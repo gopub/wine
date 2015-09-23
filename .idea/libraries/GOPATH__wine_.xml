@@ -94,6 +94,7 @@
       <root url="file://$PROJECT_DIR$/../../../golang.org/x/net/html/charset/testdata" />
       <root url="file://$PROJECT_DIR$/../../manucorporat/sse/.git" />
       <root url="file://$PROJECT_DIR$/../../stretchr/objx/.git" />
+      <root url="file://$PROJECT_DIR$/.git" />
       <root url="file://$PROJECT_DIR$/../../robfig/config/testdata" />
       <root url="file://$PROJECT_DIR$/../../../gopkg.in/bluesuncorp/validator.v5/.git" />
       <root url="file://$PROJECT_DIR$/../../robfig/config/.git" />

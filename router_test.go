@@ -1,19 +1,20 @@
 package wine
+
 import "testing"
 
-func TestRouter1(t *testing.T)  {
+func TestRouter1(t *testing.T) {
 	r := NewRouter()
-	r.Get("/hello", func (c Context) bool{
+	r.Get("/hello", func(c Context) bool {
 		t.Log("hello")
 		return true
 	})
 
-	r.Get("/hello/:world", func (c Context) bool{
+	r.Get("/hello/:world", func(c Context) bool {
 		t.Log("hello,world")
 		return true
 	})
 
-	r.Get("/hello/:world2", func (c Context) bool{
+	r.Get("/hello/:world2", func(c Context) bool {
 		t.Log("hello,world")
 		return true
 	})

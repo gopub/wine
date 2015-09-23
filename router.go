@@ -2,7 +2,7 @@ package wine
 
 import "strings"
 
-type Handler func(Context) bool
+type Handler func(*Context) bool
 
 type Routing interface {
 	Use(handlers ...Handler)
@@ -29,11 +29,12 @@ func NewRouter() *Router {
 
 func (this *Router) Group(relativePath string) Routing {
 	if len(relativePath) == 0 || relativePath == "/" {
-		panic("invalid path " + relativePath)
+		panic("relative path can not be empty")
 	}
+
 	r := &Router{}
 	r.methodTrees = this.methodTrees
-	r.basePath = this.basePath + "/" + relativePath
+	r.basePath = cleanPath(this.basePath + "/" + relativePath)
 	r.handlers = this.handlers
 	return r
 }
@@ -50,14 +51,22 @@ func (this *Router) Match(method string, path string) (handlers []Handler, param
 
 	segments := strings.Split(path, "/")
 	if len(segments) > 1 && segments[len(segments)-1] == "" {
-		segments = segments[0:len(segments)-1]
+		segments = segments[0 : len(segments)-1]
 	}
 	return n.match(segments, path)
 }
 
 func (this *Router) Bind(method string, path string, handlers ...Handler) {
-	if len(path) == 0 {
-		panic("bind empty path")
+	if path == "" {
+		panic("path can not be empty")
+	}
+
+	if len(method) == 0 {
+		panic("method can not be empty")
+	}
+
+	if len(handlers) == 0 {
+		panic("requre at least one handler")
 	}
 
 	n := this.methodTrees[method]
@@ -67,18 +76,18 @@ func (this *Router) Bind(method string, path string, handlers ...Handler) {
 		this.methodTrees[method] = n
 	}
 
+	path = cleanPath(path)
 	if len(this.basePath) == 0 {
 		if path == "/" {
 			if len(n.handlers) == 0 {
 				n.handlers = handlers
 			} else {
-				panic("binding conflicts")
+				panic("path conflicts")
 			}
 		}
 	}
 
-	fullPath := this.basePath + "/" + path
-	fullPath = strings.Replace(fullPath, "//", "/", -1)
+	fullPath := cleanPath(this.basePath + "/" + path)
 	hs := append(this.handlers, handlers...)
 	segments := strings.Split(fullPath, "/")
 	n.addChild(segments[1:], fullPath, hs...)

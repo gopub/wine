@@ -1,19 +1,36 @@
 package wine
 
-type Server struct {
-	*Router
+import (
+	"fmt"
+	"github.com/justintan/gox"
+	"net/http"
+	"strings"
+)
+
+type server struct {
+	Routing
 }
 
-/*
-func (this *APIServer) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
+func Server() *server {
+	s := &server{}
+	s.Routing = NewRouter()
+	return s
+}
+
+func (this *server) Run(addr string) error {
+	err := http.ListenAndServe(addr, this)
+	return err
+}
+
+func (this *server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	defer func() {
 		if e := recover(); e != nil {
-			Log().Error("ServeHTTP", e)
+			gox.Log().Error("ServeHTTP", e)
 		}
-		Log().Critical(fmt.Sprintf("Handled Request %q", req.RequestURI))
+		gox.Log().Critical(fmt.Sprintf("Handled Request %q", req.RequestURI))
 	}()
 
-	Log().Critical(fmt.Sprintf("%s %s %q", req.Method, req.Header.Get(ContentTypeName), req.RequestURI))
+	gox.Log().Critical(fmt.Sprintf("%s %s %q", req.Method, req.Header.Get(gox.ContentTypeName), req.RequestURI))
 
 	path := req.RequestURI
 	i := strings.Index(path, "?")
@@ -21,36 +38,22 @@ func (this *APIServer) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		path = req.RequestURI[:i]
 	}
 
-	handlers := this.router.Match(req.Method, path)
+	handlers, params := this.Match(req.Method, path)
 	if len(handlers) == 0 {
-		Log().Error("No service ", path, "[", req.RequestURI, "]")
+		gox.Log().Error("No service ", path, "[", req.RequestURI, "]")
 		http.Error(rw, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 		return
 	}
 
+	context := NewContext(rw, req)
+	context.Params.AddMap(params)
 	for _, h := range handlers {
-
-	}
-
-	if handler, parameters := self.findHandler(HTTPMethod(req.Method), path); handler != nil {
-		logger.Info("Path Parameters: ", parameters)
-		request := NewRequest(req, parameters)
-		response := handler(request)
-		if response != nil {
-			//			logger.Info(path, response.Header, response.Status)
-			for key, values := range response.Header {
-				for _, v := range values {
-					rw.Header().Set(key, v)
-				}
-			}
-			rw.WriteHeader(response.Status)
-			if len(response.Body) > 0 {
-				rw.Write(response.Body)
-			}
-		} else {
-			http.Error(rw, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
-			logger.Error(path, parameters)
+		if h(context) == false {
+			break
 		}
-	} else {
 	}
-}*/
+
+	if context.Written() == false {
+		context.Status(http.StatusNotFound)
+	}
+}

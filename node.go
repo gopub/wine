@@ -38,7 +38,7 @@ func (this *node) conflict(n *node) bool {
 
 func (this *node) addChild(pathSegments []string, fullPath string, handlers ...Handler) {
 	if len(pathSegments) == 0 || len(pathSegments[0]) == 0 {
-		panic("path segments is empty")
+		panic("path segments can not be empty")
 	}
 
 	n := &node{}

@@ -8,6 +8,7 @@ import (
 
 const HeaderPrefix = "wine-"
 
+//API Request
 type Request struct {
 	API    string `json:"api"`
 	Header gox.M  `json:"header"`

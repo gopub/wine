@@ -4,6 +4,7 @@ import "github.com/justintan/gox"
 
 type Response struct {
 	Code gox.Code `json:"code"`
+	API  string   `json:"api,omitempty"`
 	Msg  string   `json:"msg,omitempty"`
 	Data gox.M    `json:"data,omitempty"`
 }
