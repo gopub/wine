@@ -28,8 +28,12 @@ func NewRouter() *Router {
 }
 
 func (this *Router) Group(relativePath string) Routing {
-	if len(relativePath) == 0 || relativePath == "/" {
+	if len(relativePath) == 0 {
 		panic("relative path can not be empty")
+	}
+
+	if relativePath == "/" {
+		panic("unnecessary to create group \"/\"")
 	}
 
 	r := &Router{}
