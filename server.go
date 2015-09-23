@@ -27,7 +27,6 @@ func (this *server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		if e := recover(); e != nil {
 			gox.Log().Error("ServeHTTP", e)
 		}
-		gox.Log().Critical(fmt.Sprintf("Handled Request %q", req.RequestURI))
 	}()
 
 	gox.Log().Critical(fmt.Sprintf("%s %s %q", req.Method, req.Header.Get(gox.ContentTypeName), req.RequestURI))
