@@ -63,5 +63,5 @@ func (this *Context) Status(s int) {
 	}
 	this.written = true
 	this.writer.Header().Set("Access-Control-Allow-Origin", "*")
-	this.writer.WriteHeader(s)
+	http.Error(this.writer, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 }

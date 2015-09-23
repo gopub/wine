@@ -19,7 +19,7 @@ func (this *node) conflict(n *node) bool {
 		if n.path != this.path {
 			return false
 		}
-	} else {
+	} else if this.t == paramNode {
 		if len(n.handlers) > 0 && len(this.handlers) > 0 {
 			return true
 		}
@@ -58,11 +58,15 @@ func (this *node) addChild(pathSegments []string, fullPath string, handlers ...H
 
 	for _, child := range this.children {
 		if child.conflict(n) {
-			panic("duplicate path:" + fullPath)
+			panic("duplicate path " + fullPath)
 		}
 	}
 
-	this.children = append(this.children, n)
+	if n.t == staticNode {
+		this.children = append([]*node{n}, this.children...)
+	} else {
+		this.children = append(this.children, n)
+	}
 }
 
 func (this *node) match(pathSegments []string, fullPath string) (handlers []Handler, params map[string]string) {
