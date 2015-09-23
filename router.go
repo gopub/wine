@@ -2,7 +2,7 @@ package wine
 
 import "strings"
 
-type Handler func(*Context) (shouldContinue bool)
+type Handler func(*Context)
 
 type Routing interface {
 	Use(handlers ...Handler)

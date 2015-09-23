@@ -45,14 +45,8 @@ func (this *server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	context := NewContext(rw, req)
-	context.Params.AddMap(params)
-	for _, h := range handlers {
-		if h(context) == false {
-			break
-		}
-	}
-
+	context := NewContext(rw, req, handlers, params)
+	context.Next()
 	if context.Written() == false {
 		context.Status(http.StatusNotFound)
 	}
