@@ -39,7 +39,7 @@ func (this *Router) Group(relativePath string) Routing {
 	r := &Router{}
 	r.methodTrees = this.methodTrees
 	r.basePath = cleanPath(this.basePath + "/" + relativePath)
-	r.handlers = this.handlers
+	copy(r.handlers, this.handlers)
 	return r
 }
 
