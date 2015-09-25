@@ -5,14 +5,14 @@ import "strings"
 type Handler func(*Context)
 
 type Routing interface {
-	Use(handlers ...Handler)
+	Use(handlers ...Handler) Routing
 	Group(relativePath string) Routing
 	Bind(method string, path string, handlers ...Handler)
 	Match(method string, path string) (handlers []Handler, params map[string]string)
-	Get(path string, handlers ...Handler)
-	Post(path string, handlers ...Handler)
-	Delete(path string, handlers ...Handler)
-	Put(path string, handlers ...Handler)
+	GET(path string, handlers ...Handler)
+	POST(path string, handlers ...Handler)
+	DELETE(path string, handlers ...Handler)
+	PUT(path string, handlers ...Handler)
 }
 
 type Router struct {
@@ -43,8 +43,9 @@ func (this *Router) Group(relativePath string) Routing {
 	return r
 }
 
-func (this *Router) Use(handlers ...Handler) {
+func (this *Router) Use(handlers ...Handler) Routing {
 	this.handlers = append(this.handlers, handlers...)
+	return this
 }
 
 func (this *Router) Match(method string, path string) (handlers []Handler, params map[string]string) {
@@ -97,18 +98,18 @@ func (this *Router) Bind(method string, path string, handlers ...Handler) {
 	n.addChild(segments[1:], fullPath, hs...)
 }
 
-func (this *Router) Get(path string, handlers ...Handler) {
+func (this *Router) GET(path string, handlers ...Handler) {
 	this.Bind("GET", path, handlers...)
 }
 
-func (this *Router) Post(path string, handlers ...Handler) {
+func (this *Router) POST(path string, handlers ...Handler) {
 	this.Bind("POST", path, handlers...)
 }
 
-func (this *Router) Delete(path string, handlers ...Handler) {
+func (this *Router) DELETE(path string, handlers ...Handler) {
 	this.Bind("DELETE", path, handlers...)
 }
 
-func (this *Router) Put(path string, handlers ...Handler) {
+func (this *Router) PUT(path string, handlers ...Handler) {
 	this.Bind("PUT", path, handlers...)
 }
