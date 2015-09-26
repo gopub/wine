@@ -1,5 +1,9 @@
 package wine
 
+import (
+	"github.com/justintan/gox"
+)
+
 type nodeType int
 
 const (
@@ -100,4 +104,31 @@ func (this *node) match(pathSegments []string, fullPath string) (handlers []Hand
 		}
 	}
 	return
+}
+
+func (this *node) Print(method string, parentPath string) {
+	var path string
+	if this.t == staticNode {
+		path = parentPath + "/" + this.path
+	} else {
+		path = parentPath + "/:" + this.path
+	}
+
+	path = cleanPath(path)
+
+	if len(this.handlers) > 0 {
+		var hNames string
+		for _, h := range this.handlers {
+			if len(hNames) != 0 {
+				hNames += ", "
+			}
+
+			hNames += h.Name()
+		}
+		gox.LInfof("%-5s %s\t%s", method, path, hNames)
+	}
+
+	for _, n := range this.children {
+		n.Print(method, path)
+	}
 }

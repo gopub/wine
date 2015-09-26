@@ -24,7 +24,7 @@ You can use wine like,
 		
 			server.Get("/topic/:id/title", func (c *wine.Context)  {
 				topicId := c.Params.GetInt("id")
-				gox.Log().Info(topicId)
+				gox.LInfo(topicId)
 				c.JSON(gox.M{"title":"this is topic title"})
 			})
 		
@@ -34,14 +34,14 @@ You can use wine like,
 			
 			r.Get(":id/name", func (c *wine.Context)  {
 				id := c.Params.GetInt("id")
-				gox.Log().Info(id)
+				gox.LInfo(id)
 				c.JSON(gox.M{"name":"tom"})
 			})
 		
 			r.Put(":id/name/:name", func (c *wine.Context)  {
 				id := c.Params.GetInt("id")
 				name := c.Params.GetStr("name")
-				gox.Log().Info(id, name)
+				gox.LInfo(id, name)
 				c.JSON(gox.M{"name":name})
 			})
 		
@@ -49,7 +49,7 @@ You can use wine like,
 		}
 		
 		func Logger(c *wine.Context)  {
-			gox.Log().Info("[BEGIN]", c.Request.URL.RequestURI())
+			gox.LInfo("[BEGIN]", c.Request.URL.RequestURI())
 			c.Next()
-			gox.Log().Info("[END]", c.Request.URL.RequestURI())
+			gox.LInfo("[END]", c.Request.URL.RequestURI())
 		}

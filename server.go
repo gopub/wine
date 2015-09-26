@@ -18,6 +18,7 @@ func Server() *server {
 }
 
 func (this *server) Run(addr string) error {
+	this.Print()
 	err := http.ListenAndServe(addr, this)
 	return err
 }
@@ -25,11 +26,11 @@ func (this *server) Run(addr string) error {
 func (this *server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	defer func() {
 		if e := recover(); e != nil {
-			gox.Log().Error("ServeHTTP", e)
+			gox.LError("ServeHTTP", e)
 		}
 	}()
 
-	gox.Log().Critical(fmt.Sprintf("%s %s %q", req.Method, req.Header.Get(gox.ContentTypeName), req.RequestURI))
+	gox.LCritical(fmt.Sprintf("%s %s %q", req.Method, req.Header.Get(gox.ContentTypeName), req.RequestURI))
 
 	path := req.RequestURI
 	i := strings.Index(path, "?")
@@ -39,7 +40,7 @@ func (this *server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 
 	handlers, params := this.Match(req.Method, path)
 	if len(handlers) == 0 {
-		gox.Log().Error("No service ", path, "[", req.RequestURI, "]")
+		gox.LError("No service ", path, "[", req.RequestURI, "]")
 		http.Error(rw, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 		return
 	}

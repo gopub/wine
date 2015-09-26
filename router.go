@@ -1,8 +1,15 @@
 package wine
 
-import "strings"
+import (
+	"github.com/justintan/gox"
+	"strings"
+)
 
 type Handler func(*Context)
+
+func (this Handler) Name() string {
+	return gox.GetFuncName(this)
+}
 
 type Routing interface {
 	Use(handlers ...Handler) Routing
@@ -13,6 +20,7 @@ type Routing interface {
 	POST(path string, handlers ...Handler)
 	DELETE(path string, handlers ...Handler)
 	PUT(path string, handlers ...Handler)
+	Print()
 }
 
 type Router struct {
@@ -112,4 +120,10 @@ func (this *Router) DELETE(path string, handlers ...Handler) {
 
 func (this *Router) PUT(path string, handlers ...Handler) {
 	this.Bind("PUT", path, handlers...)
+}
+
+func (this *Router) Print() {
+	for m, n := range this.methodTrees {
+		n.Print(m, "/")
+	}
 }

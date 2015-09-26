@@ -47,7 +47,7 @@ func SendRequest(destUrl string, req *Request) *Response {
 
 	resp.Code = gox.Code(result.GetInt("code"))
 	resp.Msg = result.GetStr("msg")
-	gox.Log().Debug("[RequestData]", destUrl, req, "result:", resp)
+	gox.LDebug("[RequestData]", destUrl, req, "result:", resp)
 	return resp
 }
 
