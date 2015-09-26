@@ -14,24 +14,29 @@ type Context struct {
 	handlers  []Handler
 	index     int //handler index
 
-	Request *http.Request
-	Header  gox.M
-	Params  gox.M
+	Request        *http.Request
+	RequestHeader  gox.M
+	RequestParams  gox.M
+	ResponseHeader http.Header
 }
 
-func NewContext(rw http.ResponseWriter, req *http.Request, handlers []Handler, params map[string]string) *Context {
+func NewContext(rw http.ResponseWriter, req *http.Request, handlers []Handler, params map[string]string, header http.Header) *Context {
 	c := &Context{}
 	c.writer = rw
 	c.Request = req
-	c.Params = gox.ParseHttpRequest(req)
+	c.RequestParams = gox.ParseHttpRequest(req)
 	if len(params) > 0 {
-		c.Params.AddMap(params)
+		c.RequestParams.AddMap(params)
 	}
-	c.Header = gox.M{}
+	c.RequestHeader = gox.M{}
 	for k, v := range req.Header {
-		c.Header[strings.ToLower(k)] = v
+		c.RequestHeader[strings.ToLower(k)] = v
 	}
 	c.handlers = handlers
+	c.ResponseHeader = make(http.Header)
+	for k, v := range header {
+		c.ResponseHeader[k] = v
+	}
 	return c
 }
 
@@ -52,8 +57,10 @@ func (this *Context) JSON(obj interface{}) {
 		panic("already written")
 	}
 	this.written = true
-	this.writer.Header().Set("Access-Control-Allow-Origin", "*")
 	this.writer.Header()[gox.ContentTypeName] = gox.JsonContentType
+	for k, v := range this.ResponseHeader {
+		this.writer.Header()[k] = v
+	}
 	jsonBytes, err := json.MarshalIndent(obj, "", "    ")
 	if err != nil {
 		this.writer.WriteHeader(http.StatusInternalServerError)
@@ -68,7 +75,9 @@ func (this *Context) Status(s int) {
 		panic("already written")
 	}
 	this.written = true
-	this.writer.Header().Set("Access-Control-Allow-Origin", "*")
+	for k, v := range this.ResponseHeader {
+		this.writer.Header()[k] = v
+	}
 	http.Error(this.writer, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 }
 

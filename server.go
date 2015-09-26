@@ -9,11 +9,13 @@ import (
 
 type server struct {
 	Routing
+	Header http.Header
 }
 
 func Server() *server {
 	s := &server{}
 	s.Routing = NewRouter()
+	s.Header = make(http.Header)
 	return s
 }
 
@@ -45,7 +47,7 @@ func (this *server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	context := NewContext(rw, req, handlers, params)
+	context := NewContext(rw, req, handlers, params, this.Header)
 	context.Next()
 	if context.Written() == false {
 		context.Status(http.StatusNotFound)
