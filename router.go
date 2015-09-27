@@ -14,13 +14,13 @@ func (this Handler) Name() string {
 type Routing interface {
 	Use(handlers ...Handler) Routing
 	Group(relativePath string) Routing
-	Bind(method string, path string, handlers ...Handler)
+	Bind(method string, path string, handlers ...Handler) Routing
 	Match(method string, path string) (handlers []Handler, params map[string]string)
-	GET(path string, handlers ...Handler)
-	POST(path string, handlers ...Handler)
-	DELETE(path string, handlers ...Handler)
-	PUT(path string, handlers ...Handler)
-	ANY(path string, handlers ...Handler)
+	GET(path string, handlers ...Handler) Routing
+	POST(path string, handlers ...Handler) Routing
+	DELETE(path string, handlers ...Handler) Routing
+	PUT(path string, handlers ...Handler) Routing
+	ANY(path string, handlers ...Handler) Routing
 	Print()
 }
 
@@ -70,7 +70,7 @@ func (this *Router) Match(method string, path string) (handlers []Handler, param
 	return n.match(segments, path)
 }
 
-func (this *Router) Bind(method string, path string, handlers ...Handler) {
+func (this *Router) Bind(method string, path string, handlers ...Handler) Routing {
 	if path == "" {
 		panic("path can not be empty")
 	}
@@ -105,29 +105,35 @@ func (this *Router) Bind(method string, path string, handlers ...Handler) {
 	hs := append(this.handlers, handlers...)
 	segments := strings.Split(fullPath, "/")
 	n.addChild(segments[1:], fullPath, hs...)
+	return this
 }
 
-func (this *Router) GET(path string, handlers ...Handler) {
+func (this *Router) GET(path string, handlers ...Handler) Routing {
 	this.Bind("GET", path, handlers...)
+	return this
 }
 
-func (this *Router) POST(path string, handlers ...Handler) {
+func (this *Router) POST(path string, handlers ...Handler) Routing {
 	this.Bind("POST", path, handlers...)
+	return this
 }
 
-func (this *Router) DELETE(path string, handlers ...Handler) {
+func (this *Router) DELETE(path string, handlers ...Handler) Routing {
 	this.Bind("DELETE", path, handlers...)
+	return this
 }
 
-func (this *Router) PUT(path string, handlers ...Handler) {
+func (this *Router) PUT(path string, handlers ...Handler) Routing {
 	this.Bind("PUT", path, handlers...)
+	return this
 }
 
-func (this *Router) ANY(path string, handlers ...Handler) {
+func (this *Router) ANY(path string, handlers ...Handler) Routing {
 	this.GET(path, handlers...)
 	this.POST(path, handlers...)
 	this.PUT(path, handlers...)
 	this.DELETE(path, handlers...)
+	return this
 }
 
 func (this *Router) Print() {
