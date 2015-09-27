@@ -20,6 +20,7 @@ func Server() *server {
 }
 
 func (this *server) Run(addr string) error {
+	gox.LInfo("Running at", addr, "...")
 	this.Print()
 	err := http.ListenAndServe(addr, this)
 	return err

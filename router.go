@@ -20,6 +20,7 @@ type Routing interface {
 	POST(path string, handlers ...Handler)
 	DELETE(path string, handlers ...Handler)
 	PUT(path string, handlers ...Handler)
+	ANY(path string, handlers ...Handler)
 	Print()
 }
 
@@ -120,6 +121,13 @@ func (this *Router) DELETE(path string, handlers ...Handler) {
 
 func (this *Router) PUT(path string, handlers ...Handler) {
 	this.Bind("PUT", path, handlers...)
+}
+
+func (this *Router) ANY(path string, handlers ...Handler) {
+	this.GET(path, handlers...)
+	this.POST(path, handlers...)
+	this.PUT(path, handlers...)
+	this.DELETE(path, handlers...)
 }
 
 func (this *Router) Print() {

@@ -22,6 +22,7 @@ type Context struct {
 
 func NewContext(rw http.ResponseWriter, req *http.Request, handlers []Handler, params map[string]string, header http.Header) *Context {
 	c := &Context{}
+	c.keyValues = gox.M{}
 	c.writer = rw
 	c.Request = req
 	c.RequestParams = gox.ParseHttpRequest(req)
