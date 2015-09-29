@@ -24,3 +24,15 @@ func cleanPath(path string) string {
 
 	return path
 }
+
+//过滤`//`
+func filterSlashPath(path string) string{
+	if path == ""{
+		return "/"
+	}
+	for strings.Contains(path,"//") {
+		path=strings.Replace(path,"//","/",-1)
+	}
+
+	return path
+}

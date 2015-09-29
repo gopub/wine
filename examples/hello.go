@@ -3,8 +3,8 @@ package main
 import (
 	"fmt"
 	"github.com/justintan/gox"
-	"github.com/justintan/wine"
 	"time"
+	"github.com/shanks-hongfa/wine"
 )
 
 func main() {
