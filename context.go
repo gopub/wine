@@ -7,6 +7,8 @@ import (
 	"strings"
 )
 
+type NewContextFunc func(writer http.ResponseWriter, req *http.Request, handlers []Handler, params map[string]string, respHeader http.Header) Context
+
 type Context interface {
 	Set(key string, value interface{})
 	Get(key string) interface{}
@@ -34,7 +36,7 @@ type DefaultContext struct {
 	respHeader http.Header
 }
 
-func NewContext(rw http.ResponseWriter, req *http.Request, handlers []Handler, params map[string]string, header http.Header) *DefaultContext {
+func NewDefaultContext(rw http.ResponseWriter, req *http.Request, handlers []Handler, params map[string]string, header http.Header) Context {
 	c := &DefaultContext{}
 	c.keyValues = gox.M{}
 	c.writer = rw
