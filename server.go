@@ -40,7 +40,7 @@ func (this *server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	if i > 0 {
 		path = req.RequestURI[:i]
 	}
-	path=cleanPath(path)
+	path = cleanPath(path)
 	handlers, params := this.Match(req.Method, path)
 	if len(handlers) == 0 {
 		gox.LError("Not found", path, "[", req.RequestURI, "]")
@@ -51,6 +51,6 @@ func (this *server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	context := NewContext(rw, req, handlers, params, this.Header)
 	context.Next()
 	if context.Written() == false {
-		context.Status(http.StatusNotFound)
+		context.SendStatus(http.StatusNotFound)
 	}
 }

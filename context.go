@@ -11,7 +11,8 @@ type Context interface {
 	Set(key string, value interface{})
 	Get(key string) interface{}
 	Written() bool
-	JSON(obj interface{})
+	SendJSON(obj interface{})
+	SendStatus(status int)
 	Next()
 	Request() *http.Request
 	RequestParams() gox.M
@@ -66,7 +67,7 @@ func (this *DefaultContext) Written() bool {
 	return this.written
 }
 
-func (this *DefaultContext) JSON(obj interface{}) {
+func (this *DefaultContext) SendJSON(obj interface{}) {
 	if this.written {
 		panic("already written")
 	}
@@ -84,7 +85,7 @@ func (this *DefaultContext) JSON(obj interface{}) {
 	this.writer.Write(jsonBytes)
 }
 
-func (this *DefaultContext) Status(s int) {
+func (this *DefaultContext) SendStatus(s int) {
 	if this.written {
 		panic("already written")
 	}
