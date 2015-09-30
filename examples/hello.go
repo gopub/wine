@@ -2,15 +2,13 @@ package main
 
 import (
 	"fmt"
-	"github.com/justintan/gox"
 	"github.com/justintan/wine"
 	"time"
 )
 
 func main() {
-	s := wine.Server()
+	s := wine.Default()
 	//You can implement middle wares and add them to the routing
-	s.Use(logger)
 
 	s.GET("server-time", func(c wine.Context) {
 		resp := map[string]interface{}{"time": time.Now().Unix()}
@@ -49,14 +47,6 @@ func auth(c wine.Context) {
 		resp := map[string]interface{}{"msg": "authorization failed"}
 		c.SendJSON(resp)
 	}
-}
-
-func logger(c wine.Context) {
-	startAt := time.Now()
-	c.Next()
-	duration := time.Since(startAt)
-	timeStr := fmt.Sprintf("%dus", duration/1000)
-	gox.LInfo(c.Request().Method, c.Request().RequestURI, timeStr)
 }
 
 func login(c wine.Context) {

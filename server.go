@@ -1,7 +1,6 @@
 package wine
 
 import (
-	"fmt"
 	"github.com/justintan/gox"
 	"net/http"
 	"strings"
@@ -21,6 +20,15 @@ func Server() *server {
 	return s
 }
 
+func Default() *server {
+	s := &server{}
+	s.Routing = NewRouter()
+	s.Header = make(http.Header)
+	s.NewContext = NewDefaultContext
+	s.Use(Logger)
+	return s
+}
+
 func (this *server) Run(addr string) error {
 	gox.LInfo("Running at", addr, "...")
 	this.Print()
@@ -34,8 +42,6 @@ func (this *server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 			gox.LError("ServeHTTP", e)
 		}
 	}()
-
-	gox.LCritical(fmt.Sprintf("%s %s %q", req.Method, req.Header.Get(gox.ContentTypeName), req.RequestURI))
 
 	path := req.RequestURI
 	i := strings.Index(path, "?")
