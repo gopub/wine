@@ -7,59 +7,72 @@ import (
 	"strings"
 )
 
-type Context struct {
+type Context interface {
+	Set(key string, value interface{})
+	Get(key string) interface{}
+	Written() bool
+	JSON(obj interface{})
+	Next()
+	Request() *http.Request
+	RequestParams() gox.M
+	RequestHeader() http.Header
+	ResponseHeader() http.Header
+	ResponseWriter() http.ResponseWriter
+}
+
+type DefaultContext struct {
 	keyValues gox.M
 	writer    http.ResponseWriter
 	written   bool
 	handlers  []Handler
 	index     int //handler index
 
-	Request        *http.Request
-	RequestHeader  gox.M
-	RequestParams  gox.M
-	ResponseHeader http.Header
+	req        *http.Request
+	reqHeader  http.Header
+	reqParams  gox.M
+	respHeader http.Header
 }
 
-func NewContext(rw http.ResponseWriter, req *http.Request, handlers []Handler, params map[string]string, header http.Header) *Context {
-	c := &Context{}
+func NewContext(rw http.ResponseWriter, req *http.Request, handlers []Handler, params map[string]string, header http.Header) *DefaultContext {
+	c := &DefaultContext{}
 	c.keyValues = gox.M{}
 	c.writer = rw
-	c.Request = req
-	c.RequestParams = gox.ParseHttpRequest(req)
+	c.req = req
+	c.reqParams = gox.ParseHttpRequest(req)
 	if len(params) > 0 {
-		c.RequestParams.AddMap(params)
+		c.reqParams.AddMap(params)
 	}
-	c.RequestHeader = gox.M{}
+	c.reqHeader = make(http.Header)
 	for k, v := range req.Header {
-		c.RequestHeader[strings.ToLower(k)] = v
+		c.reqHeader[strings.ToLower(k)] = v
 	}
 	c.handlers = handlers
-	c.ResponseHeader = make(http.Header)
+	c.respHeader = make(http.Header)
 	for k, v := range header {
-		c.ResponseHeader[k] = v
+		c.respHeader[k] = v
 	}
 	return c
 }
 
-func (this *Context) Set(key string, value interface{}) {
+func (this *DefaultContext) Set(key string, value interface{}) {
 	this.keyValues[key] = value
 }
 
-func (this *Context) Get(key string) interface{} {
+func (this *DefaultContext) Get(key string) interface{} {
 	return this.keyValues[key]
 }
 
-func (this *Context) Written() bool {
+func (this *DefaultContext) Written() bool {
 	return this.written
 }
 
-func (this *Context) JSON(obj interface{}) {
+func (this *DefaultContext) JSON(obj interface{}) {
 	if this.written {
 		panic("already written")
 	}
 	this.written = true
 	this.writer.Header()[gox.ContentTypeName] = gox.JsonContentType
-	for k, v := range this.ResponseHeader {
+	for k, v := range this.respHeader {
 		this.writer.Header()[k] = v
 	}
 	jsonBytes, err := json.MarshalIndent(obj, "", "    ")
@@ -71,18 +84,18 @@ func (this *Context) JSON(obj interface{}) {
 	this.writer.Write(jsonBytes)
 }
 
-func (this *Context) Status(s int) {
+func (this *DefaultContext) Status(s int) {
 	if this.written {
 		panic("already written")
 	}
 	this.written = true
-	for k, v := range this.ResponseHeader {
+	for k, v := range this.respHeader {
 		this.writer.Header()[k] = v
 	}
 	http.Error(this.writer, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 }
 
-func (this *Context) Next() {
+func (this *DefaultContext) Next() {
 	if this.index >= len(this.handlers) {
 		return
 	}
@@ -90,4 +103,24 @@ func (this *Context) Next() {
 	index := this.index
 	this.index += 1
 	this.handlers[index](this)
+}
+
+func (this *DefaultContext) Request() *http.Request {
+	return this.req
+}
+
+func (this *DefaultContext) RequestParams() gox.M {
+	return this.reqParams
+}
+
+func (this *DefaultContext) RequestHeader() http.Header {
+	return this.reqHeader
+}
+
+func (this *DefaultContext) ResponseHeader() http.Header {
+	return this.respHeader
+}
+
+func (this *DefaultContext) ResponseWriter() http.ResponseWriter {
+	return this.writer
 }

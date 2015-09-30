@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-type Handler func(*Context)
+type Handler func(Context)
 
 func (this Handler) Name() string {
 	return gox.GetFuncName(this)
