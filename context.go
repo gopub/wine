@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-type NewContextFunc func(writer http.ResponseWriter, req *http.Request, handlers []Handler, params map[string]string, respHeader http.Header) Context
+type NewContextFunc func(writer http.ResponseWriter, req *http.Request, handlers []Handler) Context
 
 type Context interface {
 	Set(key string, value interface{})
@@ -36,24 +36,18 @@ type DefaultContext struct {
 	respHeader http.Header
 }
 
-func NewDefaultContext(rw http.ResponseWriter, req *http.Request, handlers []Handler, params map[string]string, header http.Header) Context {
+func NewDefaultContext(rw http.ResponseWriter, req *http.Request, handlers []Handler) Context {
 	c := &DefaultContext{}
 	c.keyValues = gox.M{}
 	c.writer = rw
 	c.req = req
 	c.reqParams = gox.ParseHttpRequest(req)
-	if len(params) > 0 {
-		c.reqParams.AddMap(params)
-	}
 	c.reqHeader = make(http.Header)
 	for k, v := range req.Header {
 		c.reqHeader[strings.ToLower(k)] = v
 	}
 	c.handlers = handlers
 	c.respHeader = make(http.Header)
-	for k, v := range header {
-		c.respHeader[k] = v
-	}
 	return c
 }
 

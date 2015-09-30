@@ -50,7 +50,11 @@ func (this *server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	context := this.NewContext(rw, req, handlers, params, this.Header)
+	context := this.NewContext(rw, req, handlers)
+	context.RequestParams().AddMap(params)
+	for k, v := range this.Header {
+		context.RequestHeader()[k] = v
+	}
 	context.Next()
 	if context.Written() == false {
 		context.SendStatus(http.StatusNotFound)
