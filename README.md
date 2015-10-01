@@ -21,8 +21,8 @@ You can use wine like,
         		c.SendJSON(resp)
         	})
         
-        	//ANY means the union of GET, POST, PUT, DELETE
-        	s.ANY("login", login)
+        	//Equals to s.GET("login", login) and s.POST("login", login)
+            s.GP("login", login)
         
         	g := s.Group("users")
         	g.Use(auth)

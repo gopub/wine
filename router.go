@@ -18,7 +18,7 @@ type Routing interface {
 	POST(path string, handlers ...Handler) Routing
 	DELETE(path string, handlers ...Handler) Routing
 	PUT(path string, handlers ...Handler) Routing
-	ANY(path string, handlers ...Handler) Routing
+	GP(path string, handlers ...Handler) Routing
 	Print()
 }
 
@@ -126,11 +126,9 @@ func (this *Router) PUT(path string, handlers ...Handler) Routing {
 	return this
 }
 
-func (this *Router) ANY(path string, handlers ...Handler) Routing {
+func (this *Router) GP(path string, handlers ...Handler) Routing {
 	this.GET(path, handlers...)
 	this.POST(path, handlers...)
-	this.PUT(path, handlers...)
-	this.DELETE(path, handlers...)
 	return this
 }
 
