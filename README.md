@@ -78,13 +78,13 @@ You can use wine like,
 
 
 
-2015/10/04 20:36:25 [INFO ]  Running at :8080 ...
-2015/10/04 20:36:25 [INFO ] GET   /     github.com/justintan/wine.(*Router).StaticFile.func1
-2015/10/04 20:36:25 [INFO ] GET   /users/:id/profile    github.com/justintan/wine.Logger, main.auth, main.getProfile
-2015/10/04 20:36:25 [INFO ] GET   /login        github.com/justintan/wine.Logger, main.login
-2015/10/04 20:36:25 [INFO ] GET   /users/:id/name       github.com/justintan/wine.Logger, main.main.func2
-2015/10/04 20:36:25 [INFO ] GET   /server-time  github.com/justintan/wine.Logger, main.main.func1
-2015/10/04 20:36:25 [INFO ] GET   /html/*       github.com/justintan/wine.Logger, github.com/justintan/wine.(*Router).StaticFS.func1
-2015/10/04 20:36:25 [INFO ] POST  /login        github.com/justintan/wine.Logger, main.login
-2015/10/04 20:36:25 [INFO ] PUT   /users/:id/name       github.com/justintan/wine.Logger, main.auth, main.updateName
+2015/10/04 20:36:25 [INFO ]  Running at :8080 ...  
+2015/10/04 20:36:25 [INFO ] GET   /     github.com/justintan/wine.(*Router).StaticFile.func1  
+2015/10/04 20:36:25 [INFO ] GET   /users/:id/profile    github.com/justintan/wine.Logger, main.auth, main.getProfile  
+2015/10/04 20:36:25 [INFO ] GET   /login        github.com/justintan/wine.Logger, main.login  
+2015/10/04 20:36:25 [INFO ] GET   /users/:id/name       github.com/justintan/wine.Logger, main.main.func2  
+2015/10/04 20:36:25 [INFO ] GET   /server-time  github.com/justintan/wine.Logger, main.main.func1  
+2015/10/04 20:36:25 [INFO ] GET   /html/*       github.com/justintan/wine.Logger, github.com/justintan/wine.(*Router).StaticFS.func1  
+2015/10/04 20:36:25 [INFO ] POST  /login        github.com/justintan/wine.Logger, main.login  
+2015/10/04 20:36:25 [INFO ] PUT   /users/:id/name       github.com/justintan/wine.Logger, main.auth, main.updateName  
   
