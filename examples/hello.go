@@ -10,12 +10,15 @@ func main() {
 	s := wine.Default()
 	//You can implement middle wares and add them to the routing
 
+	s.StaticFile("a", "/Users/qiyu/tmpwork/index.html")
+	s.StaticDir("/users/*", "/Users/qiyu/tmpwork/")
+
 	s.GET("server-time", func(c wine.Context) {
 		resp := map[string]interface{}{"time": time.Now().Unix()}
 		c.SendJSON(resp)
 	})
 
-	s.GET("users/:id/name", func(c wine.Context) {
+	s.GET("users/:id", func(c wine.Context) {
 		id := c.RequestParams().GetStr("id")
 		resp := map[string]interface{}{"name": "This is " + id + "'s name"}
 		c.SendJSON(resp)

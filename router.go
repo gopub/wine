@@ -2,6 +2,7 @@ package wine
 
 import (
 	"github.com/justintan/gox"
+	"net/http"
 	"strings"
 )
 
@@ -12,8 +13,11 @@ func (this Handler) Name() string {
 type Routing interface {
 	Use(handlers ...Handler) Routing
 	Group(relativePath string) Routing
-	Bind(method string, path string, handlers ...Handler) Routing
-	Match(method string, path string) (handlers []Handler, params map[string]string)
+	StaticFile(relativePath, filePath string) Routing
+	StaticDir(relativePath, filePath string) Routing
+	StaticFS(relativePath string, fs http.FileSystem) Routing
+	Bind(method, path string, handlers ...Handler) Routing
+	Match(method, path string) (handlers []Handler, params map[string]string)
 	GET(path string, handlers ...Handler) Routing
 	POST(path string, handlers ...Handler) Routing
 	DELETE(path string, handlers ...Handler) Routing
@@ -110,6 +114,39 @@ func (this *Router) Bind(method string, path string, handlers ...Handler) Routin
 	hs := append(this.handlers, handlers...)
 	segments := strings.Split(fullPath, "/")
 	n.addChild(segments[1:], fullPath, hs...)
+	return this
+}
+
+func (this *Router) StaticFile(relativePath, filePath string) Routing {
+	this.GET(relativePath, func(c Context) {
+		gox.LInfo(relativePath)
+		c.SendFile(filePath)
+		c.MarkWritten()
+	})
+	return this
+}
+
+func (this *Router) StaticDir(relativePath, dirPath string) Routing {
+	this.StaticFS(relativePath, http.Dir(dirPath))
+	return this
+}
+
+func (this *Router) StaticFS(relativePath string, fs http.FileSystem) Routing {
+	prefix := cleanPath(this.basePath + "/" + relativePath)
+	i := strings.Index(prefix, "*")
+	if i > 0 {
+		prefix = prefix[:i]
+	}
+
+	if prefix[len(prefix)-1] != '/' {
+		panic("invalid path: " + relativePath)
+	}
+
+	fileServer := http.StripPrefix(prefix, http.FileServer(fs))
+	this.GET(relativePath, func(c Context) {
+		fileServer.ServeHTTP(c.ResponseWriter(), c.Request())
+		c.MarkWritten()
+	})
 	return this
 }
 

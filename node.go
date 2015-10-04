@@ -2,13 +2,15 @@ package wine
 
 import (
 	"github.com/justintan/gox"
+	"strings"
 )
 
 type nodeType int
 
 const (
-	staticNode nodeType = 0
-	paramNode  nodeType = 1
+	staticNode   nodeType = 0
+	paramNode    nodeType = 1
+	wildcardNode nodeType = 2
 )
 
 type node struct {
@@ -19,14 +21,27 @@ type node struct {
 }
 
 func (this *node) conflict(n *node) bool {
-	if n.t == staticNode {
+	if n.t != this.t {
+		return false
+	}
+
+	switch n.t {
+	case staticNode:
 		if n.path != this.path {
 			return false
+		} else {
+			if len(n.handlers) > 0 && len(this.handlers) > 0 {
+				return true
+			}
 		}
-	} else if this.t == paramNode {
+	case paramNode:
 		if len(n.handlers) > 0 && len(this.handlers) > 0 {
 			return true
 		}
+	case wildcardNode:
+		return true
+	default:
+		panic("unknown node type")
 	}
 
 	for _, c1 := range n.children {
@@ -50,6 +65,15 @@ func (this *node) addChild(pathSegments []string, fullPath string, handlers ...H
 	if segment[0] == ':' {
 		n.t = paramNode
 		n.path = segment[1:]
+		if len(n.path) == 0 {
+			panic("invalid path: " + fullPath)
+		}
+	} else if segment[0] == '*' {
+		n.t = wildcardNode
+		n.path = segment[1:]
+		if len(pathSegments) > 1 {
+			panic("wildcard only in the end segement")
+		}
 	} else {
 		n.path = segment
 	}
@@ -68,6 +92,23 @@ func (this *node) addChild(pathSegments []string, fullPath string, handlers ...H
 
 	if n.t == staticNode {
 		this.children = append([]*node{n}, this.children...)
+	} else if n.t == paramNode {
+		i := len(this.children) - 1
+		for i >= 0 {
+			if this.children[i].t != wildcardNode {
+				break
+			}
+			i--
+		}
+		if i < 0 {
+			this.children = append([]*node{n}, this.children...)
+		} else if i == len(this.children)-1 {
+			this.children = append(this.children, n)
+		} else {
+			this.children = append(this.children, n)
+			copy(this.children[i+2:], this.children[i+1:])
+			this.children[i+1] = n
+		}
 	} else {
 		this.children = append(this.children, n)
 	}
@@ -94,7 +135,13 @@ func (this *node) match(pathSegments []string, fullPath string) (handlers []Hand
 		}
 	}
 
-	if len(handlers) > 0 {
+	//consider wildcard in the end
+	if len(handlers) == 0 && this.t == wildcardNode {
+		handlers = this.handlers
+		segment = strings.Join(pathSegments, "/")
+	}
+
+	if len(handlers) > 0 { //matched
 		if len(params) == 0 {
 			params = map[string]string{}
 		}
@@ -110,8 +157,10 @@ func (this *node) Print(method string, parentPath string) {
 	var path string
 	if this.t == staticNode {
 		path = parentPath + "/" + this.path
-	} else {
+	} else if this.t == paramNode {
 		path = parentPath + "/:" + this.path
+	} else {
+		path = parentPath + "/*" + this.path
 	}
 
 	path = cleanPath(path)
