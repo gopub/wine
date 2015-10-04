@@ -18,7 +18,13 @@ type Routing interface {
 	POST(path string, handlers ...Handler) Routing
 	DELETE(path string, handlers ...Handler) Routing
 	PUT(path string, handlers ...Handler) Routing
+	HEAD(path string, handlers ...Handler) Routing
+	PATCH(path string, handlers ...Handler) Routing
+	OPTIONS(path string, handlers ...Handler) Routing
+	CONNECT(path string, handlers ...Handler) Routing
+	TRACE(path string, handlers ...Handler) Routing
 	GP(path string, handlers ...Handler) Routing
+	ANY(path string, handlers ...Handler) Routing
 	Print()
 }
 
@@ -127,9 +133,47 @@ func (this *Router) PUT(path string, handlers ...Handler) Routing {
 	return this
 }
 
+func (this *Router) HEAD(path string, handlers ...Handler) Routing {
+	this.Bind("HEAD", path, handlers...)
+	return this
+}
+
+func (this *Router) PATCH(path string, handlers ...Handler) Routing {
+	this.Bind("PATCH", path, handlers...)
+	return this
+}
+
+func (this *Router) OPTIONS(path string, handlers ...Handler) Routing {
+	this.Bind("OPTIONS", path, handlers...)
+	return this
+}
+
+func (this *Router) CONNECT(path string, handlers ...Handler) Routing {
+	this.Bind("CONNECT", path, handlers...)
+	return this
+}
+
+func (this *Router) TRACE(path string, handlers ...Handler) Routing {
+	this.Bind("TRACE", path, handlers...)
+	return this
+}
+
 func (this *Router) GP(path string, handlers ...Handler) Routing {
 	this.GET(path, handlers...)
 	this.POST(path, handlers...)
+	return this
+}
+
+func (this *Router) ANY(path string, handlers ...Handler) Routing {
+	this.GET(path, handlers...)
+	this.POST(path, handlers...)
+	this.DELETE(path, handlers...)
+	this.PUT(path, handlers...)
+	this.HEAD(path, handlers...)
+	this.OPTIONS(path, handlers...)
+	this.PATCH(path, handlers...)
+	this.CONNECT(path, handlers...)
+	this.TRACE(path, handlers...)
 	return this
 }
 
