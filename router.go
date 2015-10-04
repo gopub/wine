@@ -120,7 +120,9 @@ func (this *Router) Bind(method string, path string, handlers ...Handler) Routin
 
 func (this *Router) StaticFile(relativePath, filePath string) Routing {
 	this.GET(relativePath, func(c Context) {
-		gox.LInfo(relativePath)
+		if c.Written() {
+			panic("already written")
+		}
 		c.SendFile(filePath)
 		c.MarkWritten()
 	})
@@ -145,6 +147,9 @@ func (this *Router) StaticFS(relativePath string, fs http.FileSystem) Routing {
 
 	fileServer := http.StripPrefix(prefix, http.FileServer(fs))
 	this.GET(relativePath, func(c Context) {
+		if c.Written() {
+			panic("already written")
+		}
 		fileServer.ServeHTTP(c.ResponseWriter(), c.Request())
 		c.MarkWritten()
 	})

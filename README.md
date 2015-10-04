@@ -6,9 +6,16 @@ You can use wine like,
 
 		
 		func main() {
+        
         	s := wine.Server()
+        
         	//You can implement middle wares and add them to the routing
-        	s.Use(logger)
+        	s.Use(wine.Logger)
+        
+        
+        	//support file and directory
+        	s.StaticFile("/", "/var/www/index.html")
+        	s.StaticDir("/html/*", "/var/www/html")
         
         	s.GET("server-time", func(c wine.Context) {
         		resp := map[string]interface{}{"time": time.Now().Unix()}
@@ -22,7 +29,7 @@ You can use wine like,
         	})
         
         	//Equals to s.GET("login", login) and s.POST("login", login)
-            s.GP("login", login)
+        	s.GP("login", login)
         
         	g := s.Group("users")
         	g.Use(auth)
@@ -49,14 +56,6 @@ You can use wine like,
         	}
         }
         
-        func logger(c wine.Context) {
-        	startAt := time.Now()
-        	c.Next()
-        	duration := time.Since(startAt)
-        	timeStr := fmt.Sprintf("%dus", duration/1000)
-        	gox.LInfo(c.Request().Method, c.Request().RequestURI, timeStr)
-        }
-        
         func login(c wine.Context) {
         	account := c.RequestParams().GetStr("account")
         	password := c.RequestParams().GetStr("password")
@@ -78,17 +77,14 @@ You can use wine like,
         }
 
 
-2015/09/27 21:52:48 [INFO ]  Running at :8080 ...  
-2015/09/27 21:52:48 [INFO ] GET   /users/:id/profile    main.auth, main.getProfile  
-2015/09/27 21:52:48 [INFO ] GET   /login        main.logger, main.login  
-2015/09/27 21:52:48 [INFO ] GET   /users/:id/name       main.logger, main.main.func2  
-2015/09/27 21:52:48 [INFO ] GET   /server-time  main.logger, main.main.func1  
-2015/09/27 21:52:48 [INFO ] POST  /login        main.logger, main.login  
-2015/09/27 21:52:48 [INFO ] PUT   /users/:id/name       main.auth, main.updateName  
-2015/09/27 21:52:48 [INFO ] PUT   /login        main.logger, main.login  
-2015/09/27 21:52:48 [INFO ] DELETE /login       main.logger, main.login  
-2015/09/27 21:52:56 [CRITI]  GET  "/server-time"  
-2015/09/27 21:52:56 [INFO ]  GET /server-time 115us  
-2015/09/27 21:55:52 [CRITI]  POST  "/login?account=tom&password=123"  
-tom 123  
-2015/09/27 21:55:52 [INFO ]  POST /login?account=tom&password=123 37us  
+
+2015/10/04 20:36:25 [INFO ]  Running at :8080 ...
+2015/10/04 20:36:25 [INFO ] GET   /     github.com/justintan/wine.(*Router).StaticFile.func1
+2015/10/04 20:36:25 [INFO ] GET   /users/:id/profile    github.com/justintan/wine.Logger, main.auth, main.getProfile
+2015/10/04 20:36:25 [INFO ] GET   /login        github.com/justintan/wine.Logger, main.login
+2015/10/04 20:36:25 [INFO ] GET   /users/:id/name       github.com/justintan/wine.Logger, main.main.func2
+2015/10/04 20:36:25 [INFO ] GET   /server-time  github.com/justintan/wine.Logger, main.main.func1
+2015/10/04 20:36:25 [INFO ] GET   /html/*       github.com/justintan/wine.Logger, github.com/justintan/wine.(*Router).StaticFS.func1
+2015/10/04 20:36:25 [INFO ] POST  /login        github.com/justintan/wine.Logger, main.login
+2015/10/04 20:36:25 [INFO ] PUT   /users/:id/name       github.com/justintan/wine.Logger, main.auth, main.updateName
+  
