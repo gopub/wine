@@ -104,6 +104,7 @@ func (this *Router) Bind(method string, path string, handlers ...Handler) Routin
 		if path == "/" {
 			if len(n.handlers) == 0 {
 				n.handlers = handlers
+				return this
 			} else {
 				panic("path conflicts")
 			}

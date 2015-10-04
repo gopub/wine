@@ -10,7 +10,7 @@ func main() {
 	s := wine.Default()
 	//You can implement middle wares and add them to the routing
 
-	s.StaticFile("a", "/Users/qiyu/tmpwork/index.html")
+	s.StaticFile("/", "/Users/qiyu/tmpwork/index.html")
 	s.StaticDir("/users/*", "/Users/qiyu/tmpwork/")
 
 	s.GET("server-time", func(c wine.Context) {
