@@ -21,4 +21,5 @@ type Context interface {
 	ResponseWriter() http.ResponseWriter
 	SendJSON(obj interface{})
 	SendStatus(status int)
+	SendFile(filePath string)
 }

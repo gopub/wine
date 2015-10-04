@@ -102,3 +102,7 @@ func (this *DefaultContext) SendStatus(status int) {
 	}
 	render.Status(this.writer, status)
 }
+
+func (this *DefaultContext) SendFile(filePath string) {
+	http.ServeFile(this.ResponseWriter(), this.Request(), filePath)
+}
