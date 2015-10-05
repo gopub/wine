@@ -6,10 +6,6 @@ import (
 	"strings"
 )
 
-func (this Handler) Name() string {
-	return gox.GetFuncName(this)
-}
-
 type Routing interface {
 	Use(handlers ...Handler) Routing
 	Group(relativePath string) Routing

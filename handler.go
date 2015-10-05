@@ -1,4 +1,5 @@
 package wine
+import "github.com/justintan/gox"
 
 type Handler func(Context)
 
@@ -21,4 +22,8 @@ func (this *HandlerChain) Next() Handler {
 	index := this.index
 	this.index += 1
 	return this.handlers[index]
+}
+
+func (this Handler) Name() string {
+	return gox.GetFuncName(this)
 }
