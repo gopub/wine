@@ -2,7 +2,6 @@ package wine
 
 import (
 	"regexp"
-	"strings"
 )
 
 var slashCleanRegexp = regexp.MustCompile("/{2}")
