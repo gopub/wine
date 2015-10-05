@@ -1,6 +1,11 @@
 package wine
 
-import "strings"
+import (
+	"regexp"
+	"strings"
+)
+
+var slashCleanRegexp = regexp.MustCompile("/{2}")
 
 func cleanPath(path string) string {
 	if path == "" {
@@ -15,12 +20,6 @@ func cleanPath(path string) string {
 		path = path[0 : len(path)-1]
 	}
 
-	n := len(path)
-	path = strings.Replace(path, "//", "/", -1)
-	for n != len(path) {
-		n = len(path)
-		path = strings.Replace(path, "//", "/", -1)
-	}
-
+	path = slashCleanRegexp.ReplaceAllString(path, "/")
 	return path
 }
