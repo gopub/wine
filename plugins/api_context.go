@@ -4,6 +4,7 @@ import (
 	"github.com/justintan/gox"
 	"github.com/justintan/wine"
 	"net/http"
+	"html/template"
 )
 
 //type Context wine.DefaultContext
@@ -11,8 +12,8 @@ type APIContext struct {
 	*wine.DefaultContext
 }
 
-func NewAPIContext(rw http.ResponseWriter, req *http.Request, handlers []wine.Handler) wine.Context {
-	ctx := wine.NewDefaultContext(rw, req, handlers).(*wine.DefaultContext)
+func NewAPIContext(rw http.ResponseWriter, req *http.Request, templates []*template.Template, handlers []wine.Handler) wine.Context {
+	ctx := wine.NewDefaultContext(rw, req, templates, handlers).(*wine.DefaultContext)
 	c := &APIContext{}
 	c.DefaultContext = ctx
 	return c
