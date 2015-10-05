@@ -2,6 +2,7 @@ package wine
 
 import (
 	"github.com/justintan/gox"
+	"html/template"
 	"net/http"
 	"strings"
 )
@@ -10,6 +11,7 @@ type server struct {
 	Routing
 	Header     http.Header
 	NewContext NewContextFunc
+	templates  []*template.Template
 }
 
 func Server() *server {
@@ -56,7 +58,7 @@ func (this *server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	context := this.NewContext(rw, req, handlers)
+	context := this.NewContext(rw, req, this.templates, handlers)
 	context.RequestParams().AddMap(params)
 	for k, v := range this.Header {
 		context.RequestHeader()[k] = v
@@ -65,4 +67,18 @@ func (this *server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	if context.Written() == false {
 		context.SendStatus(http.StatusNotFound)
 	}
+}
+
+func (this *server) AddGlobTemplate(pattern string) {
+	tpl := template.Must(template.ParseGlob(pattern))
+	this.AddTemplate(tpl)
+}
+
+func (this *server) AddFilesTemplate(files ...string) {
+	tpl := template.Must(template.ParseFiles(files...))
+	this.AddTemplate(tpl)
+}
+
+func (this *server) AddTemplate(tpl *template.Template) {
+	this.templates = append(this.templates, tpl)
 }

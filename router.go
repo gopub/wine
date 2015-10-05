@@ -139,10 +139,12 @@ func (this *Router) StaticFS(relativePath string, fs http.FileSystem) Routing {
 	i := strings.Index(prefix, "*")
 	if i > 0 {
 		prefix = prefix[:i]
+	} else {
+		relativePath = cleanPath(relativePath + "/*")
 	}
 
 	if prefix[len(prefix)-1] != '/' {
-		panic("invalid path: " + relativePath)
+		prefix += "/"
 	}
 
 	fileServer := http.StripPrefix(prefix, http.FileServer(fs))
@@ -150,6 +152,7 @@ func (this *Router) StaticFS(relativePath string, fs http.FileSystem) Routing {
 		if c.Written() {
 			panic("already written")
 		}
+
 		fileServer.ServeHTTP(c.ResponseWriter(), c.Request())
 		c.MarkWritten()
 	})

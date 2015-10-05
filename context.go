@@ -2,10 +2,11 @@ package wine
 
 import (
 	"github.com/justintan/gox"
+	"html/template"
 	"net/http"
 )
 
-type NewContextFunc func(writer http.ResponseWriter, req *http.Request, handlers []Handler) Context
+type NewContextFunc func(writer http.ResponseWriter, req *http.Request, templates []*template.Template, handlers []Handler) Context
 
 type Context interface {
 	Set(key string, value interface{})
@@ -13,6 +14,7 @@ type Context interface {
 	Written() bool
 	MarkWritten()
 	HandlerChain() *HandlerChain
+	Templates() []*template.Template
 	Next()
 	Request() *http.Request
 	RequestParams() gox.M
@@ -22,4 +24,6 @@ type Context interface {
 	SendJSON(obj interface{})
 	SendStatus(status int)
 	SendFile(filePath string)
+	SendHTML(htmlText string)
+	SendTemplateHTML(templateFileName string, params gox.M)
 }

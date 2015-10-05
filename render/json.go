@@ -7,7 +7,7 @@ import (
 )
 
 func JSON(writer http.ResponseWriter, jsonObj interface{}) {
-	writer.Header()[gox.ContentTypeName] = gox.JsonContentType
+	writer.Header()[gox.ContentTypeName] = gox.JSONContentType
 	jsonBytes, err := json.MarshalIndent(jsonObj, "", "    ")
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)

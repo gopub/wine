@@ -3,6 +3,7 @@ package wine
 import (
 	"github.com/justintan/gox"
 	"github.com/justintan/wine/render"
+	"html/template"
 	"net/http"
 	"strings"
 )
@@ -11,6 +12,7 @@ type DefaultContext struct {
 	keyValues gox.M
 	writer    http.ResponseWriter
 	written   bool
+	templates []*template.Template
 	handlers  *HandlerChain
 	index     int //handler index
 
@@ -20,7 +22,7 @@ type DefaultContext struct {
 	respHeader http.Header
 }
 
-func NewDefaultContext(rw http.ResponseWriter, req *http.Request, handlers []Handler) Context {
+func NewDefaultContext(rw http.ResponseWriter, req *http.Request, templates []*template.Template, handlers []Handler) Context {
 	c := &DefaultContext{}
 	c.keyValues = gox.M{}
 	c.writer = rw
@@ -32,6 +34,7 @@ func NewDefaultContext(rw http.ResponseWriter, req *http.Request, handlers []Han
 	}
 	c.handlers = NewHandlerChain(handlers)
 	c.respHeader = make(http.Header)
+	c.templates = templates
 	return c
 }
 
@@ -81,6 +84,10 @@ func (this *DefaultContext) ResponseWriter() http.ResponseWriter {
 	return this.writer
 }
 
+func (this *DefaultContext) Templates() []*template.Template {
+	return this.templates
+}
+
 func (this *DefaultContext) SendJSON(jsonObj interface{}) {
 	if this.written {
 		panic("already written")
@@ -105,4 +112,19 @@ func (this *DefaultContext) SendStatus(status int) {
 
 func (this *DefaultContext) SendFile(filePath string) {
 	http.ServeFile(this.ResponseWriter(), this.Request(), filePath)
+}
+
+func (this *DefaultContext) SendHTML(htmlText string) {
+	this.MarkWritten()
+	render.HTML(this.ResponseWriter(), htmlText)
+}
+
+func (this *DefaultContext) SendTemplateHTML(templateFileName string, params gox.M) {
+	for _, tpl := range this.templates {
+		err := render.TemplateHTML(this.ResponseWriter(), tpl, templateFileName, params)
+		if err == nil {
+			this.MarkWritten()
+			break
+		}
+	}
 }
