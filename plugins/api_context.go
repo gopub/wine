@@ -30,7 +30,7 @@ func (this *APIContext) SendData(data gox.M) {
 }
 
 func (this *APIContext) SendCode(code gox.Code) {
-	this.SendJSON(gox.M{"code": code, "msg": gox.MsgForCode(code)})
+	this.SendJSON(gox.M{"code": code, "msg": code.String()})
 }
 
 func (this *APIContext) User() *gox.User {
