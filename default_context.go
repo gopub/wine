@@ -64,7 +64,7 @@ func (this *DefaultContext) Next() {
 	}
 }
 
-func (this *DefaultContext) Request() *http.Request {
+func (this *DefaultContext) HttpRequest() *http.Request {
 	return this.req
 }
 
@@ -111,7 +111,7 @@ func (this *DefaultContext) SendStatus(status int) {
 }
 
 func (this *DefaultContext) SendFile(filePath string) {
-	http.ServeFile(this.ResponseWriter(), this.Request(), filePath)
+	http.ServeFile(this.ResponseWriter(), this.HttpRequest(), filePath)
 }
 
 func (this *DefaultContext) SendHTML(htmlText string) {

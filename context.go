@@ -16,7 +16,7 @@ type Context interface {
 	HandlerChain() *HandlerChain
 	Templates() []*template.Template
 	Next()
-	Request() *http.Request
+	HttpRequest() *http.Request
 	RequestParams() gox.M
 	RequestHeader() http.Header
 	ResponseHeader() http.Header

@@ -2,20 +2,30 @@ package plugins
 
 import (
 	"github.com/justintan/gox"
+	"github.com/justintan/gox/api"
 	"github.com/justintan/wine"
 	"html/template"
 	"net/http"
 )
 
+var _, _ = api.Context(nil).(*APIContext)
+
 //type Context wine.DefaultContext
 type APIContext struct {
 	*wine.DefaultContext
+	userId gox.Id
+	req    *api.Request
 }
 
 func NewAPIContext(rw http.ResponseWriter, req *http.Request, templates []*template.Template, handlers []wine.Handler) wine.Context {
 	ctx := wine.NewDefaultContext(rw, req, templates, handlers).(*wine.DefaultContext)
 	c := &APIContext{}
 	c.DefaultContext = ctx
+	h := gox.M{}
+	for k, v := range c.RequestHeader() {
+		h[k] = v
+	}
+	c.req = api.NewRequest("", h, c.RequestParams())
 	return c
 }
 
@@ -25,19 +35,26 @@ func (this *APIContext) Next() {
 	}
 }
 
-func (this *APIContext) SendData(data gox.M) {
-	this.SendJSON(gox.M{"code": gox.OK, "data": data})
+func (this *APIContext) Request() *api.Request {
+	return this.req
 }
 
-func (this *APIContext) SendCode(code gox.Code) {
-	this.SendJSON(gox.M{"code": code, "msg": code.String()})
+func (this *APIContext) SendResponse(resp *api.Response) {
+	this.SendJSON(resp)
 }
 
-func (this *APIContext) User() *gox.User {
-	user, _ := this.Get("user").(*gox.User)
-	return user
+func (this *APIContext) SendData(data interface{}) {
+	this.SendResponse(api.NewResponse(api.OK, "", data))
 }
 
-func (this *APIContext) SetUser(user *gox.User) {
-	this.Set("user", user)
+func (this *APIContext) SendCode(code api.Code) {
+	this.SendResponse(api.NewResponse(api.OK, "", nil))
+}
+
+func (this *APIContext) SetUserId(userId gox.Id) {
+	this.userId = userId
+}
+
+func (this *APIContext) UserId() gox.Id {
+	return this.userId
 }

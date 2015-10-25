@@ -148,7 +148,7 @@ func (this *Router) StaticFS(relativePath string, fs http.FileSystem) Routing {
 			panic("already written")
 		}
 
-		fileServer.ServeHTTP(c.ResponseWriter(), c.Request())
+		fileServer.ServeHTTP(c.ResponseWriter(), c.HttpRequest())
 		c.MarkWritten()
 	})
 	return this
