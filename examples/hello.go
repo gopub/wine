@@ -12,6 +12,7 @@ func main() {
 
 	//You can implement middle wares and add them to the routing
 	s.Use(wine.Logger)
+	s.Use()
 
 	//support file and directory
 	s.StaticFile("/", "/var/www/index.html")
@@ -30,11 +31,6 @@ func main() {
 
 	//Equals to s.GET("login", login) and s.POST("login", login)
 	s.GP("login", login)
-
-	g := s.Group("users")
-	g.Use(auth)
-	g.GET(":id/profile", getProfile)
-	g.PUT(":id/name", updateName)
 
 	s.Run(":8080")
 }

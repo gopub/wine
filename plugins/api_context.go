@@ -48,7 +48,7 @@ func (this *APIContext) SendData(data interface{}) {
 }
 
 func (this *APIContext) SendCode(code api.Code) {
-	this.SendResponse(api.NewResponse(api.OK, "", nil))
+	this.SendResponse(api.NewResponse(code, code.String(), nil))
 }
 
 func (this *APIContext) SetUserId(userId gox.Id) {
