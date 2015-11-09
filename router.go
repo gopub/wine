@@ -5,41 +5,45 @@ import (
 	"strings"
 )
 
-type Routing interface {
-	Use(handlers ...Handler) Routing
-	Group(relativePath string) Routing
-	StaticFile(relativePath, filePath string) Routing
-	StaticDir(relativePath, filePath string) Routing
-	StaticFS(relativePath string, fs http.FileSystem) Routing
-	Bind(method, path string, handlers ...Handler) Routing
+type Router interface {
+	Use(handlers ...Handler) Router
+	StaticFile(relativePath, filePath string) Router
+	StaticDir(relativePath, filePath string) Router
+	StaticFS(relativePath string, fs http.FileSystem) Router
+	Bind(method, path string, handlers ...Handler) Router
 	Match(method, path string) (handlers []Handler, params map[string]string)
-	GET(path string, handlers ...Handler) Routing
-	POST(path string, handlers ...Handler) Routing
-	DELETE(path string, handlers ...Handler) Routing
-	PUT(path string, handlers ...Handler) Routing
-	HEAD(path string, handlers ...Handler) Routing
-	PATCH(path string, handlers ...Handler) Routing
-	OPTIONS(path string, handlers ...Handler) Routing
-	CONNECT(path string, handlers ...Handler) Routing
-	TRACE(path string, handlers ...Handler) Routing
-	GP(path string, handlers ...Handler) Routing
-	ANY(path string, handlers ...Handler) Routing
+	GET(path string, handlers ...Handler) Router
+	POST(path string, handlers ...Handler) Router
+	DELETE(path string, handlers ...Handler) Router
+	PUT(path string, handlers ...Handler) Router
+	HEAD(path string, handlers ...Handler) Router
+	PATCH(path string, handlers ...Handler) Router
+	OPTIONS(path string, handlers ...Handler) Router
+	CONNECT(path string, handlers ...Handler) Router
+	TRACE(path string, handlers ...Handler) Router
+	GP(path string, handlers ...Handler) Router
+	ANY(path string, handlers ...Handler) Router
 	Print()
 }
 
-type Router struct {
+type GroupRouter interface {
+	Router
+	Group(relativePath string) GroupRouter
+}
+
+type DefaultRouter struct {
 	methodTrees map[string]*node
 	basePath    string
 	handlers    []Handler
 }
 
-func NewRouter() *Router {
-	r := &Router{}
+func NewDefaultRouter() *DefaultRouter {
+	r := &DefaultRouter{}
 	r.methodTrees = make(map[string]*node, 4)
 	return r
 }
 
-func (this *Router) Group(relativePath string) Routing {
+func (this *DefaultRouter) Group(relativePath string) GroupRouter {
 	if len(relativePath) == 0 {
 		panic("relative path can not be empty")
 	}
@@ -48,7 +52,7 @@ func (this *Router) Group(relativePath string) Routing {
 		panic("unnecessary to create group \"/\"")
 	}
 
-	r := &Router{}
+	r := &DefaultRouter{}
 	r.methodTrees = this.methodTrees
 	r.basePath = cleanPath(this.basePath + "/" + relativePath)
 	r.handlers = make([]Handler, len(this.handlers))
@@ -56,12 +60,12 @@ func (this *Router) Group(relativePath string) Routing {
 	return r
 }
 
-func (this *Router) Use(handlers ...Handler) Routing {
+func (this *DefaultRouter) Use(handlers ...Handler) Router {
 	this.handlers = append(this.handlers, handlers...)
 	return this
 }
 
-func (this *Router) Match(method string, path string) (handlers []Handler, params map[string]string) {
+func (this *DefaultRouter) Match(method string, path string) (handlers []Handler, params map[string]string) {
 	n := this.methodTrees[method]
 	if n == nil {
 		return
@@ -74,7 +78,7 @@ func (this *Router) Match(method string, path string) (handlers []Handler, param
 	return n.match(segments, path)
 }
 
-func (this *Router) Bind(method string, path string, handlers ...Handler) Routing {
+func (this *DefaultRouter) Bind(method string, path string, handlers ...Handler) Router {
 	if path == "" {
 		panic("path can not be empty")
 	}
@@ -113,7 +117,7 @@ func (this *Router) Bind(method string, path string, handlers ...Handler) Routin
 	return this
 }
 
-func (this *Router) StaticFile(relativePath, filePath string) Routing {
+func (this *DefaultRouter) StaticFile(relativePath, filePath string) Router {
 	this.GET(relativePath, func(c Context) {
 		if c.Written() {
 			panic("already written")
@@ -124,12 +128,12 @@ func (this *Router) StaticFile(relativePath, filePath string) Routing {
 	return this
 }
 
-func (this *Router) StaticDir(relativePath, dirPath string) Routing {
+func (this *DefaultRouter) StaticDir(relativePath, dirPath string) Router {
 	this.StaticFS(relativePath, http.Dir(dirPath))
 	return this
 }
 
-func (this *Router) StaticFS(relativePath string, fs http.FileSystem) Routing {
+func (this *DefaultRouter) StaticFS(relativePath string, fs http.FileSystem) Router {
 	prefix := cleanPath(this.basePath + "/" + relativePath)
 	i := strings.Index(prefix, "*")
 	if i > 0 {
@@ -154,58 +158,58 @@ func (this *Router) StaticFS(relativePath string, fs http.FileSystem) Routing {
 	return this
 }
 
-func (this *Router) GET(path string, handlers ...Handler) Routing {
+func (this *DefaultRouter) GET(path string, handlers ...Handler) Router {
 	this.Bind("GET", path, handlers...)
 	return this
 }
 
-func (this *Router) POST(path string, handlers ...Handler) Routing {
+func (this *DefaultRouter) POST(path string, handlers ...Handler) Router {
 	this.Bind("POST", path, handlers...)
 	return this
 }
 
-func (this *Router) DELETE(path string, handlers ...Handler) Routing {
+func (this *DefaultRouter) DELETE(path string, handlers ...Handler) Router {
 	this.Bind("DELETE", path, handlers...)
 	return this
 }
 
-func (this *Router) PUT(path string, handlers ...Handler) Routing {
+func (this *DefaultRouter) PUT(path string, handlers ...Handler) Router {
 	this.Bind("PUT", path, handlers...)
 	return this
 }
 
-func (this *Router) HEAD(path string, handlers ...Handler) Routing {
+func (this *DefaultRouter) HEAD(path string, handlers ...Handler) Router {
 	this.Bind("HEAD", path, handlers...)
 	return this
 }
 
-func (this *Router) PATCH(path string, handlers ...Handler) Routing {
+func (this *DefaultRouter) PATCH(path string, handlers ...Handler) Router {
 	this.Bind("PATCH", path, handlers...)
 	return this
 }
 
-func (this *Router) OPTIONS(path string, handlers ...Handler) Routing {
+func (this *DefaultRouter) OPTIONS(path string, handlers ...Handler) Router {
 	this.Bind("OPTIONS", path, handlers...)
 	return this
 }
 
-func (this *Router) CONNECT(path string, handlers ...Handler) Routing {
+func (this *DefaultRouter) CONNECT(path string, handlers ...Handler) Router {
 	this.Bind("CONNECT", path, handlers...)
 	return this
 }
 
-func (this *Router) TRACE(path string, handlers ...Handler) Routing {
+func (this *DefaultRouter) TRACE(path string, handlers ...Handler) Router {
 	this.Bind("TRACE", path, handlers...)
 	return this
 }
 
-func (this *Router) GP(path string, handlers ...Handler) Routing {
+func (this *DefaultRouter) GP(path string, handlers ...Handler) Router {
 	this.GET(path, handlers...)
 	this.POST(path, handlers...)
 	return this
 }
 
-func (this *Router) ANY(path string, handlers ...Handler) Routing {
+func (this *DefaultRouter) ANY(path string, handlers ...Handler) Router {
 	this.GET(path, handlers...)
 	this.POST(path, handlers...)
 	this.DELETE(path, handlers...)
@@ -218,7 +222,7 @@ func (this *Router) ANY(path string, handlers ...Handler) Routing {
 	return this
 }
 
-func (this *Router) Print() {
+func (this *DefaultRouter) Print() {
 	for m, n := range this.methodTrees {
 		n.Print(m, "/")
 	}

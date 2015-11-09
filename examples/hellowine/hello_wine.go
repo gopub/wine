@@ -1,7 +1,8 @@
 package main
+
 import "github.com/justintan/wine"
 
-func main()  {
+func main() {
 	s := wine.Server()
 	s.GP("/", func(c wine.Context) {
 		c.SendHTML("Hello, This is WINE!")
