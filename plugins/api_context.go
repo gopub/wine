@@ -51,6 +51,10 @@ func (this *APIContext) SendCode(code api.Code) {
 	this.SendResponse(api.NewResponse(code, code.String(), nil))
 }
 
+func (this *APIContext) SendMsg(code api.Code, msg string) {
+	this.SendResponse(api.NewResponse(code, msg, nil))
+}
+
 func (this *APIContext) SetUserId(userId gox.Id) {
 	this.userId = userId
 }
