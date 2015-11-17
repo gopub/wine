@@ -8,7 +8,7 @@ import (
 )
 
 type server struct {
-	GroupRouter
+	Router
 	Header     http.Header
 	NewContext NewContextFunc
 	templates  []*template.Template
@@ -16,7 +16,7 @@ type server struct {
 
 func Server() *server {
 	s := &server{}
-	s.GroupRouter = NewDefaultRouter()
+	s.Router = NewDefaultRouter()
 	s.Header = make(http.Header)
 	s.NewContext = NewDefaultContext
 	return s
@@ -24,7 +24,7 @@ func Server() *server {
 
 func Default() *server {
 	s := &server{}
-	s.GroupRouter = NewDefaultRouter()
+	s.Router = NewDefaultRouter()
 	s.Header = make(http.Header)
 	s.NewContext = NewDefaultContext
 	s.Use(Logger)
