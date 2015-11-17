@@ -13,7 +13,7 @@ type Context interface {
 	Get(key string) interface{}
 	Written() bool
 	MarkWritten()
-	HandlerChain() *HandlerChain
+	HandlerChain() *handlerChain
 	Templates() []*template.Template
 	Next()
 	HttpRequest() *http.Request

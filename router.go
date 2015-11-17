@@ -7,23 +7,26 @@ import (
 
 type Router interface {
 	Group(relativePath string) Router
-	Use(handlers ...Handler) Router
+	UseHandlers(handlers ...Handler) Router
+	Use(handlerFuncs ...HandlerFunc) Router
 	StaticFile(relativePath, filePath string)
 	StaticDir(relativePath, filePath string)
 	StaticFS(relativePath string, fs http.FileSystem)
 	Bind(method, path string, handlers ...Handler)
 	Match(method, path string) (handlers []Handler, params map[string]string)
-	GET(path string, handlers ...Handler)
-	POST(path string, handlers ...Handler)
-	DELETE(path string, handlers ...Handler)
-	PUT(path string, handlers ...Handler)
-	HEAD(path string, handlers ...Handler)
-	PATCH(path string, handlers ...Handler)
-	OPTIONS(path string, handlers ...Handler)
-	CONNECT(path string, handlers ...Handler)
-	TRACE(path string, handlers ...Handler)
-	GP(path string, handlers ...Handler)
-	ANY(path string, handlers ...Handler)
+
+	HandleGet(path string, handlers ...Handler)
+	HandlePost(path string, handlers ...Handler)
+	HandleDelete(path string, handlers ...Handler)
+	HandlePut(path string, handlers ...Handler)
+	HandleAny(path string, handlers ...Handler)
+
+	Get(path string, handlers ...HandlerFunc)
+	Post(path string, handlers ...HandlerFunc)
+	Delete(path string, handlers ...HandlerFunc)
+	Put(path string, handlers ...HandlerFunc)
+	Any(path string, handlers ...HandlerFunc)
+
 	Print()
 }
 
@@ -56,9 +59,13 @@ func (this *DefaultRouter) Group(relativePath string) Router {
 	return r
 }
 
-func (this *DefaultRouter) Use(handlers ...Handler) Router {
+func (this *DefaultRouter) UseHandlers(handlers ...Handler) Router {
 	this.handlers = append(this.handlers, handlers...)
 	return this
+}
+
+func (this *DefaultRouter) Use(handlerFuncs ...HandlerFunc) Router {
+	return this.UseHandlers(convertToHandlers(handlerFuncs...)...)
 }
 
 func (this *DefaultRouter) Match(method string, path string) (handlers []Handler, params map[string]string) {
@@ -114,7 +121,7 @@ func (this *DefaultRouter) Bind(method string, path string, handlers ...Handler)
 }
 
 func (this *DefaultRouter) StaticFile(relativePath, filePath string) {
-	this.GET(relativePath, func(c Context) {
+	this.Get(relativePath, func(c Context) {
 		if c.Written() {
 			panic("already written")
 		}
@@ -143,83 +150,75 @@ func (this *DefaultRouter) StaticFS(relativePath string, fs http.FileSystem) {
 	}
 
 	fileServer := http.StripPrefix(prefix, http.FileServer(fs))
-	this.GET(relativePath, func(c Context) {
+	this.Get(relativePath, HandlerFunc(func(c Context) {
 		if c.Written() {
 			panic("already written")
 		}
 
 		fileServer.ServeHTTP(c.ResponseWriter(), c.HttpRequest())
 		c.MarkWritten()
-	})
+	}))
 	return
 }
 
-func (this *DefaultRouter) GET(path string, handlers ...Handler) {
+func (this *DefaultRouter) HandleGet(path string, handlers ...Handler) {
 	this.Bind("GET", path, handlers...)
 	return
 }
 
-func (this *DefaultRouter) POST(path string, handlers ...Handler) {
+func (this *DefaultRouter) HandlePost(path string, handlers ...Handler) {
 	this.Bind("POST", path, handlers...)
 	return
 }
 
-func (this *DefaultRouter) DELETE(path string, handlers ...Handler) {
+func (this *DefaultRouter) HandleDelete(path string, handlers ...Handler) {
 	this.Bind("DELETE", path, handlers...)
 	return
 }
 
-func (this *DefaultRouter) PUT(path string, handlers ...Handler) {
+func (this *DefaultRouter) HandlePut(path string, handlers ...Handler) {
 	this.Bind("PUT", path, handlers...)
 	return
 }
 
-func (this *DefaultRouter) HEAD(path string, handlers ...Handler) {
-	this.Bind("HEAD", path, handlers...)
+func (this *DefaultRouter) HandleAny(path string, handlers ...Handler) {
+	this.HandleGet(path, handlers...)
+	this.HandlePost(path, handlers...)
+	this.HandleDelete(path, handlers...)
+	this.HandlePut(path, handlers...)
 	return
 }
 
-func (this *DefaultRouter) PATCH(path string, handlers ...Handler) {
-	this.Bind("PATCH", path, handlers...)
-	return
+func (this *DefaultRouter) Get(path string, handlerFuncs ...HandlerFunc) {
+	this.HandleGet(path, convertToHandlers(handlerFuncs...)...)
 }
 
-func (this *DefaultRouter) OPTIONS(path string, handlers ...Handler) {
-	this.Bind("OPTIONS", path, handlers...)
-	return
+func (this *DefaultRouter) Post(path string, handlerFuncs ...HandlerFunc) {
+	this.HandlePost(path, convertToHandlers(handlerFuncs...)...)
 }
 
-func (this *DefaultRouter) CONNECT(path string, handlers ...Handler) {
-	this.Bind("CONNECT", path, handlers...)
-	return
+func (this *DefaultRouter) Delete(path string, handlerFuncs ...HandlerFunc) {
+	this.HandleDelete(path, convertToHandlers(handlerFuncs...)...)
 }
 
-func (this *DefaultRouter) TRACE(path string, handlers ...Handler) {
-	this.Bind("TRACE", path, handlers...)
-	return
+func (this *DefaultRouter) Put(path string, handlerFuncs ...HandlerFunc) {
+	this.HandlePut(path, convertToHandlers(handlerFuncs...)...)
 }
 
-func (this *DefaultRouter) GP(path string, handlers ...Handler) {
-	this.GET(path, handlers...)
-	this.POST(path, handlers...)
-	return
-}
-
-func (this *DefaultRouter) ANY(path string, handlers ...Handler) {
-	this.GET(path, handlers...)
-	this.POST(path, handlers...)
-	this.DELETE(path, handlers...)
-	this.PUT(path, handlers...)
-	this.HEAD(path, handlers...)
-	this.OPTIONS(path, handlers...)
-	this.PATCH(path, handlers...)
-	this.CONNECT(path, handlers...)
-	this.TRACE(path, handlers...)
-	return
+func (this *DefaultRouter) Any(path string, handlerFuncs ...HandlerFunc) {
+	this.HandleAny(path, convertToHandlers(handlerFuncs...)...)
 }
 
 func (this *DefaultRouter) Print() {
 	for m, n := range this.methodTrees {
 		n.Print(m, "/")
 	}
+}
+
+func convertToHandlers(handlerFuncs ...HandlerFunc) []Handler {
+	handlers := make([]Handler, len(handlerFuncs))
+	for i, h := range handlerFuncs {
+		handlers[i] = h
+	}
+	return handlers
 }

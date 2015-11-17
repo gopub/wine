@@ -172,7 +172,11 @@ func (this *node) Print(method string, parentPath string) {
 				hNames += ", "
 			}
 
-			hNames += h.Name()
+			if f, ok := h.(HandlerFunc); ok {
+				hNames += gox.GetFuncName(f)
+			} else {
+				hNames += gox.GetTypeName(h)
+			}
 		}
 		gox.LInfof("%-5s %s\t%s", method, path, hNames)
 	}

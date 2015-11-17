@@ -1,21 +1,27 @@
 package wine
 
-import "github.com/justintan/gox"
+type Handler interface {
+	HandleRequest(Context)
+}
 
-type Handler func(Context)
+type HandlerFunc func(Context)
 
-type HandlerChain struct {
+func (this HandlerFunc) HandleRequest(c Context) {
+	this(c)
+}
+
+type handlerChain struct {
 	index    int
 	handlers []Handler
 }
 
-func NewHandlerChain(handlers []Handler) *HandlerChain {
-	hc := &HandlerChain{}
+func NewHandlerChain(handlers []Handler) *handlerChain {
+	hc := &handlerChain{}
 	hc.handlers = handlers
 	return hc
 }
 
-func (this *HandlerChain) Next() Handler {
+func (this *handlerChain) Next() Handler {
 	if this.index >= len(this.handlers) {
 		return nil
 	}
@@ -23,8 +29,4 @@ func (this *HandlerChain) Next() Handler {
 	index := this.index
 	this.index += 1
 	return this.handlers[index]
-}
-
-func (this Handler) Name() string {
-	return gox.GetFuncName(this)
 }

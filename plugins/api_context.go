@@ -31,7 +31,7 @@ func NewAPIContext(rw http.ResponseWriter, req *http.Request, templates []*templ
 
 func (this *APIContext) Next() {
 	if h := this.HandlerChain().Next(); h != nil {
-		h(this)
+		h.HandleRequest(this)
 	}
 }
 

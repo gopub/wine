@@ -17,24 +17,24 @@ You can use wine like,
         	s.StaticFile("/", "/var/www/index.html")
         	s.StaticDir("/html/*", "/var/www/html")
         
-        	s.GET("server-time", func(c wine.Context) {
+        	s.Get("server-time", func(c wine.Context) {
         		resp := map[string]interface{}{"time": time.Now().Unix()}
         		c.SendJSON(resp)
         	})
         
-        	s.GET("users/:id/name", func(c wine.Context) {
+        	s.Get("users/:id/name", func(c wine.Context) {
         		id := c.RequestParams().GetStr("id")
         		resp := map[string]interface{}{"name": "This is " + id + "'s name"}
         		c.SendJSON(resp)
         	})
         
-        	//Equals to s.GET("login", login) and s.POST("login", login)
-        	s.GP("login", login)
+        	//Equals to s.Get("login", login) and s.Post("login", login)
+        	s.Any("login", login)
         
         	g := s.Group("users")
         	g.Use(auth)
-        	g.GET(":id/profile", getProfile)
-        	g.PUT(":id/name", updateName)
+        	g.Get(":id/profile", getProfile)
+        	g.Put(":id/name", updateName)
         
         	s.Run(":8080")
         }

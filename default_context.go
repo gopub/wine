@@ -13,7 +13,7 @@ type DefaultContext struct {
 	writer    http.ResponseWriter
 	written   bool
 	templates []*template.Template
-	handlers  *HandlerChain
+	handlers  *handlerChain
 	index     int //handler index
 
 	req        *http.Request
@@ -54,13 +54,13 @@ func (this *DefaultContext) MarkWritten() {
 	this.written = true
 }
 
-func (this *DefaultContext) HandlerChain() *HandlerChain {
+func (this *DefaultContext) HandlerChain() *handlerChain {
 	return this.handlers
 }
 
 func (this *DefaultContext) Next() {
 	if h := this.handlers.Next(); h != nil {
-		h(this)
+		h.HandleRequest(this)
 	}
 }
 
