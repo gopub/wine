@@ -8,7 +8,7 @@ import (
 
 func main() {
 
-	s := wine.Server()
+	s := wine.NewServer()
 
 	//You can implement middlewares and add them to the server
 	s.Use(wine.Logger)

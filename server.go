@@ -14,7 +14,7 @@ type server struct {
 	templates      []*template.Template
 }
 
-func Server() *server {
+func NewServer() *server {
 	s := &server{}
 	s.Router = NewDefaultRouter()
 	s.Header = make(http.Header)

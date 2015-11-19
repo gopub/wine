@@ -3,7 +3,7 @@ package main
 import "github.com/justintan/wine"
 
 func main() {
-	s := wine.Server()
+	s := wine.NewServer()
 	s.Any("/", func(c wine.Context) {
 		c.HTML("Hello, This is WINE!")
 	})
