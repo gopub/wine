@@ -9,16 +9,16 @@ import (
 
 type server struct {
 	Router
-	Header     http.Header
-	NewContext NewContextFunc
-	templates  []*template.Template
+	Header         http.Header
+	ContextCreator NewContextFunc
+	templates      []*template.Template
 }
 
 func Server() *server {
 	s := &server{}
 	s.Router = NewDefaultRouter()
 	s.Header = make(http.Header)
-	s.NewContext = NewDefaultContext
+	s.ContextCreator = NewDefaultContext
 	return s
 }
 
@@ -26,7 +26,7 @@ func Default() *server {
 	s := &server{}
 	s.Router = NewDefaultRouter()
 	s.Header = make(http.Header)
-	s.NewContext = NewDefaultContext
+	s.ContextCreator = NewDefaultContext
 	s.Use(Logger)
 	return s
 }
@@ -58,7 +58,7 @@ func (this *server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	context := this.NewContext(rw, req, this.templates, handlers)
+	context := this.ContextCreator(rw, req, this.templates, handlers)
 	context.Params().AddMap(params)
 	for k, v := range this.Header {
 		context.Header()[k] = v
