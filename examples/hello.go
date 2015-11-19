@@ -10,11 +10,11 @@ func main() {
 
 	s := wine.Server()
 
-	//You can implement middle wares and add them to the routing
+	//You can implement middlewares and add them to the server
 	s.Use(wine.Logger)
 	s.Use()
 
-	//support file and directory
+	//Support file and directory
 	s.StaticFile("/", "/var/www/index.html")
 	s.StaticDir("/html/*", "/var/www/html")
 
@@ -29,7 +29,7 @@ func main() {
 		c.SendJSON(resp)
 	})
 
-	//Equals to s.Get("login", login) and s.Post("login", login)
+	//Means accept methods: GET POST PUT DELETE
 	s.Any("login", login)
 
 	s.Run(":8080")

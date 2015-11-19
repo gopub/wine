@@ -13,8 +13,7 @@ type DefaultContext struct {
 	writer    http.ResponseWriter
 	written   bool
 	templates []*template.Template
-	handlers  *handlerChain
-	index     int //handler index
+	handlers  *HandlerChain
 
 	req        *http.Request
 	reqHeader  http.Header
@@ -54,10 +53,6 @@ func (this *DefaultContext) MarkWritten() {
 	this.written = true
 }
 
-func (this *DefaultContext) HandlerChain() *handlerChain {
-	return this.handlers
-}
-
 func (this *DefaultContext) Next() {
 	if h := this.handlers.Next(); h != nil {
 		h.HandleRequest(this)
@@ -82,10 +77,6 @@ func (this *DefaultContext) ResponseHeader() http.Header {
 
 func (this *DefaultContext) ResponseWriter() http.ResponseWriter {
 	return this.writer
-}
-
-func (this *DefaultContext) Templates() []*template.Template {
-	return this.templates
 }
 
 func (this *DefaultContext) SendJSON(jsonObj interface{}) {

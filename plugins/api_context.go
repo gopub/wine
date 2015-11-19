@@ -13,14 +13,16 @@ var _, _ = api.Context(nil).(*APIContext)
 //type Context wine.DefaultContext
 type APIContext struct {
 	*wine.DefaultContext
-	userId gox.Id
-	req    *api.Request
+	userId   gox.Id
+	req      *api.Request
+	handlers *wine.HandlerChain
 }
 
 func NewAPIContext(rw http.ResponseWriter, req *http.Request, templates []*template.Template, handlers []wine.Handler) wine.Context {
 	ctx := wine.NewDefaultContext(rw, req, templates, handlers).(*wine.DefaultContext)
 	c := &APIContext{}
 	c.DefaultContext = ctx
+	c.handlers = wine.NewHandlerChain(handlers)
 	h := gox.M{}
 	for k, v := range c.RequestHeader() {
 		h[k] = v
@@ -30,7 +32,7 @@ func NewAPIContext(rw http.ResponseWriter, req *http.Request, templates []*templ
 }
 
 func (this *APIContext) Next() {
-	if h := this.HandlerChain().Next(); h != nil {
+	if h := this.handlers.Next(); h != nil {
 		h.HandleRequest(this)
 	}
 }

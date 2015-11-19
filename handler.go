@@ -10,18 +10,18 @@ func (this HandlerFunc) HandleRequest(c Context) {
 	this(c)
 }
 
-type handlerChain struct {
+type HandlerChain struct {
 	index    int
 	handlers []Handler
 }
 
-func NewHandlerChain(handlers []Handler) *handlerChain {
-	hc := &handlerChain{}
+func NewHandlerChain(handlers []Handler) *HandlerChain {
+	hc := &HandlerChain{}
 	hc.handlers = handlers
 	return hc
 }
 
-func (this *handlerChain) Next() Handler {
+func (this *HandlerChain) Next() Handler {
 	if this.index >= len(this.handlers) {
 		return nil
 	}

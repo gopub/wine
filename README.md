@@ -9,11 +9,11 @@ You can use wine like,
         
         	s := wine.Server()
         
-        	//You can implement middle wares and add them to the routing
+        	//You can implement middlewares and add them to the server
         	s.Use(wine.Logger)
+        	s.Use()
         
-        
-        	//support file and directory
+        	//Support file and directory
         	s.StaticFile("/", "/var/www/index.html")
         	s.StaticDir("/html/*", "/var/www/html")
         
@@ -28,13 +28,8 @@ You can use wine like,
         		c.SendJSON(resp)
         	})
         
-        	//Equals to s.Get("login", login) and s.Post("login", login)
+        	//Means accept methods: GET POST PUT DELETE
         	s.Any("login", login)
-        
-        	g := s.Group("users")
-        	g.Use(auth)
-        	g.Get(":id/profile", getProfile)
-        	g.Put(":id/name", updateName)
         
         	s.Run(":8080")
         }
@@ -77,14 +72,16 @@ You can use wine like,
         }
 
 
+Run this program:
 
-2015/10/04 20:36:25 [INFO ]  Running at :8080 ...  
-2015/10/04 20:36:25 [INFO ] GET   /     github.com/justintan/wine.(*Router).StaticFile.func1  
-2015/10/04 20:36:25 [INFO ] GET   /users/:id/profile    github.com/justintan/wine.Logger, main.auth, main.getProfile  
-2015/10/04 20:36:25 [INFO ] GET   /login        github.com/justintan/wine.Logger, main.login  
-2015/10/04 20:36:25 [INFO ] GET   /users/:id/name       github.com/justintan/wine.Logger, main.main.func2  
-2015/10/04 20:36:25 [INFO ] GET   /server-time  github.com/justintan/wine.Logger, main.main.func1  
-2015/10/04 20:36:25 [INFO ] GET   /html/*       github.com/justintan/wine.Logger, github.com/justintan/wine.(*Router).StaticFS.func1  
-2015/10/04 20:36:25 [INFO ] POST  /login        github.com/justintan/wine.Logger, main.login  
-2015/10/04 20:36:25 [INFO ] PUT   /users/:id/name       github.com/justintan/wine.Logger, main.auth, main.updateName  
+		[INFO ]  Running at :8080 ...  
+		[INFO ] GET   /     github.com/justintan/wine.(*DefaultRouter).StaticFile.func1  
+		[INFO ] GET   /login        github.com/justintan/wine.Logger, main.login  
+		[INFO ] GET   /users/:id/name       github.com/justintan/wine.Logger, main.main.func2  
+		[INFO ] GET   /server-time  github.com/justintan/wine.Logger, main.main.func1  
+		[INFO ] GET   /html/*       github.com/justintan/wine.Logger, github.com/justintan/wine.(*DefaultRouter).StaticFS.func1  
+		[INFO ] POST  /login        github.com/justintan/wine.Logger, main.login  
+		[INFO ] DELETE /login       github.com/justintan/wine.Logger, main.login  
+		[INFO ] PUT   /login        github.com/justintan/wine.Logger, main.login  
+ 
   
