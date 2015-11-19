@@ -20,13 +20,13 @@ func main() {
 
 	s.Get("server-time", func(c wine.Context) {
 		resp := map[string]interface{}{"time": time.Now().Unix()}
-		c.SendJSON(resp)
+		c.JSON(resp)
 	})
 
 	s.Get("users/:id/name", func(c wine.Context) {
-		id := c.RequestParams().GetStr("id")
+		id := c.Params().GetStr("id")
 		resp := map[string]interface{}{"name": "This is " + id + "'s name"}
-		c.SendJSON(resp)
+		c.JSON(resp)
 	})
 
 	//Means accept methods: GET POST PUT DELETE
@@ -48,26 +48,26 @@ func auth(c wine.Context) {
 	} else {
 		//abort the handling process, send an error response
 		resp := map[string]interface{}{"msg": "authorization failed"}
-		c.SendJSON(resp)
+		c.JSON(resp)
 	}
 }
 
 func login(c wine.Context) {
-	account := c.RequestParams().GetStr("account")
-	password := c.RequestParams().GetStr("password")
+	account := c.Params().GetStr("account")
+	password := c.Params().GetStr("password")
 	fmt.Println(account, password)
 	resp := map[string]interface{}{"status": "success"}
-	c.SendJSON(resp)
+	c.JSON(resp)
 }
 
 func getProfile(c wine.Context) {
-	id := c.RequestParams().GetStr("id")
+	id := c.Params().GetStr("id")
 	resp := map[string]interface{}{"profile": "This is " + id + "'s profile"}
-	c.SendJSON(resp)
+	c.JSON(resp)
 }
 
 func updateName(c wine.Context) {
-	name := c.RequestParams().GetStr("name")
+	name := c.Params().GetStr("name")
 	resp := map[string]interface{}{"name": name}
-	c.SendJSON(resp)
+	c.JSON(resp)
 }

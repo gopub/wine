@@ -11,7 +11,7 @@ import (
 type DefaultContext struct {
 	keyValues gox.M
 	writer    http.ResponseWriter
-	written   bool
+	responded bool
 	templates []*template.Template
 	handlers  *HandlerChain
 
@@ -45,29 +45,21 @@ func (this *DefaultContext) Get(key string) interface{} {
 	return this.keyValues[key]
 }
 
-func (this *DefaultContext) Written() bool {
-	return this.written
-}
-
-func (this *DefaultContext) MarkWritten() {
-	this.written = true
-}
-
 func (this *DefaultContext) Next() {
 	if h := this.handlers.Next(); h != nil {
 		h.HandleRequest(this)
 	}
 }
 
-func (this *DefaultContext) HttpRequest() *http.Request {
+func (this *DefaultContext) HTTPRequest() *http.Request {
 	return this.req
 }
 
-func (this *DefaultContext) RequestParams() gox.M {
+func (this *DefaultContext) Params() gox.M {
 	return this.reqParams
 }
 
-func (this *DefaultContext) RequestHeader() http.Header {
+func (this *DefaultContext) Header() http.Header {
 	return this.reqHeader
 }
 
@@ -75,47 +67,54 @@ func (this *DefaultContext) ResponseHeader() http.Header {
 	return this.respHeader
 }
 
-func (this *DefaultContext) ResponseWriter() http.ResponseWriter {
-	return this.writer
+func (this *DefaultContext) Responded() bool {
+	return this.responded
 }
 
-func (this *DefaultContext) SendJSON(jsonObj interface{}) {
-	if this.written {
-		panic("already written")
+func (this *DefaultContext) setResponded() {
+	if this.responded {
+		panic("cannot responded twice")
 	}
-	this.written = true
+	this.responded = true
+}
+
+func (this *DefaultContext) JSON(jsonObj interface{}) {
+	this.setResponded()
 	for k, v := range this.respHeader {
 		this.writer.Header()[k] = v
 	}
 	render.JSON(this.writer, jsonObj)
 }
 
-func (this *DefaultContext) SendStatus(status int) {
-	if this.written {
-		panic("already written")
-	}
-	this.written = true
+func (this *DefaultContext) Status(status int) {
+	this.setResponded()
 	for k, v := range this.respHeader {
 		this.writer.Header()[k] = v
 	}
 	render.Status(this.writer, status)
 }
 
-func (this *DefaultContext) SendFile(filePath string) {
-	http.ServeFile(this.ResponseWriter(), this.HttpRequest(), filePath)
+func (this *DefaultContext) File(filePath string) {
+	this.setResponded()
+	http.ServeFile(this.writer, this.req, filePath)
 }
 
-func (this *DefaultContext) SendHTML(htmlText string) {
-	this.MarkWritten()
-	render.HTML(this.ResponseWriter(), htmlText)
+func (this *DefaultContext) HTML(htmlText string) {
+	this.setResponded()
+	render.HTML(this.writer, htmlText)
 }
 
-func (this *DefaultContext) SendTemplateHTML(templateFileName string, params gox.M) {
+func (this *DefaultContext) TemplateHTML(templateFileName string, params gox.M) {
 	for _, tpl := range this.templates {
-		err := render.TemplateHTML(this.ResponseWriter(), tpl, templateFileName, params)
+		err := render.TemplateHTML(this.writer, tpl, templateFileName, params)
 		if err == nil {
-			this.MarkWritten()
+			this.setResponded()
 			break
 		}
 	}
+}
+
+func (this *DefaultContext) ServeHTTP(h http.Handler) {
+	this.setResponded()
+	h.ServeHTTP(this.writer, this.req)
 }

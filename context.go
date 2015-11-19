@@ -9,19 +9,20 @@ import (
 type NewContextFunc func(writer http.ResponseWriter, req *http.Request, templates []*template.Template, handlers []Handler) Context
 
 type Context interface {
+	HTTPRequest() *http.Request
+	Params() gox.M
+	Header() http.Header
+
+	Next()
+	Responded() bool
+	ResponseHeader() http.Header
+	Status(status int)
+	JSON(obj interface{})
+	File(filePath string)
+	HTML(htmlText string)
+	TemplateHTML(templateFileName string, params gox.M)
+	ServeHTTP(h http.Handler)
+
 	Set(key string, value interface{})
 	Get(key string) interface{}
-	Written() bool
-	MarkWritten()
-	Next()
-	HttpRequest() *http.Request
-	RequestParams() gox.M
-	RequestHeader() http.Header
-	ResponseHeader() http.Header
-	ResponseWriter() http.ResponseWriter
-	SendStatus(status int)
-	SendJSON(obj interface{})
-	SendFile(filePath string)
-	SendHTML(htmlText string)
-	SendTemplateHTML(templateFileName string, params gox.M)
 }

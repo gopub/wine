@@ -122,11 +122,7 @@ func (this *DefaultRouter) Bind(method string, path string, handlers ...Handler)
 
 func (this *DefaultRouter) StaticFile(relativePath, filePath string) {
 	this.Get(relativePath, func(c Context) {
-		if c.Written() {
-			panic("already written")
-		}
-		c.SendFile(filePath)
-		c.MarkWritten()
+		c.File(filePath)
 	})
 	return
 }
@@ -151,12 +147,7 @@ func (this *DefaultRouter) StaticFS(relativePath string, fs http.FileSystem) {
 
 	fileServer := http.StripPrefix(prefix, http.FileServer(fs))
 	this.Get(relativePath, func(c Context) {
-		if c.Written() {
-			panic("already written")
-		}
-
-		fileServer.ServeHTTP(c.ResponseWriter(), c.HttpRequest())
-		c.MarkWritten()
+		c.ServeHTTP(fileServer)
 	})
 	return
 }

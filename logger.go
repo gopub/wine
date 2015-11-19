@@ -13,7 +13,7 @@ func Logger(c Context) {
 	gox.LInfo(fmt.Sprintf("%.3fms %v%s%v %s",
 		cost,
 		gox.GreenColor,
-		c.HttpRequest().Method,
+		c.HTTPRequest().Method,
 		gox.ResetColor,
-		c.HttpRequest().RequestURI))
+		c.HTTPRequest().RequestURI))
 }

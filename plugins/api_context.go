@@ -24,10 +24,10 @@ func NewAPIContext(rw http.ResponseWriter, req *http.Request, templates []*templ
 	c.DefaultContext = ctx
 	c.handlers = wine.NewHandlerChain(handlers)
 	h := gox.M{}
-	for k, v := range c.RequestHeader() {
+	for k, v := range c.Header() {
 		h[k] = v
 	}
-	c.req = api.NewRequest("", h, c.RequestParams())
+	c.req = api.NewRequest("", h, c.Params())
 	return c
 }
 
@@ -42,7 +42,7 @@ func (this *APIContext) Request() *api.Request {
 }
 
 func (this *APIContext) SendResponse(resp *api.Response) {
-	this.SendJSON(resp)
+	this.JSON(resp)
 }
 
 func (this *APIContext) SendData(data interface{}) {
