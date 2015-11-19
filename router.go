@@ -8,7 +8,7 @@ import (
 type Router interface {
 	Group(relativePath string) Router
 	UseHandlers(handlers ...Handler) Router
-	Use(handlerFuncs ...HandlerFunc) Router
+	Use(funcList ...HandlerFunc) Router
 	StaticFile(relativePath, filePath string)
 	StaticDir(relativePath, filePath string)
 	StaticFS(relativePath string, fs http.FileSystem)
@@ -64,8 +64,8 @@ func (this *DefaultRouter) UseHandlers(handlers ...Handler) Router {
 	return this
 }
 
-func (this *DefaultRouter) Use(handlerFuncs ...HandlerFunc) Router {
-	return this.UseHandlers(convertToHandlers(handlerFuncs...)...)
+func (this *DefaultRouter) Use(funcList ...HandlerFunc) Router {
+	return this.UseHandlers(convertToHandlers(funcList...)...)
 }
 
 func (this *DefaultRouter) Match(method string, path string) (handlers []Handler, params map[string]string) {
@@ -150,14 +150,14 @@ func (this *DefaultRouter) StaticFS(relativePath string, fs http.FileSystem) {
 	}
 
 	fileServer := http.StripPrefix(prefix, http.FileServer(fs))
-	this.Get(relativePath, HandlerFunc(func(c Context) {
+	this.Get(relativePath, func(c Context) {
 		if c.Written() {
 			panic("already written")
 		}
 
 		fileServer.ServeHTTP(c.ResponseWriter(), c.HttpRequest())
 		c.MarkWritten()
-	}))
+	})
 	return
 }
 
@@ -189,24 +189,24 @@ func (this *DefaultRouter) HandleAny(path string, handlers ...Handler) {
 	return
 }
 
-func (this *DefaultRouter) Get(path string, handlerFuncs ...HandlerFunc) {
-	this.HandleGet(path, convertToHandlers(handlerFuncs...)...)
+func (this *DefaultRouter) Get(path string, funcList ...HandlerFunc) {
+	this.HandleGet(path, convertToHandlers(funcList...)...)
 }
 
-func (this *DefaultRouter) Post(path string, handlerFuncs ...HandlerFunc) {
-	this.HandlePost(path, convertToHandlers(handlerFuncs...)...)
+func (this *DefaultRouter) Post(path string, funcList ...HandlerFunc) {
+	this.HandlePost(path, convertToHandlers(funcList...)...)
 }
 
-func (this *DefaultRouter) Delete(path string, handlerFuncs ...HandlerFunc) {
-	this.HandleDelete(path, convertToHandlers(handlerFuncs...)...)
+func (this *DefaultRouter) Delete(path string, funcList ...HandlerFunc) {
+	this.HandleDelete(path, convertToHandlers(funcList...)...)
 }
 
-func (this *DefaultRouter) Put(path string, handlerFuncs ...HandlerFunc) {
-	this.HandlePut(path, convertToHandlers(handlerFuncs...)...)
+func (this *DefaultRouter) Put(path string, funcList ...HandlerFunc) {
+	this.HandlePut(path, convertToHandlers(funcList...)...)
 }
 
-func (this *DefaultRouter) Any(path string, handlerFuncs ...HandlerFunc) {
-	this.HandleAny(path, convertToHandlers(handlerFuncs...)...)
+func (this *DefaultRouter) Any(path string, funcList ...HandlerFunc) {
+	this.HandleAny(path, convertToHandlers(funcList...)...)
 }
 
 func (this *DefaultRouter) Print() {
@@ -215,9 +215,9 @@ func (this *DefaultRouter) Print() {
 	}
 }
 
-func convertToHandlers(handlerFuncs ...HandlerFunc) []Handler {
-	handlers := make([]Handler, len(handlerFuncs))
-	for i, h := range handlerFuncs {
+func convertToHandlers(funcList ...HandlerFunc) []Handler {
+	handlers := make([]Handler, len(funcList))
+	for i, h := range funcList {
 		handlers[i] = h
 	}
 	return handlers
