@@ -23,11 +23,9 @@ type Router interface {
 
 	Get(path string, handlers ...HandlerFunc)
 	Post(path string, handlers ...HandlerFunc)
-	Delete(path string, handlers ...HandlerFunc)
 	Put(path string, handlers ...HandlerFunc)
+	Delete(path string, handlers ...HandlerFunc)
 	Any(path string, handlers ...HandlerFunc)
-
-	Print()
 }
 
 type DefaultRouter struct {
@@ -168,13 +166,13 @@ func (this *DefaultRouter) HandlePost(path string, handlers ...Handler) {
 	return
 }
 
-func (this *DefaultRouter) HandleDelete(path string, handlers ...Handler) {
-	this.Bind("DELETE", path, handlers...)
+func (this *DefaultRouter) HandlePut(path string, handlers ...Handler) {
+	this.Bind("PUT", path, handlers...)
 	return
 }
 
-func (this *DefaultRouter) HandlePut(path string, handlers ...Handler) {
-	this.Bind("PUT", path, handlers...)
+func (this *DefaultRouter) HandleDelete(path string, handlers ...Handler) {
+	this.Bind("DELETE", path, handlers...)
 	return
 }
 
@@ -194,12 +192,12 @@ func (this *DefaultRouter) Post(path string, funcList ...HandlerFunc) {
 	this.HandlePost(path, convertToHandlers(funcList...)...)
 }
 
-func (this *DefaultRouter) Delete(path string, funcList ...HandlerFunc) {
-	this.HandleDelete(path, convertToHandlers(funcList...)...)
-}
-
 func (this *DefaultRouter) Put(path string, funcList ...HandlerFunc) {
 	this.HandlePut(path, convertToHandlers(funcList...)...)
+}
+
+func (this *DefaultRouter) Delete(path string, funcList ...HandlerFunc) {
+	this.HandleDelete(path, convertToHandlers(funcList...)...)
 }
 
 func (this *DefaultRouter) Any(path string, funcList ...HandlerFunc) {

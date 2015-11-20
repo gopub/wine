@@ -32,8 +32,10 @@ func Default() *server {
 }
 
 func (this *server) Run(addr string) error {
-	gox.LInfo("Running at", addr, "...")
-	this.Print()
+	gox.LInfo("Running server at", addr, "...")
+	if r, ok := this.Router.(*DefaultRouter); ok {
+		r.Print()
+	}
 	err := http.ListenAndServe(addr, this)
 	return err
 }
