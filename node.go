@@ -90,9 +90,11 @@ func (this *node) addChild(pathSegments []string, fullPath string, handlers ...H
 		}
 	}
 
-	if n.t == staticNode {
+	switch n.t {
+	case staticNode:
 		this.children = append([]*node{n}, this.children...)
-	} else if n.t == paramNode {
+		break
+	case paramNode:
 		i := len(this.children) - 1
 		for i >= 0 {
 			if this.children[i].t != wildcardNode {
@@ -100,6 +102,7 @@ func (this *node) addChild(pathSegments []string, fullPath string, handlers ...H
 			}
 			i--
 		}
+
 		if i < 0 {
 			this.children = append([]*node{n}, this.children...)
 		} else if i == len(this.children)-1 {
@@ -109,8 +112,10 @@ func (this *node) addChild(pathSegments []string, fullPath string, handlers ...H
 			copy(this.children[i+2:], this.children[i+1:])
 			this.children[i+1] = n
 		}
-	} else {
+		break
+	default:
 		this.children = append(this.children, n)
+		break
 	}
 }
 
