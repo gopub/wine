@@ -25,7 +25,7 @@ func main() {
 		c.JSON(resp)
 	})
 
-	//Any means methods: GET POST PUT DELETE
+	//Any means methods: GET POST PUT
 	s.Any("server-time", func(c wine.Context) {
 		resp := map[string]interface{}{"time": time.Now().Unix()}
 		c.JSON(resp)
