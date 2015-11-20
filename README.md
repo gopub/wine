@@ -7,20 +7,16 @@ You can use wine like,
 		
 		func main() {
         
-        	s := wine.Server()
+        	s := wine.NewServer()
         
-        	//You can implement middlewares and add them to the server
+        	//Intercept all requests with wine.Logger
         	s.Use(wine.Logger)
-        	s.Use()
         
-        	//Support file and directory
+        	//Output html file
         	s.StaticFile("/", "/var/www/index.html")
-        	s.StaticDir("/html/*", "/var/www/html")
         
-        	s.Get("server-time", func(c wine.Context) {
-        		resp := map[string]interface{}{"time": time.Now().Unix()}
-        		c.JSON(resp)
-        	})
+        	//Map path dir to local dir
+        	s.StaticDir("/html/*", "/var/www/html")
         
         	s.Get("users/:id/name", func(c wine.Context) {
         		id := c.Params().GetStr("id")
@@ -28,60 +24,51 @@ You can use wine like,
         		c.JSON(resp)
         	})
         
-        	//Means accept methods: GET POST PUT DELETE
-        	s.Any("login", login)
+        	//Any means methods: GET POST PUT DELETE
+        	s.Any("server-time", func(c wine.Context) {
+        		resp := map[string]interface{}{"time": time.Now().Unix()}
+        		c.JSON(resp)
+        	})
+        
+        	s.Post("update-name", auth, func(c wine.Context) {
+        		name := c.Params().GetStr("name")
+        		if len(name) == 0 {
+        			c.JSON(map[string]interface{}{"msg": "missing name"})
+        			return
+        		}
+        		c.JSON(map[string]interface{}{"msg": "new name is " + name})
+        	})
         
         	s.Run(":8080")
         }
         
         func auth(c wine.Context) {
-        	sid := c.Get("session_id")
+        	sid := c.Params().GetStr("sid")
         	fmt.Println(sid)
         	//auth sid
         	//...
-        	authorized := false
-        
-        	if authorized {
-        		//call the next handler
+        	//simulate authorization
+        	if len(sid) > 0 {
+        		//authorized, call the next handler
         		c.Next()
         	} else {
-        		//abort the handling process, send an error response
         		resp := map[string]interface{}{"msg": "authorization failed"}
         		c.JSON(resp)
         	}
-        }
-        
-        func login(c wine.Context) {
-        	account := c.Params().GetStr("account")
-        	password := c.Params().GetStr("password")
-        	fmt.Println(account, password)
-        	resp := map[string]interface{}{"status": "success"}
-        	c.JSON(resp)
-        }
-        
-        func getProfile(c wine.Context) {
-        	id := c.Params().GetStr("id")
-        	resp := map[string]interface{}{"profile": "This is " + id + "'s profile"}
-        	c.JSON(resp)
-        }
-        
-        func updateName(c wine.Context) {
-        	name := c.Params().GetStr("name")
-        	resp := map[string]interface{}{"name": name}
-        	c.JSON(resp)
         }
 
 
 Run this program:
 
-		[INFO ]  Running at :8080 ...  
-		[INFO ] GET   /     github.com/justintan/wine.(*DefaultRouter).StaticFile.func1  
-		[INFO ] GET   /login        github.com/justintan/wine.Logger, main.login  
-		[INFO ] GET   /users/:id/name       github.com/justintan/wine.Logger, main.main.func2  
-		[INFO ] GET   /server-time  github.com/justintan/wine.Logger, main.main.func1  
-		[INFO ] GET   /html/*       github.com/justintan/wine.Logger, github.com/justintan/wine.(*DefaultRouter).StaticFS.func1  
-		[INFO ] POST  /login        github.com/justintan/wine.Logger, main.login  
-		[INFO ] DELETE /login       github.com/justintan/wine.Logger, main.login  
-		[INFO ] PUT   /login        github.com/justintan/wine.Logger, main.login  
+		[INFO ]  Running at :8080 ...
+        [INFO ] GET   /     github.com/justintan/wine.(*DefaultRouter).StaticFile.func1
+        [INFO ] GET   /server-time  github.com/justintan/wine.Logger, main.main.func2
+        [INFO ] GET   /users/:id/name       github.com/justintan/wine.Logger, main.main.func1
+        [INFO ] GET   /html/*       github.com/justintan/wine.Logger, github.com/justintan/wine.(*DefaultRouter).StaticFS.func1
+        [INFO ] POST  /update-name  github.com/justintan/wine.Logger, main.auth, main.main.func3
+        [INFO ] POST  /server-time  github.com/justintan/wine.Logger, main.main.func2
+        [INFO ] DELETE /server-time github.com/justintan/wine.Logger, main.main.func2
+        [INFO ] PUT   /server-time  github.com/justintan/wine.Logger, main.main.func2
+  
  
   

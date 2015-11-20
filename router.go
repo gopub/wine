@@ -60,11 +60,17 @@ func (this *DefaultRouter) Group(relativePath string) Router {
 }
 
 func (this *DefaultRouter) UseHandlers(handlers ...Handler) Router {
+	if len(handlers) == 0 {
+		return this
+	}
 	this.handlers = append(this.handlers, handlers...)
 	return this
 }
 
 func (this *DefaultRouter) Use(funcList ...HandlerFunc) Router {
+	if len(funcList) == 0 {
+		return this
+	}
 	return this.UseHandlers(convertToHandlers(funcList...)...)
 }
 
