@@ -179,7 +179,6 @@ func (this *DefaultRouter) HandleDelete(path string, handlers ...Handler) {
 func (this *DefaultRouter) HandleAny(path string, handlers ...Handler) {
 	this.HandleGet(path, handlers...)
 	this.HandlePost(path, handlers...)
-	this.HandleDelete(path, handlers...)
 	this.HandlePut(path, handlers...)
 	return
 }
