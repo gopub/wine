@@ -104,9 +104,9 @@ func (this *DefaultContext) HTML(htmlText string) {
 	render.HTML(this.writer, htmlText)
 }
 
-func (this *DefaultContext) TemplateHTML(templateFileName string, params gox.M) {
+func (this *DefaultContext) TemplateHTML(templateName string, params gox.M) {
 	for _, tpl := range this.templates {
-		err := render.TemplateHTML(this.writer, tpl, templateFileName, params)
+		err := render.TemplateHTML(this.writer, tpl, templateName, params)
 		if err == nil {
 			this.setResponded()
 			break

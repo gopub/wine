@@ -20,7 +20,7 @@ type Context interface {
 	JSON(obj interface{})
 	File(filePath string)
 	HTML(htmlText string)
-	TemplateHTML(templateFileName string, params gox.M)
+	TemplateHTML(templateName string, params gox.M)
 	ServeHTTP(h http.Handler)
 
 	Set(key string, value interface{})
