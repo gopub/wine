@@ -7,23 +7,23 @@ import (
 	"strings"
 )
 
-type server struct {
+type Server struct {
 	Router
 	Header         http.Header
 	ContextCreator NewContextFunc
 	templates      []*template.Template
 }
 
-func NewServer() *server {
-	s := &server{}
+func NewServer() *Server {
+	s := &Server{}
 	s.Router = NewDefaultRouter()
 	s.Header = make(http.Header)
 	s.ContextCreator = NewDefaultContext
 	return s
 }
 
-func Default() *server {
-	s := &server{}
+func Default() *Server {
+	s := &Server{}
 	s.Router = NewDefaultRouter()
 	s.Header = make(http.Header)
 	s.ContextCreator = NewDefaultContext
@@ -31,7 +31,7 @@ func Default() *server {
 	return s
 }
 
-func (this *server) Run(addr string) error {
+func (this *Server) Run(addr string) error {
 	gox.LInfo("Running server at", addr, "...")
 	if r, ok := this.Router.(*DefaultRouter); ok {
 		r.Print()
@@ -40,7 +40,7 @@ func (this *server) Run(addr string) error {
 	return err
 }
 
-func (this *server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
+func (this *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	defer func() {
 		if e := recover(); e != nil {
 			gox.LError("ServeHTTP", e)
@@ -71,16 +71,16 @@ func (this *server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	}
 }
 
-func (this *server) AddGlobTemplate(pattern string) {
+func (this *Server) AddGlobTemplate(pattern string) {
 	tpl := template.Must(template.ParseGlob(pattern))
 	this.AddTemplate(tpl)
 }
 
-func (this *server) AddFilesTemplate(files ...string) {
+func (this *Server) AddFilesTemplate(files ...string) {
 	tpl := template.Must(template.ParseFiles(files...))
 	this.AddTemplate(tpl)
 }
 
-func (this *server) AddTemplate(tpl *template.Template) {
+func (this *Server) AddTemplate(tpl *template.Template) {
 	this.templates = append(this.templates, tpl)
 }
