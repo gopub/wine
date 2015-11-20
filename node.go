@@ -8,9 +8,9 @@ import (
 type nodeType int
 
 const (
-	staticNode   nodeType = 0
-	paramNode    nodeType = 1
-	wildcardNode nodeType = 2
+	staticNode   nodeType = 0 // /users
+	paramNode    nodeType = 1 // /users/:id
+	wildcardNode nodeType = 2 // /users/:id/photos/*
 )
 
 type node struct {
