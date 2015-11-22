@@ -51,14 +51,21 @@ func (this *APIContext) SendData(data interface{}) {
 
 func (this *APIContext) SendCode(code api.Code) {
 	this.SendResponse(api.NewResponse(code, code.String(), nil))
+	if code != api.OK {
+		gox.LDebug(this.HTTPRequest(), code, code.String())
+	}
 }
 
 func (this *APIContext) SendMsg(code api.Code, msg string) {
 	this.SendResponse(api.NewResponse(code, msg, nil))
+	if code != api.OK {
+		gox.LDebug(this.HTTPRequest(), code, msg)
+	}
 }
 
 func (this *APIContext) SetUserId(userId gox.Id) {
 	this.userId = userId
+	gox.LDebug(this.HTTPRequest(), "set user_id:", userId)
 }
 
 func (this *APIContext) UserId() gox.Id {
