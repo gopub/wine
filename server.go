@@ -43,7 +43,7 @@ func (this *Server) Run(addr string) error {
 func (this *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	defer func() {
 		if e := recover(); e != nil {
-			gox.LError("ServeHTTP", e)
+			gox.LError("ServeHTTP", e, req)
 		}
 	}()
 
