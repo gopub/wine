@@ -55,7 +55,7 @@ func (this *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	path = cleanPath(path)
 	handlers, params := this.Match(req.Method, path)
 	if len(handlers) == 0 {
-		gox.LError("Not found", path, "[", req, "]")
+		gox.LError("Not found[", path, "]", req)
 		http.Error(rw, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 		return
 	}
