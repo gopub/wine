@@ -10,7 +10,7 @@ func Logger(c Context) {
 	st := time.Now()
 	c.Next()
 	cost := float32((time.Since(st) / time.Microsecond)) / 1000.0
-	gox.LInfo(fmt.Sprintf("%.3fms %v%s%v %s",
+	gox.LDebug(fmt.Sprintf("%.3fms %v%s%v %s",
 		cost,
 		gox.GreenColor,
 		c.HTTPRequest().Method,
