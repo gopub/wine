@@ -55,84 +55,84 @@ func (n *node) conflict(nod *node) bool {
 	return false
 }
 
-func (this *node) addChild(pathSegments []string, fullPath string, handlers ...Handler) {
+func (n *node) addChild(pathSegments []string, fullPath string, handlers ...Handler) {
 	if len(pathSegments) == 0 || len(pathSegments[0]) == 0 {
 		panic("path segments can not be empty")
 	}
 
-	n := &node{}
+	nod := &node{}
 	segment := pathSegments[0]
 	if segment[0] == ':' {
-		n.t = paramNode
-		n.path = segment[1:]
-		if len(n.path) == 0 {
+		nod.t = paramNode
+		nod.path = segment[1:]
+		if len(nod.path) == 0 {
 			panic("invalid path: " + fullPath)
 		}
 	} else if segment[0] == '*' {
-		n.t = wildcardNode
-		n.path = segment[1:]
+		nod.t = wildcardNode
+		nod.path = segment[1:]
 		if len(pathSegments) > 1 {
 			panic("wildcard only in the end segement")
 		}
 	} else {
-		n.path = segment
+		nod.path = segment
 	}
 
 	if len(pathSegments) == 1 {
-		n.handlers = handlers
+		nod.handlers = handlers
 	} else {
-		n.addChild(pathSegments[1:], fullPath, handlers...)
+		nod.addChild(pathSegments[1:], fullPath, handlers...)
 	}
 
-	for _, child := range this.children {
-		if child.conflict(n) {
+	for _, child := range n.children {
+		if child.conflict(nod) {
 			panic("duplicate path " + fullPath)
 		}
 	}
 
-	switch n.t {
+	switch nod.t {
 	case staticNode:
-		this.children = append([]*node{n}, this.children...)
+		n.children = append([]*node{nod}, n.children...)
 		break
 	case paramNode:
-		i := len(this.children) - 1
+		i := len(n.children) - 1
 		for i >= 0 {
-			if this.children[i].t != wildcardNode {
+			if n.children[i].t != wildcardNode {
 				break
 			}
 			i--
 		}
 
 		if i < 0 {
-			this.children = append([]*node{n}, this.children...)
-		} else if i == len(this.children)-1 {
-			this.children = append(this.children, n)
+			n.children = append([]*node{nod}, n.children...)
+		} else if i == len(n.children)-1 {
+			n.children = append(n.children, nod)
 		} else {
-			this.children = append(this.children, n)
-			copy(this.children[i+2:], this.children[i+1:])
-			this.children[i+1] = n
+			n.children = append(n.children, nod)
+			copy(n.children[i+2:], n.children[i+1:])
+			n.children[i+1] = nod
 		}
 		break
 	default:
-		this.children = append(this.children, n)
+		n.children = append(n.children, nod)
 		break
 	}
 }
 
-func (this *node) match(pathSegments []string, fullPath string) (handlers []Handler, params map[string]string) {
+func (n *node) match(pathSegments []string, fullPath string) (handlers []Handler, params map[string]string) {
 	if len(pathSegments) == 0 {
 		panic("path segments is empty")
 	}
 
 	segment := pathSegments[0]
-	if this.t == staticNode && this.path != segment {
+	if n.t == staticNode && n.path != segment {
 		return
 	}
 
 	if len(pathSegments) == 1 {
-		handlers = this.handlers
+		handlers = n.handlers
 	} else {
-		for _, child := range this.children {
+		for _, child := range n.children {
 			handlers, params = child.match(pathSegments[1:], fullPath)
 			if len(handlers) > 0 {
 				break
@@ -141,8 +141,8 @@ func (this *node) match(pathSegments []string, fullPath string) (handlers []Hand
 	}
 
 	//consider wildcard in the end
-	if len(handlers) == 0 && this.t == wildcardNode {
-		handlers = this.handlers
+	if len(handlers) == 0 && n.t == wildcardNode {
+		handlers = n.handlers
 		segment = strings.Join(pathSegments, "/")
 	}
 
@@ -151,28 +151,28 @@ func (this *node) match(pathSegments []string, fullPath string) (handlers []Hand
 			params = map[string]string{}
 		}
 
-		if this.t == paramNode {
-			params[this.path] = segment
+		if n.t == paramNode {
+			params[n.path] = segment
 		}
 	}
 	return
 }
 
-func (this *node) Print(method string, parentPath string) {
+func (n *node) Print(method string, parentPath string) {
 	var path string
-	if this.t == staticNode {
-		path = parentPath + "/" + this.path
-	} else if this.t == paramNode {
-		path = parentPath + "/:" + this.path
+	if n.t == staticNode {
+		path = parentPath + "/" + n.path
+	} else if n.t == paramNode {
+		path = parentPath + "/:" + n.path
 	} else {
-		path = parentPath + "/*" + this.path
+		path = parentPath + "/*" + n.path
 	}
 
 	path = cleanPath(path)
 
-	if len(this.handlers) > 0 {
+	if len(n.handlers) > 0 {
 		var hNames string
-		for _, h := range this.handlers {
+		for _, h := range n.handlers {
 			if len(hNames) != 0 {
 				hNames += ", "
 			}
@@ -186,7 +186,7 @@ func (this *node) Print(method string, parentPath string) {
 		gox.LInfof("%-5s %s\t%s", method, path, hNames)
 	}
 
-	for _, n := range this.children {
-		n.Print(method, path)
+	for _, nod := range n.children {
+		nod.Print(method, path)
 	}
 }

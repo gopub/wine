@@ -10,9 +10,9 @@ func TemplateHTML(writer http.ResponseWriter, tpl *template.Template, name strin
 	writer.Header()[gox.ContentTypeName] = gox.HTMLContentType
 	if len(name) == 0 {
 		return tpl.Execute(writer, params)
-	} else {
-		return tpl.ExecuteTemplate(writer, name, params)
 	}
+
+	return tpl.ExecuteTemplate(writer, name, params)
 }
 
 func HTML(writer http.ResponseWriter, htmlText string) {
