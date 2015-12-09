@@ -37,84 +37,84 @@ func NewDefaultContext(rw http.ResponseWriter, req *http.Request, templates []*t
 	return c
 }
 
-func (this *DefaultContext) Set(key string, value interface{}) {
-	this.keyValues[key] = value
+func (dc *DefaultContext) Set(key string, value interface{}) {
+	dc.keyValues[key] = value
 }
 
-func (this *DefaultContext) Get(key string) interface{} {
-	return this.keyValues[key]
+func (dc *DefaultContext) Get(key string) interface{} {
+	return dc.keyValues[key]
 }
 
-func (this *DefaultContext) Next() {
-	if h := this.handlers.Next(); h != nil {
-		h.HandleRequest(this)
+func (dc *DefaultContext) Next() {
+	if h := dc.handlers.Next(); h != nil {
+		h.HandleRequest(dc)
 	}
 }
 
-func (this *DefaultContext) HTTPRequest() *http.Request {
-	return this.req
+func (dc *DefaultContext) HTTPRequest() *http.Request {
+	return dc.req
 }
 
-func (this *DefaultContext) Params() gox.M {
-	return this.reqParams
+func (dc *DefaultContext) Params() gox.M {
+	return dc.reqParams
 }
 
-func (this *DefaultContext) Header() http.Header {
-	return this.reqHeader
+func (dc *DefaultContext) Header() http.Header {
+	return dc.reqHeader
 }
 
-func (this *DefaultContext) ResponseHeader() http.Header {
-	return this.respHeader
+func (dc *DefaultContext) ResponseHeader() http.Header {
+	return dc.respHeader
 }
 
-func (this *DefaultContext) Responded() bool {
-	return this.responded
+func (dc *DefaultContext) Responded() bool {
+	return dc.responded
 }
 
-func (this *DefaultContext) setResponded() {
-	if this.responded {
+func (dc *DefaultContext) setResponded() {
+	if dc.responded {
 		panic("cannot responded twice")
 	}
-	this.responded = true
+	dc.responded = true
 }
 
-func (this *DefaultContext) JSON(jsonObj interface{}) {
-	this.setResponded()
-	for k, v := range this.respHeader {
-		this.writer.Header()[k] = v
+func (dc *DefaultContext) JSON(jsonObj interface{}) {
+	dc.setResponded()
+	for k, v := range dc.respHeader {
+		dc.writer.Header()[k] = v
 	}
-	render.JSON(this.writer, jsonObj)
+	render.JSON(dc.writer, jsonObj)
 }
 
-func (this *DefaultContext) Status(status int) {
-	this.setResponded()
-	for k, v := range this.respHeader {
-		this.writer.Header()[k] = v
+func (dc *DefaultContext) Status(status int) {
+	dc.setResponded()
+	for k, v := range dc.respHeader {
+		dc.writer.Header()[k] = v
 	}
-	render.Status(this.writer, status)
+	render.Status(dc.writer, status)
 }
 
-func (this *DefaultContext) File(filePath string) {
-	this.setResponded()
-	http.ServeFile(this.writer, this.req, filePath)
+func (dc *DefaultContext) File(filePath string) {
+	dc.setResponded()
+	http.ServeFile(dc.writer, dc.req, filePath)
 }
 
-func (this *DefaultContext) HTML(htmlText string) {
-	this.setResponded()
-	render.HTML(this.writer, htmlText)
+func (dc *DefaultContext) HTML(htmlText string) {
+	dc.setResponded()
+	render.HTML(dc.writer, htmlText)
 }
 
-func (this *DefaultContext) TemplateHTML(templateName string, params gox.M) {
-	for _, tpl := range this.templates {
-		err := render.TemplateHTML(this.writer, tpl, templateName, params)
+func (dc *DefaultContext) TemplateHTML(templateName string, params gox.M) {
+	for _, tpl := range dc.templates {
+		err := render.TemplateHTML(dc.writer, tpl, templateName, params)
 		if err == nil {
-			this.setResponded()
+			dc.setResponded()
 			break
 		}
 	}
 }
 
-func (this *DefaultContext) ServeHTTP(h http.Handler) {
-	this.setResponded()
-	h.ServeHTTP(this.writer, this.req)
+func (dc *DefaultContext) ServeHTTP(h http.Handler) {
+	dc.setResponded()
+	h.ServeHTTP(dc.writer, dc.req)
 }

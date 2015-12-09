@@ -31,43 +31,43 @@ func NewAPIContext(rw http.ResponseWriter, req *http.Request, templates []*templ
 	return c
 }
 
-func (this *APIContext) Next() {
-	if h := this.handlers.Next(); h != nil {
-		h.HandleRequest(this)
+func (c *APIContext) Next() {
+	if h := c.handlers.Next(); h != nil {
+		h.HandleRequest(c)
 	}
 }
 
-func (this *APIContext) Request() *api.Request {
-	return this.req
+func (c *APIContext) Request() *api.Request {
+	return c.req
 }
 
-func (this *APIContext) SendResponse(resp *api.Response) {
-	this.JSON(resp)
+func (c *APIContext) SendResponse(resp *api.Response) {
+	c.JSON(resp)
 }
 
-func (this *APIContext) SendData(data interface{}) {
-	this.SendResponse(api.NewResponse(api.OK, "", data))
+func (c *APIContext) SendData(data interface{}) {
+	c.SendResponse(api.NewResponse(api.OK, "", data))
 }
 
-func (this *APIContext) SendCode(code api.Code) {
-	this.SendResponse(api.NewResponse(code, code.String(), nil))
+func (c *APIContext) SendCode(code api.Code) {
+	c.SendResponse(api.NewResponse(code, code.String(), nil))
 	if code != api.OK {
-		gox.LError(code, this.HTTPRequest())
+		gox.LError(code, c.HTTPRequest())
 	}
 }
 
-func (this *APIContext) SendMsg(code api.Code, msg string) {
-	this.SendResponse(api.NewResponse(code, msg, nil))
+func (c *APIContext) SendMsg(code api.Code, msg string) {
+	c.SendResponse(api.NewResponse(code, msg, nil))
 	if code != api.OK {
-		gox.LError(code, msg, this.HTTPRequest())
+		gox.LError(code, msg, c.HTTPRequest())
 	}
 }
 
-func (this *APIContext) SetUserId(userId gox.Id) {
-	this.userId = userId
-	gox.LInfo("set uid[", userId, "]", this.HTTPRequest().URL)
+func (c *APIContext) SetUserId(userId gox.Id) {
+	c.userId = userId
+	gox.LInfo("set uid[", userId, "]", c.HTTPRequest().URL)
 }
 
-func (this *APIContext) UserId() gox.Id {
-	return this.userId
+func (c *APIContext) UserId() gox.Id {
+	return c.userId
 }

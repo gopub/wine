@@ -6,8 +6,8 @@ type Handler interface {
 
 type HandlerFunc func(Context)
 
-func (this HandlerFunc) HandleRequest(c Context) {
-	this(c)
+func (h HandlerFunc) HandleRequest(c Context) {
+	h(c)
 }
 
 type HandlerChain struct {
@@ -21,12 +21,12 @@ func NewHandlerChain(handlers []Handler) *HandlerChain {
 	return hc
 }
 
-func (this *HandlerChain) Next() Handler {
-	if this.index >= len(this.handlers) {
+func (h *HandlerChain) Next() Handler {
+	if h.index >= len(h.handlers) {
 		return nil
 	}
 
-	index := this.index
-	this.index += 1
-	return this.handlers[index]
+	index := h.index
+	h.index += 1
+	return h.handlers[index]
 }

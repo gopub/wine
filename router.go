@@ -40,7 +40,7 @@ func NewDefaultRouter() *DefaultRouter {
 	return r
 }
 
-func (this *DefaultRouter) Group(relativePath string) Router {
+func (dr *DefaultRouter) Group(relativePath string) Router {
 	if len(relativePath) == 0 {
 		panic("relative path can not be empty")
 	}
@@ -50,30 +50,30 @@ func (this *DefaultRouter) Group(relativePath string) Router {
 	}
 
 	r := &DefaultRouter{}
-	r.methodTrees = this.methodTrees
-	r.basePath = cleanPath(this.basePath + "/" + relativePath)
-	r.handlers = make([]Handler, len(this.handlers))
-	copy(r.handlers, this.handlers)
+	r.methodTrees = dr.methodTrees
+	r.basePath = cleanPath(dr.basePath + "/" + relativePath)
+	r.handlers = make([]Handler, len(dr.handlers))
+	copy(r.handlers, dr.handlers)
 	return r
 }
 
-func (this *DefaultRouter) UseHandlers(handlers ...Handler) Router {
+func (dr *DefaultRouter) UseHandlers(handlers ...Handler) Router {
 	if len(handlers) == 0 {
-		return this
+		return dr
 	}
-	this.handlers = append(this.handlers, handlers...)
-	return this
+	dr.handlers = append(dr.handlers, handlers...)
+	return dr
 }
 
-func (this *DefaultRouter) Use(funcList ...HandlerFunc) Router {
+func (dr *DefaultRouter) Use(funcList ...HandlerFunc) Router {
 	if len(funcList) == 0 {
-		return this
+		return dr
 	}
-	return this.UseHandlers(convertToHandlers(funcList...)...)
+	return dr.UseHandlers(convertToHandlers(funcList...)...)
 }
 
-func (this *DefaultRouter) Match(method string, path string) (handlers []Handler, params map[string]string) {
-	n := this.methodTrees[method]
+func (dr *DefaultRouter) Match(method string, path string) (handlers []Handler, params map[string]string) {
+	n := dr.methodTrees[method]
 	if n == nil {
 		return
 	}
@@ -85,7 +85,7 @@ func (this *DefaultRouter) Match(method string, path string) (handlers []Handler
 	return n.match(segments, path)
 }
 
-func (this *DefaultRouter) Bind(method string, path string, handlers ...Handler) {
+func (dr *DefaultRouter) Bind(method string, path string, handlers ...Handler) {
 	if path == "" {
 		panic("path can not be empty")
 	}
@@ -98,15 +98,15 @@ func (this *DefaultRouter) Bind(method string, path string, handlers ...Handler)
 		panic("requre at least one handler")
 	}
 
-	n := this.methodTrees[method]
+	n := dr.methodTrees[method]
 	if n == nil {
 		n = &node{}
 		n.t = staticNode
-		this.methodTrees[method] = n
+		dr.methodTrees[method] = n
 	}
 
 	path = cleanPath(path)
-	if len(this.basePath) == 0 {
+	if len(dr.basePath) == 0 {
 		if path == "/" {
 			if len(n.handlers) == 0 {
 				n.handlers = handlers
@@ -117,27 +117,27 @@ func (this *DefaultRouter) Bind(method string, path string, handlers ...Handler)
 		}
 	}
 
-	fullPath := cleanPath(this.basePath + "/" + path)
-	hs := append(this.handlers, handlers...)
+	fullPath := cleanPath(dr.basePath + "/" + path)
+	hs := append(dr.handlers, handlers...)
 	segments := strings.Split(fullPath, "/")
 	n.addChild(segments[1:], fullPath, hs...)
 	return
 }
 
-func (this *DefaultRouter) StaticFile(relativePath, filePath string) {
-	this.Get(relativePath, func(c Context) {
+func (dr *DefaultRouter) StaticFile(relativePath, filePath string) {
+	dr.Get(relativePath, func(c Context) {
 		c.File(filePath)
 	})
 	return
 }
 
-func (this *DefaultRouter) StaticDir(relativePath, dirPath string) {
-	this.StaticFS(relativePath, http.Dir(dirPath))
+func (dr *DefaultRouter) StaticDir(relativePath, dirPath string) {
+	dr.StaticFS(relativePath, http.Dir(dirPath))
 	return
 }
 
-func (this *DefaultRouter) StaticFS(relativePath string, fs http.FileSystem) {
-	prefix := cleanPath(this.basePath + "/" + relativePath)
+func (dr *DefaultRouter) StaticFS(relativePath string, fs http.FileSystem) {
+	prefix := cleanPath(dr.basePath + "/" + relativePath)
 	i := strings.Index(prefix, "*")
 	if i > 0 {
 		prefix = prefix[:i]
@@ -150,61 +150,61 @@ func (this *DefaultRouter) StaticFS(relativePath string, fs http.FileSystem) {
 	}
 
 	fileServer := http.StripPrefix(prefix, http.FileServer(fs))
-	this.Get(relativePath, func(c Context) {
+	dr.Get(relativePath, func(c Context) {
 		c.ServeHTTP(fileServer)
 	})
 	return
 }
 
-func (this *DefaultRouter) HandleGet(path string, handlers ...Handler) {
-	this.Bind("GET", path, handlers...)
+func (dr *DefaultRouter) HandleGet(path string, handlers ...Handler) {
+	dr.Bind("GET", path, handlers...)
 	return
 }
 
-func (this *DefaultRouter) HandlePost(path string, handlers ...Handler) {
-	this.Bind("POST", path, handlers...)
+func (dr *DefaultRouter) HandlePost(path string, handlers ...Handler) {
+	dr.Bind("POST", path, handlers...)
 	return
 }
 
-func (this *DefaultRouter) HandlePut(path string, handlers ...Handler) {
-	this.Bind("PUT", path, handlers...)
+func (dr *DefaultRouter) HandlePut(path string, handlers ...Handler) {
+	dr.Bind("PUT", path, handlers...)
 	return
 }
 
-func (this *DefaultRouter) HandleDelete(path string, handlers ...Handler) {
-	this.Bind("DELETE", path, handlers...)
+func (dr *DefaultRouter) HandleDelete(path string, handlers ...Handler) {
+	dr.Bind("DELETE", path, handlers...)
 	return
 }
 
-func (this *DefaultRouter) HandleAny(path string, handlers ...Handler) {
-	this.HandleGet(path, handlers...)
-	this.HandlePost(path, handlers...)
-	this.HandlePut(path, handlers...)
+func (dr *DefaultRouter) HandleAny(path string, handlers ...Handler) {
+	dr.HandleGet(path, handlers...)
+	dr.HandlePost(path, handlers...)
+	dr.HandlePut(path, handlers...)
 	return
 }
 
-func (this *DefaultRouter) Get(path string, funcList ...HandlerFunc) {
-	this.HandleGet(path, convertToHandlers(funcList...)...)
+func (dr *DefaultRouter) Get(path string, funcList ...HandlerFunc) {
+	dr.HandleGet(path, convertToHandlers(funcList...)...)
 }
 
-func (this *DefaultRouter) Post(path string, funcList ...HandlerFunc) {
-	this.HandlePost(path, convertToHandlers(funcList...)...)
+func (dr *DefaultRouter) Post(path string, funcList ...HandlerFunc) {
+	dr.HandlePost(path, convertToHandlers(funcList...)...)
 }
 
-func (this *DefaultRouter) Put(path string, funcList ...HandlerFunc) {
-	this.HandlePut(path, convertToHandlers(funcList...)...)
+func (dr *DefaultRouter) Put(path string, funcList ...HandlerFunc) {
+	dr.HandlePut(path, convertToHandlers(funcList...)...)
 }
 
-func (this *DefaultRouter) Delete(path string, funcList ...HandlerFunc) {
-	this.HandleDelete(path, convertToHandlers(funcList...)...)
+func (dr *DefaultRouter) Delete(path string, funcList ...HandlerFunc) {
+	dr.HandleDelete(path, convertToHandlers(funcList...)...)
 }
 
-func (this *DefaultRouter) Any(path string, funcList ...HandlerFunc) {
-	this.HandleAny(path, convertToHandlers(funcList...)...)
+func (dr *DefaultRouter) Any(path string, funcList ...HandlerFunc) {
+	dr.HandleAny(path, convertToHandlers(funcList...)...)
 }
 
-func (this *DefaultRouter) Print() {
-	for m, n := range this.methodTrees {
+func (dr *DefaultRouter) Print() {
+	for m, n := range dr.methodTrees {
 		n.Print(m, "/")
 	}
 }

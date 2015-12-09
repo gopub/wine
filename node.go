@@ -20,22 +20,22 @@ type node struct {
 	children []*node
 }
 
-func (this *node) conflict(n *node) bool {
-	if n.t != this.t {
+func (n *node) conflict(nod *node) bool {
+	if nod.t != n.t {
 		return false
 	}
 
-	switch n.t {
+	switch nod.t {
 	case staticNode:
-		if n.path != this.path {
+		if nod.path != n.path {
 			return false
 		} else {
-			if len(n.handlers) > 0 && len(this.handlers) > 0 {
+			if len(nod.handlers) > 0 && len(n.handlers) > 0 {
 				return true
 			}
 		}
 	case paramNode:
-		if len(n.handlers) > 0 && len(this.handlers) > 0 {
+		if len(nod.handlers) > 0 && len(n.handlers) > 0 {
 			return true
 		}
 	case wildcardNode:
@@ -44,8 +44,8 @@ func (this *node) conflict(n *node) bool {
 		panic("unknown node type")
 	}
 
-	for _, c1 := range n.children {
-		for _, c2 := range this.children {
+	for _, c1 := range nod.children {
+		for _, c2 := range n.children {
 			if c1.conflict(c2) {
 				return true
 			}

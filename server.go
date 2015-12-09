@@ -31,16 +31,16 @@ func Default() *Server {
 	return s
 }
 
-func (this *Server) Run(addr string) error {
+func (s *Server) Run(addr string) error {
 	gox.LInfo("Running server at", addr, "...")
-	if r, ok := this.Router.(*DefaultRouter); ok {
+	if r, ok := s.Router.(*DefaultRouter); ok {
 		r.Print()
 	}
-	err := http.ListenAndServe(addr, this)
+	err := http.ListenAndServe(addr, s)
 	return err
 }
 
-func (this *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
+func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	defer func() {
 		if e := recover(); e != nil {
 			gox.LError("ServeHTTP", e, req)
@@ -53,16 +53,16 @@ func (this *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		path = req.RequestURI[:i]
 	}
 	path = cleanPath(path)
-	handlers, params := this.Match(req.Method, path)
+	handlers, params := s.Match(req.Method, path)
 	if len(handlers) == 0 {
 		gox.LError("Not found[", path, "]", req)
 		http.Error(rw, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 		return
 	}
 
-	context := this.ContextCreator(rw, req, this.templates, handlers)
+	context := s.ContextCreator(rw, req, s.templates, handlers)
 	context.Params().AddMap(params)
-	for k, v := range this.Header {
+	for k, v := range s.Header {
 		context.Header()[k] = v
 	}
 	context.Next()
@@ -71,16 +71,16 @@ func (this *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	}
 }
 
-func (this *Server) AddGlobTemplate(pattern string) {
+func (s *Server) AddGlobTemplate(pattern string) {
 	tpl := template.Must(template.ParseGlob(pattern))
-	this.AddTemplate(tpl)
+	s.AddTemplate(tpl)
 }
 
-func (this *Server) AddFilesTemplate(files ...string) {
+func (s *Server) AddFilesTemplate(files ...string) {
 	tpl := template.Must(template.ParseFiles(files...))
-	this.AddTemplate(tpl)
+	s.AddTemplate(tpl)
 }
 
-func (this *Server) AddTemplate(tpl *template.Template) {
-	this.templates = append(this.templates, tpl)
+func (s *Server) AddTemplate(tpl *template.Template) {
+	s.templates = append(s.templates, tpl)
 }
