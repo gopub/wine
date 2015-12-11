@@ -61,7 +61,7 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	}
 
 	context := s.ContextCreator(rw, req, s.templates, handlers)
-	context.Params().AddMap(params)
+	context.Params().AddMapObj(params)
 	for k, v := range s.Header {
 		context.Header()[k] = v
 	}

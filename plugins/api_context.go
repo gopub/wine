@@ -13,7 +13,7 @@ var _, _ = api.Context(nil).(*APIContext)
 //type Context wine.DefaultContext
 type APIContext struct {
 	*wine.DefaultContext
-	userId   gox.Id
+	userID   gox.ID
 	req      *api.Request
 	handlers *wine.HandlerChain
 }
@@ -63,11 +63,11 @@ func (c *APIContext) SendMsg(code api.Code, msg string) {
 	}
 }
 
-func (c *APIContext) SetUserId(userId gox.Id) {
-	c.userId = userId
-	gox.LInfo("set uid[", userId, "]", c.HTTPRequest().URL)
+func (c *APIContext) SetUserID(userID gox.ID) {
+	c.userID = userID
+	gox.LInfo("set uid[", userID, "]", c.HTTPRequest().URL)
 }
 
-func (c *APIContext) UserId() gox.Id {
-	return c.userId
+func (c *APIContext) UserID() gox.ID {
+	return c.userID
 }
