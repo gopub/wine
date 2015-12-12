@@ -26,7 +26,7 @@ func NewDefaultContext(rw http.ResponseWriter, req *http.Request, templates []*t
 	c.keyValues = gox.M{}
 	c.writer = rw
 	c.req = req
-	c.reqParams = gox.ParseHttpRequest(req)
+	c.reqParams = gox.ParseReqParams(req)
 	c.reqHeader = make(http.Header)
 	for k, v := range req.Header {
 		c.reqHeader[strings.ToLower(k)] = v
