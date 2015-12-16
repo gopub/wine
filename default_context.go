@@ -24,17 +24,33 @@ type DefaultContext struct {
 func NewDefaultContext(rw http.ResponseWriter, req *http.Request, templates []*template.Template, handlers []Handler) Context {
 	c := &DefaultContext{}
 	c.keyValues = gox.M{}
-	c.writer = rw
-	c.req = req
-	c.reqParams = gox.ParseReqParams(req)
 	c.reqHeader = make(http.Header)
-	for k, v := range req.Header {
-		c.reqHeader[strings.ToLower(k)] = v
-	}
-	c.handlers = NewHandlerChain(handlers)
 	c.respHeader = make(http.Header)
-	c.templates = templates
+	c.Reborn(rw, req, templates, handlers)
 	return c
+}
+
+func (dc *DefaultContext) Reborn(rw http.ResponseWriter, req *http.Request, templates []*template.Template, handlers []Handler) {
+	for k := range dc.keyValues {
+		delete(dc.keyValues, k)
+	}
+	for k := range dc.reqHeader {
+		delete(dc.reqHeader, k)
+	}
+	for k := range dc.respHeader {
+		delete(dc.respHeader, k)
+	}
+	dc.responded = false
+
+	dc.writer = rw
+	dc.req = req
+	dc.reqParams = gox.ParseReqParams(req)
+	dc.handlers = NewHandlerChain(handlers)
+	dc.templates = templates
+
+	for k, v := range req.Header {
+		dc.reqHeader[strings.ToLower(k)] = v
+	}
 }
 
 func (dc *DefaultContext) Set(key string, value interface{}) {

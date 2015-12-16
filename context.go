@@ -25,4 +25,6 @@ type Context interface {
 
 	Set(key string, value interface{})
 	Get(key string) interface{}
+
+	Reborn(http.ResponseWriter, *http.Request, []*template.Template, []Handler)
 }

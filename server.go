@@ -5,6 +5,7 @@ import (
 	"html/template"
 	"net/http"
 	"strings"
+	"sync"
 )
 
 type Server struct {
@@ -12,6 +13,7 @@ type Server struct {
 	Header         http.Header
 	ContextCreator NewContextFunc
 	templates      []*template.Template
+	contextPool    sync.Pool
 }
 
 func NewServer() *Server {
@@ -60,15 +62,22 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	context := s.ContextCreator(rw, req, s.templates, handlers)
-	context.Params().AddMapObj(params)
+	c, _ := s.contextPool.Get().(Context)
+	if c == nil {
+		c = s.ContextCreator(rw, req, s.templates, handlers)
+		gox.LDebug("new context")
+	} else {
+		c.Reborn(rw, req, s.templates, handlers)
+	}
+	c.Params().AddMapObj(params)
 	for k, v := range s.Header {
-		context.Header()[k] = v
+		c.Header()[k] = v
 	}
-	context.Next()
-	if context.Responded() == false {
-		context.Status(http.StatusNotFound)
+	c.Next()
+	if c.Responded() == false {
+		c.Status(http.StatusNotFound)
 	}
+	s.contextPool.Put(c)
 }
 
 func (s *Server) AddGlobTemplate(pattern string) {

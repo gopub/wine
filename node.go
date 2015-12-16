@@ -62,19 +62,20 @@ func (n *node) addChild(pathSegments []string, fullPath string, handlers ...Hand
 
 	nod := &node{}
 	segment := pathSegments[0]
-	if segment[0] == ':' {
+	switch segment[0] {
+	case ':':
 		nod.t = paramNode
 		nod.path = segment[1:]
 		if len(nod.path) == 0 {
 			panic("invalid path: " + fullPath)
 		}
-	} else if segment[0] == '*' {
+	case '*':
 		nod.t = wildcardNode
 		nod.path = segment[1:]
 		if len(pathSegments) > 1 {
 			panic("wildcard only in the end segement")
 		}
-	} else {
+	default:
 		nod.path = segment
 	}
 
@@ -160,11 +161,12 @@ func (n *node) match(pathSegments []string, fullPath string) (handlers []Handler
 
 func (n *node) Print(method string, parentPath string) {
 	var path string
-	if n.t == staticNode {
+	switch n.t {
+	case staticNode:
 		path = parentPath + "/" + n.path
-	} else if n.t == paramNode {
+	case paramNode:
 		path = parentPath + "/:" + n.path
-	} else {
+	default:
 		path = parentPath + "/*" + n.path
 	}
 
