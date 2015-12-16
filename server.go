@@ -46,7 +46,7 @@ func (s *Server) newContext() interface{} {
 
 func (s *Server) Run(addr string) error {
 	s.contextPool.New = s.newContext
-	gox.LInfo("Running server at", addr, "...")
+	gox.LInfo("Running wine server at", addr, "...")
 	if r, ok := s.Router.(*DefaultRouter); ok {
 		r.Print()
 	}
