@@ -18,17 +18,17 @@ type APIContext struct {
 	handlers *wine.HandlerChain
 }
 
-func NewAPIContext(rw http.ResponseWriter, req *http.Request, templates []*template.Template, handlers []wine.Handler) wine.Context {
-	ctx := wine.NewDefaultContext(rw, req, templates, handlers).(*wine.DefaultContext)
-	c := &APIContext{}
-	c.DefaultContext = ctx
+func (c *APIContext) Rebuild(rw http.ResponseWriter, req *http.Request, templates []*template.Template, handlers []wine.Handler) {
+	if c.DefaultContext == nil {
+		c.DefaultContext = &wine.DefaultContext{}
+	}
+	c.DefaultContext.Rebuild(rw, req, templates, handlers)
 	c.handlers = wine.NewHandlerChain(handlers)
 	h := gox.M{}
 	for k, v := range c.Header() {
 		h[k] = v
 	}
 	c.req = api.NewRequest("", h, c.Params())
-	return c
 }
 
 func (c *APIContext) Next() {

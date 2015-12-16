@@ -25,10 +25,7 @@ func NewServer() *Server {
 }
 
 func Default() *Server {
-	s := &Server{}
-	s.Router = NewDefaultRouter()
-	s.Header = make(http.Header)
-	s.RegisterContext(&DefaultContext{})
+	s := NewServer()
 	s.Use(Logger)
 	return s
 }
@@ -37,7 +34,15 @@ func (s *Server) RegisterContext(c Context) {
 	s.context = c
 }
 
+func (s *Server) newContext() interface{} {
+	var c Context
+	gox.Renew(&c, s.context)
+	gox.LDebug("new context")
+	return c
+}
+
 func (s *Server) Run(addr string) error {
+	s.contextPool.New = s.newContext
 	gox.LInfo("Running server at", addr, "...")
 	if r, ok := s.Router.(*DefaultRouter); ok {
 		r.Print()
@@ -67,10 +72,6 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	}
 
 	c, _ := s.contextPool.Get().(Context)
-	if c == nil {
-		gox.Renew(&c, s.context)
-		gox.LDebug("new context")
-	}
 	c.Rebuild(rw, req, s.templates, handlers)
 
 	c.Params().AddMapObj(params)
