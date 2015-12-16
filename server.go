@@ -10,17 +10,17 @@ import (
 
 type Server struct {
 	Router
-	Header         http.Header
-	ContextCreator NewContextFunc
-	templates      []*template.Template
-	contextPool    sync.Pool
+	Header      http.Header
+	context     Context
+	templates   []*template.Template
+	contextPool sync.Pool
 }
 
 func NewServer() *Server {
 	s := &Server{}
 	s.Router = NewDefaultRouter()
 	s.Header = make(http.Header)
-	s.ContextCreator = NewDefaultContext
+	s.RegisterContext(&DefaultContext{})
 	return s
 }
 
@@ -28,9 +28,13 @@ func Default() *Server {
 	s := &Server{}
 	s.Router = NewDefaultRouter()
 	s.Header = make(http.Header)
-	s.ContextCreator = NewDefaultContext
+	s.RegisterContext(&DefaultContext{})
 	s.Use(Logger)
 	return s
+}
+
+func (s *Server) RegisterContext(c Context) {
+	s.context = c
 }
 
 func (s *Server) Run(addr string) error {
@@ -64,11 +68,11 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 
 	c, _ := s.contextPool.Get().(Context)
 	if c == nil {
-		c = s.ContextCreator(rw, req, s.templates, handlers)
+		gox.Renew(&c, s.context)
 		gox.LDebug("new context")
-	} else {
-		c.Reborn(rw, req, s.templates, handlers)
 	}
+	c.Rebuild(rw, req, s.templates, handlers)
+
 	c.Params().AddMapObj(params)
 	for k, v := range s.Header {
 		c.Header()[k] = v

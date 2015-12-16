@@ -6,8 +6,6 @@ import (
 	"net/http"
 )
 
-type NewContextFunc func(writer http.ResponseWriter, req *http.Request, templates []*template.Template, handlers []Handler) Context
-
 type Context interface {
 	HTTPRequest() *http.Request
 	Params() gox.M
@@ -26,5 +24,5 @@ type Context interface {
 	Set(key string, value interface{})
 	Get(key string) interface{}
 
-	Reborn(http.ResponseWriter, *http.Request, []*template.Template, []Handler)
+	Rebuild(http.ResponseWriter, *http.Request, []*template.Template, []Handler)
 }

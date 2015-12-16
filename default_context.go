@@ -21,27 +21,32 @@ type DefaultContext struct {
 	respHeader http.Header
 }
 
-func NewDefaultContext(rw http.ResponseWriter, req *http.Request, templates []*template.Template, handlers []Handler) Context {
-	c := &DefaultContext{}
-	c.keyValues = gox.M{}
-	c.reqHeader = make(http.Header)
-	c.respHeader = make(http.Header)
-	c.Reborn(rw, req, templates, handlers)
-	return c
-}
+func (dc *DefaultContext) Rebuild(rw http.ResponseWriter, req *http.Request, templates []*template.Template, handlers []Handler) {
+	if dc.keyValues != nil {
+		for k := range dc.keyValues {
+			delete(dc.keyValues, k)
+		}
+	} else {
+		dc.keyValues = gox.M{}
+	}
 
-func (dc *DefaultContext) Reborn(rw http.ResponseWriter, req *http.Request, templates []*template.Template, handlers []Handler) {
-	for k := range dc.keyValues {
-		delete(dc.keyValues, k)
+	if dc.reqHeader != nil {
+		for k := range dc.reqHeader {
+			delete(dc.reqHeader, k)
+		}
+	} else {
+		dc.reqHeader = make(http.Header)
 	}
-	for k := range dc.reqHeader {
-		delete(dc.reqHeader, k)
+
+	if dc.respHeader != nil {
+		for k := range dc.respHeader {
+			delete(dc.respHeader, k)
+		}
+	} else {
+		dc.respHeader = make(http.Header)
 	}
-	for k := range dc.respHeader {
-		delete(dc.respHeader, k)
-	}
+
 	dc.responded = false
-
 	dc.writer = rw
 	dc.req = req
 	dc.reqParams = gox.ParseReqParams(req)
