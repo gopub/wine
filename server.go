@@ -31,6 +31,9 @@ func Default() *Server {
 }
 
 func (s *Server) RegisterContext(c Context) {
+	if c == nil {
+		panic("wine.Server.RegisterContext register nil")
+	}
 	s.context = c
 }
 
