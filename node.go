@@ -41,10 +41,10 @@ func (n *node) conflict(nod *node) bool {
 	case staticNode:
 		if nod.path != n.path {
 			return false
-		} else {
-			if len(nod.handlers) > 0 && len(n.handlers) > 0 {
-				return true
-			}
+		}
+
+		if len(nod.handlers) > 0 && len(n.handlers) > 0 {
+			return true
 		}
 	case paramNode:
 		if len(nod.handlers) > 0 && len(n.handlers) > 0 {
