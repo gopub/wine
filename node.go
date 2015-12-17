@@ -2,7 +2,6 @@ package wine
 
 import (
 	"github.com/justintan/gox"
-	"strings"
 )
 
 type nodeType int
@@ -12,6 +11,19 @@ const (
 	paramNode    nodeType = 1 // /users/:id
 	wildcardNode nodeType = 2 // /users/:id/photos/*
 )
+
+func (n nodeType) String() string {
+	switch n {
+	case staticNode:
+		return "staticNode"
+	case paramNode:
+		return "paramNode"
+	case wildcardNode:
+		return "wildcardNode"
+	default:
+		return ""
+	}
+}
 
 type node struct {
 	t        nodeType
@@ -120,43 +132,54 @@ func (n *node) addChild(pathSegments []string, fullPath string, handlers ...Hand
 	}
 }
 
-func (n *node) match(pathSegments []string, fullPath string) (handlers []Handler, params map[string]string) {
+func (n *node) match(pathSegments []string, fullPath string) ([]Handler, map[string]string) {
 	if len(pathSegments) == 0 {
 		panic("path segments is empty")
 	}
 
-	segment := pathSegments[0]
-	if n.t == staticNode && n.path != segment {
-		return
-	}
+	//gox.LDebug(pathSegments, n.t, n.path, n.children[0].t, n.children[0].path, fullPath)
 
-	if len(pathSegments) == 1 {
-		handlers = n.handlers
-	} else {
+	segment := pathSegments[0]
+	switch n.t {
+	case staticNode:
+		if n.path != segment {
+			return nil, nil
+		}
+
+		if len(pathSegments) == 1 {
+			return n.handlers, nil
+		}
+
 		for _, child := range n.children {
-			handlers, params = child.match(pathSegments[1:], fullPath)
+			handlers, params := child.match(pathSegments[1:], fullPath)
 			if len(handlers) > 0 {
-				break
+				return handlers, params
 			}
 		}
-	}
 
-	//consider wildcard in the end
-	if len(handlers) == 0 && n.t == wildcardNode {
-		handlers = n.handlers
-		segment = strings.Join(pathSegments, "/")
-	}
-
-	if len(handlers) > 0 { //matched
-		if len(params) == 0 {
-			params = map[string]string{}
+		return nil, nil
+	case paramNode:
+		if len(pathSegments) == 1 {
+			return n.handlers, map[string]string{n.path:segment}
 		}
 
-		if n.t == paramNode {
-			params[n.path] = segment
+		for _, child := range n.children {
+			handlers, params := child.match(pathSegments[1:], fullPath)
+			if len(handlers) > 0 {
+				if params == nil {
+					params = map[string]string{}
+				}
+				params[n.path] = segment
+				return handlers, params
+			}
 		}
+
+		return nil, nil
+	case wildcardNode:
+		return n.handlers, nil
+	default:
+		return nil, nil
 	}
-	return
 }
 
 func (n *node) Print(method string, parentPath string) {

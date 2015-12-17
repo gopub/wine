@@ -6,12 +6,12 @@ import (
 )
 
 type Router interface {
-	Group(relativePath string) Router
+	Group(path string) Router
 	UseHandlers(handlers ...Handler) Router
 	Use(funcList ...HandlerFunc) Router
-	StaticFile(relativePath, filePath string)
-	StaticDir(relativePath, filePath string)
-	StaticFS(relativePath string, fs http.FileSystem)
+	StaticFile(path, filePath string)
+	StaticDir(path, filePath string)
+	StaticFS(path string, fs http.FileSystem)
 	Bind(method, path string, handlers ...Handler)
 	Match(method, path string) (handlers []Handler, params map[string]string)
 
@@ -40,18 +40,18 @@ func NewDefaultRouter() *DefaultRouter {
 	return r
 }
 
-func (dr *DefaultRouter) Group(relativePath string) Router {
-	if len(relativePath) == 0 {
+func (dr *DefaultRouter) Group(path string) Router {
+	if len(path) == 0 {
 		panic("relative path can not be empty")
 	}
 
-	if relativePath == "/" {
+	if path == "/" {
 		panic("unnecessary to create group \"/\"")
 	}
 
 	r := &DefaultRouter{}
 	r.methodTrees = dr.methodTrees
-	r.basePath = cleanPath(dr.basePath + "/" + relativePath)
+	r.basePath = cleanPath(dr.basePath + "/" + path)
 	r.handlers = make([]Handler, len(dr.handlers))
 	copy(r.handlers, dr.handlers)
 	return r
@@ -124,25 +124,25 @@ func (dr *DefaultRouter) Bind(method string, path string, handlers ...Handler) {
 	return
 }
 
-func (dr *DefaultRouter) StaticFile(relativePath, filePath string) {
-	dr.Get(relativePath, func(c Context) {
+func (dr *DefaultRouter) StaticFile(path, filePath string) {
+	dr.Get(path, func(c Context) {
 		c.File(filePath)
 	})
 	return
 }
 
-func (dr *DefaultRouter) StaticDir(relativePath, dirPath string) {
-	dr.StaticFS(relativePath, http.Dir(dirPath))
+func (dr *DefaultRouter) StaticDir(path, dirPath string) {
+	dr.StaticFS(path, http.Dir(dirPath))
 	return
 }
 
-func (dr *DefaultRouter) StaticFS(relativePath string, fs http.FileSystem) {
-	prefix := cleanPath(dr.basePath + "/" + relativePath)
+func (dr *DefaultRouter) StaticFS(path string, fs http.FileSystem) {
+	prefix := cleanPath(dr.basePath + "/" + path)
 	i := strings.Index(prefix, "*")
 	if i > 0 {
 		prefix = prefix[:i]
 	} else {
-		relativePath = cleanPath(relativePath + "/*")
+		path = cleanPath(path + "/*")
 	}
 
 	if prefix[len(prefix)-1] != '/' {
@@ -150,7 +150,7 @@ func (dr *DefaultRouter) StaticFS(relativePath string, fs http.FileSystem) {
 	}
 
 	fileServer := http.StripPrefix(prefix, http.FileServer(fs))
-	dr.Get(relativePath, func(c Context) {
+	dr.Get(path, func(c Context) {
 		c.ServeHTTP(fileServer)
 	})
 	return
