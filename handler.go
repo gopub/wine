@@ -27,6 +27,6 @@ func (h *HandlerChain) Next() Handler {
 	}
 
 	index := h.index
-	h.index += 1
+	h.index++
 	return h.handlers[index]
 }
