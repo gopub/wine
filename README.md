@@ -4,71 +4,36 @@
 
 You can use wine like,   
 
+1. Webpage server  
 		
-		func main() {
+		s := wine.Default()
+        s.StaticDir("/", "./html")
+        s.Run(":8000")
         
-        	s := wine.NewServer()
-        
-        	//Intercept all requests with wine.Logger
-        	s.Use(wine.Logger)
-        
-        	//Output html file
-        	s.StaticFile("/", "/var/www/index.html")
-        
-        	//Map path dir to local dir
-        	s.StaticDir("/html/*", "/var/www/html")
-        
-        	s.Get("users/:id/name", func(c wine.Context) {
-        		id := c.Params().GetStr("id")
-        		resp := map[string]interface{}{"name": "This is " + id + "'s name"}
-        		c.JSON(resp)
-        	})
-        
-        	//Any means methods: GET POST PUT
-        	s.Any("server-time", func(c wine.Context) {
-        		resp := map[string]interface{}{"time": time.Now().Unix()}
-        		c.JSON(resp)
-        	})
-        
-        	s.Post("update-name", auth, func(c wine.Context) {
-        		name := c.Params().GetStr("name")
-        		if len(name) == 0 {
-        			c.JSON(map[string]interface{}{"msg": "missing name"})
-        			return
-        		}
-        		c.JSON(map[string]interface{}{"msg": "new name is " + name})
-        	})
-        
-        	s.Run(":8080")
-        }
-        
-        func auth(c wine.Context) {
-        	sid := c.Params().GetStr("sid")
-        	fmt.Println(sid)
-        	//auth sid
-        	//...
-        	//simulate authorization
-        	if len(sid) > 0 {
-        		//authorized, call the next handler
-        		c.Next()
-        	} else {
-        		resp := map[string]interface{}{"msg": "authorization failed"}
-        		c.JSON(resp)
-        	}
-        }
+2. RESTFul API Server  
 
-
-Run this program:
-
-		[INFO ]  Running at :8080 ...
-        [INFO ] GET   /     github.com/justintan/wine.(*DefaultRouter).StaticFile.func1
-        [INFO ] GET   /server-time  github.com/justintan/wine.Logger, main.main.func2
-        [INFO ] GET   /users/:id/name       github.com/justintan/wine.Logger, main.main.func1
-        [INFO ] GET   /html/*       github.com/justintan/wine.Logger, github.com/justintan/wine.(*DefaultRouter).StaticFS.func1
-        [INFO ] POST  /update-name  github.com/justintan/wine.Logger, main.auth, main.main.func3
-        [INFO ] POST  /server-time  github.com/justintan/wine.Logger, main.main.func2
-        [INFO ] DELETE /server-time github.com/justintan/wine.Logger, main.main.func2
-        [INFO ] PUT   /server-time  github.com/justintan/wine.Logger, main.main.func2
-  
+        s := wine.Default()
+    
+    	s.Get("whattime", func(c wine.Context) {
+    		c.JSON(gox.M{"time": time.Now()})
+    	})
+    
+    	s.Get("users/:user_id/name", func(c wine.Context) {
+    		c.HTML(c.Params().GetStr("user_id") + "'s name is Wine")
+    	})
+    
+    	s.Post("users/:user_id/name/:name", func(c wine.Context) {
+    		c.HTML(c.Params().GetStr("user_id") + "'s new name is " + c.Params().GetStr("name"))
+    	})
+    
+    	s.Any("login", func(c wine.Context) {
+    		username := c.Params().GetStr("username")
+    		password := c.Params().GetStr("password")
+    		gox.LDebug(username, password)
+    		c.JSON(gox.M{"status": 0, "token": gox.NewUUID(), "msg": "success"})
+    	})
+    
+    	s.Run(":8000")
+        	
  
   

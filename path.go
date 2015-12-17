@@ -15,8 +15,8 @@ func cleanPath(path string) string {
 		path = "/" + path
 	}
 
-	if len(path) > 1 && path[len(path)-1] == '/' {
-		path = path[0 : len(path)-1]
+	if len(path) > 1 && path[len(path)-1] != '/' {
+		path += "/"
 	}
 
 	path = slashCleanRegexp.ReplaceAllString(path, "/")

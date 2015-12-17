@@ -68,13 +68,21 @@ func (n *node) conflict(nod *node) bool {
 }
 
 func (n *node) addChild(pathSegments []string, fullPath string, handlers ...Handler) {
-	if len(pathSegments) == 0 || len(pathSegments[0]) == 0 {
+	if len(pathSegments) == 0 {
 		panic("path segments can not be empty")
+	}
+
+	if n.t == wildcardNode {
+		panic("add child to wildcardNode")
 	}
 
 	nod := &node{}
 	segment := pathSegments[0]
-	switch segment[0] {
+	var firstChar byte
+	if len(segment) > 0 {
+		firstChar = segment[0]
+	}
+	switch firstChar {
 	case ':':
 		nod.t = paramNode
 		nod.path = segment[1:]
@@ -85,9 +93,14 @@ func (n *node) addChild(pathSegments []string, fullPath string, handlers ...Hand
 		nod.t = wildcardNode
 		nod.path = segment[1:]
 		if len(pathSegments) > 1 {
-			panic("wildcard only in the end segement")
+			if pathSegments[1] == "" {
+				pathSegments = pathSegments[0:1]
+			} else {
+				panic("wildcard only in the end segement")
+			}
 		}
 	default:
+		nod.t = staticNode
 		nod.path = segment
 	}
 
@@ -126,9 +139,11 @@ func (n *node) addChild(pathSegments []string, fullPath string, handlers ...Hand
 			n.children[i+1] = nod
 		}
 		break
-	default:
+	case wildcardNode:
 		n.children = append(n.children, nod)
 		break
+	default:
+		panic("invalid node type")
 	}
 }
 
@@ -137,44 +152,48 @@ func (n *node) match(pathSegments []string, fullPath string) ([]Handler, map[str
 		panic("path segments is empty")
 	}
 
-	//gox.LDebug(pathSegments, n.t, n.path, n.children[0].t, n.children[0].path, fullPath)
+	//gox.LDebug(pathSegments, len(pathSegments), n.t, n.path, fullPath)
 
 	segment := pathSegments[0]
 	switch n.t {
 	case staticNode:
-		if n.path != segment {
+		switch {
+		case n.path != segment:
+			return nil, nil
+		case len(pathSegments) == 1:
+			return n.handlers, nil
+		case pathSegments[1] == "" && len(n.handlers) > 0:
+			return n.handlers, nil
+		default:
+			for _, child := range n.children {
+				handlers, params := child.match(pathSegments[1:], fullPath)
+				if len(handlers) > 0 {
+					return handlers, params
+				}
+			}
+			return nil, nil
+		}
+	case paramNode:
+		switch {
+		case len(pathSegments) == 1:
+			return n.handlers, map[string]string{n.path: segment}
+		case pathSegments[1] == "" && len(n.handlers) > 0:
+			return n.handlers, map[string]string{n.path: segment}
+		default:
+			for _, child := range n.children {
+				handlers, params := child.match(pathSegments[1:], fullPath)
+				if len(handlers) > 0 {
+					if params == nil {
+						params = map[string]string{}
+					}
+					params[n.path] = segment
+					return handlers, params
+				}
+			}
+
 			return nil, nil
 		}
 
-		if len(pathSegments) == 1 {
-			return n.handlers, nil
-		}
-
-		for _, child := range n.children {
-			handlers, params := child.match(pathSegments[1:], fullPath)
-			if len(handlers) > 0 {
-				return handlers, params
-			}
-		}
-
-		return nil, nil
-	case paramNode:
-		if len(pathSegments) == 1 {
-			return n.handlers, map[string]string{n.path:segment}
-		}
-
-		for _, child := range n.children {
-			handlers, params := child.match(pathSegments[1:], fullPath)
-			if len(handlers) > 0 {
-				if params == nil {
-					params = map[string]string{}
-				}
-				params[n.path] = segment
-				return handlers, params
-			}
-		}
-
-		return nil, nil
 	case wildcardNode:
 		return n.handlers, nil
 	default:

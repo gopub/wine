@@ -79,9 +79,6 @@ func (dr *DefaultRouter) Match(method string, path string) (handlers []Handler, 
 	}
 
 	segments := strings.Split(path, "/")
-	if len(segments) > 1 && segments[len(segments)-1] == "" {
-		segments = segments[0 : len(segments)-1]
-	}
 	return n.match(segments, path)
 }
 
@@ -106,17 +103,6 @@ func (dr *DefaultRouter) Bind(method string, path string, handlers ...Handler) {
 	}
 
 	path = cleanPath(path)
-	if len(dr.basePath) == 0 {
-		if path == "/" {
-			if len(n.handlers) == 0 {
-				n.handlers = handlers
-				return
-			} else {
-				panic("path conflicts")
-			}
-		}
-	}
-
 	fullPath := cleanPath(dr.basePath + "/" + path)
 	hs := append(dr.handlers, handlers...)
 	segments := strings.Split(fullPath, "/")
