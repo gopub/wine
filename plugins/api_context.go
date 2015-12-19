@@ -9,7 +9,7 @@ import (
 
 var _, _ = gox.Context(nil).(*APIContext)
 
-//type Context wine.DefaultContext
+//implement gox.Content with wine.DefaultContext
 type APIContext struct {
 	*wine.DefaultContext
 	userID   gox.ID
