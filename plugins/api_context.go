@@ -2,19 +2,18 @@ package plugins
 
 import (
 	"github.com/justintan/gox"
-	"github.com/justintan/gox/api"
 	"github.com/justintan/wine"
 	"html/template"
 	"net/http"
 )
 
-var _, _ = api.Context(nil).(*APIContext)
+var _, _ = gox.Context(nil).(*APIContext)
 
 //type Context wine.DefaultContext
 type APIContext struct {
 	*wine.DefaultContext
 	userID   gox.ID
-	req      *api.Request
+	req      *gox.Request
 	handlers *wine.HandlerChain
 }
 
@@ -28,7 +27,7 @@ func (c *APIContext) Rebuild(rw http.ResponseWriter, req *http.Request, template
 	for k, v := range c.Header() {
 		h[k] = v
 	}
-	c.req = api.NewRequest("", h, c.Params())
+	c.req = gox.NewRequest("", h, c.Params())
 }
 
 func (c *APIContext) Next() {
@@ -37,28 +36,28 @@ func (c *APIContext) Next() {
 	}
 }
 
-func (c *APIContext) Request() *api.Request {
+func (c *APIContext) Request() *gox.Request {
 	return c.req
 }
 
-func (c *APIContext) SendResponse(resp *api.Response) {
+func (c *APIContext) SendResponse(resp *gox.Response) {
 	c.JSON(resp)
 }
 
 func (c *APIContext) SendData(data interface{}) {
-	c.SendResponse(api.NewResponse(api.OK, "", data))
+	c.SendResponse(gox.NewResponse(gox.OK, "", data))
 }
 
-func (c *APIContext) SendCode(code api.Code) {
-	c.SendResponse(api.NewResponse(code, code.String(), nil))
-	if code != api.OK {
+func (c *APIContext) SendCode(code gox.Code) {
+	c.SendResponse(gox.NewResponse(code, code.String(), nil))
+	if code != gox.OK {
 		gox.LError(code, c.HTTPRequest())
 	}
 }
 
-func (c *APIContext) SendMsg(code api.Code, msg string) {
-	c.SendResponse(api.NewResponse(code, msg, nil))
-	if code != api.OK {
+func (c *APIContext) SendMsg(code gox.Code, msg string) {
+	c.SendResponse(gox.NewResponse(code, msg, nil))
+	if code != gox.OK {
 		gox.LError(code, msg, c.HTTPRequest())
 	}
 }
