@@ -54,7 +54,11 @@ func (dc *DefaultContext) Rebuild(rw http.ResponseWriter, req *http.Request, tem
 	dc.templates = templates
 
 	for k, v := range req.Header {
-		dc.reqHeader[strings.ToLower(k)] = v
+		k = strings.ToLower(k)
+		if strings.Index(k, "x-") == 0 {
+			k = k[2:]
+		}
+		dc.reqHeader[k] = v
 	}
 }
 
