@@ -1,7 +1,6 @@
 package wine
 
 import (
-	"github.com/justintan/gox"
 	"net/http"
 	"strings"
 )
