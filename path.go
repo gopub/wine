@@ -4,7 +4,7 @@ import (
 	"regexp"
 )
 
-var slashCleanRegexp = regexp.MustCompile("/{2}")
+var slashCleanRegexp = regexp.MustCompile("/{2,}")
 
 func cleanPath(path string) string {
 	if path == "" {
