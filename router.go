@@ -1,6 +1,7 @@
 package wine
 
 import (
+	"github.com/justintan/gox"
 	"net/http"
 	"strings"
 )
@@ -104,7 +105,9 @@ func (dr *DefaultRouter) Bind(method string, path string, handlers ...Handler) {
 
 	path = cleanPath(path)
 	fullPath := cleanPath(dr.basePath + "/" + path)
-	hs := append(dr.handlers, handlers...)
+	hs := make([]Handler, len(dr.handlers))
+	copy(hs, dr.handlers)
+	hs = append(hs, handlers...)
 	segments := strings.Split(fullPath, "/")
 	n.addChild(segments[1:], fullPath, hs...)
 	return
