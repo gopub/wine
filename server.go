@@ -69,8 +69,14 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	path = cleanPath(path)
 	handlers, params := s.Match(req.Method, path)
 	if len(handlers) == 0 {
-		gox.LError("Not found[", path, "]", req)
-		http.Error(rw, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+		if path == "/favicon.ico/" || path == "/favicon.ico" {
+			rw.Header()[gox.ContentTypeName] = []string{"image/x-icon"}
+			rw.WriteHeader(http.StatusOK)
+			rw.Write(faviconBytes)
+		} else {
+			gox.LError("Not found[", path, "]", req)
+			http.Error(rw, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+		}
 		return
 	}
 
