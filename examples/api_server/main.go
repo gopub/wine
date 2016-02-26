@@ -13,6 +13,10 @@ func main() {
 		c.JSON(gox.M{"time": time.Now()})
 	})
 
+	s.Get("list/:page,:size", func(c wine.Context) {
+		c.HTML(c.Params().GetStr("page") + ", " + c.Params().GetStr("size"))
+	})
+
 	s.Get("users/:user_id/name", func(c wine.Context) {
 		c.HTML(c.Params().GetStr("user_id") + "'s name is Wine")
 	})

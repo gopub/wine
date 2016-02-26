@@ -2,6 +2,8 @@ package wine
 
 import (
 	"github.com/justintan/gox"
+	"regexp"
+	"strings"
 )
 
 type nodeType int
@@ -30,6 +32,21 @@ type node struct {
 	path     string
 	handlers []Handler
 	children []*node
+}
+
+func isValidStaticNode(path string) bool {
+	matched, _ := regexp.MatchString("[^:\\*]+", path)
+	return matched
+}
+
+func isValidWildcardNode(path string) bool {
+	matched, _ := regexp.MatchString("\\*[0-9a-zA-Z_\\-]+", path)
+	return matched
+}
+
+func isValidParamNode(path string) bool {
+	matched, _ := regexp.MatchString(":[a-zA-Z_]([a-zA-Z_0-9]+,)*", path)
+	return matched
 }
 
 func (n *node) conflict(nod *node) bool {
@@ -78,18 +95,11 @@ func (n *node) addChild(pathSegments []string, fullPath string, handlers ...Hand
 
 	nod := &node{}
 	segment := pathSegments[0]
-	var firstChar byte
-	if len(segment) > 0 {
-		firstChar = segment[0]
-	}
-	switch firstChar {
-	case ':':
+	switch {
+	case isValidParamNode(segment):
 		nod.t = paramNode
-		nod.path = segment[1:]
-		if len(nod.path) == 0 {
-			panic("invalid path: " + fullPath)
-		}
-	case '*':
+		nod.path = segment
+	case isValidWildcardNode(segment):
 		nod.t = wildcardNode
 		nod.path = segment[1:]
 		if len(pathSegments) > 1 {
@@ -99,9 +109,11 @@ func (n *node) addChild(pathSegments []string, fullPath string, handlers ...Hand
 				panic("wildcard only in the end segement")
 			}
 		}
-	default:
+	case len(segment) == 0 || isValidStaticNode(segment):
 		nod.t = staticNode
 		nod.path = segment
+	default:
+		panic("invalid path: " + fullPath)
 	}
 
 	if len(pathSegments) == 1 {
@@ -152,8 +164,6 @@ func (n *node) match(pathSegments []string, fullPath string) ([]Handler, map[str
 		panic("path segments is empty")
 	}
 
-	//gox.LDebug(pathSegments, len(pathSegments), n.t, n.path, fullPath)
-
 	segment := pathSegments[0]
 	switch n.t {
 	case staticNode:
@@ -186,14 +196,21 @@ func (n *node) match(pathSegments []string, fullPath string) ([]Handler, map[str
 					if params == nil {
 						params = map[string]string{}
 					}
-					params[n.path] = segment
+
+					strs := strings.Split(n.path, ",")
+					segs := strings.Split(segment, ",")
+					if len(segs) != len(strs) {
+						return nil, nil
+					}
+					for i, s := range strs {
+						params[s[1:]] = segs[i]
+					}
 					return handlers, params
 				}
 			}
 
 			return nil, nil
 		}
-
 	case wildcardNode:
 		return n.handlers, nil
 	default:
@@ -207,7 +224,7 @@ func (n *node) Print(method string, parentPath string) {
 	case staticNode:
 		path = parentPath + "/" + n.path
 	case paramNode:
-		path = parentPath + "/:" + n.path
+		path = parentPath + "/" + n.path
 	default:
 		path = parentPath + "/*" + n.path
 	}
