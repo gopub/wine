@@ -45,19 +45,19 @@ func (c *APIContext) SendResponse(resp *gox.Response) {
 }
 
 func (c *APIContext) SendData(data interface{}) {
-	c.SendResponse(gox.NewResponse(gox.OK, "", data))
+	c.SendResponse(gox.NewResponse(0, "", data))
 }
 
-func (c *APIContext) SendCode(code gox.Code) {
-	c.SendResponse(gox.NewResponse(code, code.String(), nil))
-	if code != gox.OK {
+func (c *APIContext) SendCode(code int) {
+	c.SendResponse(gox.NewResponse(code, "", nil))
+	if code != 0 {
 		gox.LError(code, c.HTTPRequest())
 	}
 }
 
-func (c *APIContext) SendMsg(code gox.Code, msg string) {
+func (c *APIContext) SendMsg(code int, msg string) {
 	c.SendResponse(gox.NewResponse(code, msg, nil))
-	if code != gox.OK {
+	if code != 0 {
 		gox.LError(code, msg, c.HTTPRequest())
 	}
 }
