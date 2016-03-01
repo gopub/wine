@@ -28,10 +28,11 @@ func (n nodeType) String() string {
 }
 
 type node struct {
-	t        nodeType
-	path     string
-	handlers []Handler
-	children []*node
+	t          nodeType
+	path       string
+	paramNames []string
+	handlers   []Handler
+	children   []*node
 }
 
 func isValidStaticNode(path string) bool {
@@ -50,6 +51,7 @@ func isValidParamNode(path string) bool {
 }
 
 func (n *node) conflict(nod *node) bool {
+	gox.LDebug(n, nod)
 	if nod.t != n.t {
 		return false
 	}
@@ -64,6 +66,10 @@ func (n *node) conflict(nod *node) bool {
 			return true
 		}
 	case paramNode:
+		if len(nod.paramNames) != len(n.paramNames) {
+			return false
+		}
+
 		if len(nod.handlers) > 0 && len(n.handlers) > 0 {
 			return true
 		}
@@ -99,6 +105,10 @@ func (n *node) addChild(pathSegments []string, fullPath string, handlers ...Hand
 	case isValidParamNode(segment):
 		nod.t = paramNode
 		nod.path = segment
+		nod.paramNames = strings.Split(segment, ",")
+		for i, pn := range nod.paramNames {
+			nod.paramNames[i] = pn[1:]
+		}
 	case isValidWildcardNode(segment):
 		nod.t = wildcardNode
 		nod.path = segment[1:]
@@ -197,13 +207,12 @@ func (n *node) match(pathSegments []string, fullPath string) ([]Handler, map[str
 						params = map[string]string{}
 					}
 
-					strs := strings.Split(n.path, ",")
 					segs := strings.Split(segment, ",")
-					if len(segs) != len(strs) {
+					if len(segs) != len(n.paramNames) {
 						return nil, nil
 					}
-					for i, s := range strs {
-						params[s[1:]] = segs[i]
+					for i, s := range n.paramNames {
+						params[s] = segs[i]
 					}
 					return handlers, params
 				}
