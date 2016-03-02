@@ -1,8 +1,10 @@
 package wine
 
 import (
-	"github.com/justintan/gox"
+	"log"
+	"reflect"
 	"regexp"
+	"runtime"
 	"strings"
 )
 
@@ -51,7 +53,6 @@ func isValidParamNode(path string) bool {
 }
 
 func (n *node) conflict(nod *node) bool {
-	gox.LDebug(n, nod)
 	if nod.t != n.t {
 		return false
 	}
@@ -248,12 +249,12 @@ func (n *node) Print(method string, parentPath string) {
 			}
 
 			if f, ok := h.(HandlerFunc); ok {
-				hNames += gox.GetFuncName(f)
+				hNames += runtime.FuncForPC(reflect.ValueOf(f).Pointer()).Name()
 			} else {
-				hNames += gox.GetTypeName(h)
+				hNames += reflect.TypeOf(h).Name()
 			}
 		}
-		gox.LInfof("%-5s %s\t%s", method, path, hNames)
+		log.Printf("%-5s %s\t%s", method, path, hNames)
 	}
 
 	for _, nod := range n.children {

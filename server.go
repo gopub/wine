@@ -1,12 +1,25 @@
 package wine
 
 import (
-	"github.com/justintan/gox"
 	"html/template"
+	"log"
 	"net/http"
+	"reflect"
 	"strings"
 	"sync"
 )
+
+func renew(ptrDst interface{}, src interface{}) {
+	pdv := reflect.ValueOf(ptrDst)
+	sv := reflect.ValueOf(src)
+	if sv.Kind() == reflect.Ptr {
+		//注意Type().Elem()与Elem().Type()的区别,sv的值为空时,后者会panic
+		//Value和Type是两套体系, Value可能会为空值,但是Type总是有效的,因此走Type这条分支取指向的Type
+		pdv.Elem().Set(reflect.New(sv.Type().Elem()))
+	} else {
+		pdv.Elem().Set(reflect.Zero(sv.Type()))
+	}
+}
 
 type Server struct {
 	Router
@@ -39,14 +52,13 @@ func (s *Server) RegisterContext(c Context) {
 
 func (s *Server) newContext() interface{} {
 	var c Context
-	gox.Renew(&c, s.context)
-	gox.LDebug("new context")
+	renew(&c, s.context)
 	return c
 }
 
 func (s *Server) Run(addr string) error {
 	s.contextPool.New = s.newContext
-	gox.LInfo("Running wine server at", addr, "...")
+	log.Println("Running wine server", addr, "...")
 	if r, ok := s.Router.(*DefaultRouter); ok {
 		r.Print()
 	}
@@ -57,7 +69,7 @@ func (s *Server) Run(addr string) error {
 func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	defer func() {
 		if e := recover(); e != nil {
-			gox.LError("ServeHTTP", e, req)
+			log.Println("ServeHTTP", e, req)
 		}
 	}()
 
@@ -70,11 +82,11 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	handlers, params := s.Match(req.Method, path)
 	if len(handlers) == 0 {
 		if path == "/favicon.ico/" || path == "/favicon.ico" {
-			rw.Header()[gox.ContentTypeName] = []string{"image/x-icon"}
+			rw.Header()["Content-Type"] = []string{"image/x-icon"}
 			rw.WriteHeader(http.StatusOK)
 			rw.Write(faviconBytes)
 		} else {
-			gox.LError("Not found[", path, "]", req)
+			log.Println("Not found[", path, "]", req)
 			http.Error(rw, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 		}
 		return

@@ -1,15 +1,15 @@
 package wine
 
 import (
-	"github.com/justintan/gox"
 	"github.com/justintan/wine/render"
+	"github.com/justintan/xtypes"
 	"html/template"
 	"net/http"
 	"strings"
 )
 
 type DefaultContext struct {
-	keyValues gox.M
+	keyValues xtypes.M
 	writer    http.ResponseWriter
 	responded bool
 	templates []*template.Template
@@ -17,7 +17,7 @@ type DefaultContext struct {
 
 	req        *http.Request
 	reqHeader  http.Header
-	reqParams  gox.M
+	reqParams  xtypes.M
 	respHeader http.Header
 }
 
@@ -27,7 +27,7 @@ func (dc *DefaultContext) Rebuild(rw http.ResponseWriter, req *http.Request, tem
 			delete(dc.keyValues, k)
 		}
 	} else {
-		dc.keyValues = gox.M{}
+		dc.keyValues = xtypes.M{}
 	}
 
 	if dc.reqHeader != nil {
@@ -49,7 +49,7 @@ func (dc *DefaultContext) Rebuild(rw http.ResponseWriter, req *http.Request, tem
 	dc.responded = false
 	dc.writer = rw
 	dc.req = req
-	dc.reqParams = gox.ParseReqParams(req)
+	dc.reqParams = parseHTTPReq(req)
 	dc.handlers = NewHandlerChain(handlers)
 	dc.templates = templates
 
@@ -80,7 +80,7 @@ func (dc *DefaultContext) HTTPRequest() *http.Request {
 	return dc.req
 }
 
-func (dc *DefaultContext) Params() gox.M {
+func (dc *DefaultContext) Params() xtypes.M {
 	return dc.reqParams
 }
 
@@ -129,7 +129,7 @@ func (dc *DefaultContext) HTML(htmlText string) {
 	render.HTML(dc.writer, htmlText)
 }
 
-func (dc *DefaultContext) TemplateHTML(templateName string, params gox.M) {
+func (dc *DefaultContext) TemplateHTML(templateName string, params xtypes.M) {
 	for _, tpl := range dc.templates {
 		err := render.TemplateHTML(dc.writer, tpl, templateName, params)
 		if err == nil {

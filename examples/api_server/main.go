@@ -1,8 +1,9 @@
 package main
 
 import (
-	"github.com/justintan/gox"
 	"github.com/justintan/wine"
+	"github.com/justintan/xtypes"
+	"log"
 	"time"
 )
 
@@ -10,7 +11,7 @@ func main() {
 	s := wine.Default()
 
 	s.Get("whattime", func(c wine.Context) {
-		c.JSON(gox.M{"time": time.Now()})
+		c.JSON(xtypes.M{"time": time.Now()})
 	})
 
 	s.Get("users/:page,:size", func(c wine.Context) {
@@ -32,8 +33,8 @@ func main() {
 	s.Any("login", func(c wine.Context) {
 		username := c.Params().GetStr("username")
 		password := c.Params().GetStr("password")
-		gox.LDebug(username, password)
-		c.JSON(gox.M{"status": 0, "token": gox.NewUUID(), "msg": "success"})
+		log.Println(username, password)
+		c.JSON(xtypes.M{"status": 0, "token": xtypes.NewUUID(), "msg": "success"})
 	})
 
 	s.Run(":8000")
