@@ -1,15 +1,15 @@
 package wine
 
 import (
+	"github.com/justintan/gox/types"
 	"github.com/justintan/wine/render"
-	"github.com/justintan/xtypes"
 	"html/template"
 	"net/http"
 	"strings"
 )
 
 type DefaultContext struct {
-	keyValues xtypes.M
+	keyValues types.M
 	writer    http.ResponseWriter
 	responded bool
 	templates []*template.Template
@@ -17,7 +17,7 @@ type DefaultContext struct {
 
 	req        *http.Request
 	reqHeader  http.Header
-	reqParams  xtypes.M
+	reqParams  types.M
 	respHeader http.Header
 }
 
@@ -27,7 +27,7 @@ func (dc *DefaultContext) Rebuild(rw http.ResponseWriter, req *http.Request, tem
 			delete(dc.keyValues, k)
 		}
 	} else {
-		dc.keyValues = xtypes.M{}
+		dc.keyValues = types.M{}
 	}
 
 	if dc.reqHeader != nil {
@@ -80,7 +80,7 @@ func (dc *DefaultContext) HTTPRequest() *http.Request {
 	return dc.req
 }
 
-func (dc *DefaultContext) Params() xtypes.M {
+func (dc *DefaultContext) Params() types.M {
 	return dc.reqParams
 }
 
@@ -129,7 +129,7 @@ func (dc *DefaultContext) HTML(htmlText string) {
 	render.HTML(dc.writer, htmlText)
 }
 
-func (dc *DefaultContext) TemplateHTML(templateName string, params xtypes.M) {
+func (dc *DefaultContext) TemplateHTML(templateName string, params types.M) {
 	for _, tpl := range dc.templates {
 		err := render.TemplateHTML(dc.writer, tpl, templateName, params)
 		if err == nil {

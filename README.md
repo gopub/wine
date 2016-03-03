@@ -15,7 +15,7 @@ You can use wine like,
         s := wine.Default()
     
     	s.Get("whattime", func(c wine.Context) {
-    		c.JSON(xtypes.M{"time": time.Now()})
+    		c.JSON(types.M{"time": time.Now()})
     	})
     
     	s.Get("users/:user_id/name", func(c wine.Context) {
@@ -30,7 +30,7 @@ You can use wine like,
     		username := c.Params().GetStr("username")
     		password := c.Params().GetStr("password")
     		fmt.Println(username, password)
-    		c.JSON(xtypes.M{"status": 0, "token": gox.NewUUID(), "msg": "success"})
+    		c.JSON(types.M{"status": 0, "token": gox.NewUUID(), "msg": "success"})
     	})
     
     	s.Run(":8000")

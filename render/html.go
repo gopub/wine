@@ -1,13 +1,14 @@
 package render
 
 import (
-	"github.com/justintan/xtypes"
+	ghttp "github.com/justintan/gox/http"
+	"github.com/justintan/gox/types"
 	"html/template"
 	"net/http"
 )
 
-func TemplateHTML(writer http.ResponseWriter, tpl *template.Template, name string, params xtypes.M) error {
-	writer.Header()["Content-Type"] = []string{xtypes.MIMEHTML + "; charset=utf-8"}
+func TemplateHTML(writer http.ResponseWriter, tpl *template.Template, name string, params types.M) error {
+	writer.Header()["Content-Type"] = []string{ghttp.MIMEHTML + "; charset=utf-8"}
 	if len(name) == 0 {
 		return tpl.Execute(writer, params)
 	}
@@ -16,6 +17,6 @@ func TemplateHTML(writer http.ResponseWriter, tpl *template.Template, name strin
 }
 
 func HTML(writer http.ResponseWriter, htmlText string) {
-	writer.Header()["Content-Type"] = []string{xtypes.MIMEHTML + "; charset=utf-8"}
+	writer.Header()["Content-Type"] = []string{ghttp.MIMEHTML + "; charset=utf-8"}
 	writer.Write([]byte(htmlText))
 }

@@ -1,14 +1,14 @@
 package wine
 
 import (
-	"github.com/justintan/xtypes"
+	"github.com/justintan/gox/types"
 	"html/template"
 	"net/http"
 )
 
 type Context interface {
 	HTTPRequest() *http.Request
-	Params() xtypes.M
+	Params() types.M
 	Header() http.Header
 
 	Next()
@@ -18,7 +18,7 @@ type Context interface {
 	JSON(obj interface{})
 	File(filePath string)
 	HTML(htmlText string)
-	TemplateHTML(templateName string, params xtypes.M)
+	TemplateHTML(templateName string, params types.M)
 	ServeHTTP(h http.Handler)
 
 	Set(key string, value interface{})

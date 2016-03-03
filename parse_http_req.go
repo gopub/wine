@@ -5,14 +5,15 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/jsix/gof/log"
-	"github.com/justintan/xtypes"
+	ghttp "github.com/justintan/gox/http"
+	"github.com/justintan/gox/types"
 	"io/ioutil"
 	"net/http"
 	"strings"
 )
 
-func parseHTTPReq(req *http.Request) (params xtypes.M) {
-	params = xtypes.M{}
+func parseHTTPReq(req *http.Request) (params types.M) {
+	params = types.M{}
 	for _, cookie := range req.Cookies() {
 		params[cookie.Name] = cookie.Value
 	}
@@ -28,9 +29,9 @@ func parseHTTPReq(req *http.Request) (params xtypes.M) {
 	}
 
 	switch contentType {
-	case xtypes.MIMEHTML, xtypes.MIMEPlain:
+	case ghttp.MIMEHTML, ghttp.MIMEPlain:
 		break
-	case xtypes.MIMEJSON:
+	case ghttp.MIMEJSON:
 		d, e := ioutil.ReadAll(req.Body)
 		if e != nil {
 			log.PrintErr(e)
@@ -38,17 +39,17 @@ func parseHTTPReq(req *http.Request) (params xtypes.M) {
 		}
 
 		if len(d) > 0 {
-			var m xtypes.M
+			var m types.M
 			e = jsonUnmarshal(d, &m)
 			if e != nil {
 				break
 			}
 			params.AddM(m)
 		}
-	case xtypes.MIMEPOSTForm:
+	case ghttp.MIMEPOSTForm:
 		req.ParseForm()
 		params.AddM(convertToM(req.Form))
-	case xtypes.MIMEMultipartPOSTForm:
+	case ghttp.MIMEMultipartPOSTForm:
 		req.ParseMultipartForm(32 << 20)
 		if req.MultipartForm != nil && req.MultipartForm.File != nil {
 			params.AddM(convertToM(req.MultipartForm.Value))
@@ -63,8 +64,8 @@ func parseHTTPReq(req *http.Request) (params xtypes.M) {
 	return
 }
 
-func convertToM(values map[string][]string) xtypes.M {
-	m := xtypes.M{}
+func convertToM(values map[string][]string) types.M {
+	m := types.M{}
 	for k, v := range values {
 		i := strings.Index(k, "[]")
 		if i >= 0 && i == len(k)-2 {
