@@ -1,39 +1,58 @@
-# wine
-### A lightweight RESTful API Server implemented in golang
-### Still in progress...
+# WINE
 
-You can use wine like,   
+Wine is a lightweight web framework for quickly writing web applications/services in Golang. 
 
-1. Webpage server  
-		
-		s := wine.Default()
-        s.StaticDir("/", "./html")
-        s.Run(":8000")
+## Install  
+
+        $ go get -u -v github.com/justintan/wine
+
+## Quick start  
+Create ./hello.go  
         
-2. RESTFul API Server  
+        package main
+        
+        import "github.com/justintan/wine"
+        
+        func main() {
+        	s := wine.Default()
+        	s.Get("/hello", func(c wine.Context) {
+        		c.Text("Hello, Wine!")
+        	})
+        	s.Run(":8000")
+        }
+Run and test:  
+
+        $ go run hello.go
+        $ curl http://localhost:8000/hello
+        $ Hello, Wine!
+        
+
+## JSON Rendering
 
         s := wine.Default()
-    
-    	s.Get("whattime", func(c wine.Context) {
-    		c.JSON(types.M{"time": time.Now()})
-    	})
-    
-    	s.Get("users/:user_id/name", func(c wine.Context) {
-    		c.HTML(c.Params().GetStr("user_id") + "'s name is Wine")
-    	})
-    
-    	s.Post("users/:user_id/name/:name", func(c wine.Context) {
-    		c.HTML(c.Params().GetStr("user_id") + "'s new name is " + c.Params().GetStr("name"))
-    	})
-    
-    	s.Any("login", func(c wine.Context) {
-    		username := c.Params().GetStr("username")
-    		password := c.Params().GetStr("password")
-    		fmt.Println(username, password)
-    		c.JSON(types.M{"status": 0, "token": types.NewUUID(), "msg": "success"})
-    	})
-    
-    	s.Run(":8000")
+        s.Get("/time", func(c wine.Context) {
+        	c.JSON(map[string]interface{}{"time":time.Now().Unix()})
+        })
+        s.Run(":8000")
+        
+## Path Parameters
+Single parameter in a path segment
+
+        s := wine.Default()
+        s.Get("/items/:id", func(c wine.Context) {
+        	id := c.Params().GetStr("id")
+        	c.Text("item id: " + id)
+        })
+        s.Run(":8000")
+        
+Multiple parameters in a path segment   
+     
+        s.Get("/items/:page,:size", func(c wine.Context) {
+        	page := c.Params().GetInt("page")
+        	size := c.Params().GetInt("size")
+        	c.Text("page:" + strconv.Itoa(page) + " size:" + strconv.Itoa(size))
+        })
+
         	
  
   

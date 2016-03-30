@@ -18,6 +18,7 @@ type Context interface {
 	JSON(obj interface{})
 	File(filePath string)
 	HTML(htmlText string)
+	Text(text string)
 	TemplateHTML(templateName string, params types.M)
 	ServeHTTP(h http.Handler)
 

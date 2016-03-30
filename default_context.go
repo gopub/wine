@@ -129,6 +129,11 @@ func (dc *DefaultContext) HTML(htmlText string) {
 	render.HTML(dc.writer, htmlText)
 }
 
+func (dc *DefaultContext) Text(text string) {
+	dc.setResponded()
+	render.Text(dc.writer, text)
+}
+
 func (dc *DefaultContext) TemplateHTML(templateName string, params types.M) {
 	for _, tpl := range dc.templates {
 		err := render.TemplateHTML(dc.writer, tpl, templateName, params)
