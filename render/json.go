@@ -3,7 +3,6 @@ package render
 import (
 	"encoding/json"
 	ghttp "github.com/justintan/gox/http"
-
 	"net/http"
 )
 
