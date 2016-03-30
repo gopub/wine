@@ -98,7 +98,7 @@ func (dc *DefaultContext) Responded() bool {
 
 func (dc *DefaultContext) setResponded() {
 	if dc.responded {
-		panic("can't respond twice")
+		panic("[WINE] already responded")
 	}
 	dc.responded = true
 }

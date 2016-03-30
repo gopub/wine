@@ -77,7 +77,7 @@ func (n *node) conflict(nod *node) bool {
 	case wildcardNode:
 		return true
 	default:
-		panic("unknown node type")
+		panic("[WINE] invalid node type")
 	}
 
 	for _, c1 := range nod.children {
@@ -93,11 +93,11 @@ func (n *node) conflict(nod *node) bool {
 
 func (n *node) addChild(pathSegments []string, fullPath string, handlers ...Handler) {
 	if len(pathSegments) == 0 {
-		panic("path segments can not be empty")
+		panic("[WINE] pathSegments is empty")
 	}
 
 	if n.t == wildcardNode {
-		panic("add child to wildcardNode")
+		panic("[WINE] forbidden to add child to wildcardNode")
 	}
 
 	nod := &node{}
@@ -117,14 +117,14 @@ func (n *node) addChild(pathSegments []string, fullPath string, handlers ...Hand
 			if pathSegments[1] == "" {
 				pathSegments = pathSegments[0:1]
 			} else {
-				panic("wildcard only in the end segement")
+				panic("[WINE] wildcard node only allowed at the end")
 			}
 		}
 	case len(segment) == 0 || isValidStaticNode(segment):
 		nod.t = staticNode
 		nod.path = segment
 	default:
-		panic("invalid path: " + fullPath)
+		panic("[WINE] invalid path: " + fullPath)
 	}
 
 	if len(pathSegments) == 1 {
@@ -135,7 +135,7 @@ func (n *node) addChild(pathSegments []string, fullPath string, handlers ...Hand
 
 	for _, child := range n.children {
 		if child.conflict(nod) {
-			panic("duplicate path " + fullPath)
+			panic("[WINE] duplicate path: " + fullPath)
 		}
 	}
 
@@ -166,13 +166,13 @@ func (n *node) addChild(pathSegments []string, fullPath string, handlers ...Hand
 		n.children = append(n.children, nod)
 		break
 	default:
-		panic("invalid node type")
+		panic("[WINE] invalid node type")
 	}
 }
 
 func (n *node) match(pathSegments []string, fullPath string) ([]Handler, map[string]string) {
 	if len(pathSegments) == 0 {
-		panic("path segments is empty")
+		panic("[WINE] pathSegments is empty")
 	}
 
 	segment := pathSegments[0]
@@ -254,7 +254,7 @@ func (n *node) Print(method string, parentPath string) {
 				hNames += reflect.TypeOf(h).Name()
 			}
 		}
-		log.Printf("%-5s %s\t%s", method, path, hNames)
+		log.Printf("[WINE] %-5s %s\t%s", method, path, hNames)
 	}
 
 	for _, nod := range n.children {

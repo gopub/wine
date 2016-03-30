@@ -56,7 +56,7 @@ func parseHTTPReq(req *http.Request) (params types.M) {
 		}
 	default:
 		if len(contentType) > 0 {
-			log.PrintErr(errors.New("unsupported content type"))
+			log.PrintErr(errors.New("[WINE] unsupported content type"))
 		}
 		break
 	}
@@ -84,7 +84,7 @@ func convertToM(values map[string][]string) types.M {
 
 func jsonUnmarshal(data []byte, pJSONObj interface{}) error {
 	if len(data) == 0 {
-		return errors.New("data is empty")
+		return errors.New("[WINE] data is empty")
 	}
 	decoder := json.NewDecoder(bytes.NewBuffer(data))
 	decoder.UseNumber()

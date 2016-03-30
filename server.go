@@ -45,7 +45,7 @@ func Default() *Server {
 
 func (s *Server) RegisterContext(c Context) {
 	if c == nil {
-		panic("wine.Server.RegisterContext register nil")
+		panic("[WINE] c is nil")
 	}
 	s.context = c
 }
@@ -58,7 +58,7 @@ func (s *Server) newContext() interface{} {
 
 func (s *Server) Run(addr string) error {
 	s.contextPool.New = s.newContext
-	log.Println("Running wine server", addr, "...")
+	log.Println("[WINE] Running at", addr, "...")
 	if r, ok := s.Router.(*DefaultRouter); ok {
 		r.Print()
 	}
@@ -69,7 +69,7 @@ func (s *Server) Run(addr string) error {
 func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	defer func() {
 		if e := recover(); e != nil {
-			log.Println("ServeHTTP", e, req)
+			log.Println("[WINE] ServeHTTP", e, req)
 		}
 	}()
 
@@ -86,7 +86,7 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 			rw.WriteHeader(http.StatusOK)
 			rw.Write(faviconBytes)
 		} else {
-			log.Println("Not found[", path, "]", req)
+			log.Println("[WINE] Not found[", path, "]", req)
 			http.Error(rw, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 		}
 		return

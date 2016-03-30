@@ -30,7 +30,7 @@ You can use wine like,
     		username := c.Params().GetStr("username")
     		password := c.Params().GetStr("password")
     		fmt.Println(username, password)
-    		c.JSON(types.M{"status": 0, "token": gox.NewUUID(), "msg": "success"})
+    		c.JSON(types.M{"status": 0, "token": types.NewUUID(), "msg": "success"})
     	})
     
     	s.Run(":8000")

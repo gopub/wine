@@ -20,7 +20,7 @@ func Logger(c Context) {
 	st := time.Now()
 	c.Next()
 	cost := float32((time.Since(st) / time.Microsecond)) / 1000.0
-	log.Printf("%.3fms %v%s%v %s",
+	log.Printf("[WINE] %.3fms %v%s%v %s",
 		cost,
 		GreenColor,
 		c.HTTPRequest().Method,

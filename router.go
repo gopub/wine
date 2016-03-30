@@ -42,11 +42,11 @@ func NewDefaultRouter() *DefaultRouter {
 
 func (dr *DefaultRouter) Group(path string) Router {
 	if len(path) == 0 {
-		panic("relative path can not be empty")
+		panic("[WINE] group path is empty")
 	}
 
 	if path == "/" {
-		panic("unnecessary to create group \"/\"")
+		panic("[WINE] don't create default group \"/\"")
 	}
 
 	r := &DefaultRouter{}
@@ -84,15 +84,15 @@ func (dr *DefaultRouter) Match(method string, path string) (handlers []Handler, 
 
 func (dr *DefaultRouter) Bind(method string, path string, handlers ...Handler) {
 	if path == "" {
-		panic("path can not be empty")
+		panic("[WINE] invalid path")
 	}
 
 	if len(method) == 0 {
-		panic("method can not be empty")
+		panic("[WINE] invalid method")
 	}
 
 	if len(handlers) == 0 {
-		panic("requre at least one handler")
+		panic("[WINE] no handler")
 	}
 
 	n := dr.methodTrees[method]
