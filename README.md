@@ -38,22 +38,22 @@ Run and test:
 ## Path Parameters
 Single parameter in one segment
 <pre>
-    s := wine.Default() <br/>
-    s.Get("/items/<b>:id</b>", func(c wine.Context) { <br/>
-        id := c.Params().GetStr("id") <br/>
-        c.Text("item id: " + id) <br/>
-    }) <br/>
+    s := wine.Default() 
+    s.Get("/items/<b>:id</b>", func(c wine.Context) { 
+        id := c.Params().GetStr("id") 
+        c.Text("item id: " + id) 
+    }) 
     s.Run(":8000")
 </pre>
         
 Multiple parameters in one segment   
 <pre>
-    s := wine.Default() <br/>
-    s.Get("/items/<b>:page,:size</b>", func(c wine.Context) { <br/>
-        page := c.Params().GetInt("page") <br/>
-        size := c.Params().GetInt("size") <br/>
-        c.Text("page:" + strconv.Itoa(page) + " size:" + strconv.Itoa(size)) <br/>
-    }) <br/>
+    s := wine.Default() 
+    s.Get("/items/<b>:page,:size</b>", func(c wine.Context) { 
+        page := c.Params().GetInt("page") 
+        size := c.Params().GetInt("size") 
+        c.Text("page:" + strconv.Itoa(page) + " size:" + strconv.Itoa(size)) 
+    }) 
     s.Run(":8000")
 </pre>
 
