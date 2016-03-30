@@ -2,12 +2,22 @@ package main
 
 import (
 	"github.com/justintan/wine"
+	"log"
 	"strconv"
 	"time"
 )
 
+func Logger(c wine.Context) {
+	st := time.Now()
+	c.Next()
+	cost := float32((time.Since(st) / time.Microsecond)) / 1000.0
+	req := c.HTTPRequest()
+	log.Printf("[WINE] %.3fms %s %s", cost, req.Method, req.RequestURI)
+}
+
 func main() {
-	s := wine.Default()
+	s := wine.NewServer()
+	s.Use(Logger)
 	s.Get("/hello", func(c wine.Context) {
 		c.Text("Hello, Wine!")
 	})

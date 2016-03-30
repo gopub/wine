@@ -36,23 +36,51 @@ Run and test:
         s.Run(":8000")
         
 ## Path Parameters
-Single parameter in a path segment
+Single parameter in one segment
+<pre>
+    s := wine.Default() <br/>
+    s.Get("/items/<b>:id</b>", func(c wine.Context) { <br/>
+        id := c.Params().GetStr("id") <br/>
+        c.Text("item id: " + id) <br/>
+    }) <br/>
+    s.Run(":8000")
+</pre>
+        
+Multiple parameters in one segment   
+<pre>
+    s := wine.Default() <br/>
+    s.Get("/items/<b>:page,:size</b>", func(c wine.Context) { <br/>
+        page := c.Params().GetInt("page") <br/>
+        size := c.Params().GetInt("size") <br/>
+        c.Text("page:" + strconv.Itoa(page) + " size:" + strconv.Itoa(size)) <br/>
+    }) <br/>
+    s.Run(":8000")
+</pre>
 
-        s := wine.Default()
-        s.Get("/items/:id", func(c wine.Context) {
-        	id := c.Params().GetStr("id")
-        	c.Text("item id: " + id)
+## Use Middlewares
+Use middlewares to intercept and preprocess requests  
+
+    //Custom middleware
+    func Logger(c wine.Context) {
+    	st := time.Now()
+    	
+    	//call Next() to pass request to the next handler
+    	c.Next() 
+    	
+    	cost := float32((time.Since(st) / time.Microsecond)) / 1000.0
+    	req := c.HTTPRequest()
+    	log.Printf("[WINE] %.3fms %s %s", cost, req.Method, req.RequestURI)
+    }
+    
+    func main() {
+    	s := wine.NewServer()
+    	
+    	//Use middleware Logger
+    	s.Use(Logger)
+    	
+    	s.Get("/hello", func(c wine.Context) {
+    		c.Text("Hello, Wine!")
         })
         s.Run(":8000")
-        
-Multiple parameters in a path segment   
-     
-        s.Get("/items/:page,:size", func(c wine.Context) {
-        	page := c.Params().GetInt("page")
-        	size := c.Params().GetInt("size")
-        	c.Text("page:" + strconv.Itoa(page) + " size:" + strconv.Itoa(size))
-        })
-
-        	
- 
+    }
   
