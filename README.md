@@ -145,3 +145,91 @@ Run it:
     [WINE] GET   /time/ main.GetServerTime
     [WINE] GET   /accounts/:user_id/friends/:page,:size/    main.CheckSessionID, main.GetUserFriends
     [WINE] GET   /accounts/:user_id/profile/    main.CheckSessionID, main.GetUserProfile
+
+## Model Binding
+
+    type Coordinate struct {
+    	Lat float64 `json:"lat" param:"lat"`
+    	Lng float64 `json:"lng" param:"lng"`
+    }
+    
+    type User struct {
+    	ID         int         `json:"id" param:"-"`
+    	Name       string      `json:"name" param:"name"`
+    	Password   string      `json:"-" param:"password"`
+    	Coordinate *Coordinate `json:"coordinate" param:"coordinate"`
+    }
+    
+    func main() {
+    	s := wine.Default()
+    	s.Post("register", func(c wine.Context) {
+    		u := &User{}
+    		c.Params().AssignTo(u, "param")
+    		c.JSON(u)
+    	})
+    	s.Run(":8000")
+    }
+Test:
+    
+    $ curl -X POST -H "Content-Type:application/json" 
+           -d '{"name":"tom", "password":"123", "coordinate":{"lat":21, "lng":90.0}}' 
+           http://localhost:8000/register
+Response:
+
+    {
+         "id": 1,
+         "name": "tom",
+         "coordinate": {
+             "lat": 21,
+             "lng": 90
+         }
+    }
+## Custom Context
+Custom context to add more features. 
+e.g. Create MyContext to support SendResponse method 
+
+    type MyContext struct {
+    	*wine.DefaultContext
+    	handlers *wine.HandlerChain
+    }
+    
+    func (c *MyContext) Rebuild(rw http.ResponseWriter, req *http.Request, templates []*template.Template, handlers []wine.Handler) {
+    	if c.DefaultContext == nil {
+    		c.DefaultContext = &wine.DefaultContext{}
+    	}
+    	c.DefaultContext.Rebuild(rw, req, templates, handlers)
+    	c.handlers = wine.NewHandlerChain(handlers)
+    }
+    
+    func (c *MyContext) Next() {
+    	if h := c.handlers.Next(); h != nil {
+    		h.HandleRequest(c)
+    	}
+    }
+    
+    func (c *MyContext) SendResponse(code int, msg string, data interface{}) {
+    	c.JSON(map[string]interface{}{"code": code, "data": data, "msg": msg})
+    }
+    
+    
+    func main() {
+    	s := wine.Default()
+    	s.RegisterContext(&MyContext{})
+    	s.Get("time", func(c wine.Context) {
+    		ctx := c.(*MyContext)
+    		ctx.SendResponse(0, "", time.Now().Unix())
+    	})
+    	s.Run(":8000")
+    }
+Test:  
+
+    $ curl http://localhost:8000/time
+Response:  
+
+    {
+        "code": 0,
+        "data": 1459404100,
+        "msg": ""
+    }    
+## Recommendations
+    Wine which is designed for modular web applications/services is not a general purpose web server. It should be used behind a web server such as Nginx, Caddy which provide compression, security features.
