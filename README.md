@@ -34,9 +34,29 @@ Run and test:
         	c.JSON(map[string]interface{}{"time":time.Now().Unix()})
         })
         s.Run(":8000")
-        
-## Path Parameters
-Single parameter in one segment
+
+## Parameters
+Context.Params() provides an uniform interface to retrieve request parameters, which might be in query string, http body, url path, etc. Form and json are supported.  
+
+        s := wine.Default()
+        s.Post("feedback", func(c wine.Context) {
+            text := c.Params().GetStr("text")
+            email := c.Params().GetStr("email")
+            c.Text("Feedback:" + text + " from " + email)
+        })
+        s.Run(":8000")
+Test parameters in query string
+
+        $ curl -X POST "http://localhost:8000/feedback?text=crash&email=wine@wine.com"
+Test parameters in form
+
+        $ curl -X POST -d "text=crash&email=wine@wine.com" http://localhost:8000/feedback
+Test parameters in json
+
+        $ curl -X POST -H "Content-Type:application/json" -d '{"text":"crash", "email":"wine@wine.com"}' http://localhost:8000/feedback
+#### Parameters in URL Path
+Path parameters are also supported in order to provide elegant RESTFul api.
+Single parameter in one segment:
 <pre>
     s := wine.Default() 
     s.Get("/items/<b>:id</b>", func(c wine.Context) { 
@@ -46,7 +66,7 @@ Single parameter in one segment
     s.Run(":8000")
 </pre>
         
-Multiple parameters in one segment   
+Multiple parameters in one segment:   
 <pre>
     s := wine.Default() 
     s.Get("/items/<b>:page,:size</b>", func(c wine.Context) { 
@@ -60,27 +80,24 @@ Multiple parameters in one segment
 ## Use Middlewares
 Use middlewares to intercept and preprocess requests  
 
-    //Custom middleware
+Custom middleware
+<pre>
     func Logger(c wine.Context) {
-    	st := time.Now()
-    	
-    	//call Next() to pass request to the next handler
-    	c.Next() 
-    	
+    	st := time.Now()  
+    	//pass request to the next handler
+    	<b>c.Next()</b> 
     	cost := float32((time.Since(st) / time.Microsecond)) / 1000.0
     	req := c.HTTPRequest()
     	log.Printf("[WINE] %.3fms %s %s", cost, req.Method, req.RequestURI)
-    }
-    
+    } <br/>
     func main() {
-    	s := wine.NewServer()
-    	
+    	s := wine.NewServer() 
     	//Use middleware Logger
-    	s.Use(Logger)
-    	
+    	<b>s.Use(Logger)</b> 
     	s.Get("/hello", func(c wine.Context) {
     		c.Text("Hello, Wine!")
         })
         s.Run(":8000")
     }
+</pre>
   
