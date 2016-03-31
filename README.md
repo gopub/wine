@@ -57,7 +57,7 @@ Test parameters in json
                -d '{"text":"crash", "email":"wine@wine.com"}' 
                http://localhost:8000/feedback
 #### Parameters in URL Path
-Path parameters are also supported in order to provide elegant RESTFul api.  
+Path parameters are also supported in order to provide elegant RESTful apis.  
 Single parameter in one segment:
 <pre>
     s := wine.Default() 
@@ -187,8 +187,8 @@ Response:
          }
     }
 ## Custom Context
-Custom context to add more features. 
-e.g. Create MyContext to support SendResponse method 
+Custom context to add more features.   
+e.g. Create MyContext to support SendResponse method   
 
     type MyContext struct {
     	*wine.DefaultContext
