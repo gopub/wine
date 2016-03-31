@@ -36,7 +36,7 @@ Run and test:
         s.Run(":8000")
 
 ## Parameters
-Context.Params() provides an uniform interface to retrieve request parameters, which might be in query string, http body, url path, etc. Form and json are supported.  
+Context.Params() provides an uniform interface to retrieve request parameters.  
 
         s := wine.Default()
         s.Post("feedback", func(c wine.Context) {
