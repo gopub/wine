@@ -101,7 +101,7 @@ Custom middleware
     }
 </pre>
 ## Grouping Route
-
+<pre>  
     func CheckSessionID(c wine.Context) {
     	sid := c.Params().GetStr("sid")
     	//check sid
@@ -128,15 +128,17 @@ Custom middleware
     	s := wine.NewServer()
     
     	//Create "accounts" group
-    	g := s.Group("accounts")
-    	g.Use(CheckSessionID)
+    	<b>g := s.Group("accounts")</b>
+    	//Use CheckSessionID to process all requests in this route group
+    	<b>g.Use(CheckSessionID)</b>
     	g.Get(":user_id/profile", GetUserProfile)
     	g.Get(":user_id/friends/:page,:size", GetUserFriends)
     
     	s.Get("time", GetServerTime)
     
     	s.Run(":8000")
-    }
+    }  
+</pre>
 Run it: 
 
     [WINE] Running at :8000 ...
