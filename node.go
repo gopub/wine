@@ -43,7 +43,7 @@ func isValidStaticNode(path string) bool {
 }
 
 func isValidWildcardNode(path string) bool {
-	matched, _ := regexp.MatchString("\\*[0-9a-zA-Z_\\-]+", path)
+	matched, _ := regexp.MatchString("\\*[0-9a-zA-Z_\\-]*", path)
 	return matched
 }
 
@@ -124,7 +124,7 @@ func (n *node) addChild(pathSegments []string, fullPath string, handlers ...Hand
 		nod.t = staticNode
 		nod.path = segment
 	default:
-		panic("[WINE] invalid path: " + fullPath)
+		panic("[WINE] invalid path: " + segment + " " + fullPath)
 	}
 
 	if len(pathSegments) == 1 {
