@@ -100,4 +100,46 @@ Custom middleware
         s.Run(":8000")
     }
 </pre>
-  
+## Grouping Route
+
+    func CheckSessionID(c wine.Context) {
+    	sid := c.Params().GetStr("sid")
+    	//check sid
+    	if len(sid) == 0 {
+    		c.JSON(map[string]interface{}{"error":"need sid"})
+    	} else {
+    		c.Next()
+    	}
+    }
+    
+    func GetUserProfile(c wine.Context)  {
+    	//...
+    }
+    
+    func GetUserFriends(c wine.Context)  {
+    	//...
+    }
+    
+    func GetServerTime(c wine.Context)  {
+    	//...
+    }
+    
+    func main() {
+    	s := wine.NewServer()
+    
+    	//Create "accounts" group
+    	g := s.Group("accounts")
+    	g.Use(CheckSessionID)
+    	g.Get(":user_id/profile", GetUserProfile)
+    	g.Get(":user_id/friends/:page,:size", GetUserFriends)
+    
+    	s.Get("time", GetServerTime)
+    
+    	s.Run(":8000")
+    }
+Run it: 
+
+    [WINE] Running at :8000 ...
+    [WINE] GET   /time/ main.GetServerTime
+    [WINE] GET   /accounts/:user_id/friends/:page,:size/    main.CheckSessionID, main.GetUserFriends
+    [WINE] GET   /accounts/:user_id/profile/    main.CheckSessionID, main.GetUserProfile
