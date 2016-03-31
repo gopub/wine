@@ -234,4 +234,4 @@ Response:
         "msg": ""
     }    
 ## Recommendations
-    Wine which is designed for modular web applications/services is not a general purpose web server. It should be used behind a web server such as Nginx, Caddy which provide compression, security features.
+Wine which is designed for modular web applications/services is not a general purpose web server. It should be used behind a web server such as Nginx, Caddy which provide compression, security features.
