@@ -78,7 +78,7 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	if i > 0 {
 		path = req.RequestURI[:i]
 	}
-	path = cleanPath(path)
+	path = normalizePath(path)
 	handlers, params := s.Match(req.Method, path)
 	if len(handlers) == 0 {
 		if path == "/favicon.ico/" || path == "/favicon.ico" {

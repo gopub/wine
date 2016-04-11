@@ -3,7 +3,6 @@ package wine
 import (
 	"log"
 	"reflect"
-	"regexp"
 	"runtime"
 	"strings"
 )
@@ -35,21 +34,6 @@ type node struct {
 	paramNames []string
 	handlers   []Handler
 	children   []*node
-}
-
-func isValidStaticNode(path string) bool {
-	matched, _ := regexp.MatchString("[^:\\*]+", path)
-	return matched
-}
-
-func isValidWildcardNode(path string) bool {
-	matched, _ := regexp.MatchString("\\*[0-9a-zA-Z_\\-]*", path)
-	return matched
-}
-
-func isValidParamNode(path string) bool {
-	matched, _ := regexp.MatchString(":[a-zA-Z_]([a-zA-Z_0-9]+,)*", path)
-	return matched
 }
 
 func (n *node) conflict(nod *node) bool {
@@ -103,14 +87,14 @@ func (n *node) addChild(pathSegments []string, fullPath string, handlers ...Hand
 	nod := &node{}
 	segment := pathSegments[0]
 	switch {
-	case isValidParamNode(segment):
+	case isParamPath(segment):
 		nod.t = paramNode
 		nod.path = segment
 		nod.paramNames = strings.Split(segment, ",")
 		for i, pn := range nod.paramNames {
 			nod.paramNames[i] = pn[1:]
 		}
-	case isValidWildcardNode(segment):
+	case isWildcardPath(segment):
 		nod.t = wildcardNode
 		nod.path = segment[1:]
 		if len(pathSegments) > 1 {
@@ -120,7 +104,7 @@ func (n *node) addChild(pathSegments []string, fullPath string, handlers ...Hand
 				panic("[WINE] wildcard node only allowed at the end")
 			}
 		}
-	case len(segment) == 0 || isValidStaticNode(segment):
+	case len(segment) == 0 || isStaticPath(segment):
 		nod.t = staticNode
 		nod.path = segment
 	default:
@@ -239,7 +223,7 @@ func (n *node) Print(method string, parentPath string) {
 		path = parentPath + "/*" + n.path
 	}
 
-	path = cleanPath(path)
+	path = normalizePath(path)
 
 	if len(n.handlers) > 0 {
 		var hNames string

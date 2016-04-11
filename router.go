@@ -51,7 +51,7 @@ func (dr *DefaultRouter) Group(path string) Router {
 
 	r := &DefaultRouter{}
 	r.methodTrees = dr.methodTrees
-	r.basePath = cleanPath(dr.basePath + "/" + path)
+	r.basePath = normalizePath(dr.basePath + "/" + path)
 	r.handlers = make([]Handler, len(dr.handlers))
 	copy(r.handlers, dr.handlers)
 	return r
@@ -102,8 +102,8 @@ func (dr *DefaultRouter) Bind(method string, path string, handlers ...Handler) {
 		dr.methodTrees[method] = n
 	}
 
-	path = cleanPath(path)
-	fullPath := cleanPath(dr.basePath + "/" + path)
+	path = normalizePath(path)
+	fullPath := normalizePath(dr.basePath + "/" + path)
 	hs := make([]Handler, len(dr.handlers))
 	copy(hs, dr.handlers)
 	hs = append(hs, handlers...)
@@ -125,12 +125,12 @@ func (dr *DefaultRouter) StaticDir(path, dirPath string) {
 }
 
 func (dr *DefaultRouter) StaticFS(path string, fs http.FileSystem) {
-	prefix := cleanPath(dr.basePath + "/" + path)
+	prefix := normalizePath(dr.basePath + "/" + path)
 	i := strings.Index(prefix, "*")
 	if i > 0 {
 		prefix = prefix[:i]
 	} else {
-		path = cleanPath(path + "/*")
+		path = normalizePath(path + "/*")
 	}
 
 	if prefix[len(prefix)-1] != '/' {

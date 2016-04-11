@@ -4,9 +4,12 @@ import (
 	"regexp"
 )
 
-var slashCleanRegexp = regexp.MustCompile("/{2,}")
+var compactSlashRegexp = regexp.MustCompile("/{2,}")
+var staticPathRegexp = regexp.MustCompile("[^:\\*]+")
+var wildcardPathRegexp = regexp.MustCompile("\\*[0-9a-zA-Z_\\-]*")
+var paramPathRegexp = regexp.MustCompile(":[a-zA-Z_]([a-zA-Z_0-9]+)*(,:[a-zA-Z_]([a-zA-Z_0-9]+,)*)*")
 
-func cleanPath(path string) string {
+func normalizePath(path string) string {
 	if path == "" {
 		return "/"
 	}
@@ -19,6 +22,21 @@ func cleanPath(path string) string {
 		path += "/"
 	}
 
-	path = slashCleanRegexp.ReplaceAllString(path, "/")
+	path = compactSlashRegexp.ReplaceAllString(path, "/")
 	return path
+}
+
+func isStaticPath(path string) bool {
+	return staticPathRegexp.FindString(path) == path
+}
+
+func isWildcardPath(path string) bool {
+	return wildcardPathRegexp.FindString(path) == path
+}
+
+func isParamPath(path string) bool {
+	if path == ":_" {
+		return false
+	}
+	return paramPathRegexp.FindString(path) == path
 }
