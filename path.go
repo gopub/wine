@@ -35,7 +35,7 @@ func isWildcardPath(path string) bool {
 }
 
 func isParamPath(path string) bool {
-	if path == ":_" {
+	if path == ":_" { //make regex pattern simple
 		return false
 	}
 	return paramPathRegexp.FindString(path) == path
