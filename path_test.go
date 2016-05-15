@@ -2,7 +2,7 @@ package wine
 
 import "testing"
 
-func TestIsStaticPath(t *testing.T)  {
+func TestIsStaticPath(t *testing.T) {
 	if isStaticPath(":a") {
 		t.Fail()
 	}

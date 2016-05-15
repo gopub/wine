@@ -31,11 +31,14 @@ func isStaticPath(path string) bool {
 }
 
 func isWildcardPath(path string) bool {
+	if len(path) == 0 {
+		return false
+	}
 	return wildcardPathRegexp.FindString(path) == path
 }
 
 func isParamPath(path string) bool {
-	if path == ":_" { //make regex pattern simple
+	if len(path) == 0 || path == ":_" { //make regex pattern simple
 		return false
 	}
 	return paramPathRegexp.FindString(path) == path
