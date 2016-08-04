@@ -1,25 +1,13 @@
 package wine
 
 import (
+	"github.com/justintan/gox/runtime"
 	"html/template"
 	"log"
 	"net/http"
-	"reflect"
 	"strings"
 	"sync"
 )
-
-func renew(ptrDst interface{}, src interface{}) {
-	pdv := reflect.ValueOf(ptrDst)
-	sv := reflect.ValueOf(src)
-	if sv.Kind() == reflect.Ptr {
-		//注意Type().Elem()与Elem().Type()的区别,sv的值为空时,后者会panic
-		//Value和Type是两套体系, Value可能会为空值,但是Type总是有效的,因此走Type这条分支取指向的Type
-		pdv.Elem().Set(reflect.New(sv.Type().Elem()))
-	} else {
-		pdv.Elem().Set(reflect.Zero(sv.Type()))
-	}
-}
 
 type Server struct {
 	Router
@@ -52,7 +40,7 @@ func (s *Server) RegisterContext(c Context) {
 
 func (s *Server) newContext() interface{} {
 	var c Context
-	renew(&c, s.context)
+	runtime.Renew(&c, s.context)
 	return c
 }
 
