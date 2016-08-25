@@ -179,32 +179,33 @@ func (n *node) match(pathSegments []string, fullPath string) ([]Handler, map[str
 			return nil, nil
 		}
 	case paramNode:
-		switch {
-		case len(pathSegments) == 1:
-			return n.handlers, map[string]string{n.path: segment}
-		case pathSegments[1] == "" && len(n.handlers) > 0:
-			return n.handlers, map[string]string{n.path: segment}
-		default:
+		var handlers []Handler
+		var params map[string]string
+		if len(pathSegments) == 1 || (pathSegments[1] == "" && len(n.handlers) > 0) {
+			handlers = n.handlers
+		} else {
 			for _, child := range n.children {
-				handlers, params := child.match(pathSegments[1:], fullPath)
+				handlers, params = child.match(pathSegments[1:], fullPath)
 				if len(handlers) > 0 {
-					if params == nil {
-						params = map[string]string{}
-					}
-
-					segs := strings.Split(segment, ",")
-					if len(segs) != len(n.paramNames) {
-						return nil, nil
-					}
-					for i, s := range n.paramNames {
-						params[s] = segs[i]
-					}
-					return handlers, params
+					break
 				}
 			}
-
-			return nil, nil
 		}
+
+		if len(handlers) > 0 {
+			if params == nil {
+				params = map[string]string{}
+			}
+
+			segs := strings.Split(segment, ",")
+			if len(segs) != len(n.paramNames) {
+				return nil, nil
+			}
+			for i, s := range n.paramNames {
+				params[s] = segs[i]
+			}
+		}
+		return handlers, params
 	case wildcardNode:
 		return n.handlers, nil
 	default:
