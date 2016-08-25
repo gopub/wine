@@ -18,8 +18,15 @@ func normalizePath(path string) string {
 		path = "/" + path
 	}
 
-	if len(path) > 1 && path[len(path)-1] != '/' {
-		path += "/"
+	if len(path) > 1 {
+		if path[len(path)-1] == '/' {
+			path = path[:len(path)-1]
+		}
+
+		//Why??
+		//if path[len(path)-1] != '/' {
+		//	path += "/"
+		//}
 	}
 
 	path = compactSlashRegexp.ReplaceAllString(path, "/")
