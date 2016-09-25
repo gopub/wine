@@ -4,11 +4,11 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	"github.com/jsix/gof/log"
 	ghttp "github.com/justintan/gox/http"
 	"github.com/justintan/gox/types"
 	"io/ioutil"
 	"net/http"
+	"qiniupkg.com/x/log.v7"
 	"strings"
 )
 
@@ -34,7 +34,7 @@ func parseHTTPReq(req *http.Request) (params types.M) {
 	case ghttp.MIMEJSON:
 		d, e := ioutil.ReadAll(req.Body)
 		if e != nil {
-			log.PrintErr(e)
+			log.Error(e)
 			break
 		}
 
@@ -56,7 +56,7 @@ func parseHTTPReq(req *http.Request) (params types.M) {
 		}
 	default:
 		if len(contentType) > 0 {
-			log.PrintErr(errors.New("[WINE] unsupported content type"))
+			log.Error(errors.New("[WINE] unsupported content type"))
 		}
 		break
 	}
@@ -90,7 +90,7 @@ func jsonUnmarshal(data []byte, pJSONObj interface{}) error {
 	decoder.UseNumber()
 	err := decoder.Decode(pJSONObj)
 	if err != nil {
-		log.PrintErr(err)
+		log.Error(err)
 	}
 	return err
 }
