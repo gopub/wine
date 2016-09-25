@@ -1,11 +1,11 @@
 package main
 
 import (
-	"github.com/justintan/gox/log"
 	"github.com/justintan/gox/types"
 	"github.com/justintan/wine"
 	"net/http"
 	_ "net/http/pprof"
+	"qiniupkg.com/x/log.v7"
 	"time"
 )
 
