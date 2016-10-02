@@ -29,7 +29,7 @@ func parseHTTPReq(req *http.Request) (params types.M) {
 	}
 
 	switch contentType {
-	case ghttp.MIMEHTML, ghttp.MIMEPlain:
+	case ghttp.MIMEHTML, ghttp.MIMETEXT:
 		break
 	case ghttp.MIMEJSON:
 		d, e := ioutil.ReadAll(req.Body)
