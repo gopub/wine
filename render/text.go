@@ -6,7 +6,7 @@ import (
 )
 
 func Text(writer http.ResponseWriter, text string) {
-	writer.Header()["Content-Type"] = []string{ghttp.MIMEPlain + "; charset=utf-8"}
+	writer.Header()["Content-Type"] = []string{ghttp.MIMETEXT+ "; charset=utf-8"}
 	writer.WriteHeader(http.StatusOK)
 	writer.Write([]byte(text))
 }
