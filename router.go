@@ -1,6 +1,7 @@
 package wine
 
 import (
+	"github.com/jsix/gof/log"
 	"net/http"
 	"strings"
 )
@@ -79,7 +80,10 @@ func (dr *DefaultRouter) Match(method string, path string) (handlers []Handler, 
 	}
 
 	segments := strings.Split(path, "/")
-	return n.match(segments, path)
+	if segments[0] != "" {
+		segments = append([]string{""}, segments...)
+	}
+	return n.match(segments)
 }
 
 func (dr *DefaultRouter) Bind(method string, path string, handlers ...Handler) {
@@ -102,13 +106,15 @@ func (dr *DefaultRouter) Bind(method string, path string, handlers ...Handler) {
 		dr.methodTrees[method] = n
 	}
 
-	path = normalizePath(path)
-	fullPath := normalizePath(dr.basePath + "/" + path)
 	hs := make([]Handler, len(dr.handlers))
 	copy(hs, dr.handlers)
 	hs = append(hs, handlers...)
-	segments := strings.Split(fullPath, "/")
-	n.addChild(segments[1:], fullPath, hs...)
+	nodes := newNodeList(path, hs...)
+	if !n.add(nodes) {
+		panic("failed to bind path: " + path)
+	}
+
+	n.Print("==GET", "/")
 	return
 }
 
@@ -126,6 +132,12 @@ func (dr *DefaultRouter) StaticDir(path, dirPath string) {
 
 func (dr *DefaultRouter) StaticFS(path string, fs http.FileSystem) {
 	prefix := normalizePath(dr.basePath + "/" + path)
+	if len(prefix) == 0 {
+		prefix = "/"
+	} else if prefix[0] != '/' {
+		prefix = "/" + prefix
+	}
+
 	i := strings.Index(prefix, "*")
 	if i > 0 {
 		prefix = prefix[:i]

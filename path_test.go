@@ -1,6 +1,20 @@
 package wine
 
-import "testing"
+import (
+	"strings"
+	"testing"
+)
+
+func TestPath1(t *testing.T) {
+	t.Log(normalizePath("hello//"))
+	t.Log(normalizePath("hello/:id/"))
+	t.Log(normalizePath("//hello/:id"))
+	t.Log(normalizePath("//"))
+
+	t.Log(len(strings.Split("hello", "/")))
+	t.Log(len(strings.Split("hello/:id", "/")))
+	t.Log(len(strings.Split("", "/")))
+}
 
 func TestIsStaticPath(t *testing.T) {
 	if isStaticPath(":a") {

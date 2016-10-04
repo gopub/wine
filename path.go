@@ -10,26 +10,18 @@ var wildcardPathRegexp = regexp.MustCompile("^\\*[0-9a-zA-Z_\\-]*$")
 var paramPathRegexp = regexp.MustCompile("^:[a-zA-Z_]([a-zA-Z_0-9]+)*(,:[a-zA-Z_]([a-zA-Z_0-9]+,)*)*$")
 
 func normalizePath(path string) string {
-	if path == "" {
-		return "/"
-	}
-
-	if path[0] != '/' {
-		path = "/" + path
-	}
-
-	if len(path) > 1 {
-		if path[len(path)-1] == '/' {
-			path = path[:len(path)-1]
-		}
-
-		//Why??
-		//if path[len(path)-1] != '/' {
-		//	path += "/"
-		//}
-	}
-
 	path = compactSlashRegexp.ReplaceAllString(path, "/")
+	if len(path) == 0 {
+		return path
+	}
+
+	if path[0] == '/' {
+		path = path[1:]
+	}
+
+	if len(path) > 1 && path[len(path)-1] == '/' {
+		path = path[:len(path)-1]
+	}
 	return path
 }
 
@@ -49,4 +41,17 @@ func isParamPath(path string) bool {
 		return false
 	}
 	return paramPathRegexp.MatchString(path)
+}
+
+func getNodeType(path string) nodeType {
+	switch {
+	case isStaticPath(path):
+		return staticNode
+	case isParamPath(path):
+		return paramNode
+	case isWildcardPath(path):
+		return wildcardNode
+	default:
+		panic("invalid path: " + path)
+	}
 }

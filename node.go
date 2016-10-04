@@ -36,129 +36,121 @@ type node struct {
 	children   []*node
 }
 
-func (n *node) conflict(nod *node) bool {
-	if nod.t != n.t {
-		return false
+func newNodeList(path string, handlers ...Handler) []*node {
+	path = normalizePath(path)
+	segs := strings.Split(path, "/")
+	nodes := make([]*node, len(segs))
+	for i, s := range segs {
+		nodes[i] = newNode(s)
 	}
 
-	switch nod.t {
-	case staticNode:
-		if nod.path != n.path {
-			return false
-		}
-
-		if len(nod.handlers) > 0 && len(n.handlers) > 0 {
-			return true
-		}
-	case paramNode:
-		if len(nod.paramNames) != len(n.paramNames) {
-			return false
-		}
-
-		if len(nod.handlers) > 0 && len(n.handlers) > 0 {
-			return true
-		}
-	case wildcardNode:
-		return true
-	default:
-		panic("[WINE] invalid node type")
-	}
-
-	for _, c1 := range nod.children {
-		for _, c2 := range n.children {
-			if c1.conflict(c2) {
-				return true
-			}
-		}
-	}
-
-	return false
+	nodes[len(nodes)-1].handlers = handlers
+	return nodes
 }
 
-func (n *node) addChild(pathSegments []string, fullPath string, handlers ...Handler) {
-	if len(pathSegments) == 0 {
-		panic("[WINE] pathSegments is empty")
+func newNode(pathSegment string) *node {
+	if len(strings.Split(pathSegment, "/")) > 1 {
+		panic("invalid path segment: " + pathSegment)
 	}
-
-	if n.t == wildcardNode {
-		panic("[WINE] forbidden to add child to wildcardNode")
+	n := &node{
+		t:    getNodeType(pathSegment),
+		path: pathSegment,
 	}
-
-	nod := &node{}
-	segment := pathSegments[0]
-	switch {
-	case isParamPath(segment):
-		nod.t = paramNode
-		nod.path = segment
-		nod.paramNames = strings.Split(segment, ",")
-		for i, pn := range nod.paramNames {
-			nod.paramNames[i] = pn[1:]
-		}
-	case isWildcardPath(segment):
-		nod.t = wildcardNode
-		nod.path = segment[1:]
-		if len(pathSegments) > 1 {
-			if pathSegments[1] == "" {
-				pathSegments = pathSegments[0:1]
-			} else {
-				panic("[WINE] wildcard node only allowed at the end")
-			}
-		}
-	case len(segment) == 0 || isStaticPath(segment):
-		nod.t = staticNode
-		nod.path = segment
-	default:
-		panic("[WINE] invalid path: " + segment + " " + fullPath)
-	}
-
-	if len(pathSegments) == 1 {
-		nod.handlers = handlers
-	} else {
-		nod.addChild(pathSegments[1:], fullPath, handlers...)
-	}
-
-	for _, child := range n.children {
-		if child.conflict(nod) {
-			panic("[WINE] duplicate path: " + fullPath)
-		}
-	}
-
-	switch nod.t {
-	case staticNode:
-		n.children = append([]*node{nod}, n.children...)
-		break
+	switch n.t {
 	case paramNode:
-		i := len(n.children) - 1
-		for i >= 0 {
-			if n.children[i].t != wildcardNode {
+		n.paramNames = strings.Split(pathSegment, ",")
+		for i, pn := range n.paramNames {
+			n.paramNames[i] = pn[1:]
+		}
+	case wildcardNode:
+		n.path = pathSegment[1:]
+	default:
+		break
+	}
+	return n
+}
+
+func (n *node) add(nodes []*node) bool {
+	var matchNode *node
+	for _, cn := range n.children {
+		nod := nodes[0]
+		if cn.t == wildcardNode || nod.t == wildcardNode {
+			return false
+		}
+
+		if cn.t != nod.t {
+			continue
+		}
+
+		//cn.t == node.t
+		if cn.path == nod.path {
+			if len(cn.handlers) > 0 && len(nod.handlers) > 0 {
+				return false
+			} else {
+				matchNode = cn
 				break
 			}
-			i--
 		}
 
-		if i < 0 {
-			n.children = append([]*node{nod}, n.children...)
-		} else if i == len(n.children)-1 {
-			n.children = append(n.children, nod)
-		} else {
-			n.children = append(n.children, nod)
-			copy(n.children[i+2:], n.children[i+1:])
-			n.children[i+1] = nod
+		if cn.t == paramNode && len(cn.handlers) > 0 && len(nod.handlers) > 0 && len(cn.paramNames) == len(nod.paramNames) {
+			return false
 		}
-		break
-	case wildcardNode:
-		n.children = append(n.children, nod)
-		break
-	default:
-		panic("[WINE] invalid node type")
 	}
+
+	if matchNode != nil {
+		if len(nodes) > 1 {
+			return matchNode.add(nodes[1:])
+		} else {
+			matchNode.handlers = nodes[0].handlers
+		}
+	} else {
+		nod := nodes[0]
+		for i := 1; i < len(nodes); i++ {
+			nod.children = []*node{nodes[i]}
+			nod = nodes[i]
+		}
+
+		nod = nodes[0]
+		switch nod.t {
+		case staticNode:
+			n.children = append([]*node{nod}, n.children...)
+			break
+		case paramNode:
+			i := len(n.children) - 1
+			for i >= 0 {
+				if n.children[i].t != wildcardNode {
+					break
+				}
+				i--
+			}
+
+			if i < 0 {
+				n.children = append([]*node{nod}, n.children...)
+			} else if i == len(n.children)-1 {
+				n.children = append(n.children, nod)
+			} else {
+				n.children = append(n.children, nod)
+				copy(n.children[i+2:], n.children[i+1:])
+				n.children[i+1] = nod
+			}
+			break
+		case wildcardNode:
+			n.children = append(n.children, nod)
+			break
+		default:
+			panic("[WINE] invalid node type")
+		}
+	}
+
+	return true
 }
 
-func (n *node) match(pathSegments []string, fullPath string) ([]Handler, map[string]string) {
+func (n *node) match(pathSegments []string) ([]Handler, map[string]string) {
 	if len(pathSegments) == 0 {
 		panic("[WINE] pathSegments is empty")
 	}
 
+	//log.Println(n.t, n.path, n.paramNames, n.children, "==", pathSegments)
 	segment := pathSegments[0]
 	switch n.t {
 	case staticNode:
@@ -171,7 +163,7 @@ func (n *node) match(pathSegments []string, fullPath string) ([]Handler, map[str
 			return n.handlers, nil
 		default:
 			for _, child := range n.children {
-				handlers, params := child.match(pathSegments[1:], fullPath)
+				handlers, params := child.match(pathSegments[1:])
 				if len(handlers) > 0 {
 					return handlers, params
 				}
@@ -185,7 +177,7 @@ func (n *node) match(pathSegments []string, fullPath string) ([]Handler, map[str
 			handlers = n.handlers
 		} else {
 			for _, child := range n.children {
-				handlers, params = child.match(pathSegments[1:], fullPath)
+				handlers, params = child.match(pathSegments[1:])
 				if len(handlers) > 0 {
 					break
 				}
