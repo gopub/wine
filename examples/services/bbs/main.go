@@ -3,9 +3,9 @@ package main
 import (
 	"github.com/justintan/gox/types"
 	"github.com/justintan/wine"
+	"log"
 	"net/http"
 	_ "net/http/pprof"
-	"log"
 	"time"
 )
 

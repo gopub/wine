@@ -7,8 +7,8 @@ import (
 	ghttp "github.com/justintan/gox/http"
 	"github.com/justintan/gox/types"
 	"io/ioutil"
-	"net/http"
 	"log"
+	"net/http"
 	"strings"
 )
 
