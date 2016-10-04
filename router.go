@@ -108,7 +108,8 @@ func (dr *DefaultRouter) Bind(method string, path string, handlers ...Handler) {
 	hs := make([]Handler, len(dr.handlers))
 	copy(hs, dr.handlers)
 	hs = append(hs, handlers...)
-	nodes := newNodeList(dr.basePath+"/"+path, hs...)
+	path = normalizePath(dr.basePath + "/" + path)
+	nodes := newNodeList(path, hs...)
 	if !n.add(nodes) {
 		panic("failed to bind path: " + path)
 	}
