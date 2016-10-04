@@ -1,7 +1,7 @@
 package wine
 
 import (
-	"qiniupkg.com/x/log.v7"
+	"log"
 	"reflect"
 	"runtime"
 	"strings"
@@ -179,7 +179,6 @@ func (n *node) match(pathSegments []string, fullPath string) ([]Handler, map[str
 			return nil, nil
 		}
 	case paramNode:
-		log.Info(pathSegments, n.t, n.path, n.paramNames)
 		var handlers []Handler
 		var params map[string]string
 		if len(pathSegments) == 1 || (pathSegments[1] == "" && len(n.handlers) > 0) {

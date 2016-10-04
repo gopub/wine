@@ -5,7 +5,7 @@ import (
 	"github.com/justintan/wine"
 	"net/http"
 	_ "net/http/pprof"
-	"qiniupkg.com/x/log.v7"
+	"log"
 	"time"
 )
 
@@ -52,7 +52,7 @@ func main() {
 	})
 
 	go func() {
-		log.Debug(http.ListenAndServe("localhost:6060", nil))
+		log.Println(http.ListenAndServe("localhost:6060", nil))
 	}()
 
 	s.Run(":8000")
