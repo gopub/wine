@@ -1,7 +1,6 @@
 package wine
 
 import (
-	"github.com/jsix/gof/log"
 	"net/http"
 	"strings"
 )

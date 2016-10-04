@@ -11,6 +11,14 @@ func main() {
 		c.Text("Hello, wine!")
 	})
 
+	s.Get("docs/create", func(c wine.Context) {
+		c.Text("Create doc")
+	})
+
+	s.Get("docs/:doc_id", func(c wine.Context) {
+		c.Text("doc id is " + c.Params().GetStr("doc_id"))
+	})
+
 	s.Get("sum/:a,:b", func(c wine.Context) {
 		r := c.Params().GetInt("a") + c.Params().GetInt("b")
 		c.Text(fmt.Sprint(r))
