@@ -15,6 +15,10 @@ func main() {
 		c.Text("Create doc")
 	})
 
+	s.Get("docs/:s/a", func(c wine.Context) {
+		c.Text("Create doc: " + c.Params().GetStr("s"))
+	})
+
 	s.Get("docs/:doc_id", func(c wine.Context) {
 		c.Text("doc id is " + c.Params().GetStr("doc_id"))
 	})

@@ -70,30 +70,51 @@ func newNode(pathSegment string) *node {
 	return n
 }
 
-func (n *node) add(nodes []*node) bool {
-	var matchNode *node
-	for _, cn := range n.children {
-		nod := nodes[0]
-		if cn.t == wildcardNode || nod.t == wildcardNode {
-			return false
-		}
+func (n *node) conflict(nodes []*node) bool {
+	if len(nodes) == 0 {
+		return false
+	}
+	nod := nodes[0]
+	if n.t == wildcardNode || nod.t == wildcardNode {
+		return true
+	}
 
-		if cn.t != nod.t {
-			continue
-		}
+	if n.t != nod.t {
+		return false
+	}
 
-		//cn.t == node.t
-		if cn.path == nod.path {
-			if len(cn.handlers) > 0 && len(nod.handlers) > 0 {
-				return false
-			} else {
-				matchNode = cn
-				break
+	//n.t == node.t
+	if n.t == staticNode {
+		return n.path == nod.path && len(n.handlers) > 0 && len(nod.handlers) > 0
+	} else if n.t == paramNode {
+		if len(n.handlers) > 0 && len(nod.handlers) > 0 {
+			if n.path == nod.path || len(n.paramNames) == len(nod.paramNames) {
+				return true
 			}
 		}
 
-		if cn.t == paramNode && len(cn.handlers) > 0 && len(nod.handlers) > 0 && len(cn.paramNames) == len(nod.paramNames) {
+		for _, cn := range n.children {
+			if cn.conflict(nodes[1:]) {
+				return true
+			}
+		}
+	}
+
+	return false
+}
+
+func (n *node) add(nodes []*node) bool {
+	var matchNode *node
+	for _, cn := range n.children {
+		if cn.conflict(nodes) {
 			return false
+		}
+
+		nod := nodes[0]
+		if cn.path == nod.path {
+			matchNode = cn
+			break
+
 		}
 	}
 
