@@ -7,6 +7,18 @@ import (
 
 func main() {
 	s := wine.Default()
+	s.Get("/", func(c wine.Context) {
+		c.Text("root")
+	})
+
+	s.Get("hi", func(c wine.Context) {
+		c.Text("hi")
+	})
+
+	s.Group("hi").Get("/", func(c wine.Context) {
+		c.Text("hi")
+	})
+
 	s.Get("hello", func(c wine.Context) {
 		c.Text("Hello, wine!")
 	})

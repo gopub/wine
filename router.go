@@ -108,14 +108,20 @@ func (dr *DefaultRouter) Bind(method string, path string, handlers ...Handler) {
 	hs := make([]Handler, len(dr.handlers))
 	copy(hs, dr.handlers)
 	hs = append(hs, handlers...)
-	path = normalizePath(dr.basePath + "/" + path)
-	nodes := newNodeList(path, hs...)
-	if !n.add(nodes) {
-		panic("failed to bind path: " + path)
-	}
 
-	n.Print("==GET", "/")
-	return
+	path = normalizePath(dr.basePath + "/" + path)
+	if path == "" {
+		if len(n.handlers) == 0 {
+			n.handlers = hs
+		} else {
+			panic("binding conflict: " + path)
+		}
+	} else {
+		nodes := newNodeList(path, hs...)
+		if !n.add(nodes) {
+			panic("binding conflict: " + path)
+		}
+	}
 }
 
 func (dr *DefaultRouter) StaticFile(path, filePath string) {
