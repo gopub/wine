@@ -2,6 +2,7 @@ package wine
 
 import (
 	"github.com/justintan/gox/types"
+	ghttp "github.com/justintan/gox/http"
 	"github.com/justintan/wine/render"
 	"html/template"
 	"net/http"
@@ -49,7 +50,7 @@ func (dc *DefaultContext) Rebuild(rw http.ResponseWriter, req *http.Request, tem
 	dc.responded = false
 	dc.writer = rw
 	dc.req = req
-	dc.reqParams = parseHTTPReq(req)
+	dc.reqParams = ghttp.ParseParameters(req)
 	dc.handlers = NewHandlerChain(handlers)
 	dc.templates = templates
 
