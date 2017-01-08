@@ -1,8 +1,8 @@
 package wine
 
 import (
-	"github.com/justintan/gox/types"
 	ghttp "github.com/justintan/gox/http"
+	"github.com/justintan/gox/types"
 	"github.com/justintan/wine/render"
 	"html/template"
 	"net/http"
@@ -15,6 +15,7 @@ type DefaultContext struct {
 	responded bool
 	templates []*template.Template
 	handlers  *HandlerChain
+	gzipFlag  bool
 
 	req        *http.Request
 	reqHeader  http.Header
@@ -53,6 +54,7 @@ func (dc *DefaultContext) Rebuild(rw http.ResponseWriter, req *http.Request, tem
 	dc.reqParams = ghttp.ParseParameters(req)
 	dc.handlers = NewHandlerChain(handlers)
 	dc.templates = templates
+	dc.gzipFlag = true
 
 	for k, v := range req.Header {
 		k = strings.ToLower(k)
@@ -109,7 +111,15 @@ func (dc *DefaultContext) JSON(jsonObj interface{}) {
 	for k, v := range dc.respHeader {
 		dc.writer.Header()[k] = v
 	}
-	render.JSON(dc.writer, jsonObj)
+	render.JSON(dc.writer, jsonObj, dc.gzipFlag)
+}
+
+func (dc *DefaultContext) SetGzipFlag(f bool) {
+	dc.gzipFlag = f
+}
+
+func (dc *DefaultContext) GzipFlag() bool {
+	return dc.gzipFlag
 }
 
 func (dc *DefaultContext) Status(status int) {
@@ -127,7 +137,7 @@ func (dc *DefaultContext) File(filePath string) {
 
 func (dc *DefaultContext) HTML(htmlText string) {
 	dc.setResponded()
-	render.HTML(dc.writer, htmlText)
+	render.HTML(dc.writer, htmlText, dc.gzipFlag)
 }
 
 func (dc *DefaultContext) Text(text string) {

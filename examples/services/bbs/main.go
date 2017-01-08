@@ -24,6 +24,10 @@ type Topic struct {
 
 func main() {
 	s := wine.Default()
+	s.Get("hello", func(c wine.Context) {
+		c.JSON(types.M{"code": 0, "msg": "hello"})
+	})
+
 	s.Get("login", func(c wine.Context) {
 		username := c.Params().GetStr("username")
 		password := c.Params().GetStr("password")
