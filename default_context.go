@@ -111,7 +111,11 @@ func (dc *DefaultContext) JSON(jsonObj interface{}) {
 	for k, v := range dc.respHeader {
 		dc.writer.Header()[k] = v
 	}
-	render.JSON(dc.writer, jsonObj, dc.gzipFlag)
+	gzipFlag := false
+	if strings.Index(dc.reqHeader.Get("Accept-Encoding"), "gzip") >= 0 {
+		gzipFlag = dc.gzipFlag
+	}
+	render.JSON(dc.writer, jsonObj, gzipFlag)
 }
 
 func (dc *DefaultContext) SetGzipFlag(f bool) {
@@ -137,12 +141,21 @@ func (dc *DefaultContext) File(filePath string) {
 
 func (dc *DefaultContext) HTML(htmlText string) {
 	dc.setResponded()
-	render.HTML(dc.writer, htmlText, dc.gzipFlag)
+
+	gzipFlag := false
+	if strings.Index(dc.reqHeader.Get("Accept-Encoding"), "gzip") >= 0 {
+		gzipFlag = dc.gzipFlag
+	}
+	render.HTML(dc.writer, htmlText, gzipFlag)
 }
 
 func (dc *DefaultContext) Text(text string) {
 	dc.setResponded()
-	render.Text(dc.writer, text)
+	gzipFlag := false
+	if strings.Index(dc.reqHeader.Get("Accept-Encoding"), "gzip") >= 0 {
+		gzipFlag = dc.gzipFlag
+	}
+	render.Text(dc.writer, text, gzipFlag)
 }
 
 func (dc *DefaultContext) TemplateHTML(templateName string, params types.M) {
