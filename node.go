@@ -87,14 +87,17 @@ func (n *node) conflict(nodes []*node) bool {
 	if n.t == staticNode {
 		return n.path == nod.path && len(n.handlers) > 0 && len(nod.handlers) > 0
 	} else if n.t == paramNode {
-		if len(n.handlers) > 0 && len(nod.handlers) > 0 {
-			if n.path == nod.path || len(n.paramNames) == len(nod.paramNames) {
-				return true
-			}
+		if len(n.paramNames) != len(nod.paramNames) {
+			return false
 		}
 
+		if len(n.handlers) > 0 && len(nod.handlers) > 0 {
+			return true
+		}
+
+		sn := nodes[1:]
 		for _, cn := range n.children {
-			if cn.conflict(nodes[1:]) {
+			if cn.conflict(sn) {
 				return true
 			}
 		}
@@ -110,8 +113,7 @@ func (n *node) add(nodes []*node) bool {
 			return false
 		}
 
-		nod := nodes[0]
-		if cn.path == nod.path {
+		if cn.path == nodes[0].path {
 			matchNode = cn
 			break
 
