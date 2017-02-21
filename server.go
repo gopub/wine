@@ -1,6 +1,7 @@
 package wine
 
 import (
+	"context"
 	"github.com/justintan/gox/runtime"
 	"html/template"
 	"log"
@@ -15,6 +16,7 @@ type Server struct {
 	context     Context
 	templates   []*template.Template
 	contextPool sync.Pool
+	server      *http.Server
 }
 
 func NewServer() *Server {
@@ -45,13 +47,22 @@ func (s *Server) newContext() interface{} {
 }
 
 func (s *Server) Run(addr string) error {
+	if s.server != nil {
+		panic("[WINE] Server is running")
+	}
+
 	s.contextPool.New = s.newContext
 	log.Println("[WINE] Running at", addr, "...")
 	if r, ok := s.Router.(*DefaultRouter); ok {
 		r.Print()
 	}
-	err := http.ListenAndServe(addr, s)
+	s.server = &http.Server{Addr: addr, Handler: s}
+	err := s.server.ListenAndServe()
 	return err
+}
+
+func (s *Server) Shutdown() {
+	s.server.Shutdown(context.Background())
 }
 
 func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
