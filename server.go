@@ -24,6 +24,9 @@ func NewServer() *Server {
 	s.Router = NewDefaultRouter()
 	s.Header = make(http.Header)
 	s.RegisterContext(&DefaultContext{})
+	s.Any("ping", func(c Context) {
+		c.Text("Pong")
+	})
 	return s
 }
 
@@ -78,7 +81,8 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		path = req.RequestURI[:i]
 	}
 	path = normalizePath(path)
-	handlers, params := s.Match(req.Method, path)
+	method := strings.ToUpper(req.Method)
+	handlers, params := s.Match(method, path)
 	if len(handlers) == 0 {
 		if path == "/favicon.ico/" || path == "/favicon.ico" || path == "favicon.ico" {
 			rw.Header()["Content-Type"] = []string{"image/x-icon"}
