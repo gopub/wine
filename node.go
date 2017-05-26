@@ -123,9 +123,8 @@ func (n *node) add(nodes []*node) bool {
 	if matchNode != nil {
 		if len(nodes) > 1 {
 			return matchNode.add(nodes[1:])
-		} else {
-			matchNode.handlers = nodes[0].handlers
 		}
+		matchNode.handlers = nodes[0].handlers
 	} else {
 		nod := nodes[0]
 		for i := 1; i < len(nodes); i++ {
