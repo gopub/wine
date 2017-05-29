@@ -1,12 +1,13 @@
 package wine
 
 import (
-	ghttp "github.com/justintan/gox/http"
-	"github.com/justintan/gox/types"
-	"github.com/justintan/wine/render"
 	"html/template"
 	"net/http"
 	"strings"
+
+	ghttp "github.com/justintan/gox/http"
+	"github.com/justintan/gox/types"
+	"github.com/justintan/wine/render"
 )
 
 type DefaultContext struct {
@@ -158,7 +159,7 @@ func (dc *DefaultContext) Text(text string) {
 	render.Text(dc.writer, text, gzipFlag)
 }
 
-func (dc *DefaultContext) TemplateHTML(templateName string, params types.M) {
+func (dc *DefaultContext) TemplateHTML(templateName string, params interface{}) {
 	for _, tpl := range dc.templates {
 		err := render.TemplateHTML(dc.writer, tpl, templateName, params)
 		if err == nil {

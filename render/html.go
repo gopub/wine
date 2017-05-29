@@ -1,14 +1,14 @@
 package render
 
 import (
-	gcompress "github.com/justintan/gox/compress"
-	ghttp "github.com/justintan/gox/http"
-	"github.com/justintan/gox/types"
 	"html/template"
 	"net/http"
+
+	gcompress "github.com/justintan/gox/compress"
+	ghttp "github.com/justintan/gox/http"
 )
 
-func TemplateHTML(writer http.ResponseWriter, tpl *template.Template, name string, params types.M) error {
+func TemplateHTML(writer http.ResponseWriter, tpl *template.Template, name string, params interface{}) error {
 	writer.Header()["Content-Type"] = []string{ghttp.MIMEHTML + "; charset=utf-8"}
 	if len(name) == 0 {
 		return tpl.Execute(writer, params)

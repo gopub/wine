@@ -1,9 +1,10 @@
 package wine
 
 import (
-	"github.com/justintan/gox/types"
 	"html/template"
 	"net/http"
+
+	"github.com/justintan/gox/types"
 )
 
 type Context interface {
@@ -21,7 +22,7 @@ type Context interface {
 	File(filePath string)
 	HTML(htmlText string)
 	Text(text string)
-	TemplateHTML(templateName string, params types.M)
+	TemplateHTML(templateName string, params interface{})
 	ServeHTTP(h http.Handler)
 
 	Set(key string, value interface{})
