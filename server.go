@@ -30,6 +30,12 @@ func NewServer() *Server {
 	s.Any("ping", func(c Context) {
 		c.Text("Pong")
 	})
+	s.AddTemplateFuncs(template.FuncMap{
+		"plus":     plus,
+		"minus":    minus,
+		"multiple": multiple,
+		"divide":   divide,
+	})
 	return s
 }
 
