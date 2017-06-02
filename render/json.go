@@ -2,11 +2,13 @@ package render
 
 import (
 	"encoding/json"
+	"net/http"
+
 	gcompress "github.com/justintan/gox/compress"
 	ghttp "github.com/justintan/gox/http"
-	"net/http"
 )
 
+// JSON responds application/json content
 func JSON(writer http.ResponseWriter, jsonObj interface{}, gzipFlag bool) {
 	writer.Header()["Content-Type"] = []string{ghttp.MIMEJSON + "; charset=utf-8"}
 	data, err := json.MarshalIndent(jsonObj, "", "    ")

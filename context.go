@@ -16,6 +16,7 @@ type Context interface {
 	Responded() bool
 	ResponseHeader() http.Header
 	Status(status int)
+	Redirect(location string, permanent bool)
 	SetGzipFlag(f bool)
 	GzipFlag() bool
 	JSON(obj interface{})

@@ -10,6 +10,7 @@ import (
 	"github.com/justintan/wine/render"
 )
 
+// DefaultContext is a default implementation of Context interface
 type DefaultContext struct {
 	keyValues types.M
 	writer    http.ResponseWriter
@@ -24,6 +25,7 @@ type DefaultContext struct {
 	respHeader http.Header
 }
 
+// Rebuild can construct Context object with new parameters in order to make it reusable
 func (dc *DefaultContext) Rebuild(rw http.ResponseWriter, req *http.Request, templates []*template.Template, handlers []Handler) {
 	if dc.keyValues != nil {
 		for k := range dc.keyValues {
@@ -66,36 +68,44 @@ func (dc *DefaultContext) Rebuild(rw http.ResponseWriter, req *http.Request, tem
 	}
 }
 
+// Set sets key:value
 func (dc *DefaultContext) Set(key string, value interface{}) {
 	dc.keyValues[key] = value
 }
 
+// Get returns value for key
 func (dc *DefaultContext) Get(key string) interface{} {
 	return dc.keyValues[key]
 }
 
+// Next calls the next handler
 func (dc *DefaultContext) Next() {
 	if h := dc.handlers.Next(); h != nil {
 		h.HandleRequest(dc)
 	}
 }
 
+// HTTPRequest returns request
 func (dc *DefaultContext) HTTPRequest() *http.Request {
 	return dc.req
 }
 
+// Params returns request's parameters including queries, body
 func (dc *DefaultContext) Params() types.M {
 	return dc.reqParams
 }
 
+// Header returns request header
 func (dc *DefaultContext) Header() http.Header {
 	return dc.reqHeader
 }
 
+// ResponseHeader returns response header
 func (dc *DefaultContext) ResponseHeader() http.Header {
 	return dc.respHeader
 }
 
+// Responded returns a flag to determine whether if the response has been written
 func (dc *DefaultContext) Responded() bool {
 	return dc.responded
 }
@@ -107,6 +117,7 @@ func (dc *DefaultContext) setResponded() {
 	dc.responded = true
 }
 
+// JSON sends json response
 func (dc *DefaultContext) JSON(jsonObj interface{}) {
 	dc.setResponded()
 	for k, v := range dc.respHeader {
@@ -119,14 +130,17 @@ func (dc *DefaultContext) JSON(jsonObj interface{}) {
 	render.JSON(dc.writer, jsonObj, gzipFlag)
 }
 
+// SetGzipFlag sets gzip flag for response
 func (dc *DefaultContext) SetGzipFlag(f bool) {
 	dc.gzipFlag = f
 }
 
+// GzipFlag returns gzip flag
 func (dc *DefaultContext) GzipFlag() bool {
 	return dc.gzipFlag
 }
 
+// Status sends a response just with a status code
 func (dc *DefaultContext) Status(status int) {
 	dc.setResponded()
 	for k, v := range dc.respHeader {
@@ -135,11 +149,23 @@ func (dc *DefaultContext) Status(status int) {
 	render.Status(dc.writer, status)
 }
 
+// Redirect sends a redirect response
+func (dc *DefaultContext) Redirect(location string, permanent bool) {
+	dc.respHeader.Set("Location", location)
+	if permanent {
+		dc.Status(http.StatusMovedPermanently)
+	} else {
+		dc.Status(http.StatusFound)
+	}
+}
+
+// File sends a file response
 func (dc *DefaultContext) File(filePath string) {
 	dc.setResponded()
 	http.ServeFile(dc.writer, dc.req, filePath)
 }
 
+// HTML sends a HTML response
 func (dc *DefaultContext) HTML(htmlText string) {
 	dc.setResponded()
 
@@ -150,6 +176,7 @@ func (dc *DefaultContext) HTML(htmlText string) {
 	render.HTML(dc.writer, htmlText, gzipFlag)
 }
 
+// Text sends a text response
 func (dc *DefaultContext) Text(text string) {
 	dc.setResponded()
 	gzipFlag := false
@@ -159,6 +186,7 @@ func (dc *DefaultContext) Text(text string) {
 	render.Text(dc.writer, text, gzipFlag)
 }
 
+// TemplateHTML sends a HTML response. HTML page is rendered according to templateName and params
 func (dc *DefaultContext) TemplateHTML(templateName string, params interface{}) {
 	for _, tpl := range dc.templates {
 		err := render.TemplateHTML(dc.writer, tpl, templateName, params)
@@ -169,6 +197,7 @@ func (dc *DefaultContext) TemplateHTML(templateName string, params interface{}) 
 	}
 }
 
+// ServeHTTP starts http server
 func (dc *DefaultContext) ServeHTTP(h http.Handler) {
 	dc.setResponded()
 	h.ServeHTTP(dc.writer, dc.req)
