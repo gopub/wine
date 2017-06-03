@@ -135,6 +135,15 @@ func (s *Server) AddFilesTemplate(files ...string) {
 	s.AddTemplate(tpl)
 }
 
+// AddTextTemplate adds a template by parsing texts
+func (s *Server) AddTextTemplate(name string, texts ...string) {
+	tpl := template.New(name)
+	for _, txt := range texts {
+		tpl = template.Must(tpl.Parse(txt))
+	}
+	s.AddTemplate(tpl)
+}
+
 // AddTemplate adds a template
 func (s *Server) AddTemplate(tpl *template.Template) {
 	if s.templateFuncs != nil {
