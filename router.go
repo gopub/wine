@@ -215,9 +215,9 @@ func (dr *DefaultRouter) Print() {
 	}
 }
 
-func convertToHandlers(funcList ...HandlerFunc) []Handler {
-	handlers := make([]Handler, len(funcList))
-	for i, h := range funcList {
+func convertToHandlers(funcs ...HandlerFunc) []Handler {
+	handlers := make([]Handler, len(funcs))
+	for i, h := range funcs {
 		handlers[i] = h
 	}
 	return handlers
