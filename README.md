@@ -40,8 +40,8 @@ Context.Params() provides an uniform interface to retrieve request parameters.
 
         s := wine.Default()
         s.Post("feedback", func(c wine.Context) {
-            text := c.Params().GetStr("text")
-            email := c.Params().GetStr("email")
+            text := c.Params().String("text")
+            email := c.Params().String("email")
             c.Text("Feedback:" + text + " from " + email)
         })
         s.Run(":8000")
@@ -62,7 +62,7 @@ Single parameter in one segment:
 <pre>
     s := wine.Default() 
     s.Get("/items/<b>:id</b>", func(c wine.Context) { 
-        id := c.Params().GetStr("id") 
+        id := c.Params().String("id") 
         c.Text("item id: " + id) 
     }) 
     s.Run(":8000")
@@ -72,8 +72,8 @@ Multiple parameters in one segment:
 <pre>
     s := wine.Default() 
     s.Get("/items/<b>:page,:size</b>", func(c wine.Context) { 
-        page := c.Params().GetInt("page") 
-        size := c.Params().GetInt("size") 
+        page := c.Params().Int("page") 
+        size := c.Params().Int("size") 
         c.Text("page:" + strconv.Itoa(page) + " size:" + strconv.Itoa(size)) 
     }) 
     s.Run(":8000")
@@ -105,7 +105,7 @@ Custom middleware
 ## Grouping Route
 <pre>  
     func CheckSessionID(c wine.Context) {
-    	sid := c.Params().GetStr("sid")
+    	sid := c.Params().String("sid")
     	//check sid
     	if len(sid) == 0 {
     		c.JSON(map[string]interface{}{"error":"need sid"})

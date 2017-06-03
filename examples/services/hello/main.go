@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+
 	"github.com/justintan/wine"
 )
 
@@ -28,25 +29,25 @@ func main() {
 	})
 
 	s.Get("docs/:s/a", func(c wine.Context) {
-		c.Text("Create doc: " + c.Params().GetStr("s"))
+		c.Text("Create doc: " + c.Params().String("s"))
 	})
 
 	s.Get("docs/:doc_id", func(c wine.Context) {
-		c.Text("doc id is " + c.Params().GetStr("doc_id"))
+		c.Text("doc id is " + c.Params().String("doc_id"))
 	})
 
 	s.Get("sum/:a,:b", func(c wine.Context) {
-		r := c.Params().GetInt("a") + c.Params().GetInt("b")
+		r := c.Params().Int("a") + c.Params().Int("b")
 		c.Text(fmt.Sprint(r))
 	})
 
 	s.Get("sum/:a,:b/hehe", func(c wine.Context) {
-		r := c.Params().GetInt("a") * c.Params().GetInt("b")
+		r := c.Params().Int("a") * c.Params().Int("b")
 		c.Text(fmt.Sprint(r))
 	})
 
 	s.Get("sum/:a,:b,:c", func(c wine.Context) {
-		r := c.Params().GetInt("a") + c.Params().GetInt("b") + c.Params().GetInt("c")
+		r := c.Params().Int("a") + c.Params().Int("b") + c.Params().Int("c")
 		c.Text(fmt.Sprint(r))
 	})
 

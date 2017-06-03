@@ -1,12 +1,13 @@
 package main
 
 import (
-	"github.com/justintan/gox/types"
-	"github.com/justintan/wine"
 	"log"
 	"net/http"
 	_ "net/http/pprof"
 	"time"
+
+	"github.com/justintan/gox/types"
+	"github.com/justintan/wine"
 )
 
 type User struct {
@@ -29,8 +30,8 @@ func main() {
 	})
 
 	s.Get("login", func(c wine.Context) {
-		username := c.Params().GetStr("username")
-		password := c.Params().GetStr("password")
+		username := c.Params().String("username")
+		password := c.Params().String("password")
 		if len(username) == 0 || len(password) == 0 {
 			c.JSON(types.M{"code": 1, "msg": "login error"})
 			return
@@ -43,7 +44,7 @@ func main() {
 	})
 
 	s.Post("topic", func(c wine.Context) {
-		title := c.Params().GetStr("title")
+		title := c.Params().String("title")
 		if len(title) == 0 {
 			c.JSON(types.M{"code": 1, "msg": "no title"})
 			return
