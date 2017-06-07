@@ -116,7 +116,6 @@ func (n *node) add(nodes []*node) bool {
 		if cn.path == nodes[0].path {
 			matchNode = cn
 			break
-
 		}
 	}
 
@@ -125,43 +124,44 @@ func (n *node) add(nodes []*node) bool {
 			return matchNode.add(nodes[1:])
 		}
 		matchNode.handlers = nodes[0].handlers
-	} else {
-		nod := nodes[0]
-		for i := 1; i < len(nodes); i++ {
-			nod.children = []*node{nodes[i]}
-			nod = nodes[i]
+		return true
+	}
+
+	nod := nodes[0]
+	for i := 1; i < len(nodes); i++ {
+		nod.children = []*node{nodes[i]}
+		nod = nodes[i]
+	}
+
+	nod = nodes[0]
+	switch nod.t {
+	case staticNode:
+		n.children = append([]*node{nod}, n.children...)
+		break
+	case paramNode:
+		i := len(n.children) - 1
+		for i >= 0 {
+			if n.children[i].t != wildcardNode {
+				break
+			}
+			i--
 		}
 
-		nod = nodes[0]
-		switch nod.t {
-		case staticNode:
+		if i < 0 {
 			n.children = append([]*node{nod}, n.children...)
-			break
-		case paramNode:
-			i := len(n.children) - 1
-			for i >= 0 {
-				if n.children[i].t != wildcardNode {
-					break
-				}
-				i--
-			}
-
-			if i < 0 {
-				n.children = append([]*node{nod}, n.children...)
-			} else if i == len(n.children)-1 {
-				n.children = append(n.children, nod)
-			} else {
-				n.children = append(n.children, nod)
-				copy(n.children[i+2:], n.children[i+1:])
-				n.children[i+1] = nod
-			}
-			break
-		case wildcardNode:
+		} else if i == len(n.children)-1 {
 			n.children = append(n.children, nod)
-			break
-		default:
-			panic("[WINE] invalid node type")
+		} else {
+			n.children = append(n.children, nod)
+			copy(n.children[i+2:], n.children[i+1:])
+			n.children[i+1] = nod
 		}
+		break
+	case wildcardNode:
+		n.children = append(n.children, nod)
+		break
+	default:
+		panic("[WINE] invalid node type")
 	}
 
 	return true
