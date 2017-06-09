@@ -7,6 +7,7 @@ import (
 	"github.com/justintan/gox/types"
 )
 
+// Context defines a request context
 type Context interface {
 	HTTPRequest() *http.Request
 	Params() types.M

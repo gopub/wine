@@ -11,6 +11,7 @@ import (
 	"github.com/justintan/gox/runtime"
 )
 
+// Server implements web server
 type Server struct {
 	Router
 	Header        http.Header

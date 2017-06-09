@@ -1,11 +1,14 @@
 package wine
 
+// Handler defines interface for interceptor
 type Handler interface {
 	HandleRequest(Context)
 }
 
+// HandlerFunc converts function into Handler
 type HandlerFunc func(Context)
 
+// HandleRequest is an interface method required by Handler
 func (h HandlerFunc) HandleRequest(c Context) {
 	h(c)
 }

@@ -174,26 +174,31 @@ func (r *DefaultRouter) StaticFS(path string, fs http.FileSystem) {
 	return
 }
 
+// HandleGet binds handlers to path with GET method
 func (r *DefaultRouter) HandleGet(path string, handlers ...Handler) {
 	r.Bind("GET", path, handlers...)
 	return
 }
 
+// HandlePost binds handlers to path with POST method
 func (r *DefaultRouter) HandlePost(path string, handlers ...Handler) {
 	r.Bind("POST", path, handlers...)
 	return
 }
 
+// HandlePut binds handlers to path with PUT method
 func (r *DefaultRouter) HandlePut(path string, handlers ...Handler) {
 	r.Bind("PUT", path, handlers...)
 	return
 }
 
+// HandleDelete binds handlers to path with DELETE method
 func (r *DefaultRouter) HandleDelete(path string, handlers ...Handler) {
 	r.Bind("DELETE", path, handlers...)
 	return
 }
 
+// HandleAny binds handlers to path with GET/POST/PUT methods
 func (r *DefaultRouter) HandleAny(path string, handlers ...Handler) {
 	r.HandleGet(path, handlers...)
 	r.HandlePost(path, handlers...)
@@ -201,26 +206,32 @@ func (r *DefaultRouter) HandleAny(path string, handlers ...Handler) {
 	return
 }
 
+// Get binds funcs to path with GET method
 func (r *DefaultRouter) Get(path string, funcs ...HandlerFunc) {
 	r.HandleGet(path, convertToHandlers(funcs...)...)
 }
 
+// Post binds funcs to path with POST method
 func (r *DefaultRouter) Post(path string, funcs ...HandlerFunc) {
 	r.HandlePost(path, convertToHandlers(funcs...)...)
 }
 
+// Put binds funcs to path with PUT method
 func (r *DefaultRouter) Put(path string, funcs ...HandlerFunc) {
 	r.HandlePut(path, convertToHandlers(funcs...)...)
 }
 
+// Delete binds funcs to path with DELETE method
 func (r *DefaultRouter) Delete(path string, funcs ...HandlerFunc) {
 	r.HandleDelete(path, convertToHandlers(funcs...)...)
 }
 
+// Any binds funcs to path with GET/POST/PUT methods
 func (r *DefaultRouter) Any(path string, funcs ...HandlerFunc) {
 	r.HandleAny(path, convertToHandlers(funcs...)...)
 }
 
+// Print prints all path trees
 func (r *DefaultRouter) Print() {
 	for m, n := range r.methodTrees {
 		n.Print(m, "/")
