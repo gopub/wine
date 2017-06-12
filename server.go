@@ -33,6 +33,7 @@ func NewServer() *Server {
 		"minus":    minus,
 		"multiple": multiple,
 		"divide":   divide,
+		"join":     join,
 	})
 	return s
 }
