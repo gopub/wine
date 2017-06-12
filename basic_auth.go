@@ -7,7 +7,7 @@ import (
 )
 
 // BasicAuthUser is key for basic auth user
-const KeyBasicAuthUser = "basic_auth_user"
+const BasicAuthUser = "basic_auth_user"
 
 // BasicAuth returns a basic auth interceptor
 func BasicAuth(userToPassword map[string]string, realm string) HandlerFunc {
@@ -39,7 +39,7 @@ func BasicAuth(userToPassword map[string]string, realm string) HandlerFunc {
 			c.ResponseHeader().Set("WWW-Authenticate", authHeaderValue)
 			c.Status(http.StatusUnauthorized)
 		} else {
-			c.Set(KeyBasicAuthUser, foundUser)
+			c.Set(BasicAuthUser, foundUser)
 			c.Next()
 		}
 	}
