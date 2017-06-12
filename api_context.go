@@ -17,6 +17,7 @@ type APIContext struct {
 	handlers *HandlerChain
 }
 
+// Rebuild rebuilds the context
 func (c *APIContext) Rebuild(rw http.ResponseWriter, req *http.Request, templates []*template.Template, handlers []Handler) {
 	if c.DefaultContext == nil {
 		c.DefaultContext = &DefaultContext{}
@@ -25,27 +26,24 @@ func (c *APIContext) Rebuild(rw http.ResponseWriter, req *http.Request, template
 	c.handlers = NewHandlerChain(handlers)
 }
 
+// Next invokes the next handler
 func (c *APIContext) Next() {
 	if h := c.handlers.Next(); h != nil {
 		h.HandleRequest(c)
 	}
 }
 
+// SendResponse sends a response
 func (c *APIContext) SendResponse(code int, msg string, data interface{}) {
 	c.JSON(types.M{"code": code, "data": data, "msg": msg})
 }
 
+// SendData sends a data response
 func (c *APIContext) SendData(data interface{}) {
 	c.SendResponse(0, "", data)
 }
 
-func (c *APIContext) SendCode(code int) {
-	c.SendResponse(code, "", nil)
-	if code != 0 {
-		log.Println("[WINE] Error:", code, c.HTTPRequest())
-	}
-}
-
+// SendError sends an error response
 func (c *APIContext) SendError(err error) {
 	var e *errors.Error
 	if err == nil {
@@ -58,10 +56,11 @@ func (c *APIContext) SendError(err error) {
 	}
 	c.SendResponse(e.Code(), e.Msg(), nil)
 	if e.Code() != 0 {
-		log.Println("[WINE] Error:", e, c.HTTPRequest(), c.Params())
+		log.Println("[WINE] SendError:", e, c.HTTPRequest(), c.Params())
 	}
 }
 
+// SendMessage sends a message response
 func (c *APIContext) SendMessage(code int, msg string) {
 	c.SendResponse(code, msg, nil)
 	if code != 0 {
@@ -69,11 +68,13 @@ func (c *APIContext) SendMessage(code int, msg string) {
 	}
 }
 
+// SetUserID sets current user id
 func (c *APIContext) SetUserID(userID types.ID) {
 	c.userID = userID
 	log.Println("[WINE] Set uid[", userID, "]", c.HTTPRequest().URL)
 }
 
+// UserID return current user id
 func (c *APIContext) UserID() types.ID {
 	return c.userID
 }
