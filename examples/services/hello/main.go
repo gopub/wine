@@ -16,10 +16,6 @@ func main() {
 		c.Text("hi")
 	})
 
-	s.Group("hi").Get("/", func(c wine.Context) {
-		c.Text("hi")
-	})
-
 	s.Get("hello", func(c wine.Context) {
 		c.Text("Hello, wine!")
 	})

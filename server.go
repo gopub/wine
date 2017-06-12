@@ -143,6 +143,17 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	if c.Responded() == false {
 		c.Status(http.StatusNotFound)
 	}
+
+	if cw, ok := rw.(*compressionResponseWriter); ok {
+		switch v := cw.Writer.(type) {
+		case *gzip.Writer:
+			v.Close()
+		case *flate.Writer:
+			v.Close()
+		default:
+			break
+		}
+	}
 	s.contextPool.Put(c)
 }
 
