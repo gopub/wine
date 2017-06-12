@@ -17,7 +17,7 @@ type DefaultContext struct {
 	responded bool
 	templates []*template.Template
 	handlers  *HandlerChain
-	gzipFlag  bool
+	encoding  Encoding
 
 	req        *http.Request
 	reqHeader  http.Header
@@ -57,7 +57,7 @@ func (dc *DefaultContext) Rebuild(rw http.ResponseWriter, req *http.Request, tem
 	dc.reqParams = ghttp.ParseParameters(req)
 	dc.handlers = NewHandlerChain(handlers)
 	dc.templates = templates
-	dc.gzipFlag = true
+	dc.encoding = EncodingGzip
 
 	for k, v := range req.Header {
 		if strings.Index(k, "x-") == 0 {
@@ -116,27 +116,24 @@ func (dc *DefaultContext) setResponded() {
 	dc.responded = true
 }
 
+func (dc *DefaultContext) parseCompression() string {
+	encodings := dc.reqHeader.Get("Accept-Encoding")
+	if strings.Index(encodings, "gzip") >= 0 {
+		return "gzip"
+	} else if strings.Index(encodings, "defalte") >= 0 {
+		return "defalte"
+	} else {
+		return ""
+	}
+}
+
 // JSON sends json response
 func (dc *DefaultContext) JSON(jsonObj interface{}) {
 	dc.setResponded()
 	for k, v := range dc.respHeader {
 		dc.writer.Header()[k] = v
 	}
-	gzipFlag := false
-	if strings.Index(dc.reqHeader.Get("Accept-Encoding"), "gzip") >= 0 {
-		gzipFlag = dc.gzipFlag
-	}
-	render.JSON(dc.writer, jsonObj, gzipFlag)
-}
-
-// SetGzipFlag sets gzip flag for response
-func (dc *DefaultContext) SetGzipFlag(f bool) {
-	dc.gzipFlag = f
-}
-
-// GzipFlag returns gzip flag
-func (dc *DefaultContext) GzipFlag() bool {
-	return dc.gzipFlag
+	render.JSON(dc.writer, jsonObj, dc.parseCompression())
 }
 
 // Status sends a response just with a status code
@@ -167,22 +164,13 @@ func (dc *DefaultContext) File(filePath string) {
 // HTML sends a HTML response
 func (dc *DefaultContext) HTML(htmlText string) {
 	dc.setResponded()
-
-	gzipFlag := false
-	if strings.Index(dc.reqHeader.Get("Accept-Encoding"), "gzip") >= 0 {
-		gzipFlag = dc.gzipFlag
-	}
-	render.HTML(dc.writer, htmlText, gzipFlag)
+	render.HTML(dc.writer, htmlText, dc.parseCompression())
 }
 
 // Text sends a text response
 func (dc *DefaultContext) Text(text string) {
 	dc.setResponded()
-	gzipFlag := false
-	if strings.Index(dc.reqHeader.Get("Accept-Encoding"), "gzip") >= 0 {
-		gzipFlag = dc.gzipFlag
-	}
-	render.Text(dc.writer, text, gzipFlag)
+	render.Text(dc.writer, text, dc.parseCompression())
 }
 
 // TemplateHTML sends a HTML response. HTML page is rendered according to templateName and params

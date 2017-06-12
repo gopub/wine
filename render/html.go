@@ -2,10 +2,12 @@ package render
 
 import (
 	"html/template"
+	"log"
 	"net/http"
 
 	gcompress "github.com/justintan/gox/compress"
 	ghttp "github.com/justintan/gox/http"
+	gio "github.com/justintan/gox/io"
 )
 
 func TemplateHTML(writer http.ResponseWriter, tpl *template.Template, name string, params interface{}) error {
@@ -17,17 +19,28 @@ func TemplateHTML(writer http.ResponseWriter, tpl *template.Template, name strin
 	return tpl.ExecuteTemplate(writer, name, params)
 }
 
-func HTML(writer http.ResponseWriter, htmlText string, gzipFlag bool) {
+func HTML(writer http.ResponseWriter, htmlText string, compression string) {
 	writer.Header()["Content-Type"] = []string{ghttp.MIMEHTML + "; charset=utf-8"}
-	if gzipFlag {
-		data, err := gcompress.Gzip([]byte(htmlText))
-		if err != nil {
+	var data = []byte(htmlText)
+	if len(compression) > 0 {
+		compressor := gcompress.GetCompressor(compression)
+		if compressor == nil {
+			log.Println("[WINE] No compressor for:", compression)
 			writer.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-		writer.Header().Set("Content-Encoding", "gzip")
-		writer.Write(data)
-	} else {
-		writer.Write([]byte(htmlText))
+		var err error
+		data, err = compressor.Compress(data)
+		if err != nil {
+			log.Println("[WINE] Compression error:", err)
+			writer.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		writer.Header().Set("Content-Encoding", compression)
+	}
+	writer.WriteHeader(http.StatusOK)
+	err := gio.Write(writer, data)
+	if err != nil {
+		log.Println("[WINE] Render error:", err)
 	}
 }

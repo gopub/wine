@@ -7,6 +7,14 @@ import (
 	"github.com/justintan/gox/types"
 )
 
+type Encoding string
+
+const (
+	EncodingNone    = Encoding("")
+	EncodingGzip    = Encoding("gzip")
+	EncodingDefalte = Encoding("deflate")
+)
+
 // Context defines a request context
 type Context interface {
 	HTTPRequest() *http.Request
@@ -18,8 +26,6 @@ type Context interface {
 	ResponseHeader() http.Header
 	Status(status int)
 	Redirect(location string, permanent bool)
-	SetGzipFlag(f bool)
-	GzipFlag() bool
 	JSON(obj interface{})
 	File(filePath string)
 	HTML(htmlText string)
