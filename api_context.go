@@ -2,9 +2,8 @@ package wine
 
 import (
 	"html/template"
-	"net/http"
-
 	"log"
+	"net/http"
 
 	"github.com/justintan/gox/errors"
 	"github.com/justintan/gox/types"
