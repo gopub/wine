@@ -17,7 +17,6 @@ type DefaultContext struct {
 	responded bool
 	templates []*template.Template
 	handlers  *HandlerChain
-	encoding  Encoding
 
 	req        *http.Request
 	reqHeader  http.Header
@@ -57,7 +56,6 @@ func (dc *DefaultContext) Rebuild(rw http.ResponseWriter, req *http.Request, tem
 	dc.reqParams = ghttp.ParseParameters(req)
 	dc.handlers = NewHandlerChain(handlers)
 	dc.templates = templates
-	dc.encoding = EncodingGzip
 
 	for k, v := range req.Header {
 		if strings.Index(k, "x-") == 0 {
@@ -184,7 +182,7 @@ func (dc *DefaultContext) TemplateHTML(templateName string, params interface{}) 
 	}
 }
 
-// ServeHTTP starts http server
+// ServeHTTP handles request with h
 func (dc *DefaultContext) ServeHTTP(h http.Handler) {
 	dc.setResponded()
 	h.ServeHTTP(dc.writer, dc.req)

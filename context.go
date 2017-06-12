@@ -7,14 +7,6 @@ import (
 	"github.com/justintan/gox/types"
 )
 
-type Encoding string
-
-const (
-	EncodingNone    = Encoding("")
-	EncodingGzip    = Encoding("gzip")
-	EncodingDefalte = Encoding("deflate")
-)
-
 // Context defines a request context
 type Context interface {
 	HTTPRequest() *http.Request
