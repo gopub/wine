@@ -60,7 +60,6 @@ func (dc *DefaultContext) Rebuild(rw http.ResponseWriter, req *http.Request, tem
 	dc.gzipFlag = true
 
 	for k, v := range req.Header {
-		k = strings.ToLower(k)
 		if strings.Index(k, "x-") == 0 {
 			k = k[2:]
 		}
