@@ -1,9 +1,8 @@
 package render
 
 import (
-	"net/http"
-
 	"log"
+	"net/http"
 
 	ghttp "github.com/justintan/gox/http"
 	gio "github.com/justintan/gox/io"
