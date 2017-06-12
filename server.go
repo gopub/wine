@@ -28,9 +28,6 @@ func NewServer() *Server {
 	s.Router = NewDefaultRouter()
 	s.Header = make(http.Header)
 	s.RegisterContext(&DefaultContext{})
-	s.Any("ping", func(c Context) {
-		c.Text("Pong")
-	})
 	s.AddTemplateFuncs(template.FuncMap{
 		"plus":     plus,
 		"minus":    minus,
