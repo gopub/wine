@@ -168,8 +168,9 @@ func (r *DefaultRouter) StaticFS(path string, fs http.FileSystem) {
 	}
 
 	fileServer := http.StripPrefix(prefix, http.FileServer(fs))
+	compressionFileServer := compressionWrapper(fileServer)
 	r.Get(path, func(c Context) {
-		c.ServeHTTP(fileServer)
+		c.ServeHTTP(compressionFileServer)
 	})
 	return
 }
