@@ -114,24 +114,13 @@ func (dc *DefaultContext) setResponded() {
 	dc.responded = true
 }
 
-func (dc *DefaultContext) parseCompression() string {
-	encodings := dc.reqHeader.Get("Accept-Encoding")
-	if strings.Index(encodings, "gzip") >= 0 {
-		return "gzip"
-	} else if strings.Index(encodings, "defalte") >= 0 {
-		return "defalte"
-	} else {
-		return ""
-	}
-}
-
 // JSON sends json response
 func (dc *DefaultContext) JSON(jsonObj interface{}) {
 	dc.setResponded()
 	for k, v := range dc.respHeader {
 		dc.writer.Header()[k] = v
 	}
-	render.JSON(dc.writer, jsonObj, dc.parseCompression())
+	render.JSON(dc.writer, jsonObj)
 }
 
 // Status sends a response just with a status code
@@ -162,13 +151,13 @@ func (dc *DefaultContext) File(filePath string) {
 // HTML sends a HTML response
 func (dc *DefaultContext) HTML(htmlText string) {
 	dc.setResponded()
-	render.HTML(dc.writer, htmlText, dc.parseCompression())
+	render.HTML(dc.writer, htmlText)
 }
 
 // Text sends a text response
 func (dc *DefaultContext) Text(text string) {
 	dc.setResponded()
-	render.Text(dc.writer, text, dc.parseCompression())
+	render.Text(dc.writer, text)
 }
 
 // TemplateHTML sends a HTML response. HTML page is rendered according to templateName and params

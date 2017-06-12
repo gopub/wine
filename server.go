@@ -1,6 +1,8 @@
 package wine
 
 import (
+	"compress/flate"
+	"compress/gzip"
 	"context"
 	"html/template"
 	"log"
@@ -87,6 +89,25 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 			log.Println("[WINE] ServeHTTP", e, req)
 		}
 	}()
+
+	// Add compression to responseWriter
+	acceptEncoding := req.Header.Get("Accept-Encoding")
+	if strings.Contains(acceptEncoding, "gzip") {
+		rw.Header().Set("Content-Encoding", "gzip")
+		cw := &compressionResponseWriter{}
+		cw.ResponseWriter = rw
+		cw.Writer = gzip.NewWriter(rw)
+		rw = cw
+	} else if strings.Contains(acceptEncoding, "deflate") {
+		fw, err := flate.NewWriter(rw, flate.DefaultCompression)
+		if err == nil {
+			rw.Header().Set("Content-Encoding", "deflate")
+			cw := &compressionResponseWriter{}
+			cw.Writer = fw
+			cw.ResponseWriter = rw
+			rw = cw
+		}
+	}
 
 	path := req.RequestURI
 	i := strings.Index(path, "?")
