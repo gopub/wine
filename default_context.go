@@ -173,8 +173,8 @@ func (dc *DefaultContext) Text(text string) {
 
 // TemplateHTML sends a HTML response. HTML page is rendered according to templateName and params
 func (dc *DefaultContext) TemplateHTML(templateName string, params interface{}) {
-	for _, tpl := range dc.templates {
-		err := render.TemplateHTML(dc.writer, tpl, templateName, params)
+	for _, tmpl := range dc.templates {
+		err := render.TemplateHTML(dc.writer, tmpl, templateName, params)
 		if err == nil {
 			dc.setResponded()
 			break

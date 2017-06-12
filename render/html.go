@@ -10,13 +10,13 @@ import (
 	gio "github.com/justintan/gox/io"
 )
 
-func TemplateHTML(writer http.ResponseWriter, tpl *template.Template, name string, params interface{}) error {
+func TemplateHTML(writer http.ResponseWriter, tmpl *template.Template, name string, params interface{}) error {
 	writer.Header()["Content-Type"] = []string{ghttp.MIMEHTML + "; charset=utf-8"}
 	if len(name) == 0 {
-		return tpl.Execute(writer, params)
+		return tmpl.Execute(writer, params)
 	}
 
-	return tpl.ExecuteTemplate(writer, name, params)
+	return tmpl.ExecuteTemplate(writer, name, params)
 }
 
 func HTML(writer http.ResponseWriter, htmlText string, compression string) {
