@@ -126,37 +126,37 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 
 // AddGlobTemplate adds a template by parsing template files with pattern
 func (s *Server) AddGlobTemplate(pattern string) {
-	tpl := template.Must(template.ParseGlob(pattern))
-	s.AddTemplate(tpl)
+	tmpl := template.Must(template.ParseGlob(pattern))
+	s.AddTemplate(tmpl)
 }
 
 // AddFilesTemplate adds a template by parsing template files
 func (s *Server) AddFilesTemplate(files ...string) {
-	tpl := template.Must(template.ParseFiles(files...))
-	s.AddTemplate(tpl)
+	tmpl := template.Must(template.ParseFiles(files...))
+	s.AddTemplate(tmpl)
 }
 
 // AddTextTemplate adds a template by parsing texts
 func (s *Server) AddTextTemplate(name string, texts ...string) {
-	tpl := template.New(name)
+	tmpl := template.New(name)
 	for _, txt := range texts {
-		tpl = template.Must(tpl.Parse(txt))
+		tmpl = template.Must(tmpl.Parse(txt))
 	}
-	s.AddTemplate(tpl)
+	s.AddTemplate(tmpl)
 }
 
 // AddTemplate adds a template
-func (s *Server) AddTemplate(tpl *template.Template) {
+func (s *Server) AddTemplate(tmpl *template.Template) {
 	if s.templateFuncs != nil {
-		tpl.Funcs(s.templateFuncs)
+		tmpl.Funcs(s.templateFuncs)
 	}
-	s.templates = append(s.templates, tpl)
+	s.templates = append(s.templates, tmpl)
 }
 
 // AddTemplateFuncs adds template functions
 func (s *Server) AddTemplateFuncs(funcs template.FuncMap) {
 	if funcs == nil {
-		return
+		panic("funcs is nil")
 	}
 
 	if s.templateFuncs == nil {
@@ -167,7 +167,7 @@ func (s *Server) AddTemplateFuncs(funcs template.FuncMap) {
 		}
 	}
 
-	for _, tpl := range s.templates {
-		tpl.Funcs(funcs)
+	for _, tmpl := range s.templates {
+		tmpl.Funcs(funcs)
 	}
 }
