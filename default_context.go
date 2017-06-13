@@ -82,7 +82,7 @@ func (dc *DefaultContext) Next() {
 	}
 }
 
-// PRequest returns request
+// Request returns request
 func (dc *DefaultContext) Request() *http.Request {
 	return dc.req
 }
