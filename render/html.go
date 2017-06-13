@@ -9,6 +9,7 @@ import (
 	gio "github.com/justintan/gox/io"
 )
 
+// TemplateHTML render tmpl with name, params and writes into writer
 func TemplateHTML(writer http.ResponseWriter, tmpl *template.Template, name string, params interface{}) error {
 	writer.Header()["Content-Type"] = []string{ghttp.MIMEHTML + "; charset=utf-8"}
 	if len(name) == 0 {
@@ -18,6 +19,7 @@ func TemplateHTML(writer http.ResponseWriter, tmpl *template.Template, name stri
 	return tmpl.ExecuteTemplate(writer, name, params)
 }
 
+// HTML writes htmlText into writer
 func HTML(writer http.ResponseWriter, htmlText string) {
 	writer.Header()["Content-Type"] = []string{ghttp.MIMEHTML + "; charset=utf-8"}
 	var data = []byte(htmlText)
