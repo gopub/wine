@@ -102,7 +102,7 @@ func (dc *DefaultContext) Responded() bool {
 	return dc.responded
 }
 
-func (dc *DefaultContext) setResponded() {
+func (dc *DefaultContext) markResponded() {
 	if dc.responded {
 		panic("[WINE] already responded")
 	}
@@ -111,7 +111,7 @@ func (dc *DefaultContext) setResponded() {
 
 // JSON sends json response
 func (dc *DefaultContext) JSON(jsonObj interface{}) {
-	dc.setResponded()
+	dc.markResponded()
 	for k, v := range dc.respHeader {
 		dc.writer.Header()[k] = v
 	}
@@ -120,7 +120,7 @@ func (dc *DefaultContext) JSON(jsonObj interface{}) {
 
 // Status sends a response just with a status code
 func (dc *DefaultContext) Status(status int) {
-	dc.setResponded()
+	dc.markResponded()
 	for k, v := range dc.respHeader {
 		dc.writer.Header()[k] = v
 	}
@@ -139,19 +139,19 @@ func (dc *DefaultContext) Redirect(location string, permanent bool) {
 
 // File sends a file response
 func (dc *DefaultContext) File(filePath string) {
-	dc.setResponded()
+	dc.markResponded()
 	http.ServeFile(dc.writer, dc.req, filePath)
 }
 
 // HTML sends a HTML response
 func (dc *DefaultContext) HTML(htmlText string) {
-	dc.setResponded()
+	dc.markResponded()
 	render.HTML(dc.writer, htmlText)
 }
 
 // Text sends a text response
 func (dc *DefaultContext) Text(text string) {
-	dc.setResponded()
+	dc.markResponded()
 	render.Text(dc.writer, text)
 }
 
@@ -160,7 +160,7 @@ func (dc *DefaultContext) TemplateHTML(templateName string, params interface{}) 
 	for _, tmpl := range dc.templates {
 		err := render.TemplateHTML(dc.writer, tmpl, templateName, params)
 		if err == nil {
-			dc.setResponded()
+			dc.markResponded()
 			break
 		}
 	}
@@ -168,6 +168,6 @@ func (dc *DefaultContext) TemplateHTML(templateName string, params interface{}) 
 
 // ServeHTTP handles request with h
 func (dc *DefaultContext) ServeHTTP(h http.Handler) {
-	dc.setResponded()
+	dc.markResponded()
 	h.ServeHTTP(dc.writer, dc.req)
 }
