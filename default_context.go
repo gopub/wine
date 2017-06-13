@@ -3,7 +3,6 @@ package wine
 import (
 	"html/template"
 	"net/http"
-	"strings"
 
 	ghttp "github.com/justintan/gox/http"
 	"github.com/justintan/gox/types"
@@ -18,10 +17,8 @@ type DefaultContext struct {
 	templates []*template.Template
 	handlers  *HandlerChain
 
-	req        *http.Request
-	reqHeader  http.Header
-	reqParams  types.M
-	respHeader http.Header
+	req       *http.Request
+	reqParams types.M
 }
 
 // Rebuild can construct Context object with new parameters in order to make it reusable
@@ -34,35 +31,12 @@ func (dc *DefaultContext) Rebuild(rw http.ResponseWriter, req *http.Request, tem
 		dc.keyValues = types.M{}
 	}
 
-	if dc.reqHeader != nil {
-		for k := range dc.reqHeader {
-			delete(dc.reqHeader, k)
-		}
-	} else {
-		dc.reqHeader = make(http.Header)
-	}
-
-	if dc.respHeader != nil {
-		for k := range dc.respHeader {
-			delete(dc.respHeader, k)
-		}
-	} else {
-		dc.respHeader = make(http.Header)
-	}
-
 	dc.responded = false
 	dc.writer = rw
 	dc.req = req
 	dc.reqParams = ghttp.ParseParameters(req)
 	dc.handlers = NewHandlerChain(handlers)
 	dc.templates = templates
-
-	for k, v := range req.Header {
-		if strings.Index(k, "x-") == 0 {
-			k = k[2:]
-		}
-		dc.reqHeader[k] = v
-	}
 }
 
 // Set sets key:value
@@ -94,7 +68,7 @@ func (dc *DefaultContext) Params() types.M {
 
 // Header returns response header
 func (dc *DefaultContext) Header() http.Header {
-	return dc.respHeader
+	return dc.writer.Header()
 }
 
 // Responded returns a flag to determine whether if the response has been written
@@ -112,24 +86,18 @@ func (dc *DefaultContext) markResponded() {
 // JSON sends json response
 func (dc *DefaultContext) JSON(jsonObj interface{}) {
 	dc.markResponded()
-	for k, v := range dc.respHeader {
-		dc.writer.Header()[k] = v
-	}
 	render.JSON(dc.writer, jsonObj)
 }
 
 // Status sends a response just with a status code
 func (dc *DefaultContext) Status(status int) {
 	dc.markResponded()
-	for k, v := range dc.respHeader {
-		dc.writer.Header()[k] = v
-	}
 	render.Status(dc.writer, status)
 }
 
 // Redirect sends a redirect response
 func (dc *DefaultContext) Redirect(location string, permanent bool) {
-	dc.respHeader.Set("Location", location)
+	dc.writer.Header().Set("Location", location)
 	if permanent {
 		dc.Status(http.StatusMovedPermanently)
 	} else {
