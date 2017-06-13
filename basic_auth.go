@@ -36,7 +36,7 @@ func BasicAuth(userToPassword map[string]string, realm string) HandlerFunc {
 		}
 
 		if len(foundUser) == 0 {
-			c.ResponseHeader().Set("WWW-Authenticate", authHeaderValue)
+			c.Header().Set("WWW-Authenticate", authHeaderValue)
 			c.Status(http.StatusUnauthorized)
 		} else {
 			c.Set(BasicAuthUser, foundUser)

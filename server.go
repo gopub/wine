@@ -128,8 +128,8 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	c.Params().AddMapObj(params)
 	for k, v := range s.Header {
 		//Don't overwrite
-		if _, found := c.ResponseHeader()[k]; !found {
-			c.ResponseHeader()[k] = v
+		if _, found := c.Header()[k]; !found {
+			c.Header()[k] = v
 		}
 	}
 	c.Next()

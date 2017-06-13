@@ -92,13 +92,8 @@ func (dc *DefaultContext) Params() types.M {
 	return dc.reqParams
 }
 
-// Header returns request header
+// Header returns response header
 func (dc *DefaultContext) Header() http.Header {
-	return dc.reqHeader
-}
-
-// ResponseHeader returns response header
-func (dc *DefaultContext) ResponseHeader() http.Header {
 	return dc.respHeader
 }
 
