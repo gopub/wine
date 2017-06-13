@@ -82,8 +82,8 @@ func (dc *DefaultContext) Next() {
 	}
 }
 
-// HTTPRequest returns request
-func (dc *DefaultContext) HTTPRequest() *http.Request {
+// PRequest returns request
+func (dc *DefaultContext) Request() *http.Request {
 	return dc.req
 }
 

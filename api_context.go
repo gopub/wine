@@ -55,7 +55,7 @@ func (c *APIContext) SendError(err error) {
 	}
 	c.SendResponse(e.Code(), e.Msg(), nil)
 	if e.Code() != 0 {
-		log.Println("[WINE] SendError:", e, c.HTTPRequest(), c.Params())
+		log.Println("[WINE] SendError:", e, c.Request(), c.Params())
 	}
 }
 
@@ -63,14 +63,14 @@ func (c *APIContext) SendError(err error) {
 func (c *APIContext) SendMessage(code int, msg string) {
 	c.SendResponse(code, msg, nil)
 	if code != 0 {
-		log.Println("[WINE] Error:", code, msg, c.HTTPRequest())
+		log.Println("[WINE] Error:", code, msg, c.Request())
 	}
 }
 
 // SetUserID sets current user id
 func (c *APIContext) SetUserID(userID types.ID) {
 	c.userID = userID
-	log.Println("[WINE] Set uid[", userID, "]", c.HTTPRequest().URL)
+	log.Println("[WINE] Set uid[", userID, "]", c.Request().URL)
 }
 
 // UserID return current user id

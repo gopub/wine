@@ -24,7 +24,7 @@ func Logger(c Context) {
 	log.Printf("[WINE] %.3fms %v%s%v %s",
 		cost,
 		greenColor,
-		c.HTTPRequest().Method,
+		c.Request().Method,
 		resetColor,
-		c.HTTPRequest().RequestURI)
+		c.Request().RequestURI)
 }

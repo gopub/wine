@@ -89,7 +89,7 @@ Custom middleware
     	//pass request to the next handler
     	<b>c.Next()</b> 
     	cost := float32((time.Since(st) / time.Microsecond)) / 1000.0
-    	req := c.HTTPRequest()
+    	req := c.Request()
     	log.Printf("[WINE] %.3fms %s %s", cost, req.Method, req.RequestURI)
     } <br/>
     func main() {

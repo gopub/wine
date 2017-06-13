@@ -9,9 +9,8 @@ import (
 
 // Context defines a request context
 type Context interface {
-	HTTPRequest() *http.Request
+	Request() *http.Request
 	Params() types.M
-	Header() http.Header
 
 	Next()
 	Responded() bool
