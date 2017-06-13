@@ -10,7 +10,6 @@ import (
 
 // Text render text into writer
 func Text(writer http.ResponseWriter, text string) {
-	writer.WriteHeader(http.StatusOK)
 	writer.Header()["Content-Type"] = []string{ghttp.MIMETEXT + "; charset=utf-8"}
 	data := []byte(text)
 	err := gio.Write(writer, data)

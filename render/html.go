@@ -23,7 +23,6 @@ func TemplateHTML(writer http.ResponseWriter, tmpl *template.Template, name stri
 func HTML(writer http.ResponseWriter, htmlText string) {
 	writer.Header()["Content-Type"] = []string{ghttp.MIMEHTML + "; charset=utf-8"}
 	var data = []byte(htmlText)
-	writer.WriteHeader(http.StatusOK)
 	err := gio.Write(writer, data)
 	if err != nil {
 		log.Println("[WINE] Render error:", err)

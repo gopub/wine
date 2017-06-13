@@ -19,7 +19,6 @@ func JSON(writer http.ResponseWriter, jsonObj interface{}) {
 		return
 	}
 
-	writer.WriteHeader(http.StatusOK)
 	err = gio.Write(writer, data)
 	if err != nil {
 		log.Println("[WINE] Render error:", err)
