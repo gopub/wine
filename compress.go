@@ -35,12 +35,12 @@ func newCompressedResponseWriter(w http.ResponseWriter, compressionName string) 
 	}
 }
 
-func (g *compressedResponseWriter) Write(data []byte) (int, error) {
-	return g.compressedWriter.Write(data)
+func (w *compressedResponseWriter) Write(data []byte) (int, error) {
+	return w.compressedWriter.Write(data)
 }
 
-func (g *compressedResponseWriter) Close() error {
-	if closer, ok := g.compressedWriter.(io.Closer); ok {
+func (w *compressedResponseWriter) Close() error {
+	if closer, ok := w.compressedWriter.(io.Closer); ok {
 		return closer.Close()
 	}
 	return nil
