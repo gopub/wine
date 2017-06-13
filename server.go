@@ -1,8 +1,6 @@
 package wine
 
 import (
-	"compress/flate"
-	"compress/gzip"
 	"context"
 	"html/template"
 	"log"
@@ -94,17 +92,12 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	acceptEncoding := req.Header.Get("Accept-Encoding")
 	if strings.Contains(acceptEncoding, "gzip") {
 		rw.Header().Set("Content-Encoding", "gzip")
-		cw := &compressionResponseWriter{}
-		cw.ResponseWriter = rw
-		cw.Writer = gzip.NewWriter(rw)
-		rw = cw
+		if cw, err := newCompressedResponseWriter(rw, "gzip"); err == nil {
+			rw = cw
+		}
 	} else if strings.Contains(acceptEncoding, "deflate") {
-		fw, err := flate.NewWriter(rw, flate.DefaultCompression)
-		if err == nil {
-			rw.Header().Set("Content-Encoding", "deflate")
-			cw := &compressionResponseWriter{}
-			cw.Writer = fw
-			cw.ResponseWriter = rw
+		rw.Header().Set("Content-Encoding", "deflate")
+		if cw, err := newCompressedResponseWriter(rw, "deflate"); err == nil {
 			rw = cw
 		}
 	}
@@ -144,15 +137,8 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		c.Status(http.StatusNotFound)
 	}
 
-	if cw, ok := rw.(*compressionResponseWriter); ok {
-		switch v := cw.Writer.(type) {
-		case *gzip.Writer:
-			v.Close()
-		case *flate.Writer:
-			v.Close()
-		default:
-			break
-		}
+	if cw, ok := rw.(*compressedResponseWriter); ok {
+		cw.Close()
 	}
 	s.contextPool.Put(c)
 }
