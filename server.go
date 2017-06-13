@@ -85,6 +85,10 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	defer func() {
 		if e := recover(); e != nil {
 			log.Println("[WINE] ServeHTTP", e, req)
+		} else {
+			if cw, ok := rw.(*compressedResponseWriter); ok {
+				cw.Close()
+			}
 		}
 	}()
 
@@ -135,10 +139,6 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 
 	if c.Responded() == false {
 		c.Status(http.StatusNotFound)
-	}
-
-	if cw, ok := rw.(*compressedResponseWriter); ok {
-		cw.Close()
 	}
 
 	s.contextPool.Put(c)
