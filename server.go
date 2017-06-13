@@ -109,7 +109,7 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	}
 	path = normalizePath(path)
 	method := strings.ToUpper(req.Method)
-	handlers, params := s.Match(method, path)
+	handlers, pathParams := s.Match(method, path)
 	if len(handlers) == 0 {
 		if path == "/favicon.ico/" || path == "/favicon.ico" || path == "favicon.ico" {
 			rw.Header()["Content-Type"] = []string{"image/x-icon"}
@@ -125,14 +125,14 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	c, _ := s.contextPool.Get().(Context)
 	c.Rebuild(rw, req, s.templates, handlers)
 
-	c.Params().AddMapObj(params)
+	c.Params().AddMapObj(pathParams)
+	// Set global headers
 	for k, v := range s.Header {
-		//Don't overwrite
-		if _, found := c.Header()[k]; !found {
-			c.Header()[k] = v
-		}
+		c.Header()[k] = v
 	}
+
 	c.Next()
+
 	if c.Responded() == false {
 		c.Status(http.StatusNotFound)
 	}
@@ -140,6 +140,7 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	if cw, ok := rw.(*compressedResponseWriter); ok {
 		cw.Close()
 	}
+
 	s.contextPool.Put(c)
 }
 
