@@ -145,7 +145,7 @@ func (r *DefaultRouter) StaticFS(path string, fs http.FileSystem) {
 
 	fileServer := http.StripPrefix(prefix, http.FileServer(fs))
 	r.Get(path, func(c Context) {
-		c.ServeHTTP(fileServer)
+		c.Handle(fileServer)
 	})
 	return
 }

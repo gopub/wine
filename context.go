@@ -23,7 +23,7 @@ type Context interface {
 	HTML(htmlText string)
 	Text(text string)
 	TemplateHTML(templateName string, params interface{})
-	ServeHTTP(h http.Handler)
+	Handle(h http.Handler)
 
 	Set(key string, value interface{})
 	Get(key string) interface{}

@@ -160,8 +160,8 @@ func (c *DefaultContext) TemplateHTML(templateName string, params interface{}) {
 	}
 }
 
-// ServeHTTP handles request with h
-func (c *DefaultContext) ServeHTTP(h http.Handler) {
+// Handle handles request with h
+func (c *DefaultContext) Handle(h http.Handler) {
 	c.markResponded()
 	h.ServeHTTP(c.writer, c.req)
 }
