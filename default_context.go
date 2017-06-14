@@ -22,120 +22,120 @@ type DefaultContext struct {
 }
 
 // Rebuild can construct Context object with new parameters in order to make it reusable
-func (dc *DefaultContext) Rebuild(rw http.ResponseWriter, req *http.Request, templates []*template.Template, handlers []Handler) {
-	if dc.keyValues != nil {
-		for k := range dc.keyValues {
-			delete(dc.keyValues, k)
+func (c *DefaultContext) Rebuild(rw http.ResponseWriter, req *http.Request, templates []*template.Template, handlers []Handler) {
+	if c.keyValues != nil {
+		for k := range c.keyValues {
+			delete(c.keyValues, k)
 		}
 	} else {
-		dc.keyValues = types.M{}
+		c.keyValues = types.M{}
 	}
 
-	dc.responded = false
-	dc.writer = rw
-	dc.req = req
-	dc.reqParams = ghttp.ParseParameters(req)
-	dc.handlers = NewHandlerChain(handlers)
-	dc.templates = templates
+	c.responded = false
+	c.writer = rw
+	c.req = req
+	c.reqParams = ghttp.ParseParameters(req)
+	c.handlers = NewHandlerChain(handlers)
+	c.templates = templates
 }
 
 // Set sets key:value
-func (dc *DefaultContext) Set(key string, value interface{}) {
-	dc.keyValues[key] = value
+func (c *DefaultContext) Set(key string, value interface{}) {
+	c.keyValues[key] = value
 }
 
 // Get returns value for key
-func (dc *DefaultContext) Get(key string) interface{} {
-	return dc.keyValues[key]
+func (c *DefaultContext) Get(key string) interface{} {
+	return c.keyValues[key]
 }
 
 // Next calls the next handler
-func (dc *DefaultContext) Next() {
-	if h := dc.handlers.Next(); h != nil {
-		h.HandleRequest(dc)
+func (c *DefaultContext) Next() {
+	if h := c.handlers.Next(); h != nil {
+		h.HandleRequest(c)
 	}
 }
 
 // Request returns request
-func (dc *DefaultContext) Request() *http.Request {
-	return dc.req
+func (c *DefaultContext) Request() *http.Request {
+	return c.req
 }
 
 // Params returns request's parameters including queries, body
-func (dc *DefaultContext) Params() types.M {
-	return dc.reqParams
+func (c *DefaultContext) Params() types.M {
+	return c.reqParams
 }
 
 // Header returns response header
-func (dc *DefaultContext) Header() http.Header {
-	return dc.writer.Header()
+func (c *DefaultContext) Header() http.Header {
+	return c.writer.Header()
 }
 
 // Responded returns a flag to determine whether if the response has been written
-func (dc *DefaultContext) Responded() bool {
-	return dc.responded
+func (c *DefaultContext) Responded() bool {
+	return c.responded
 }
 
-func (dc *DefaultContext) markResponded() {
-	if dc.responded {
+func (c *DefaultContext) markResponded() {
+	if c.responded {
 		panic("[WINE] already responded")
 	}
-	dc.responded = true
+	c.responded = true
 }
 
 // JSON sends json response
-func (dc *DefaultContext) JSON(jsonObj interface{}) {
-	dc.markResponded()
-	render.JSON(dc.writer, jsonObj)
+func (c *DefaultContext) JSON(jsonObj interface{}) {
+	c.markResponded()
+	render.JSON(c.writer, jsonObj)
 }
 
 // Status sends a response just with a status code
-func (dc *DefaultContext) Status(status int) {
-	dc.markResponded()
-	render.Status(dc.writer, status)
+func (c *DefaultContext) Status(status int) {
+	c.markResponded()
+	render.Status(c.writer, status)
 }
 
 // Redirect sends a redirect response
-func (dc *DefaultContext) Redirect(location string, permanent bool) {
-	dc.writer.Header().Set("Location", location)
+func (c *DefaultContext) Redirect(location string, permanent bool) {
+	c.writer.Header().Set("Location", location)
 	if permanent {
-		dc.Status(http.StatusMovedPermanently)
+		c.Status(http.StatusMovedPermanently)
 	} else {
-		dc.Status(http.StatusFound)
+		c.Status(http.StatusFound)
 	}
 }
 
 // File sends a file response
-func (dc *DefaultContext) File(filePath string) {
-	dc.markResponded()
-	http.ServeFile(dc.writer, dc.req, filePath)
+func (c *DefaultContext) File(filePath string) {
+	c.markResponded()
+	http.ServeFile(c.writer, c.req, filePath)
 }
 
 // HTML sends a HTML response
-func (dc *DefaultContext) HTML(htmlText string) {
-	dc.markResponded()
-	render.HTML(dc.writer, htmlText)
+func (c *DefaultContext) HTML(htmlText string) {
+	c.markResponded()
+	render.HTML(c.writer, htmlText)
 }
 
 // Text sends a text response
-func (dc *DefaultContext) Text(text string) {
-	dc.markResponded()
-	render.Text(dc.writer, text)
+func (c *DefaultContext) Text(text string) {
+	c.markResponded()
+	render.Text(c.writer, text)
 }
 
 // TemplateHTML sends a HTML response. HTML page is rendered according to templateName and params
-func (dc *DefaultContext) TemplateHTML(templateName string, params interface{}) {
-	for _, tmpl := range dc.templates {
-		err := render.TemplateHTML(dc.writer, tmpl, templateName, params)
+func (c *DefaultContext) TemplateHTML(templateName string, params interface{}) {
+	for _, tmpl := range c.templates {
+		err := render.TemplateHTML(c.writer, tmpl, templateName, params)
 		if err == nil {
-			dc.markResponded()
+			c.markResponded()
 			break
 		}
 	}
 }
 
 // ServeHTTP handles request with h
-func (dc *DefaultContext) ServeHTTP(h http.Handler) {
-	dc.markResponded()
-	h.ServeHTTP(dc.writer, dc.req)
+func (c *DefaultContext) ServeHTTP(h http.Handler) {
+	c.markResponded()
+	h.ServeHTTP(c.writer, c.req)
 }
