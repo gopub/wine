@@ -21,7 +21,7 @@ func newCompressedResponseWriter(w http.ResponseWriter, compressionName string) 
 		cw.ResponseWriter = w
 		cw.compressedWriter = gzip.NewWriter(w)
 		return cw, nil
-	case "defalte":
+	case "deflate":
 		fw, err := flate.NewWriter(w, flate.DefaultCompression)
 		if err != nil {
 			return nil, err
