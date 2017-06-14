@@ -86,7 +86,7 @@ func (r *DefaultRouter) Bind(method string, path string, handlers ...Handler) {
 	n := r.methodTrees[method]
 	if n == nil {
 		n = &node{}
-		n.t = staticNode
+		n.t = _StaticNode
 		r.methodTrees[method] = n
 	}
 

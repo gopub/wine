@@ -10,19 +10,19 @@ import (
 type nodeType int
 
 const (
-	staticNode   nodeType = 0 // /users
-	paramNode    nodeType = 1 // /users/:id
-	wildcardNode nodeType = 2 // /users/:id/photos/*
+	_StaticNode   nodeType = 0 // /users
+	_ParamNode    nodeType = 1 // /users/:id
+	_WildcardNode nodeType = 2 // /users/:id/photos/*
 )
 
 func (n nodeType) String() string {
 	switch n {
-	case staticNode:
-		return "staticNode"
-	case paramNode:
-		return "paramNode"
-	case wildcardNode:
-		return "wildcardNode"
+	case _StaticNode:
+		return "_StaticNode"
+	case _ParamNode:
+		return "_ParamNode"
+	case _WildcardNode:
+		return "_WildcardNode"
 	default:
 		return ""
 	}
@@ -57,12 +57,12 @@ func newNode(pathSegment string) *node {
 		path: pathSegment,
 	}
 	switch n.t {
-	case paramNode:
+	case _ParamNode:
 		n.paramNames = strings.Split(pathSegment, ",")
 		for i, pn := range n.paramNames {
 			n.paramNames[i] = pn[1:]
 		}
-	case wildcardNode:
+	case _WildcardNode:
 		n.path = pathSegment[1:]
 	default:
 		break
@@ -76,7 +76,7 @@ func (n *node) conflict(nodes []*node) bool {
 	}
 
 	nod := nodes[0]
-	if n.t == wildcardNode || nod.t == wildcardNode {
+	if n.t == _WildcardNode || nod.t == _WildcardNode {
 		return true
 	}
 
@@ -86,11 +86,11 @@ func (n *node) conflict(nodes []*node) bool {
 
 	//n.t == node.t
 
-	if n.t == staticNode {
+	if n.t == _StaticNode {
 		return n.path == nod.path && len(n.handlers) > 0 && len(nod.handlers) > 0
 	}
 
-	if n.t == paramNode {
+	if n.t == _ParamNode {
 		if len(n.paramNames) != len(nod.paramNames) {
 			return false
 		}
@@ -139,13 +139,13 @@ func (n *node) add(nodes []*node) bool {
 
 	nod = nodes[0]
 	switch nod.t {
-	case staticNode:
+	case _StaticNode:
 		n.children = append([]*node{nod}, n.children...)
 		break
-	case paramNode:
+	case _ParamNode:
 		i := len(n.children) - 1
 		for i >= 0 {
-			if n.children[i].t != wildcardNode {
+			if n.children[i].t != _WildcardNode {
 				break
 			}
 			i--
@@ -161,7 +161,7 @@ func (n *node) add(nodes []*node) bool {
 			n.children[i+1] = nod
 		}
 		break
-	case wildcardNode:
+	case _WildcardNode:
 		n.children = append(n.children, nod)
 		break
 	default:
@@ -179,7 +179,7 @@ func (n *node) match(pathSegments []string) ([]Handler, map[string]string) {
 	//log.Println(n.t, n.path, n.paramNames, n.children, "==", pathSegments)
 	segment := pathSegments[0]
 	switch n.t {
-	case staticNode:
+	case _StaticNode:
 		switch {
 		case n.path != segment:
 			return nil, nil
@@ -196,7 +196,7 @@ func (n *node) match(pathSegments []string) ([]Handler, map[string]string) {
 			}
 			return nil, nil
 		}
-	case paramNode:
+	case _ParamNode:
 		var handlers []Handler
 		var params map[string]string
 		if len(pathSegments) == 1 || (pathSegments[1] == "" && len(n.handlers) > 0) {
@@ -224,7 +224,7 @@ func (n *node) match(pathSegments []string) ([]Handler, map[string]string) {
 			}
 		}
 		return handlers, params
-	case wildcardNode:
+	case _WildcardNode:
 		return n.handlers, nil
 	default:
 		return nil, nil
@@ -234,9 +234,9 @@ func (n *node) match(pathSegments []string) ([]Handler, map[string]string) {
 func (n *node) Print(method string, parentPath string) {
 	var path string
 	switch n.t {
-	case staticNode:
+	case _StaticNode:
 		path = parentPath + "/" + n.path
-	case paramNode:
+	case _ParamNode:
 		path = parentPath + "/" + n.path
 	default:
 		path = parentPath + "/*" + n.path

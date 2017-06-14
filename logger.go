@@ -6,14 +6,14 @@ import (
 )
 
 var (
-	greenColor   = string([]byte{27, 91, 57, 55, 59, 52, 50, 109})
-	whiteColor   = string([]byte{27, 91, 57, 48, 59, 52, 55, 109})
-	yellowColor  = string([]byte{27, 91, 57, 55, 59, 52, 51, 109})
-	redColor     = string([]byte{27, 91, 57, 55, 59, 52, 49, 109})
-	blueColor    = string([]byte{27, 91, 57, 55, 59, 52, 52, 109})
-	magentaColor = string([]byte{27, 91, 57, 55, 59, 52, 53, 109})
-	cyanColor    = string([]byte{27, 91, 57, 55, 59, 52, 54, 109})
-	resetColor   = string([]byte{27, 91, 48, 109})
+	_greenColor   = string([]byte{27, 91, 57, 55, 59, 52, 50, 109})
+	_whiteColor   = string([]byte{27, 91, 57, 48, 59, 52, 55, 109})
+	_yellowColor  = string([]byte{27, 91, 57, 55, 59, 52, 51, 109})
+	_redColor     = string([]byte{27, 91, 57, 55, 59, 52, 49, 109})
+	_blueColor    = string([]byte{27, 91, 57, 55, 59, 52, 52, 109})
+	_magentaColor = string([]byte{27, 91, 57, 55, 59, 52, 53, 109})
+	_cyanColor    = string([]byte{27, 91, 57, 55, 59, 52, 54, 109})
+	_resetColor   = string([]byte{27, 91, 48, 109})
 )
 
 // Logger calculates cost time and output to console
@@ -23,8 +23,8 @@ func Logger(c Context) {
 	cost := float32((time.Since(st) / time.Microsecond)) / 1000.0
 	log.Printf("[WINE] %.3fms %v%s%v %s",
 		cost,
-		greenColor,
+		_greenColor,
 		c.Request().Method,
-		resetColor,
+		_resetColor,
 		c.Request().RequestURI)
 }
