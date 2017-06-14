@@ -115,7 +115,7 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	method := strings.ToUpper(req.Method)
 	handlers, pathParams := s.Match(method, path)
 	if len(handlers) == 0 {
-		if path == "/favicon.ico/" || path == "/favicon.ico" || path == "favicon.ico" {
+		if path == "favicon.ico" {
 			rw.Header()["Content-Type"] = []string{"image/x-icon"}
 			rw.WriteHeader(http.StatusOK)
 			rw.Write(faviconBytes)
