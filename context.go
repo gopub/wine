@@ -16,6 +16,7 @@ type Context interface {
 	Responded() bool
 	Header() http.Header
 	Redirect(location string, permanent bool)
+	Send(data []byte, contentType string)
 	Status(status int)
 	JSON(obj interface{})
 	File(filePath string)

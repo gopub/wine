@@ -2,9 +2,13 @@ package wine
 
 import (
 	"html/template"
+	"log"
 	"net/http"
 
+	"strings"
+
 	ghttp "github.com/justintan/gox/http"
+	gio "github.com/justintan/gox/io"
 	"github.com/justintan/gox/types"
 	"github.com/justintan/wine/render"
 )
@@ -87,6 +91,22 @@ func (c *DefaultContext) markResponded() {
 		panic("[WINE] already responded")
 	}
 	c.responded = true
+}
+
+// Send sends bytes
+func (c *DefaultContext) Send(data []byte, contentType string) {
+	c.markResponded()
+	if len(contentType) == 0 {
+		contentType = http.DetectContentType(data)
+	}
+	if strings.Index(contentType, "charset") < 0 {
+		contentType += "; charset=utf-8"
+	}
+	c.Header()["Content-Type"] = []string{contentType}
+	err := gio.Write(c.writer, data)
+	if err != nil {
+		log.Println("[WINE] Send error:", err)
+	}
 }
 
 // JSON sends json response
