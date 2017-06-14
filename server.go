@@ -27,6 +27,7 @@ func NewServer() *Server {
 	s := &Server{}
 	s.Router = NewDefaultRouter()
 	s.Header = make(http.Header)
+	s.Header.Set("Server", "Wine")
 	s.RegisterContext(&DefaultContext{})
 	s.AddTemplateFuncs(template.FuncMap{
 		"plus":     plus,
