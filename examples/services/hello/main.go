@@ -7,7 +7,7 @@ import (
 )
 
 func main() {
-	s := wine.Default()
+	s := wine.DefaultServer()
 	s.Get("/", func(c wine.Context) {
 		c.Text("root")
 	})

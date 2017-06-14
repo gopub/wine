@@ -11,7 +11,7 @@ import (
 	"github.com/justintan/gox/runtime"
 )
 
-const defaultMaxRequestMemory = 8 << 20
+const _DefaultMaxRequestMemory = 8 << 20
 
 // Server implements web server
 type Server struct {
@@ -29,7 +29,7 @@ type Server struct {
 func NewServer() *Server {
 	s := &Server{}
 	s.Router = NewDefaultRouter()
-	s.MaxRequestMemory = defaultMaxRequestMemory
+	s.MaxRequestMemory = _DefaultMaxRequestMemory
 	s.Header = make(http.Header)
 	s.Header.Set("Server", "Wine")
 	s.RegisterContext(&DefaultContext{})
@@ -43,8 +43,8 @@ func NewServer() *Server {
 	return s
 }
 
-// Default returns a default server with Logger interceptor
-func Default() *Server {
+// DefaultServer returns a default server with Logger interceptor
+func DefaultServer() *Server {
 	s := NewServer()
 	s.Use(Logger)
 	return s
@@ -83,6 +83,7 @@ func (s *Server) Run(addr string) error {
 // Shutdown stops server
 func (s *Server) Shutdown() {
 	s.server.Shutdown(context.Background())
+	log.Println("[WINE] Shutdown")
 }
 
 // ServeHTTP implements for http.Handler interface, which will handle each http request

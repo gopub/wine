@@ -24,7 +24,7 @@ type Topic struct {
 }
 
 func main() {
-	s := wine.Default()
+	s := wine.DefaultServer()
 	s.Get("hello", func(c wine.Context) {
 		c.JSON(types.M{"code": 0, "msg": "hello"})
 	})

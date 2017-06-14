@@ -14,7 +14,7 @@ Create ./hello.go
         import "github.com/justintan/wine"
         
         func main() {
-        	s := wine.Default()
+        	s := wine.DefaultServer()
         	s.Get("/hello", func(c wine.Context) {
         		c.Text("Hello, Wine!")
         	})
@@ -29,7 +29,7 @@ Run and test:
 
 ## JSON Rendering
 
-        s := wine.Default()
+        s := wine.DefaultServer()
         s.Get("/time", func(c wine.Context) {
         	c.JSON(map[string]interface{}{"time":time.Now().Unix()})
         })
@@ -38,7 +38,7 @@ Run and test:
 ## Parameters
 Context.Params() provides an uniform interface to retrieve request parameters.  
 
-        s := wine.Default()
+        s := wine.DefaultServer()
         s.Post("feedback", func(c wine.Context) {
             text := c.Params().String("text")
             email := c.Params().String("email")
@@ -60,7 +60,7 @@ Test parameters in json
 Path parameters are also supported in order to provide elegant RESTful apis.  
 Single parameter in one segment:
 <pre>
-    s := wine.Default() 
+    s := wine.DefaultServer() 
     s.Get("/items/<b>:id</b>", func(c wine.Context) { 
         id := c.Params().String("id") 
         c.Text("item id: " + id) 
@@ -70,7 +70,7 @@ Single parameter in one segment:
         
 Multiple parameters in one segment:   
 <pre>
-    s := wine.Default() 
+    s := wine.DefaultServer() 
     s.Get("/items/<b>:page,:size</b>", func(c wine.Context) { 
         page := c.Params().Int("page") 
         size := c.Params().Int("size") 
@@ -163,7 +163,7 @@ Run it:
     }
     
     func main() {
-    	s := wine.Default()
+    	s := wine.DefaultServer()
     	s.Post("register", func(c wine.Context) {
     		u := &User{}
     		c.Params().AssignTo(u, "param")
@@ -215,7 +215,7 @@ e.g. Create MyContext to support SendResponse method
     
     
     func main() {
-    	s := wine.Default()
+    	s := wine.DefaultServer()
     	s.RegisterContext(&MyContext{})
     	s.Get("time", func(c wine.Context) {
     		ctx := c.(*MyContext)

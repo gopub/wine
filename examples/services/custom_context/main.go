@@ -32,7 +32,7 @@ func (c *MyContext) SendResponse(code int, msg string, data interface{}) {
 }
 
 func main() {
-	s := wine.Default()
+	s := wine.DefaultServer()
 	s.RegisterContext(&MyContext{})
 	s.Get("time", func(c wine.Context) {
 		ctx := c.(*MyContext)
