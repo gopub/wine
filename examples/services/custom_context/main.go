@@ -1,10 +1,11 @@
 package main
 
 import (
-	"github.com/justintan/wine"
 	"html/template"
 	"net/http"
 	"time"
+
+	"github.com/justintan/wine"
 )
 
 type MyContext struct {
@@ -12,11 +13,11 @@ type MyContext struct {
 	handlers *wine.HandlerChain
 }
 
-func (c *MyContext) Rebuild(rw http.ResponseWriter, req *http.Request, templates []*template.Template, handlers []wine.Handler) {
+func (c *MyContext) Rebuild(rw http.ResponseWriter, req *http.Request, templates []*template.Template, handlers []wine.Handler, maxMemory int64) {
 	if c.DefaultContext == nil {
 		c.DefaultContext = &wine.DefaultContext{}
 	}
-	c.DefaultContext.Rebuild(rw, req, templates, handlers)
+	c.DefaultContext.Rebuild(rw, req, templates, handlers, maxMemory)
 	c.handlers = wine.NewHandlerChain(handlers)
 }
 

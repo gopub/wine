@@ -17,11 +17,17 @@ type APIContext struct {
 }
 
 // Rebuild rebuilds the context
-func (c *APIContext) Rebuild(rw http.ResponseWriter, req *http.Request, templates []*template.Template, handlers []Handler) {
+func (c *APIContext) Rebuild(
+	rw http.ResponseWriter,
+	req *http.Request,
+	templates []*template.Template,
+	handlers []Handler,
+	maxMemory int64,
+) {
 	if c.DefaultContext == nil {
 		c.DefaultContext = &DefaultContext{}
 	}
-	c.DefaultContext.Rebuild(rw, req, templates, handlers)
+	c.DefaultContext.Rebuild(rw, req, templates, handlers, maxMemory)
 	c.handlers = NewHandlerChain(handlers)
 }
 

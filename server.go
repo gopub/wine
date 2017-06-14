@@ -11,21 +11,25 @@ import (
 	"github.com/justintan/gox/runtime"
 )
 
+const defaultMaxRequestMemory = 8 << 20
+
 // Server implements web server
 type Server struct {
 	Router
-	Header        http.Header
-	context       Context
-	templates     []*template.Template
-	templateFuncs template.FuncMap
-	contextPool   sync.Pool
-	server        *http.Server
+	Header           http.Header
+	MaxRequestMemory int64 //max memory for request, default value is 8M
+	context          Context
+	templates        []*template.Template
+	templateFuncs    template.FuncMap
+	contextPool      sync.Pool
+	server           *http.Server
 }
 
 // NewServer returns a server
 func NewServer() *Server {
 	s := &Server{}
 	s.Router = NewDefaultRouter()
+	s.MaxRequestMemory = defaultMaxRequestMemory
 	s.Header = make(http.Header)
 	s.Header.Set("Server", "Wine")
 	s.RegisterContext(&DefaultContext{})
@@ -128,7 +132,7 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	}
 
 	c, _ := s.contextPool.Get().(Context)
-	c.Rebuild(rw, req, s.templates, handlers)
+	c.Rebuild(rw, req, s.templates, handlers, s.MaxRequestMemory)
 
 	c.Params().AddMapObj(pathParams)
 	// Set global headers

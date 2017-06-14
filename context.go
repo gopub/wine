@@ -27,5 +27,11 @@ type Context interface {
 	Set(key string, value interface{})
 	Get(key string) interface{}
 
-	Rebuild(http.ResponseWriter, *http.Request, []*template.Template, []Handler)
+	Rebuild(
+		w http.ResponseWriter,
+		req *http.Request,
+		templates []*template.Template,
+		handlers []Handler,
+		maxMemory int64,
+	)
 }

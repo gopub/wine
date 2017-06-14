@@ -22,7 +22,13 @@ type DefaultContext struct {
 }
 
 // Rebuild can construct Context object with new parameters in order to make it reusable
-func (c *DefaultContext) Rebuild(rw http.ResponseWriter, req *http.Request, templates []*template.Template, handlers []Handler) {
+func (c *DefaultContext) Rebuild(
+	rw http.ResponseWriter,
+	req *http.Request,
+	templates []*template.Template,
+	handlers []Handler,
+	maxMemory int64,
+) {
 	if c.keyValues != nil {
 		for k := range c.keyValues {
 			delete(c.keyValues, k)
@@ -34,7 +40,7 @@ func (c *DefaultContext) Rebuild(rw http.ResponseWriter, req *http.Request, temp
 	c.responded = false
 	c.writer = rw
 	c.req = req
-	c.reqParams = ghttp.ParseParameters(req)
+	c.reqParams = ghttp.ParseParameters(req, maxMemory)
 	c.handlers = NewHandlerChain(handlers)
 	c.templates = templates
 }
