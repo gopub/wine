@@ -74,6 +74,7 @@ func (n *node) conflict(nodes []*node) bool {
 	if len(nodes) == 0 {
 		return false
 	}
+
 	nod := nodes[0]
 	if n.t == wildcardNode || nod.t == wildcardNode {
 		return true
@@ -84,9 +85,12 @@ func (n *node) conflict(nodes []*node) bool {
 	}
 
 	//n.t == node.t
+
 	if n.t == staticNode {
 		return n.path == nod.path && len(n.handlers) > 0 && len(nod.handlers) > 0
-	} else if n.t == paramNode {
+	}
+
+	if n.t == paramNode {
 		if len(n.paramNames) != len(nod.paramNames) {
 			return false
 		}
