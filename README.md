@@ -186,6 +186,16 @@ Response:
              "lng": 90
          }
     }
+## Basic Auth
+It's easy to turn on basic auth.
+
+    s := wine.DefaultServer()
+	s.Use(wine.BasicAuth(map[string]string{
+		"admin": "123",
+		"tom":   "456",
+	}, ""))
+	s.StaticDir("/", "./html")
+	s.Run(":8000")
 ## Custom Context
 Custom context to add more features.   
 e.g. Create MyContext to support SendResponse method   
