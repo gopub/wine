@@ -5,8 +5,8 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/justintan/gox/errors"
-	"github.com/justintan/gox/types"
+	"github.com/natande/gox/errors"
+	"github.com/natande/gox/types"
 )
 
 //APIContext implements Content with DefaultContext

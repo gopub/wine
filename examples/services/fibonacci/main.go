@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/justintan/gox/types"
-	"github.com/justintan/wine"
+	"github.com/natande/gox/types"
+	"github.com/natande/wine"
 )
 
 func main() {

@@ -4,7 +4,7 @@ import (
 	"html/template"
 	"net/http"
 
-	"github.com/justintan/gox/types"
+	"github.com/natande/gox/types"
 )
 
 // Context defines a request context

@@ -4,14 +4,14 @@ Wine is a lightweight web framework for quickly writing web applications/service
 
 ## Install  
 
-        $ go get -u -v github.com/justintan/wine
+        $ go get -u -v github.com/natande/wine
 
 ## Quick start  
 Create ./hello.go  
         
         package main
         
-        import "github.com/justintan/wine"
+        import "github.com/natande/wine"
         
         func main() {
         	s := wine.DefaultServer()

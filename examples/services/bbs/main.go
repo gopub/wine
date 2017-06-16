@@ -6,8 +6,8 @@ import (
 	_ "net/http/pprof"
 	"time"
 
-	"github.com/justintan/gox/types"
-	"github.com/justintan/wine"
+	"github.com/natande/gox/types"
+	"github.com/natande/wine"
 )
 
 type User struct {

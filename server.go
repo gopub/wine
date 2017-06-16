@@ -8,7 +8,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/justintan/gox/runtime"
+	"github.com/natande/gox/runtime"
 )
 
 const _DefaultMaxRequestMemory = 8 << 20

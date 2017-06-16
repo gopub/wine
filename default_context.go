@@ -7,10 +7,10 @@ import (
 
 	"strings"
 
-	ghttp "github.com/justintan/gox/http"
-	gio "github.com/justintan/gox/io"
-	"github.com/justintan/gox/types"
-	"github.com/justintan/wine/render"
+	ghttp "github.com/natande/gox/http"
+	gio "github.com/natande/gox/io"
+	"github.com/natande/gox/types"
+	"github.com/natande/wine/render"
 )
 
 // DefaultContext is a default implementation of Context interface

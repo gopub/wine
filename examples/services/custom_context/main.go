@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/justintan/wine"
+	"github.com/natande/wine"
 )
 
 type MyContext struct {

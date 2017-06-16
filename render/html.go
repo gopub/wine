@@ -5,8 +5,8 @@ import (
 	"log"
 	"net/http"
 
-	ghttp "github.com/justintan/gox/http"
-	gio "github.com/justintan/gox/io"
+	ghttp "github.com/natande/gox/http"
+	gio "github.com/natande/gox/io"
 )
 
 // TemplateHTML render tmpl with name, params and writes into writer

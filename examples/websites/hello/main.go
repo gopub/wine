@@ -5,7 +5,7 @@ package main
  * go run ./main.go
  */
 
-import "github.com/justintan/wine"
+import "github.com/natande/wine"
 
 func main() {
 	s := wine.DefaultServer()
