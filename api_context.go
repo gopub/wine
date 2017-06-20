@@ -51,7 +51,7 @@ func (c *APIContext) SendData(data interface{}) {
 func (c *APIContext) SendError(err error) {
 	var e *gox.Error
 	if err == nil {
-		e = gox.Success
+		e = gox.ErrSuccess
 	} else {
 		e = gox.ParseError(err)
 		if e == nil {
