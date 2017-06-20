@@ -4,25 +4,22 @@ import (
 	"html/template"
 	"log"
 	"net/http"
-
 	"strings"
 
-	ghttp "github.com/natande/gox/http"
-	gio "github.com/natande/gox/io"
-	"github.com/natande/gox/types"
+	"github.com/natande/gox"
 	"github.com/natande/wine/render"
 )
 
 // DefaultContext is a default implementation of Context interface
 type DefaultContext struct {
-	keyValues types.M
+	keyValues gox.M
 	writer    http.ResponseWriter
 	responded bool
 	templates []*template.Template
 	handlers  *HandlerChain
 
 	req       *http.Request
-	reqParams types.M
+	reqParams gox.M
 }
 
 // Rebuild can construct Context object with new parameters in order to make it reusable
@@ -38,13 +35,13 @@ func (c *DefaultContext) Rebuild(
 			delete(c.keyValues, k)
 		}
 	} else {
-		c.keyValues = types.M{}
+		c.keyValues = gox.M{}
 	}
 
 	c.responded = false
 	c.writer = rw
 	c.req = req
-	c.reqParams = ghttp.ParseParameters(req, maxMemory)
+	c.reqParams = gox.ParseParameters(req, maxMemory)
 	c.handlers = NewHandlerChain(handlers)
 	c.templates = templates
 }
@@ -72,7 +69,7 @@ func (c *DefaultContext) Request() *http.Request {
 }
 
 // Params returns request's parameters including queries, body
-func (c *DefaultContext) Params() types.M {
+func (c *DefaultContext) Params() gox.M {
 	return c.reqParams
 }
 
@@ -103,7 +100,7 @@ func (c *DefaultContext) Send(data []byte, contentType string) {
 		contentType += "; charset=utf-8"
 	}
 	c.Header()["Content-Type"] = []string{contentType}
-	err := gio.Write(c.writer, data)
+	err := gox.WriteAll(c.writer, data)
 	if err != nil {
 		log.Println("[WINE] Send error:", err)
 	}

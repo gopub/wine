@@ -5,14 +5,13 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/natande/gox/errors"
-	"github.com/natande/gox/types"
+	"github.com/natande/gox"
 )
 
 //APIContext implements Content with DefaultContext
 type APIContext struct {
 	*DefaultContext
-	userID   types.ID
+	userID   gox.ID
 	handlers *HandlerChain
 }
 
@@ -40,7 +39,7 @@ func (c *APIContext) Next() {
 
 // SendResponse sends a response
 func (c *APIContext) SendResponse(code int, msg string, data interface{}) {
-	c.JSON(types.M{"code": code, "data": data, "msg": msg})
+	c.JSON(gox.M{"code": code, "data": data, "msg": msg})
 }
 
 // SendData sends a data response
@@ -50,13 +49,13 @@ func (c *APIContext) SendData(data interface{}) {
 
 // SendError sends an error response
 func (c *APIContext) SendError(err error) {
-	var e *errors.Error
+	var e *gox.Error
 	if err == nil {
-		e = errors.Success
+		e = gox.Success
 	} else {
-		e = errors.ParseError(err)
+		e = gox.ParseError(err)
 		if e == nil {
-			e = errors.NewError(errors.EcodeServer, err.Error())
+			e = gox.NewError(gox.EcodeServer, err.Error())
 		}
 	}
 	c.SendResponse(e.Code(), e.Msg(), nil)
@@ -74,12 +73,12 @@ func (c *APIContext) SendMessage(code int, msg string) {
 }
 
 // SetUserID sets current user id
-func (c *APIContext) SetUserID(userID types.ID) {
+func (c *APIContext) SetUserID(userID gox.ID) {
 	c.userID = userID
 	log.Println("[WINE] Set uid[", userID, "]", c.Request().URL)
 }
 
 // UserID return current user id
-func (c *APIContext) UserID() types.ID {
+func (c *APIContext) UserID() gox.ID {
 	return c.userID
 }

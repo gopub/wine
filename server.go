@@ -8,7 +8,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/natande/gox/runtime"
+	"github.com/natande/gox"
 )
 
 const _DefaultMaxRequestMemory = 8 << 20
@@ -60,7 +60,7 @@ func (s *Server) RegisterContext(c Context) {
 
 func (s *Server) newContext() interface{} {
 	var c Context
-	runtime.Renew(&c, s.context)
+	gox.Renew(&c, s.context)
 	return c
 }
 

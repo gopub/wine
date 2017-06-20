@@ -4,13 +4,13 @@ import (
 	"html/template"
 	"net/http"
 
-	"github.com/natande/gox/types"
+	"github.com/natande/gox"
 )
 
 // Context defines a request context
 type Context interface {
 	Request() *http.Request
-	Params() types.M
+	Params() gox.M
 
 	Next()
 	Responded() bool
