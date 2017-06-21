@@ -8,6 +8,8 @@ import (
 	"github.com/natande/gox"
 )
 
+var _ Context = (*APIContext)(nil)
+
 //APIContext implements Content with DefaultContext
 type APIContext struct {
 	*DefaultContext

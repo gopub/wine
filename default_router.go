@@ -5,6 +5,8 @@ import (
 	"strings"
 )
 
+var _ Router = (*DefaultRouter)(nil)
+
 // DefaultRouter is a default implementation of Router interface
 type DefaultRouter struct {
 	methodTrees map[string]*node

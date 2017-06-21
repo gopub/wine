@@ -10,6 +10,8 @@ import (
 	"github.com/natande/wine/render"
 )
 
+var _ Context = (*DefaultContext)(nil)
+
 // DefaultContext is a default implementation of Context interface
 type DefaultContext struct {
 	keyValues gox.M
