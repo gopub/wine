@@ -79,6 +79,9 @@ func (s *Server) Run(addr string) error {
 	}
 	s.server = &http.Server{Addr: addr, Handler: s}
 	err := s.server.ListenAndServe()
+	if err != nil {
+		log.Println("[WINE]", err)
+	}
 	return err
 }
 
