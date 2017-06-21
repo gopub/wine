@@ -124,7 +124,7 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		if path == "favicon.ico" {
 			rw.Header()["Content-Type"] = []string{"image/x-icon"}
 			rw.WriteHeader(http.StatusOK)
-			rw.Write(faviconBytes)
+			rw.Write(_faviconBytes)
 		} else {
 			log.Println("[WINE] Not found[", path, "]", req)
 			http.Error(rw, http.StatusText(http.StatusNotFound), http.StatusNotFound)
@@ -142,8 +142,7 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	}
 
 	c.Next()
-
-	if c.Responded() == false {
+	if !c.Responded() {
 		c.Status(http.StatusNotFound)
 	}
 
