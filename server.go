@@ -13,6 +13,8 @@ import (
 
 const _DefaultMaxRequestMemory = 8 << 20
 
+var _acceptEncodings = [2]string{"gzip", "defalte"}
+
 // Server implements web server
 type Server struct {
 	Router
@@ -99,16 +101,14 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	}()
 
 	// Add compression to responseWriter
-	acceptEncoding := req.Header.Get("Accept-Encoding")
-	if strings.Contains(acceptEncoding, "gzip") {
-		rw.Header().Set("Content-Encoding", "gzip")
-		if cw, err := newCompressedResponseWriter(rw, "gzip"); err == nil {
-			rw = cw
-		}
-	} else if strings.Contains(acceptEncoding, "deflate") {
-		rw.Header().Set("Content-Encoding", "deflate")
-		if cw, err := newCompressedResponseWriter(rw, "deflate"); err == nil {
-			rw = cw
+	ae := req.Header.Get("Accept-Encoding")
+	for _, enc := range _acceptEncodings {
+		if strings.Contains(ae, enc) {
+			rw.Header().Set("Content-Encoding", enc)
+			if cw, err := newCompressedResponseWriter(rw, enc); err == nil {
+				rw = cw
+			}
+			break
 		}
 	}
 
