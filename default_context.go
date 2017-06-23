@@ -43,7 +43,7 @@ func (c *DefaultContext) Rebuild(
 	c.responded = false
 	c.writer = rw
 	c.req = req
-	c.reqParams = gox.ParseParameters(req, maxMemory)
+	c.reqParams = gox.ParseHTTPRequestParameters(req, maxMemory)
 	c.handlers = NewHandlerChain(handlers)
 	c.templates = templates
 }
