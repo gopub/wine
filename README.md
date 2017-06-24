@@ -202,7 +202,7 @@ e.g. Replace wine.DefaultResponder with wine.APIResponder
     
     
     func main() {
-    	s := wine.DefaultServer()
+        s := wine.DefaultServer()
         s.RegisterResponder(&wine.APIResponder{})
         s.Get("time", func(c *wine.Context) {
         	r := c.Responder.(*wine.APIResponder)
@@ -221,4 +221,4 @@ Response:
         "msg": ""
     }    
 ## Recommendations
-Wine which is designed for modular web applications/services is not a general purpose web server. It should be used behind a web server such as Nginx, Caddy which provide compression, security features.
+Wine designed for modular web applications/services is not a general purpose web server. It should be used behind a web server such as Nginx, Caddy which provide compression, security features.
