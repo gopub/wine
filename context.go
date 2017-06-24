@@ -10,7 +10,6 @@ type Context struct {
 	Responder
 	handlers  *HandlerChain
 	req       *http.Request
-	writer    http.ResponseWriter
 	reqParams gox.M
 	keyValues gox.M
 }
@@ -40,9 +39,4 @@ func (c *Context) Request() *http.Request {
 // Params returns request's parameters including queries, body
 func (c *Context) Params() gox.M {
 	return c.reqParams
-}
-
-// Writer returns request's http.ResponseWriter
-func (c *Context) Writer() http.ResponseWriter {
-	return c.writer
 }
