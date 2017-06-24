@@ -203,7 +203,7 @@ func (s *Server) makeContext(rw http.ResponseWriter, req *http.Request, handlers
 	}
 
 	if c.handlers == nil {
-		c.handlers = NewHandlerChain(handlers)
+		c.handlers = newHandlerChain(handlers)
 	} else {
 		c.handlers.handlers = handlers
 		c.handlers.index = 0

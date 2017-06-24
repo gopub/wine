@@ -14,20 +14,20 @@ func (h HandlerFunc) HandleRequest(c *Context) {
 }
 
 // HandlerChain : A chain of handlers
-type HandlerChain struct {
+type handlerChain struct {
 	index    int
 	handlers []Handler
 }
 
 // NewHandlerChain : Create handler chain
-func NewHandlerChain(handlers []Handler) *HandlerChain {
-	hc := &HandlerChain{}
+func newHandlerChain(handlers []Handler) *handlerChain {
+	hc := &handlerChain{}
 	hc.handlers = handlers
 	return hc
 }
 
 // Next : Get next handler
-func (h *HandlerChain) Next() Handler {
+func (h *handlerChain) Next() Handler {
 	if h.index >= len(h.handlers) {
 		return nil
 	}

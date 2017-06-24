@@ -8,7 +8,7 @@ import (
 // Context is a default implementation of Context interface
 type Context struct {
 	Responder
-	handlers  *HandlerChain
+	handlers  *handlerChain
 	req       *http.Request
 	reqParams gox.M
 	keyValues gox.M
