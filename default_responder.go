@@ -20,100 +20,100 @@ type DefaultResponder struct {
 	templates []*template.Template
 }
 
-// Reset can construct Context object with new parameters in order to make it reusable
-func (c *DefaultResponder) Reset(req *http.Request, rw http.ResponseWriter, tmpls []*template.Template) {
-	c.responded = false
-	c.req = req
-	c.writer = rw
-	c.templates = tmpls
+// Reset resets responder to be a new one
+func (dr *DefaultResponder) Reset(req *http.Request, rw http.ResponseWriter, tmpls []*template.Template) {
+	dr.responded = false
+	dr.req = req
+	dr.writer = rw
+	dr.templates = tmpls
 }
 
 // Header returns response header
-func (c *DefaultResponder) Header() http.Header {
-	return c.writer.Header()
+func (dr *DefaultResponder) Header() http.Header {
+	return dr.writer.Header()
 }
 
 // Responded returns a flag to determine whether if the response has been written
-func (c *DefaultResponder) Responded() bool {
-	return c.responded
+func (dr *DefaultResponder) Responded() bool {
+	return dr.responded
 }
 
-func (c *DefaultResponder) markResponded() {
-	if c.responded {
+func (dr *DefaultResponder) markResponded() {
+	if dr.responded {
 		panic("[WINE] already responded")
 	}
-	c.responded = true
+	dr.responded = true
 }
 
 // Send sends bytes
-func (c *DefaultResponder) Send(data []byte, contentType string) {
-	c.markResponded()
+func (dr *DefaultResponder) Send(data []byte, contentType string) {
+	dr.markResponded()
 	if len(contentType) == 0 {
 		contentType = http.DetectContentType(data)
 	}
 	if strings.Index(contentType, "charset") < 0 {
 		contentType += "; charset=utf-8"
 	}
-	c.Header()["Content-Type"] = []string{contentType}
-	err := gox.WriteAll(c.writer, data)
+	dr.Header()["Content-Type"] = []string{contentType}
+	err := gox.WriteAll(dr.writer, data)
 	if err != nil {
 		log.Println("[WINE] Send error:", err)
 	}
 }
 
 // JSON sends json response
-func (c *DefaultResponder) JSON(jsonObj interface{}) {
-	c.markResponded()
-	render.JSON(c.writer, jsonObj)
+func (dr *DefaultResponder) JSON(jsonObj interface{}) {
+	dr.markResponded()
+	render.JSON(dr.writer, jsonObj)
 }
 
 // Status sends a response just with a status code
-func (c *DefaultResponder) Status(status int) {
-	c.markResponded()
-	render.Status(c.writer, status)
+func (dr *DefaultResponder) Status(status int) {
+	dr.markResponded()
+	render.Status(dr.writer, status)
 }
 
 // Redirect sends a redirect response
-func (c *DefaultResponder) Redirect(location string, permanent bool) {
-	c.writer.Header().Set("Location", location)
+func (dr *DefaultResponder) Redirect(location string, permanent bool) {
+	dr.writer.Header().Set("Location", location)
 	if permanent {
-		c.Status(http.StatusMovedPermanently)
+		dr.Status(http.StatusMovedPermanently)
 	} else {
-		c.Status(http.StatusFound)
+		dr.Status(http.StatusFound)
 	}
 }
 
 // File sends a file response
-func (c *DefaultResponder) File(filePath string) {
-	c.markResponded()
-	http.ServeFile(c.writer, c.req, filePath)
+func (dr *DefaultResponder) File(filePath string) {
+	dr.markResponded()
+	http.ServeFile(dr.writer, dr.req, filePath)
 }
 
 // HTML sends a HTML response
-func (c *DefaultResponder) HTML(htmlText string) {
-	c.markResponded()
-	render.HTML(c.writer, htmlText)
+func (dr *DefaultResponder) HTML(htmlText string) {
+	dr.markResponded()
+	render.HTML(dr.writer, htmlText)
 }
 
 // Text sends a text response
-func (c *DefaultResponder) Text(text string) {
-	c.markResponded()
-	render.Text(c.writer, text)
+func (dr *DefaultResponder) Text(text string) {
+	dr.markResponded()
+	render.Text(dr.writer, text)
 }
 
 // TemplateHTML sends a HTML response. HTML page is rendered according to templateName and params
-func (c *DefaultResponder) TemplateHTML(templateName string, params interface{}) {
-	for _, tmpl := range c.templates {
-		err := render.TemplateHTML(c.writer, tmpl, templateName, params)
+func (dr *DefaultResponder) TemplateHTML(templateName string, params interface{}) {
+	for _, tmpl := range dr.templates {
+		err := render.TemplateHTML(dr.writer, tmpl, templateName, params)
 		if err == nil {
-			c.markResponded()
+			dr.markResponded()
 			break
 		}
 	}
 }
 
 // Handle handles request with h
-func (c *DefaultResponder) Handle(h http.Handler) {
-	c.markResponded()
-	h.ServeHTTP(c.writer, c.req)
+func (dr *DefaultResponder) Handle(h http.Handler) {
+	dr.markResponded()
+	h.ServeHTTP(dr.writer, dr.req)
 }
