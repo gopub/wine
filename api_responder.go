@@ -42,7 +42,7 @@ func (ar *APIResponder) SendError(err error) {
 	} else {
 		e = gox.ParseError(err)
 		if e == nil {
-			e = gox.NewError(gox.EcodeServer, erar.Error())
+			e = gox.NewError(gox.EcodeServer, err.Error())
 		}
 	}
 	ar.SendResponse(e.Code(), e.Msg(), nil)
