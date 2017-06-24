@@ -20,7 +20,7 @@ type Server struct {
 	Router
 	Header           http.Header
 	MaxRequestMemory int64 //max memory for request, default value is 8M
-	context          Context
+	responder        Responder
 	templates        []*template.Template
 	templateFuncs    template.FuncMap
 	contextPool      sync.Pool
@@ -31,10 +31,10 @@ type Server struct {
 func NewServer() *Server {
 	s := &Server{}
 	s.Router = NewDefaultRouter()
+	s.responder = &DefaultResponder{}
 	s.MaxRequestMemory = _DefaultMaxRequestMemory
 	s.Header = make(http.Header)
 	s.Header.Set("Server", "Wine")
-	s.RegisterContext(&DefaultContext{})
 	s.AddTemplateFuncs(template.FuncMap{
 		"plus":     plus,
 		"minus":    minus,
@@ -52,17 +52,17 @@ func DefaultServer() *Server {
 	return s
 }
 
-// RegisterContext registers a Context implementation
-func (s *Server) RegisterContext(c Context) {
-	if c == nil {
-		panic("[WINE] c is nil")
+func (s *Server) RegisterResponder(r Responder) {
+	if r == nil {
+		panic("[WINE] r is nil")
 	}
-	s.context = c
+	s.responder = r
 }
 
 func (s *Server) newContext() interface{} {
-	var c Context
-	gox.Renew(&c, s.context)
+	c := &Context{}
+	c.keyValues = gox.M{}
+	gox.Renew(&c.Responder, s.responder)
 	return c
 }
 
@@ -135,15 +135,9 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	c, _ := s.contextPool.Get().(Context)
-	c.Rebuild(rw, req, s.templates, handlers, s.MaxRequestMemory)
+	c := s.makeContext(rw, req, handlers)
 
 	c.Params().AddMapObj(pathParams)
-	// Set global headers
-	for k, v := range s.Header {
-		c.Header()[k] = v
-	}
-
 	c.Next()
 	if !c.Responded() {
 		c.Status(http.StatusNotFound)
@@ -198,4 +192,32 @@ func (s *Server) AddTemplateFuncs(funcs template.FuncMap) {
 	for _, tmpl := range s.templates {
 		tmpl.Funcs(funcs)
 	}
+}
+
+func (s *Server) makeContext(rw http.ResponseWriter, req *http.Request, handlers []Handler) *Context {
+	c := s.contextPool.Get().(*Context)
+	if c.keyValues != nil {
+		for k := range c.keyValues {
+			delete(c.keyValues, k)
+		}
+	} else {
+		c.keyValues = gox.M{}
+	}
+
+	c.Responder.Reset(req, rw, s.templates)
+	c.req = req
+	c.reqParams = gox.ParseHTTPRequestParameters(req, s.MaxRequestMemory)
+	if c.handlers == nil {
+		c.handlers = NewHandlerChain(handlers)
+	} else {
+		c.handlers.handlers = handlers
+		c.handlers.index = 0
+	}
+
+	// Set global headers
+	for k, v := range s.Header {
+		c.Responder.Header()[k] = v
+	}
+
+	return c
 }

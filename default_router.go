@@ -113,7 +113,7 @@ func (r *DefaultRouter) Bind(method string, path string, handlers ...Handler) {
 
 // StaticFile binds path to a file
 func (r *DefaultRouter) StaticFile(path, filePath string) {
-	r.Get(path, func(c Context) {
+	r.Get(path, func(c *Context) {
 		c.File(filePath)
 	})
 	return
@@ -146,7 +146,7 @@ func (r *DefaultRouter) StaticFS(path string, fs http.FileSystem) {
 	}
 
 	fileServer := http.StripPrefix(prefix, http.FileServer(fs))
-	r.Get(path, func(c Context) {
+	r.Get(path, func(c *Context) {
 		c.Handle(fileServer)
 	})
 	return

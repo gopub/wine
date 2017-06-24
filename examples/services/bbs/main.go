@@ -25,11 +25,11 @@ type Topic struct {
 
 func main() {
 	s := wine.DefaultServer()
-	s.Get("hello", func(c wine.Context) {
+	s.Get("hello", func(c *wine.Context) {
 		c.JSON(gox.M{"code": 0, "msg": "hello"})
 	})
 
-	s.Get("login", func(c wine.Context) {
+	s.Get("login", func(c *wine.Context) {
 		username := c.Params().String("username")
 		password := c.Params().String("password")
 		if len(username) == 0 || len(password) == 0 {
@@ -43,7 +43,7 @@ func main() {
 		c.JSON(gox.M{"code": 0, "msg": "success", "data": u})
 	})
 
-	s.Post("topic", func(c wine.Context) {
+	s.Post("topic", func(c *wine.Context) {
 		title := c.Params().String("title")
 		if len(title) == 0 {
 			c.JSON(gox.M{"code": 1, "msg": "no title"})

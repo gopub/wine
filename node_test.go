@@ -2,7 +2,7 @@ package wine
 
 import "testing"
 
-func TestNewNode(t *testing.T)  {
+func TestNewNode(t *testing.T) {
 	n := newNode("*")
 	if n.t != _WildcardNode {
 		t.FailNow()
@@ -12,7 +12,6 @@ func TestNewNode(t *testing.T)  {
 	if n.t != _WildcardNode {
 		t.FailNow()
 	}
-
 
 	n = newNode(":a,:b")
 	if n.t != _ParamNode {
@@ -27,9 +26,8 @@ func TestNewNode(t *testing.T)  {
 		t.FailNow()
 	}
 
-
 }
 
-func TestNewNodeList(t *testing.T)  {
+func TestNewNodeList(t *testing.T) {
 
 }

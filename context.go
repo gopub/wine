@@ -1,38 +1,48 @@
 package wine
 
 import (
-	"html/template"
-	"net/http"
-
 	"github.com/natande/gox"
+	"net/http"
 )
 
-// Context defines a request context
-type Context interface {
-	Request() *http.Request
-	Params() gox.M
+// Context is a default implementation of Context interface
+type Context struct {
+	Responder
+	handlers  *HandlerChain
+	req       *http.Request
+	writer    http.ResponseWriter
+	reqParams gox.M
+	keyValues gox.M
+}
 
-	Next()
-	Responded() bool
-	Header() http.Header
-	Redirect(location string, permanent bool)
-	Send(data []byte, contentType string)
-	Status(status int)
-	JSON(obj interface{})
-	File(filePath string)
-	HTML(htmlText string)
-	Text(text string)
-	TemplateHTML(templateName string, params interface{})
-	Handle(h http.Handler)
+// Set sets key:value
+func (c *Context) Set(key string, value interface{}) {
+	c.keyValues[key] = value
+}
 
-	Set(key string, value interface{})
-	Get(key string) interface{}
+// Get returns value for key
+func (c *Context) Get(key string) interface{} {
+	return c.keyValues[key]
+}
 
-	Rebuild(
-		w http.ResponseWriter,
-		req *http.Request,
-		templates []*template.Template,
-		handlers []Handler,
-		maxMemory int64,
-	)
+// Next calls the next handler
+func (c *Context) Next() {
+	if h := c.handlers.Next(); h != nil {
+		h.HandleRequest(c)
+	}
+}
+
+// Request returns request
+func (c *Context) Request() *http.Request {
+	return c.req
+}
+
+// Params returns request's parameters including queries, body
+func (c *Context) Params() gox.M {
+	return c.reqParams
+}
+
+// Writer returns request's http.ResponseWriter
+func (c *Context) Writer() http.ResponseWriter {
+	return c.writer
 }

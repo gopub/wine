@@ -15,7 +15,7 @@ Create ./hello.go
         
         func main() {
         	s := wine.DefaultServer()
-        	s.Get("/hello", func(c wine.Context) {
+        	s.Get("/hello", func(c *wine.Context) {
         		c.Text("Hello, Wine!")
         	})
         	s.Run(":8000")
@@ -30,7 +30,7 @@ Run and test:
 ## JSON Rendering
 
         s := wine.DefaultServer()
-        s.Get("/time", func(c wine.Context) {
+        s.Get("/time", func(c *wine.Context) {
         	c.JSON(map[string]interface{}{"time":time.Now().Unix()})
         })
         s.Run(":8000")
@@ -39,7 +39,7 @@ Run and test:
 Context.Params() provides an uniform interface to retrieve request parameters.  
 
         s := wine.DefaultServer()
-        s.Post("feedback", func(c wine.Context) {
+        s.Post("feedback", func(c *wine.Context) {
             text := c.Params().String("text")
             email := c.Params().String("email")
             c.Text("Feedback:" + text + " from " + email)
@@ -61,7 +61,7 @@ Path parameters are also supported in order to provide elegant RESTful apis.
 Single parameter in one segment:
 <pre>
     s := wine.DefaultServer() 
-    s.Get("/items/<b>:id</b>", func(c wine.Context) { 
+    s.Get("/items/<b>:id</b>", func(c *wine.Context) { 
         id := c.Params().String("id") 
         c.Text("item id: " + id) 
     }) 
@@ -71,7 +71,7 @@ Single parameter in one segment:
 Multiple parameters in one segment:   
 <pre>
     s := wine.DefaultServer() 
-    s.Get("/items/<b>:page,:size</b>", func(c wine.Context) { 
+    s.Get("/items/<b>:page,:size</b>", func(c *wine.Context) { 
         page := c.Params().Int("page") 
         size := c.Params().Int("size") 
         c.Text("page:" + strconv.Itoa(page) + " size:" + strconv.Itoa(size)) 
@@ -84,7 +84,7 @@ Use middlewares to intercept and preprocess requests
 
 Custom middleware
 <pre>
-    func Logger(c wine.Context) {
+    func Logger(c *wine.Context) {
     	st := time.Now()  
     	//pass request to the next handler
     	<b>c.Next()</b> 
@@ -96,7 +96,7 @@ Custom middleware
     	s := wine.NewServer() 
     	//Use middleware Logger
     	<b>s.Use(Logger)</b> 
-    	s.Get("/hello", func(c wine.Context) {
+    	s.Get("/hello", func(c *wine.Context) {
     		c.Text("Hello, Wine!")
         })
         s.Run(":8000")
@@ -104,7 +104,7 @@ Custom middleware
 </pre>
 ## Grouping Route
 <pre>  
-    func CheckSessionID(c wine.Context) {
+    func CheckSessionID(c *wine.Context) {
     	sid := c.Params().String("sid")
     	//check sid
     	if len(sid) == 0 {
@@ -114,15 +114,15 @@ Custom middleware
     	}
     }
     
-    func GetUserProfile(c wine.Context)  {
+    func GetUserProfile(c *wine.Context)  {
     	//...
     }
     
-    func GetUserFriends(c wine.Context)  {
+    func GetUserFriends(c *wine.Context)  {
     	//...
     }
     
-    func GetServerTime(c wine.Context)  {
+    func GetServerTime(c *wine.Context)  {
     	//...
     }
     
@@ -164,7 +164,7 @@ Run it:
     
     func main() {
     	s := wine.DefaultServer()
-    	s.Post("register", func(c wine.Context) {
+    	s.Post("register", func(c *wine.Context) {
     		u := &User{}
     		c.Params().AssignTo(u, "param")
     		c.JSON(u)
@@ -196,42 +196,19 @@ It's easy to turn on basic auth.
 	}, ""))
 	s.StaticDir("/", "./html")
 	s.Run(":8000")
-## Custom Context
-Custom context to add more features.   
-e.g. Create MyContext to support SendResponse method   
-
-    type MyContext struct {
-    	*wine.DefaultContext
-    	handlers *wine.HandlerChain
-    }
-    
-    func (c *MyContext) Rebuild(rw http.ResponseWriter, req *http.Request, templates []*template.Template, handlers []wine.Handler) {
-    	if c.DefaultContext == nil {
-    		c.DefaultContext = &wine.DefaultContext{}
-    	}
-    	c.DefaultContext.Rebuild(rw, req, templates, handlers)
-    	c.handlers = wine.NewHandlerChain(handlers)
-    }
-    
-    func (c *MyContext) Next() {
-    	if h := c.handlers.Next(); h != nil {
-    		h.HandleRequest(c)
-    	}
-    }
-    
-    func (c *MyContext) SendResponse(code int, msg string, data interface{}) {
-    	c.JSON(map[string]interface{}{"code": code, "data": data, "msg": msg})
-    }
+## Custom Responder
+Custom responder to add more features.   
+e.g. Replace wine.DefaultResponder with wine.APIResponder
     
     
     func main() {
     	s := wine.DefaultServer()
-    	s.RegisterContext(&MyContext{})
-    	s.Get("time", func(c wine.Context) {
-    		ctx := c.(*MyContext)
-    		ctx.SendResponse(0, "", time.Now().Unix())
-    	})
-    	s.Run(":8000")
+        s.RegisterResponder(&wine.APIResponder{})
+        s.Get("time", func(c *wine.Context) {
+        	r := c.Responder.(*wine.APIResponder)
+        	r.SendResponse(0, "", time.Now().Unix())
+        })
+        s.Run(":8000")
     }
 Test:  
 

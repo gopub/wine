@@ -7,7 +7,7 @@ import (
 
 func main() {
 	s := wine.DefaultServer()
-	s.Get("/fibonacci", func(c wine.Context) {
+	s.Get("/fibonacci", func(c *wine.Context) {
 		n := c.Params().Int("n")
 		result := fibonacci(n)
 		c.JSON(gox.M{"result": result})

@@ -25,7 +25,7 @@ func BasicAuth(userToPassword map[string]string, realm string) HandlerFunc {
 	}
 
 	authHeaderValue := "Basic realm=" + strconv.Quote(realm)
-	return func(c Context) {
+	return func(c *Context) {
 		authValue := c.Request().Header.Get("Authorization")
 		var foundUser string
 		for user, info := range userToAuthInfo {

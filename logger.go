@@ -17,7 +17,7 @@ var (
 )
 
 // Logger calculates cost time and output to console
-func Logger(c Context) {
+func Logger(c *Context) {
 	st := time.Now()
 	c.Next()
 	cost := float32((time.Since(st) / time.Microsecond)) / 1000.0
