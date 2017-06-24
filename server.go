@@ -196,17 +196,12 @@ func (s *Server) AddTemplateFuncs(funcs template.FuncMap) {
 
 func (s *Server) makeContext(rw http.ResponseWriter, req *http.Request, handlers []Handler) *Context {
 	c := s.contextPool.Get().(*Context)
-	if c.keyValues != nil {
-		for k := range c.keyValues {
-			delete(c.keyValues, k)
-		}
-	} else {
-		c.keyValues = gox.M{}
-	}
-
-	c.Responder.Reset(req, rw, s.templates)
 	c.req = req
 	c.reqParams = gox.ParseHTTPRequestParameters(req, s.MaxRequestMemory)
+	for k := range c.keyValues {
+		delete(c.keyValues, k)
+	}
+
 	if c.handlers == nil {
 		c.handlers = NewHandlerChain(handlers)
 	} else {
@@ -214,6 +209,7 @@ func (s *Server) makeContext(rw http.ResponseWriter, req *http.Request, handlers
 		c.handlers.index = 0
 	}
 
+	c.Responder.Reset(req, rw, s.templates)
 	// Set global headers
 	for k, v := range s.Header {
 		c.Responder.Header()[k] = v
