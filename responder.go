@@ -5,6 +5,7 @@ import (
 	"net/http"
 )
 
+// Responder defines methods to send response
 type Responder interface {
 	Responded() bool
 	Header() http.Header
