@@ -1,8 +1,10 @@
 package wine
 
 import (
-	"github.com/natande/gox"
+	"context"
 	"net/http"
+
+	"github.com/natande/gox"
 )
 
 // Context is a default implementation of Context interface
@@ -34,6 +36,11 @@ func (c *Context) Next() {
 // Request returns request
 func (c *Context) Request() *http.Request {
 	return c.req
+}
+
+// SetRequestContext replace http.Request's context
+func (c *Context) SetRequestContext(ctx context.Context) {
+	c.req = c.req.WithContext(ctx)
 }
 
 // Params returns request's parameters including queries, body
