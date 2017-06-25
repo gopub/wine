@@ -8,10 +8,13 @@ import (
 	"strings"
 	"sync"
 
+	"time"
+
 	"github.com/natande/gox"
 )
 
 const _DefaultMaxRequestMemory = 8 << 20
+const _DefaultRequestTimeout = time.Second * 5
 
 var _acceptEncodings = [2]string{"gzip", "defalte"}
 
@@ -19,7 +22,8 @@ var _acceptEncodings = [2]string{"gzip", "defalte"}
 type Server struct {
 	Router
 	Header           http.Header
-	MaxRequestMemory int64 //max memory for request, default value is 8M
+	MaxRequestMemory int64         //max memory for request, default value is 8M
+	RequestTimeout   time.Duration //timeout for each request, default value is 5s
 	responder        Responder
 	templates        []*template.Template
 	templateFuncs    template.FuncMap
@@ -33,6 +37,7 @@ func NewServer() *Server {
 	s.Router = NewDefaultRouter()
 	s.responder = &DefaultResponder{}
 	s.MaxRequestMemory = _DefaultMaxRequestMemory
+	s.RequestTimeout = _DefaultRequestTimeout
 	s.Header = make(http.Header)
 	s.Header.Set("Server", "Wine")
 	s.AddTemplateFuncs(template.FuncMap{
@@ -52,6 +57,7 @@ func DefaultServer() *Server {
 	return s
 }
 
+// RegisterResponder registers Responder
 func (s *Server) RegisterResponder(r Responder) {
 	if r == nil {
 		panic("[WINE] r is nil")
@@ -136,6 +142,9 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	}
 
 	c := s.makeContext(rw, req, handlers)
+	reqCtx, cancel := context.WithTimeout(req.Context(), s.RequestTimeout)
+	defer cancel()
+	c.req = req.WithContext(reqCtx)
 
 	c.Params().AddMapObj(pathParams)
 	c.Next()
@@ -196,7 +205,6 @@ func (s *Server) AddTemplateFuncs(funcs template.FuncMap) {
 
 func (s *Server) makeContext(rw http.ResponseWriter, req *http.Request, handlers []Handler) *Context {
 	c := s.contextPool.Get().(*Context)
-	c.req = req
 	c.reqParams = gox.ParseHTTPRequestParameters(req, s.MaxRequestMemory)
 	for k := range c.keyValues {
 		delete(c.keyValues, k)
