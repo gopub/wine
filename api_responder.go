@@ -36,18 +36,18 @@ func (ar *APIResponder) SendData(data interface{}) {
 
 // SendError sends an error response
 func (ar *APIResponder) SendError(err error) {
-	var e *gox.Error
+	var gerr *gox.Error
 	if err == nil {
-		e = gox.ErrSuccess
+		gerr = gox.ErrSuccess
 	} else {
-		e = gox.ParseError(err)
-		if e == nil {
-			e = gox.NewError(gox.EcodeServer, err.Error())
+		gerr = gox.ParseError(err)
+		if gerr == nil {
+			gerr = gox.NewError(gox.EcodeServer, err.Error())
 		}
 	}
-	ar.SendResponse(e.Code(), e.Msg(), nil)
-	if e.Code() != 0 {
-		log.Println("[WINE] SendError:", e, ar.req)
+	ar.SendResponse(gerr.Code(), gerr.Msg(), nil)
+	if gerr.Code() != 0 {
+		log.Println("[WINE] SendError:", gerr, ar.req)
 	}
 }
 
