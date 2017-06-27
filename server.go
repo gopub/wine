@@ -17,6 +17,7 @@ const _DefaultMaxRequestMemory = 8 << 20
 const _DefaultRequestTimeout = time.Second * 5
 
 var _acceptEncodings = [2]string{"gzip", "defalte"}
+var _defaultServer *Server
 
 // Server implements web server
 type Server struct {
@@ -52,9 +53,11 @@ func NewServer() *Server {
 
 // DefaultServer returns a default server with Logger interceptor
 func DefaultServer() *Server {
-	s := NewServer()
-	s.Use(Logger)
-	return s
+	if _defaultServer == nil {
+		_defaultServer = NewServer()
+		_defaultServer.Use(Logger)
+	}
+	return _defaultServer
 }
 
 // RegisterResponder registers Responder
