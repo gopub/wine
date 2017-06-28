@@ -41,7 +41,7 @@ func NewServer() *Server {
 	s.RequestTimeout = _DefaultRequestTimeout
 	s.Header = make(http.Header)
 	s.Header.Set("Server", "Wine")
-	s.AddTemplateFuncs(template.FuncMap{
+	s.AddTemplateFuncMap(template.FuncMap{
 		"plus":     plus,
 		"minus":    minus,
 		"multiple": multiple,
@@ -188,21 +188,21 @@ func (s *Server) AddTemplate(tmpl *template.Template) {
 }
 
 // AddTemplateFuncs adds template functions
-func (s *Server) AddTemplateFuncs(funcs template.FuncMap) {
-	if funcs == nil {
+func (s *Server) AddTemplateFuncMap(funcMap template.FuncMap) {
+	if funcMap == nil {
 		panic("funcs is nil")
 	}
 
 	if s.templateFuncs == nil {
-		s.templateFuncs = funcs
+		s.templateFuncs = funcMap
 	} else {
-		for name, f := range funcs {
+		for name, f := range funcMap {
 			s.templateFuncs[name] = f
 		}
 	}
 
 	for _, tmpl := range s.templates {
-		tmpl.Funcs(funcs)
+		tmpl.Funcs(funcMap)
 	}
 }
 
