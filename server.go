@@ -21,7 +21,7 @@ var _defaultServer *Server
 
 // Server implements web server
 type Server struct {
-	Router
+	*Router
 	Header           http.Header
 	MaxRequestMemory int64         //max memory for request, default value is 8M
 	RequestTimeout   time.Duration //timeout for each request, default value is 5s
@@ -35,7 +35,7 @@ type Server struct {
 // NewServer returns a server
 func NewServer() *Server {
 	s := &Server{}
-	s.Router = NewDefaultRouter()
+	s.Router = NewRouter()
 	s.responder = &DefaultResponder{}
 	s.MaxRequestMemory = _DefaultMaxRequestMemory
 	s.RequestTimeout = _DefaultRequestTimeout
@@ -83,9 +83,7 @@ func (s *Server) Run(addr string) error {
 
 	s.contextPool.New = s.newContext
 	log.Println("[WINE] Running at", addr, "...")
-	if r, ok := s.Router.(*DefaultRouter); ok {
-		r.Print()
-	}
+	s.Router.Print()
 	s.server = &http.Server{Addr: addr, Handler: s}
 	err := s.server.ListenAndServe()
 	if err != nil {
