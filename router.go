@@ -178,6 +178,23 @@ func (r *Router) Any(path string, funcs ...HandlerFunc) {
 	r.Bind("PUT", path, handlers...)
 }
 
+// BindControllers binds controllers
+func (r *Router) BindControllers(controllers ...Controller) {
+	for _, c := range controllers {
+		for s, h := range c.RouteMap() {
+			strs := strings.Fields(s)
+			if len(strs) != 2 {
+				panic("[WINE] invalid route key: " + s)
+			}
+			methods := strings.Split(strs[0], "|")
+			path := c.RoutePath() + "/" + strs[1]
+			for _, method := range methods {
+				r.Bind(method, path, h)
+			}
+		}
+	}
+}
+
 // Print prints all path trees
 func (r *Router) Print() {
 	for m, n := range r.methodTrees {
