@@ -2,8 +2,10 @@ package wine
 
 type Controller interface {
 	RoutePath() string
-	RouteMap() map[string][]HandlerFunc
+	RouteMap() map[string]Handler
 }
+
+var _ Controller = (*EmptyController)(nil)
 
 type EmptyController struct {
 }
