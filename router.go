@@ -170,12 +170,11 @@ func (r *Router) Delete(path string, funcs ...HandlerFunc) {
 	r.Bind("DELETE", path, convertToHandlers(funcs...)...)
 }
 
-// Any binds funcs to path with GET/POST/PUT methods
+// Any binds funcs to path with GET/POST methods
 func (r *Router) Any(path string, funcs ...HandlerFunc) {
 	handlers := convertToHandlers(funcs...)
 	r.Bind("GET", path, handlers...)
 	r.Bind("POST", path, handlers...)
-	r.Bind("PUT", path, handlers...)
 }
 
 // BindControllers binds controllers
