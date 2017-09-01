@@ -45,7 +45,7 @@ func (ar *APIResponder) SendError(err error) {
 			gerr = gox.NewError(gox.EcodeServer, err.Error())
 		}
 	}
-	ar.SendResponse(gerr.Code(), gerr.Msg(), nil)
+	ar.SendResponse(int(gerr.Code()), gerr.Msg(), nil)
 	if gerr.Code() != 0 {
 		log.Println("[WINE] SendError:", gerr, ar.req)
 	}
