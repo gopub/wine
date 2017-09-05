@@ -11,7 +11,7 @@ import (
 	"github.com/natande/wine"
 )
 
-var _testServer *wine.Server
+var server *wine.Server
 
 type testJSONObj struct {
 	Name string
@@ -19,12 +19,12 @@ type testJSONObj struct {
 }
 
 func TestMain(m *testing.M) {
-	_testServer = wine.DefaultServer()
+	server = wine.DefaultServer()
 	go func() {
-		_testServer.Run(":8000")
+		server.Run(":8000")
 	}()
 	result := m.Run()
-	_testServer.Shutdown()
+	server.Shutdown()
 	os.Exit(result)
 }
 
@@ -33,7 +33,7 @@ func TestJSON(t *testing.T) {
 		Name: "tom",
 		Age:  19,
 	}
-	_testServer.Get("/json", func(c *wine.Context) {
+	server.Get("/json", func(c *wine.Context) {
 		c.JSON(obj)
 	})
 
@@ -72,7 +72,7 @@ func TestHTML(t *testing.T) {
 		</body>
 	</html>
 	`
-	_testServer.Get("/html/hello.html", func(c *wine.Context) {
+	server.Get("/html/hello.html", func(c *wine.Context) {
 		c.HTML(htmlText)
 	})
 
@@ -96,13 +96,13 @@ func TestHTML(t *testing.T) {
 }
 
 func TestPathParams(t *testing.T) {
-	_testServer.Get("/sum/:a,:b", func(c *wine.Context) {
+	server.Get("/sum/:a,:b", func(c *wine.Context) {
 		a := c.Params().Int("a")
 		b := c.Params().Int("b")
 		c.Text(fmt.Sprint(a + b))
 	})
 
-	_testServer.Get("/sum/:a,:b,:c", func(c *wine.Context) {
+	server.Get("/sum/:a,:b,:c", func(c *wine.Context) {
 		a := c.Params().Int("a")
 		b := c.Params().Int("b")
 		cc := c.Params().Int("c")
