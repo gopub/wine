@@ -36,7 +36,7 @@ func (ar *APIResponder) SendData(data interface{}) {
 
 // SendError sends an error response
 func (ar *APIResponder) SendError(err error) {
-	var gerr *gox.Error
+	var gerr gox.Error
 	if err == nil {
 		gerr = gox.ErrSuccess
 	} else {
@@ -45,7 +45,7 @@ func (ar *APIResponder) SendError(err error) {
 			gerr = gox.NewError(gox.EcodeServer, err.Error())
 		}
 	}
-	ar.SendResponse(int(gerr.Code()), gerr.Msg(), nil)
+	ar.SendResponse(int(gerr.Code()), gerr.Error(), nil)
 	if gerr.Code() != 0 {
 		log.Println("[WINE] SendError:", gerr, ar.req)
 	}
