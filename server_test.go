@@ -8,7 +8,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/natande/wine"
+	"github.com/gopub/wine"
 )
 
 var server *wine.Server

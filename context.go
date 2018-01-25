@@ -4,7 +4,7 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/natande/gox"
+	"github.com/gopub/types"
 )
 
 // Context is a default implementation of Context interface
@@ -12,8 +12,8 @@ type Context struct {
 	Responder
 	handlers  *handlerChain
 	req       *http.Request
-	reqParams gox.M
-	keyValues gox.M
+	reqParams types.M
+	keyValues types.M
 }
 
 // Set sets key:value
@@ -44,6 +44,6 @@ func (c *Context) SetRequestContext(ctx context.Context) {
 }
 
 // Params returns request's parameters including queries, body
-func (c *Context) Params() gox.M {
+func (c *Context) Params() types.M {
 	return c.reqParams
 }

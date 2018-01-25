@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/natande/wine"
+	"github.com/gopub/wine"
 )
 
 func main() {

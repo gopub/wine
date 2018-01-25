@@ -5,12 +5,12 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/natande/gox"
+	"github.com/gopub/utils"
 )
 
 // JSON responds application/json content
 func JSON(writer http.ResponseWriter, jsonObj interface{}) {
-	writer.Header()["Content-Type"] = []string{gox.MIMEJSON + "; charset=utf-8"}
+	writer.Header()["Content-Type"] = []string{utils.MIMEJSON + "; charset=utf-8"}
 	data, err := json.MarshalIndent(jsonObj, "", "    ")
 	if err != nil {
 		log.Println("[WINE] Render error:", err)
@@ -18,7 +18,7 @@ func JSON(writer http.ResponseWriter, jsonObj interface{}) {
 		return
 	}
 
-	err = gox.WriteAll(writer, data)
+	err = utils.WriteAll(writer, data)
 	if err != nil {
 		log.Println("[WINE] Render error:", err)
 	}

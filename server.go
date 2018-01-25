@@ -10,7 +10,8 @@ import (
 
 	"time"
 
-	"github.com/natande/gox"
+	"github.com/gopub/types"
+	"github.com/gopub/utils"
 )
 
 const _DefaultMaxRequestMemory = 8 << 20
@@ -70,8 +71,8 @@ func (s *Server) RegisterResponder(r Responder) {
 
 func (s *Server) newContext() interface{} {
 	c := &Context{}
-	c.keyValues = gox.M{}
-	gox.Renew(&c.Responder, s.responder)
+	c.keyValues = types.M{}
+	utils.Renew(&c.Responder, s.responder)
 	return c
 }
 
@@ -206,7 +207,7 @@ func (s *Server) AddTemplateFuncMap(funcMap template.FuncMap) {
 
 func (s *Server) makeContext(rw http.ResponseWriter, req *http.Request, handlers []Handler) *Context {
 	c := s.contextPool.Get().(*Context)
-	c.reqParams = gox.ParseHTTPRequestParameters(req, s.MaxRequestMemory)
+	c.reqParams = utils.ParseHTTPRequestParameters(req, s.MaxRequestMemory)
 	for k := range c.keyValues {
 		delete(c.keyValues, k)
 	}

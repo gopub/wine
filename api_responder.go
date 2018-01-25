@@ -5,7 +5,7 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/natande/gox"
+	"github.com/gopub/types"
 )
 
 var _ Responder = (*APIResponder)(nil)
@@ -13,7 +13,7 @@ var _ Responder = (*APIResponder)(nil)
 //APIResponder is designed for api request/response
 type APIResponder struct {
 	*DefaultResponder
-	loginID gox.ID
+	loginID types.ID
 }
 
 // Reset resets the Responder
@@ -26,7 +26,7 @@ func (ar *APIResponder) Reset(req *http.Request, rw http.ResponseWriter, tmpls [
 
 // SendResponse sends a response
 func (ar *APIResponder) SendResponse(code int, msg string, data interface{}) {
-	ar.JSON(gox.M{"code": code, "data": data, "msg": msg})
+	ar.JSON(types.M{"code": code, "data": data, "msg": msg})
 }
 
 // SendData sends a data response
@@ -36,13 +36,13 @@ func (ar *APIResponder) SendData(data interface{}) {
 
 // SendError sends an error response
 func (ar *APIResponder) SendError(err error) {
-	var gerr gox.Error
+	var gerr types.Error
 	if err == nil {
-		gerr = gox.ErrSuccess
+		gerr = types.ErrSuccess
 	} else {
-		gerr = gox.ParseError(err)
+		gerr = types.ParseError(err)
 		if gerr == nil {
-			gerr = gox.NewError(gox.EcodeServer, err.Error())
+			gerr = types.NewError(types.EcodeServer, err.Error())
 		}
 	}
 	ar.SendResponse(int(gerr.Code()), gerr.Error(), nil)
@@ -60,12 +60,12 @@ func (ar *APIResponder) SendMessage(code int, msg string) {
 }
 
 // SetLoginID sets current login user id
-func (ar *APIResponder) SetLoginID(loginID gox.ID) {
+func (ar *APIResponder) SetLoginID(loginID types.ID) {
 	ar.loginID = loginID
 	log.Println("[WINE] Set user id[", loginID, "]", ar.req.URL)
 }
 
 // LoginID return current login user id
-func (ar *APIResponder) LoginID() gox.ID {
+func (ar *APIResponder) LoginID() types.ID {
 	return ar.loginID
 }

@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/natande/gox"
-	"github.com/natande/wine"
+	"github.com/gopub/types"
+	"github.com/gopub/wine"
 )
 
 func main() {
@@ -10,7 +10,7 @@ func main() {
 	s.Get("/fibonacci", func(c *wine.Context) {
 		n := c.Params().Int("n")
 		result := fibonacci(n)
-		c.JSON(gox.M{"result": result})
+		c.JSON(types.M{"result": result})
 	})
 	s.Run(":8000")
 }

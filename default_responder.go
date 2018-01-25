@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/natande/gox"
-	"github.com/natande/wine/render"
+	"github.com/gopub/utils"
+	"github.com/gopub/wine/render"
 )
 
 var _ Responder = (*DefaultResponder)(nil)
@@ -55,7 +55,7 @@ func (dr *DefaultResponder) Send(data []byte, contentType string) {
 		contentType += "; charset=utf-8"
 	}
 	dr.Header()["Content-Type"] = []string{contentType}
-	err := gox.WriteAll(dr.writer, data)
+	err := utils.WriteAll(dr.writer, data)
 	if err != nil {
 		log.Println("[WINE] Send error:", err)
 	}

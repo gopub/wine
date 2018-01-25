@@ -3,7 +3,7 @@ package main
 import (
 	"time"
 
-	"github.com/natande/wine"
+	"github.com/gopub/wine"
 )
 
 func main() {
