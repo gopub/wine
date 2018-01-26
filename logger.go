@@ -1,7 +1,7 @@
 package wine
 
 import (
-	"log"
+	"github.com/gopub/log"
 	"time"
 )
 
@@ -21,7 +21,7 @@ func Logger(c *Context) {
 	st := time.Now()
 	c.Next()
 	cost := float32(time.Since(st)/time.Microsecond) / 1000.0
-	log.Printf("[WINE] %.3fms %v%s%v %s",
+	log.Infof("%.3fms %v%s%v %s",
 		cost,
 		_greenColor,
 		c.Request().Method,

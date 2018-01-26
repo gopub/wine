@@ -1,7 +1,7 @@
 package main
 
 import (
-	"log"
+	"github.com/gopub/log"
 	"net/http"
 	_ "net/http/pprof"
 	"time"
@@ -57,7 +57,7 @@ func main() {
 	})
 
 	go func() {
-		log.Println(http.ListenAndServe("localhost:6060", nil))
+		log.Info(http.ListenAndServe("localhost:6060", nil))
 	}()
 
 	s.Run(":8000")

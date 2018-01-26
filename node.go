@@ -1,7 +1,7 @@
 package wine
 
 import (
-	"log"
+	"github.com/gopub/log"
 	"reflect"
 	"runtime"
 	"strings"
@@ -176,7 +176,6 @@ func (n *node) match(pathSegments []string) ([]Handler, map[string]string) {
 		panic("[WINE] pathSegments is empty")
 	}
 
-	//log.Println(n.t, n.path, n.paramNames, n.children, "==", pathSegments)
 	segment := pathSegments[0]
 	switch n.t {
 	case _StaticNode:
@@ -257,7 +256,7 @@ func (n *node) Print(method string, parentPath string) {
 				hNames += reflect.TypeOf(h).Name()
 			}
 		}
-		log.Printf("[WINE] %-5s %s\t%s", method, path, hNames)
+		log.Infof("%-5s %s\t%s", method, path, hNames)
 	}
 
 	for _, nod := range n.children {

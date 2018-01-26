@@ -2,8 +2,8 @@ package wine
 
 import (
 	"context"
+	"github.com/gopub/log"
 	"html/template"
-	"log"
 	"net/http"
 	"strings"
 	"sync"
@@ -83,12 +83,12 @@ func (s *Server) Run(addr string) error {
 	}
 
 	s.contextPool.New = s.newContext
-	log.Println("[WINE] Running at", addr, "...")
+	log.Info("Running at", addr, "...")
 	s.Router.Print()
 	s.server = &http.Server{Addr: addr, Handler: s}
 	err := s.server.ListenAndServe()
 	if err != nil {
-		log.Println("[WINE]", err)
+		log.Error("Failed to run", err)
 	}
 	return err
 }
@@ -96,14 +96,14 @@ func (s *Server) Run(addr string) error {
 // Shutdown stops server
 func (s *Server) Shutdown() {
 	s.server.Shutdown(context.Background())
-	log.Println("[WINE] Shutdown")
+	log.Info("Shutdown")
 }
 
 // ServeHTTP implements for http.Handler interface, which will handle each http request
 func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	defer func() {
 		if e := recover(); e != nil {
-			log.Println("[WINE] ServeHTTP", e, req)
+			log.Error(e, req)
 		} else {
 			if cw, ok := rw.(*compressedResponseWriter); ok {
 				cw.Close()
@@ -137,7 +137,7 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 			rw.WriteHeader(http.StatusOK)
 			rw.Write(_faviconBytes)
 		} else {
-			log.Println("[WINE] Not found[", path, "]", req)
+			log.Warnf("Not found. path=%s, request=%v", path, req)
 			http.Error(rw, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 		}
 		return

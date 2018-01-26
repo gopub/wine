@@ -1,8 +1,8 @@
 package wine
 
 import (
+	"github.com/gopub/log"
 	"html/template"
-	"log"
 	"net/http"
 	"strings"
 
@@ -57,7 +57,7 @@ func (dr *DefaultResponder) Send(data []byte, contentType string) {
 	dr.Header()["Content-Type"] = []string{contentType}
 	err := utils.WriteAll(dr.writer, data)
 	if err != nil {
-		log.Println("[WINE] Send error:", err)
+		log.Error("Send error:", err)
 	}
 }
 

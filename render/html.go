@@ -1,8 +1,8 @@
 package render
 
 import (
+	"github.com/gopub/log"
 	"html/template"
-	"log"
 	"net/http"
 
 	"github.com/gopub/utils"
@@ -24,6 +24,6 @@ func HTML(writer http.ResponseWriter, htmlText string) {
 	var data = []byte(htmlText)
 	err := utils.WriteAll(writer, data)
 	if err != nil {
-		log.Println("[WINE] Render error:", err)
+		log.Error("Render error:", err)
 	}
 }

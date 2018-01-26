@@ -1,8 +1,8 @@
 package wine
 
 import (
+	"github.com/gopub/log"
 	"html/template"
-	"log"
 	"net/http"
 
 	"github.com/gopub/types"
@@ -47,7 +47,7 @@ func (ar *APIResponder) SendError(err error) {
 	}
 	ar.SendResponse(int(gerr.Code()), gerr.Error(), nil)
 	if gerr.Code() != 0 {
-		log.Println("[WINE] SendError:", gerr, ar.req)
+		log.Error(gerr, ar.req)
 	}
 }
 
@@ -55,14 +55,14 @@ func (ar *APIResponder) SendError(err error) {
 func (ar *APIResponder) SendMessage(code int, msg string) {
 	ar.SendResponse(code, msg, nil)
 	if code != 0 {
-		log.Println("[WINE] Error:", code, msg, ar.req)
+		log.Error(code, msg, ar.req)
 	}
 }
 
 // SetLoginID sets current login user id
 func (ar *APIResponder) SetLoginID(loginID types.ID) {
 	ar.loginID = loginID
-	log.Println("[WINE] Set user id[", loginID, "]", ar.req.URL)
+	log.Infof("loginID=%d, url=%s", loginID, ar.req.URL.String())
 }
 
 // LoginID return current login user id

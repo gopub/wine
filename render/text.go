@@ -1,8 +1,8 @@
 package render
 
 import (
+	"github.com/gopub/log"
 	"github.com/gopub/utils"
-	"log"
 	"net/http"
 )
 
@@ -12,6 +12,6 @@ func Text(writer http.ResponseWriter, text string) {
 	data := []byte(text)
 	err := utils.WriteAll(writer, data)
 	if err != nil {
-		log.Println("[WINE] Render error:", err)
+		log.Error("Render error:", err)
 	}
 }
