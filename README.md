@@ -1,6 +1,6 @@
 # WINE
 
-Wine is a lightweight web framework for quickly writing web applications/services in Golang. 
+Wine is a lightweight web framework for quickly writing web applications/services in Go. 
 
 ## Install  
 
