@@ -34,23 +34,6 @@ func (ar *APIResponder) SendData(data interface{}) {
 	ar.SendResponse(0, "", data)
 }
 
-// SendError sends an error response
-func (ar *APIResponder) SendError(err error) {
-	var gerr types.Error
-	if err == nil {
-		gerr = types.ErrSuccess
-	} else {
-		gerr = types.ParseError(err)
-		if gerr == nil {
-			gerr = types.NewError(types.EcodeServer, err.Error())
-		}
-	}
-	ar.SendResponse(int(gerr.Code()), gerr.Error(), nil)
-	if gerr.Code() != 0 {
-		log.Error(gerr, ar.req)
-	}
-}
-
 // SendMessage sends a message response
 func (ar *APIResponder) SendMessage(code int, msg string) {
 	ar.SendResponse(code, msg, nil)

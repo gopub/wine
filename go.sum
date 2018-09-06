@@ -1,0 +1,10 @@
+github.com/disintegration/imaging v1.5.0 h1:uYqUhwNmLU4K1FN44vhqS4TZJRAA4RhBINgbQlKyGi0=
+github.com/disintegration/imaging v1.5.0/go.mod h1:9B/deIUIrliYkyMTuXJd6OUFLcrZ2tf+3Qlwnaf/CjU=
+github.com/gopub/log v1.0.0 h1:4Wb/Zj3wGn6S9+tUg3uvmVGsLrtlPBg8OGsR5IkabiA=
+github.com/gopub/log v1.0.0/go.mod h1:C6ijpHVzwY9Rpai9P0cDhDKTImQIFy+IWBqOfzH5cIs=
+github.com/gopub/types v1.0.3 h1:gwJP1NPx5mQzTk6zDeuiumqpBfsT9PoGchsd6IeYYDg=
+github.com/gopub/types v1.0.3/go.mod h1:Fe1/7+5HRBCB0arBtAGAF9HbUw/RnJFoGVZxo8X/Jww=
+github.com/gopub/utils v1.0.0 h1:cuJVBv/PS1GPeTE0nZZTjfar9voA/EWwFFNmLym+3dg=
+github.com/gopub/utils v1.0.0/go.mod h1:BpYtWOZLUuzVnQBIAuKl2ekvoXbQplA9JIDRN8isMeU=
+golang.org/x/image v0.0.0-20180708004352-c73c2afc3b81 h1:00VmoueYNlNz/aHIilyyQz/MHSqGoWJzpFv/HW8xpzI=
+golang.org/x/image v0.0.0-20180708004352-c73c2afc3b81/go.mod h1:ux5Hcp/YLpHSI86hEcLt0YII63i6oz57MZXIpbrjZUs=
