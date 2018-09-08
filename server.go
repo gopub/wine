@@ -107,6 +107,12 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		}
 	}()
 
+	defer func() {
+		if cw, ok := rw.(*compressedResponseWriter); ok {
+			cw.Close()
+		}
+	}()
+
 	// Add compression to responseWriter
 	ae := req.Header.Get("Accept-Encoding")
 	for _, enc := range acceptEncodings {
@@ -148,10 +154,6 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 
 	if !c.Responded() {
 		c.Status(http.StatusNotFound)
-	}
-
-	if cw, ok := rw.(*compressedResponseWriter); ok {
-		cw.Close()
 	}
 
 	s.contextPool.Put(c)

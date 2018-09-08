@@ -8,8 +8,8 @@ import (
 
 // Text render text into writer
 func Text(writer http.ResponseWriter, status int, text string) {
-	writer.WriteHeader(status)
 	writer.Header()["Content-Type"] = []string{utils.MIMETEXT + "; charset=utf-8"}
+	writer.WriteHeader(status)
 	data := []byte(text)
 	err := utils.WriteAll(writer, data)
 	if err != nil {
