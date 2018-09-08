@@ -99,26 +99,13 @@ func (s *Server) Shutdown() {
 	log.Info("Shutdown")
 }
 
-func (s *Server) cleanup(rw http.ResponseWriter, req *http.Request) {
+// ServeHTTP implements for http.Handler interface, which will handle each http request
+func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	defer func() {
 		if e := recover(); e != nil {
 			log.Error(e, req)
 		}
 	}()
-
-	if e := recover(); e != nil {
-		log.Error(e, req)
-		rw.WriteHeader(http.StatusInternalServerError)
-	} else {
-		if cw, ok := rw.(*compressedResponseWriter); ok {
-			cw.Close()
-		}
-	}
-}
-
-// ServeHTTP implements for http.Handler interface, which will handle each http request
-func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
-	defer s.cleanup(rw, req)
 
 	// Add compression to responseWriter
 	ae := req.Header.Get("Accept-Encoding")
@@ -158,8 +145,13 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	c.req = req.WithContext(reqCtx)
 	c.Params().AddMapObj(pathParams)
 	c.Next()
+
 	if !c.Responded() {
 		c.Status(http.StatusNotFound)
+	}
+
+	if cw, ok := rw.(*compressedResponseWriter); ok {
+		cw.Close()
 	}
 
 	s.contextPool.Put(c)
