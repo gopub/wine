@@ -104,6 +104,7 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	defer func() {
 		if e := recover(); e != nil {
 			log.Error(e, req)
+			rw.WriteHeader(http.StatusInternalServerError)
 		} else {
 			if cw, ok := rw.(*compressedResponseWriter); ok {
 				cw.Close()
@@ -146,10 +147,13 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	c := s.makeContext(rw, req, handlers)
 	reqCtx, cancel := context.WithTimeout(req.Context(), s.RequestTimeout)
 	defer cancel()
+	log.Info("1")
 	c.req = req.WithContext(reqCtx)
-
+	log.Info("2")
 	c.Params().AddMapObj(pathParams)
+	log.Info("3")
 	c.Next()
+	log.Info("4")
 	if !c.Responded() {
 		c.Status(http.StatusNotFound)
 	}
@@ -206,6 +210,8 @@ func (s *Server) AddTemplateFuncMap(funcMap template.FuncMap) {
 }
 
 func (s *Server) makeContext(rw http.ResponseWriter, req *http.Request, handlers []Handler) *Context {
+
+	log.Debug("START")
 	c := s.contextPool.Get().(*Context)
 	c.reqParams = utils.ParseHTTPRequestParameters(req, s.MaxRequestMemory)
 	for k := range c.keyValues {
@@ -225,5 +231,6 @@ func (s *Server) makeContext(rw http.ResponseWriter, req *http.Request, handlers
 		c.Responder.Header()[k] = v
 	}
 
+	log.Debug("DONE")
 	return c
 }
