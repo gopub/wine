@@ -27,7 +27,7 @@ func (ar *APIResponder) Reset(req *http.Request, rw http.ResponseWriter, tmpls [
 
 // SendResponse sends a response
 func (ar *APIResponder) SendResponse(code int, msg string, data interface{}) {
-	ar.JSON(types.M{"code": code, "data": data, "msg": msg})
+	ar.JSON(http.StatusOK, types.M{"code": code, "data": data, "msg": msg})
 }
 
 // SendData sends a data response

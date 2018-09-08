@@ -1,6 +1,7 @@
 package wine
 
 import (
+	"github.com/gopub/log"
 	"net/http"
 	"strings"
 )
@@ -22,11 +23,11 @@ func NewRouter() *Router {
 // Group returns a new router whose basePath is r.basePath+path
 func (r *Router) Group(path string) *Router {
 	if len(path) == 0 {
-		panic("[WINE] group path is empty")
+		log.Panic("group path is empty")
 	}
 
 	if path == "/" {
-		panic("[WINE] don't create default group \"/\"")
+		log.Panic("don't create default group \"/\"")
 	}
 
 	nr := &Router{}
@@ -72,15 +73,15 @@ func (r *Router) Match(method string, path string) (handlers []Handler, params m
 // Bind binds method, path with handlers
 func (r *Router) Bind(method string, path string, handlers ...Handler) {
 	if path == "" {
-		panic("[WINE] invalid path")
+		log.Panic("invalid path")
 	}
 
 	if len(method) == 0 {
-		panic("[WINE] invalid method")
+		log.Panic("invalid method")
 	}
 
 	if len(handlers) == 0 {
-		panic("[WINE] no handler")
+		log.Panic("no handler")
 	}
 
 	n := r.methodTrees[method]
@@ -183,7 +184,7 @@ func (r *Router) BindControllers(controllers ...Controller) {
 		for s, h := range c.RouteMap() {
 			strs := strings.Fields(s)
 			if len(strs) != 2 {
-				panic("[WINE] invalid route key: " + s)
+				log.Panic("invalid route key: " + s)
 			}
 			methods := strings.Split(strs[0], "|")
 			path := c.RoutePath() + "/" + strs[1]

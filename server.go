@@ -14,11 +14,11 @@ import (
 	"github.com/gopub/utils"
 )
 
-const _DefaultMaxRequestMemory = 8 << 20
-const _DefaultRequestTimeout = time.Second * 5
+const defaultMaxRequestMemory = 8 << 20
+const defaultRequestTimeout = time.Second * 5
 
-var _acceptEncodings = [2]string{"gzip", "defalte"}
-var _defaultServer *Server
+var acceptEncodings = [2]string{"gzip", "defalte"}
+var defaultServer *Server
 
 // Server implements web server
 type Server struct {
@@ -38,8 +38,8 @@ func NewServer() *Server {
 	s := &Server{}
 	s.Router = NewRouter()
 	s.responder = &DefaultResponder{}
-	s.MaxRequestMemory = _DefaultMaxRequestMemory
-	s.RequestTimeout = _DefaultRequestTimeout
+	s.MaxRequestMemory = defaultMaxRequestMemory
+	s.RequestTimeout = defaultRequestTimeout
 	s.Header = make(http.Header)
 	s.Header.Set("Server", "Wine")
 	s.AddTemplateFuncMap(template.FuncMap{
@@ -54,17 +54,17 @@ func NewServer() *Server {
 
 // DefaultServer returns a default server with Logger interceptor
 func DefaultServer() *Server {
-	if _defaultServer == nil {
-		_defaultServer = NewServer()
-		_defaultServer.Use(Logger)
+	if defaultServer == nil {
+		defaultServer = NewServer()
+		defaultServer.Use(Logger)
 	}
-	return _defaultServer
+	return defaultServer
 }
 
 // RegisterResponder registers Responder
 func (s *Server) RegisterResponder(r Responder) {
 	if r == nil {
-		panic("[WINE] r is nil")
+		log.Panic("r is nil")
 	}
 	s.responder = r
 }
@@ -79,7 +79,7 @@ func (s *Server) newContext() interface{} {
 // Run starts server
 func (s *Server) Run(addr string) error {
 	if s.server != nil {
-		panic("[WINE] Server is running")
+		log.Panic("Server is running")
 	}
 
 	s.contextPool.New = s.newContext
@@ -88,7 +88,7 @@ func (s *Server) Run(addr string) error {
 	s.server = &http.Server{Addr: addr, Handler: s}
 	err := s.server.ListenAndServe()
 	if err != nil {
-		log.Error("Failed to run", err)
+		log.Error(err)
 	}
 	return err
 }
@@ -99,22 +99,30 @@ func (s *Server) Shutdown() {
 	log.Info("Shutdown")
 }
 
-// ServeHTTP implements for http.Handler interface, which will handle each http request
-func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
+func (s *Server) cleanup(rw http.ResponseWriter, req *http.Request) {
 	defer func() {
 		if e := recover(); e != nil {
 			log.Error(e, req)
-			rw.WriteHeader(http.StatusInternalServerError)
-		} else {
-			if cw, ok := rw.(*compressedResponseWriter); ok {
-				cw.Close()
-			}
 		}
 	}()
 
+	if e := recover(); e != nil {
+		log.Error(e, req)
+		rw.WriteHeader(http.StatusInternalServerError)
+	} else {
+		if cw, ok := rw.(*compressedResponseWriter); ok {
+			cw.Close()
+		}
+	}
+}
+
+// ServeHTTP implements for http.Handler interface, which will handle each http request
+func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
+	defer s.cleanup(rw, req)
+
 	// Add compression to responseWriter
 	ae := req.Header.Get("Accept-Encoding")
-	for _, enc := range _acceptEncodings {
+	for _, enc := range acceptEncodings {
 		if strings.Contains(ae, enc) {
 			rw.Header().Set("Content-Encoding", enc)
 			if cw, err := newCompressedResponseWriter(rw, enc); err == nil {
@@ -189,7 +197,7 @@ func (s *Server) AddTemplate(tmpl *template.Template) {
 // AddTemplateFuncs adds template functions
 func (s *Server) AddTemplateFuncMap(funcMap template.FuncMap) {
 	if funcMap == nil {
-		panic("funcs is nil")
+		log.Panic("funcMap is nil")
 	}
 
 	if s.templateFuncs == nil {

@@ -19,7 +19,8 @@ func TemplateHTML(writer http.ResponseWriter, tmpl *template.Template, name stri
 }
 
 // HTML writes htmlText into writer
-func HTML(writer http.ResponseWriter, htmlText string) {
+func HTML(writer http.ResponseWriter, status int, htmlText string) {
+	writer.WriteHeader(status)
 	writer.Header()["Content-Type"] = []string{utils.MIMEHTML + "; charset=utf-8"}
 	var data = []byte(htmlText)
 	err := utils.WriteAll(writer, data)

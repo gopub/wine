@@ -165,7 +165,7 @@ func (n *node) add(nodes []*node) bool {
 		n.children = append(n.children, nod)
 		break
 	default:
-		panic("[WINE] invalid node type")
+		log.Panic("invalid node type")
 	}
 
 	return true
@@ -173,7 +173,7 @@ func (n *node) add(nodes []*node) bool {
 
 func (n *node) match(pathSegments []string) ([]Handler, map[string]string) {
 	if len(pathSegments) == 0 {
-		panic("[WINE] pathSegments is empty")
+		log.Panic("pathSegments is empty")
 	}
 
 	segment := pathSegments[0]

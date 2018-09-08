@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/gopub/wine"
 )
@@ -23,8 +24,8 @@ func TestMain(m *testing.M) {
 	go func() {
 		server.Run(":8000")
 	}()
+	time.Sleep(time.Second)
 	result := m.Run()
-	server.Shutdown()
 	os.Exit(result)
 }
 
@@ -34,7 +35,7 @@ func TestJSON(t *testing.T) {
 		Age:  19,
 	}
 	server.Get("/json", func(c *wine.Context) {
-		c.JSON(obj)
+		c.JSON(http.StatusOK, obj)
 	})
 
 	resp, err := http.DefaultClient.Get("http://localhost:8000/json")
@@ -73,7 +74,7 @@ func TestHTML(t *testing.T) {
 	</html>
 	`
 	server.Get("/html/hello.html", func(c *wine.Context) {
-		c.HTML(htmlText)
+		c.HTML(http.StatusOK, htmlText)
 	})
 
 	resp, err := http.DefaultClient.Get("http://localhost:8000/html/hello.html")
@@ -99,14 +100,14 @@ func TestPathParams(t *testing.T) {
 	server.Get("/sum/:a,:b", func(c *wine.Context) {
 		a := c.Params().Int("a")
 		b := c.Params().Int("b")
-		c.Text(fmt.Sprint(a + b))
+		c.Text(http.StatusOK, fmt.Sprint(a+b))
 	})
 
 	server.Get("/sum/:a,:b,:c", func(c *wine.Context) {
 		a := c.Params().Int("a")
 		b := c.Params().Int("b")
 		cc := c.Params().Int("c")
-		c.Text(fmt.Sprint(a + b + cc))
+		c.Text(http.StatusOK, fmt.Sprint(a+b+cc))
 	})
 
 	{

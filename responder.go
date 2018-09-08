@@ -12,10 +12,10 @@ type Responder interface {
 	Redirect(location string, permanent bool)
 	Send(data []byte, contentType string)
 	Status(status int)
-	JSON(obj interface{})
+	Text(status int, text string)
+	HTML(status int, htmlText string)
+	JSON(status int, obj interface{})
 	File(filePath string)
-	HTML(htmlText string)
-	Text(text string)
 	TemplateHTML(templateName string, params interface{})
 	Handle(h http.Handler)
 

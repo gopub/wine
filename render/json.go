@@ -9,7 +9,8 @@ import (
 )
 
 // JSON responds application/json content
-func JSON(writer http.ResponseWriter, jsonObj interface{}) {
+func JSON(writer http.ResponseWriter, status int, jsonObj interface{}) {
+	writer.WriteHeader(status)
 	writer.Header()["Content-Type"] = []string{utils.MIMEJSON + "; charset=utf-8"}
 	data, err := json.MarshalIndent(jsonObj, "", "    ")
 	if err != nil {
@@ -20,6 +21,6 @@ func JSON(writer http.ResponseWriter, jsonObj interface{}) {
 
 	err = utils.WriteAll(writer, data)
 	if err != nil {
-		log.Error("[WINE] Render error:", err)
+		log.Error("Render error:", err)
 	}
 }

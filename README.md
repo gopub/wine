@@ -90,7 +90,7 @@ Custom middleware
     	<b>c.Next()</b> 
     	cost := float32((time.Since(st) / time.Microsecond)) / 1000.0
     	req := c.Request()
-    	log.Printf("[WINE] %.3fms %s %s", cost, req.Method, req.RequestURI)
+    	log.Printf("%.3fms %s %s", cost, req.Method, req.RequestURI)
     } <br/>
     func main() {
     	s := wine.NewServer() 
@@ -143,10 +143,10 @@ Custom middleware
 </pre>
 Run it: 
 
-    [WINE] Running at :8000 ...
-    [WINE] GET   /time/ main.GetServerTime
-    [WINE] GET   /accounts/:user_id/friends/:page,:size/    main.CheckSessionID, main.GetUserFriends
-    [WINE] GET   /accounts/:user_id/profile/    main.CheckSessionID, main.GetUserProfile
+    Running at :8000 ...
+    GET   /time/ main.GetServerTime
+    GET   /accounts/:user_id/friends/:page,:size/    main.CheckSessionID, main.GetUserFriends
+    GET   /accounts/:user_id/profile/    main.CheckSessionID, main.GetUserProfile
 
 ## Model Binding
 

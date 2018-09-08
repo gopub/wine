@@ -40,7 +40,7 @@ func (dr *DefaultResponder) Responded() bool {
 
 func (dr *DefaultResponder) markResponded() {
 	if dr.responded {
-		panic("[WINE] already responded")
+		log.Panic("already responded")
 	}
 	dr.responded = true
 }
@@ -62,9 +62,9 @@ func (dr *DefaultResponder) Send(data []byte, contentType string) {
 }
 
 // JSON sends json response
-func (dr *DefaultResponder) JSON(jsonObj interface{}) {
+func (dr *DefaultResponder) JSON(status int, jsonObj interface{}) {
 	dr.markResponded()
-	render.JSON(dr.writer, jsonObj)
+	render.JSON(dr.writer, status, jsonObj)
 }
 
 // Status sends a response just with a status code
@@ -90,15 +90,15 @@ func (dr *DefaultResponder) File(filePath string) {
 }
 
 // HTML sends a HTML response
-func (dr *DefaultResponder) HTML(htmlText string) {
+func (dr *DefaultResponder) HTML(status int, htmlText string) {
 	dr.markResponded()
-	render.HTML(dr.writer, htmlText)
+	render.HTML(dr.writer, status, htmlText)
 }
 
 // Text sends a text response
-func (dr *DefaultResponder) Text(text string) {
+func (dr *DefaultResponder) Text(status int, text string) {
 	dr.markResponded()
-	render.Text(dr.writer, text)
+	render.Text(dr.writer, status, text)
 }
 
 // TemplateHTML sends a HTML response. HTML page is rendered according to templateName and params

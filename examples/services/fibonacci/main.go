@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/gopub/types"
 	"github.com/gopub/wine"
+	"net/http"
 )
 
 func main() {
@@ -10,7 +11,7 @@ func main() {
 	s.Get("/fibonacci", func(c *wine.Context) {
 		n := c.Params().Int("n")
 		result := fibonacci(n)
-		c.JSON(types.M{"result": result})
+		c.JSON(http.StatusOK, types.M{"result": result})
 	})
 	s.Run(":8000")
 }
