@@ -1,4 +1,4 @@
-module github.com/gopub/wine
+module github.com/gopub/wine/v2
 
 require (
 	github.com/gopub/log v1.0.3
