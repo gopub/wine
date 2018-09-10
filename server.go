@@ -6,8 +6,6 @@ import (
 	"html/template"
 	"net/http"
 	"strings"
-	"sync"
-
 	"time"
 
 	"github.com/gopub/types"
@@ -26,10 +24,8 @@ type Server struct {
 	Header           http.Header
 	MaxRequestMemory int64         //max memory for request, default value is 8M
 	RequestTimeout   time.Duration //timeout for each request, default value is 5s
-	responder        Responder
 	templates        []*template.Template
 	templateFuncs    template.FuncMap
-	contextPool      sync.Pool
 	server           *http.Server
 }
 
@@ -37,7 +33,6 @@ type Server struct {
 func NewServer() *Server {
 	s := &Server{}
 	s.Router = NewRouter()
-	s.responder = &DefaultResponder{}
 	s.MaxRequestMemory = defaultMaxRequestMemory
 	s.RequestTimeout = defaultRequestTimeout
 	s.Header = make(http.Header)
@@ -61,28 +56,12 @@ func DefaultServer() *Server {
 	return defaultServer
 }
 
-// RegisterResponder registers Responder
-func (s *Server) RegisterResponder(r Responder) {
-	if r == nil {
-		log.Panic("r is nil")
-	}
-	s.responder = r
-}
-
-func (s *Server) newContext() interface{} {
-	c := &Context{}
-	c.keyValues = types.M{}
-	utils.Renew(&c.Responder, s.responder)
-	return c
-}
-
 // Run starts server
 func (s *Server) Run(addr string) error {
 	if s.server != nil {
 		log.Panic("Server is running")
 	}
 
-	s.contextPool.New = s.newContext
 	log.Info("Running at", addr, "...")
 	s.Router.Print()
 	s.server = &http.Server{Addr: addr, Handler: s}
@@ -145,18 +124,13 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	c := s.makeContext(rw, req, handlers)
-	reqCtx, cancel := context.WithTimeout(req.Context(), s.RequestTimeout)
+	request, responder := s.makePair(rw, req, handlers)
+	ctx, cancel := context.WithTimeout(req.Context(), s.RequestTimeout)
 	defer cancel()
-	c.req = req.WithContext(reqCtx)
-	c.Params().AddMapObj(pathParams)
-	c.Next()
-
-	if !c.Responded() {
-		c.Status(http.StatusNotFound)
+	request.Parameters().AddMapObj(pathParams)
+	if !responder.Next(ctx, request, responder) {
+		responder.Status(http.StatusNotFound)
 	}
-
-	s.contextPool.Put(c)
 }
 
 // AddGlobTemplate adds a template by parsing template files with pattern
@@ -207,25 +181,24 @@ func (s *Server) AddTemplateFuncMap(funcMap template.FuncMap) {
 	}
 }
 
-func (s *Server) makeContext(rw http.ResponseWriter, req *http.Request, handlers []Handler) *Context {
-	c := s.contextPool.Get().(*Context)
-	c.reqParams = utils.ParseHTTPRequestParameters(req, s.MaxRequestMemory)
-	for k := range c.keyValues {
-		delete(c.keyValues, k)
+func (s *Server) makePair(rw http.ResponseWriter, req *http.Request, handlers []Handler) (Request, Responder) {
+	request := &requestImpl{
+		req:       req,
+		reqParams: utils.ParseHTTPRequestParameters(req, s.MaxRequestMemory),
+		keyValues: types.M{},
 	}
 
-	if c.handlers == nil {
-		c.handlers = newHandlerChain(handlers)
-	} else {
-		c.handlers.handlers = handlers
-		c.handlers.index = 0
+	responder := &responderImpl{
+		handlers:  newHandlerChain(handlers),
+		req:       req,
+		writer:    rw,
+		templates: s.templates,
 	}
 
-	c.Responder.Reset(req, rw, s.templates)
 	// Set global headers
 	for k, v := range s.Header {
-		c.Responder.Header()[k] = v
+		responder.Header()[k] = v
 	}
 
-	return c
+	return request, responder
 }

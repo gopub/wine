@@ -1,6 +1,7 @@
 package wine
 
 import (
+	"context"
 	"encoding/base64"
 	"net/http"
 	"strconv"
@@ -25,8 +26,8 @@ func BasicAuth(userToPassword map[string]string, realm string) HandlerFunc {
 	}
 
 	authHeaderValue := "Basic realm=" + strconv.Quote(realm)
-	return func(ctx *Context) {
-		authValue := ctx.Request().Header.Get("Authorization")
+	return func(ctx context.Context, request Request, responder Responder) bool {
+		authValue := request.RawRequest().Header.Get("Authorization")
 		var foundUser string
 		for user, info := range userToAuthInfo {
 			if info == authValue {
@@ -36,11 +37,12 @@ func BasicAuth(userToPassword map[string]string, realm string) HandlerFunc {
 		}
 
 		if len(foundUser) == 0 {
-			ctx.Header().Set("WWW-Authenticate", authHeaderValue)
-			ctx.Status(http.StatusUnauthorized)
+			responder.Header().Set("WWW-Authenticate", authHeaderValue)
+			responder.Status(http.StatusUnauthorized)
+			return true
 		} else {
-			ctx.Set(BasicAuthUser, foundUser)
-			ctx.Next()
+			request.SetValue(BasicAuthUser, foundUser)
+			return responder.Next(ctx, request, responder)
 		}
 	}
 }

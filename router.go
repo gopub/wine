@@ -1,6 +1,7 @@
 package wine
 
 import (
+	"context"
 	"github.com/gopub/log"
 	"net/http"
 	"strings"
@@ -112,8 +113,9 @@ func (r *Router) Bind(method string, path string, handlers ...Handler) {
 
 // StaticFile binds path to a file
 func (r *Router) StaticFile(path, filePath string) {
-	r.Get(path, func(c *Context) {
-		c.File(filePath)
+	r.Get(path, func(ctx context.Context, request Request, responder Responder) bool {
+		responder.File(filePath)
+		return true
 	})
 	return
 }
@@ -145,8 +147,9 @@ func (r *Router) StaticFS(path string, fs http.FileSystem) {
 	}
 
 	fileServer := http.StripPrefix(prefix, http.FileServer(fs))
-	r.Get(path, func(c *Context) {
-		c.Handle(fileServer)
+	r.Get(path, func(ctx context.Context, request Request, responder Responder) bool {
+		responder.Handle(fileServer)
+		return true
 	})
 	return
 }

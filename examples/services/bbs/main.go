@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"github.com/gopub/log"
 	"net/http"
 	_ "net/http/pprof"
@@ -25,35 +26,38 @@ type Topic struct {
 
 func main() {
 	s := wine.DefaultServer()
-	s.Get("hello", func(c *wine.Context) {
-		c.JSON(http.StatusOK, types.M{"code": 0, "msg": "hello"})
+	s.Get("hello", func(ctx context.Context, request wine.Request, responder wine.Responder) bool {
+		responder.JSON(http.StatusOK, types.M{"code": 0, "msg": "hello"})
+		return true
 	})
 
-	s.Get("login", func(c *wine.Context) {
-		username := c.Params().String("username")
-		password := c.Params().String("password")
+	s.Get("login", func(ctx context.Context, request wine.Request, responder wine.Responder) bool {
+		username := request.Parameters().String("username")
+		password := request.Parameters().String("password")
 		if len(username) == 0 || len(password) == 0 {
-			c.JSON(http.StatusOK, types.M{"code": 1, "msg": "login error"})
-			return
+			responder.JSON(http.StatusOK, types.M{"code": 1, "msg": "login error"})
+			return true
 		}
 		u := &User{}
 		u.ID = 1
 		u.Name = "guest"
 		u.CreatedAt = time.Now().Unix()
-		c.JSON(http.StatusOK, types.M{"code": 0, "msg": "success", "data": u})
+		responder.JSON(http.StatusOK, types.M{"code": 0, "msg": "success", "data": u})
+		return true
 	})
 
-	s.Post("topic", func(c *wine.Context) {
-		title := c.Params().String("title")
+	s.Post("topic", func(ctx context.Context, request wine.Request, responder wine.Responder) bool {
+		title := request.Parameters().String("title")
 		if len(title) == 0 {
-			c.JSON(http.StatusOK, types.M{"code": 1, "msg": "no title"})
-			return
+			responder.JSON(http.StatusOK, types.M{"code": 1, "msg": "no title"})
+			return true
 		}
 		t := &Topic{}
 		t.ID = 2
 		t.User = &User{ID: 1, Name: "guest", CreatedAt: time.Now().Unix()}
 		t.CreatedAt = time.Now().Unix()
-		c.JSON(http.StatusOK, types.M{"code": 2, "msg": "success", "data": t})
+		responder.JSON(http.StatusOK, types.M{"code": 2, "msg": "success", "data": t})
+		return true
 	})
 
 	go func() {

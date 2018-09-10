@@ -1,6 +1,7 @@
 package wine
 
 import (
+	"context"
 	"github.com/gopub/log"
 	"time"
 )
@@ -17,14 +18,15 @@ var (
 )
 
 // Logger calculates cost time and output to console
-func Logger(c *Context) {
+func Logger(ctx context.Context, request Request, responder Responder) bool {
 	st := time.Now()
-	c.Next()
+	handled := responder.Next(ctx, request, responder)
 	cost := float32(time.Since(st)/time.Microsecond) / 1000.0
 	log.Infof("%.3fms %v%s%v %s",
 		cost,
 		_greenColor,
-		c.Request().Method,
+		request.RawRequest().Method,
 		_resetColor,
-		c.Request().RequestURI)
+		request.RawRequest().RequestURI)
+	return handled
 }

@@ -1,6 +1,7 @@
 package wine
 
 import (
+	"context"
 	"github.com/gopub/log"
 	"html/template"
 	"net/http"
@@ -10,10 +11,9 @@ import (
 	"github.com/gopub/wine/render"
 )
 
-var _ Responder = (*DefaultResponder)(nil)
-
-// DefaultResponder is a default implementation of Context interface
-type DefaultResponder struct {
+// responderImpl is a default implementation of Context interface
+type responderImpl struct {
+	handlers  *handlerChain
 	req       *http.Request
 	writer    http.ResponseWriter
 	responded bool
@@ -21,24 +21,24 @@ type DefaultResponder struct {
 }
 
 // Reset resets responder to be a new one
-func (dr *DefaultResponder) Reset(req *http.Request, rw http.ResponseWriter, tmpls []*template.Template) {
-	dr.responded = false
-	dr.req = req
-	dr.writer = rw
-	dr.templates = tmpls
-}
+//func (dr *responderImpl) Reset(req *http.Request, rw http.ResponseWriter, tmpls []*template.Template) {
+//	dr.responded = false
+//	dr.req = req
+//	dr.writer = rw
+//	dr.templates = tmpls
+//}
 
 // Header returns response header
-func (dr *DefaultResponder) Header() http.Header {
+func (dr *responderImpl) Header() http.Header {
 	return dr.writer.Header()
 }
 
 // Responded returns a flag to determine whether if the response has been written
-func (dr *DefaultResponder) Responded() bool {
+func (dr *responderImpl) Responded() bool {
 	return dr.responded
 }
 
-func (dr *DefaultResponder) markResponded() {
+func (dr *responderImpl) markResponded() {
 	if dr.responded {
 		log.Panic("already responded")
 	}
@@ -46,7 +46,7 @@ func (dr *DefaultResponder) markResponded() {
 }
 
 // Send sends bytes
-func (dr *DefaultResponder) Send(data []byte, contentType string) {
+func (dr *responderImpl) Send(data []byte, contentType string) {
 	dr.markResponded()
 	if len(contentType) == 0 {
 		contentType = http.DetectContentType(data)
@@ -62,19 +62,19 @@ func (dr *DefaultResponder) Send(data []byte, contentType string) {
 }
 
 // JSON sends json response
-func (dr *DefaultResponder) JSON(status int, jsonObj interface{}) {
+func (dr *responderImpl) JSON(status int, jsonObj interface{}) {
 	dr.markResponded()
 	render.JSON(dr.writer, status, jsonObj)
 }
 
 // Status sends a response just with a status code
-func (dr *DefaultResponder) Status(status int) {
+func (dr *responderImpl) Status(status int) {
 	dr.markResponded()
 	render.Status(dr.writer, status)
 }
 
 // Redirect sends a redirect response
-func (dr *DefaultResponder) Redirect(location string, permanent bool) {
+func (dr *responderImpl) Redirect(location string, permanent bool) {
 	dr.writer.Header().Set("Location", location)
 	if permanent {
 		dr.Status(http.StatusMovedPermanently)
@@ -84,25 +84,25 @@ func (dr *DefaultResponder) Redirect(location string, permanent bool) {
 }
 
 // File sends a file response
-func (dr *DefaultResponder) File(filePath string) {
+func (dr *responderImpl) File(filePath string) {
 	dr.markResponded()
 	http.ServeFile(dr.writer, dr.req, filePath)
 }
 
 // HTML sends a HTML response
-func (dr *DefaultResponder) HTML(status int, htmlText string) {
+func (dr *responderImpl) HTML(status int, htmlText string) {
 	dr.markResponded()
 	render.HTML(dr.writer, status, htmlText)
 }
 
 // Text sends a text response
-func (dr *DefaultResponder) Text(status int, text string) {
+func (dr *responderImpl) Text(status int, text string) {
 	dr.markResponded()
 	render.Text(dr.writer, status, text)
 }
 
 // TemplateHTML sends a HTML response. HTML page is rendered according to templateName and params
-func (dr *DefaultResponder) TemplateHTML(templateName string, params interface{}) {
+func (dr *responderImpl) TemplateHTML(templateName string, params interface{}) {
 	for _, tmpl := range dr.templates {
 		err := render.TemplateHTML(dr.writer, tmpl, templateName, params)
 		if err == nil {
@@ -113,7 +113,17 @@ func (dr *DefaultResponder) TemplateHTML(templateName string, params interface{}
 }
 
 // Handle handles request with h
-func (dr *DefaultResponder) Handle(h http.Handler) {
+func (dr *responderImpl) Handle(h http.Handler) {
 	dr.markResponded()
 	h.ServeHTTP(dr.writer, dr.req)
+}
+
+func (dr *responderImpl) Next(ctx context.Context, request Request, responder Responder) bool {
+	h := dr.handlers.Next()
+	if h == nil {
+		log.Error("next handler is nil")
+		return false
+	}
+
+	return h.HandleRequest(ctx, request, responder)
 }

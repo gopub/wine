@@ -1,13 +1,12 @@
 package wine
 
 import (
-	"html/template"
+	"context"
 	"net/http"
 )
 
 // Responder defines methods to send response
 type Responder interface {
-	Responded() bool
 	Header() http.Header
 	Redirect(location string, permanent bool)
 	Send(data []byte, contentType string)
@@ -19,5 +18,7 @@ type Responder interface {
 	TemplateHTML(templateName string, params interface{})
 	Handle(h http.Handler)
 
-	Reset(req *http.Request, rw http.ResponseWriter, tmpls []*template.Template)
+	Next(ctx context.Context, request Request, responder Responder) bool
+
+	//Reset(req *http.Request, rw http.ResponseWriter, tmpls []*template.Template)
 }

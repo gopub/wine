@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"github.com/gopub/types"
 	"github.com/gopub/wine"
 	"net/http"
@@ -8,10 +9,11 @@ import (
 
 func main() {
 	s := wine.DefaultServer()
-	s.Get("/fibonacci", func(c *wine.Context) {
-		n := c.Params().Int("n")
+	s.Get("/fibonacci", func(ctx context.Context, request wine.Request, responder wine.Responder) bool {
+		n := request.Parameters().Int("n")
 		result := fibonacci(n)
-		c.JSON(http.StatusOK, types.M{"result": result})
+		responder.JSON(http.StatusOK, types.M{"result": result})
+		return true
 	})
 	s.Run(":8000")
 }

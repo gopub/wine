@@ -1,6 +1,7 @@
 package wine_test
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -34,8 +35,9 @@ func TestJSON(t *testing.T) {
 		Name: "tom",
 		Age:  19,
 	}
-	server.Get("/json", func(c *wine.Context) {
-		c.JSON(http.StatusOK, obj)
+	server.Get("/json", func(ctx context.Context, request wine.Request, responder wine.Responder) bool {
+		responder.JSON(http.StatusOK, obj)
+		return true
 	})
 
 	resp, err := http.DefaultClient.Get("http://localhost:8000/json")
@@ -73,8 +75,9 @@ func TestHTML(t *testing.T) {
 		</body>
 	</html>
 	`
-	server.Get("/html/hello.html", func(c *wine.Context) {
-		c.HTML(http.StatusOK, htmlText)
+	server.Get("/html/hello.html", func(ctx context.Context, request wine.Request, responder wine.Responder) bool {
+		responder.HTML(http.StatusOK, htmlText)
+		return true
 	})
 
 	resp, err := http.DefaultClient.Get("http://localhost:8000/html/hello.html")
@@ -97,17 +100,19 @@ func TestHTML(t *testing.T) {
 }
 
 func TestPathParams(t *testing.T) {
-	server.Get("/sum/:a,:b", func(c *wine.Context) {
-		a := c.Params().Int("a")
-		b := c.Params().Int("b")
-		c.Text(http.StatusOK, fmt.Sprint(a+b))
+	server.Get("/sum/:a,:b", func(ctx context.Context, request wine.Request, responder wine.Responder) bool {
+		a := request.Parameters().Int("a")
+		b := request.Parameters().Int("b")
+		responder.Text(http.StatusOK, fmt.Sprint(a+b))
+		return true
 	})
 
-	server.Get("/sum/:a,:b,:c", func(c *wine.Context) {
-		a := c.Params().Int("a")
-		b := c.Params().Int("b")
-		cc := c.Params().Int("c")
-		c.Text(http.StatusOK, fmt.Sprint(a+b+cc))
+	server.Get("/sum/:a,:b,:c", func(ctx context.Context, request wine.Request, responder wine.Responder) bool {
+		a := request.Parameters().Int("a")
+		b := request.Parameters().Int("b")
+		cc := request.Parameters().Int("c")
+		responder.Text(http.StatusOK, fmt.Sprint(a+b+cc))
+		return true
 	})
 
 	{

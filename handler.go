@@ -1,16 +1,18 @@
 package wine
 
+import "context"
+
 // Handler defines interface for interceptor
 type Handler interface {
-	HandleRequest(*Context)
+	HandleRequest(context.Context, Request, Responder) bool
 }
 
 // HandlerFunc converts function into Handler
-type HandlerFunc func(*Context)
+type HandlerFunc func(context.Context, Request, Responder) bool
 
 // HandleRequest is an interface method required by Handler
-func (h HandlerFunc) HandleRequest(c *Context) {
-	h(c)
+func (h HandlerFunc) HandleRequest(ctx context.Context, req Request, resp Responder) bool {
+	return h(ctx, req, resp)
 }
 
 // HandlerChain : A chain of handlers
