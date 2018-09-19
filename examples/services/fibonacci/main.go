@@ -3,7 +3,7 @@ package main
 import (
 	"context"
 	"github.com/gopub/types"
-	"github.com/gopub/wine"
+	"github.com/gopub/wine/v2"
 	"net/http"
 )
 

@@ -12,5 +12,7 @@ github.com/gopub/utils v1.0.0 h1:cuJVBv/PS1GPeTE0nZZTjfar9voA/EWwFFNmLym+3dg=
 github.com/gopub/utils v1.0.0/go.mod h1:BpYtWOZLUuzVnQBIAuKl2ekvoXbQplA9JIDRN8isMeU=
 github.com/gopub/utils v1.0.1 h1:RiCCiHFKEIdGl1Y60FkP1gvbHF1E9UPt+yg0GoyBGb4=
 github.com/gopub/utils v1.0.1/go.mod h1:aCS5sHV1j8t00x2ZGDxf5xQlBgc0T1oHWwla1wyxqk4=
+github.com/gopub/wine v1.0.5 h1:uP9lVMRwtF9GSikLpPSQ6/z2LQCNmncIpxjVv6aIb5o=
+github.com/gopub/wine v1.0.5/go.mod h1:d5mzKY2palnLHrMig1b1brrMRHubbiR1MtWKxKQ11ro=
 golang.org/x/image v0.0.0-20180708004352-c73c2afc3b81 h1:00VmoueYNlNz/aHIilyyQz/MHSqGoWJzpFv/HW8xpzI=
 golang.org/x/image v0.0.0-20180708004352-c73c2afc3b81/go.mod h1:ux5Hcp/YLpHSI86hEcLt0YII63i6oz57MZXIpbrjZUs=
