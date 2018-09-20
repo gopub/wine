@@ -25,6 +25,7 @@ func TestMain(m *testing.M) {
 	go func() {
 		server.Run(":8000")
 	}()
+
 	time.Sleep(time.Second)
 	result := m.Run()
 	os.Exit(result)

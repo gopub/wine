@@ -1,40 +1,56 @@
 package wine
 
-import "context"
+import (
+	"context"
+	"sync"
+)
 
 // Handler defines interface for interceptor
 type Handler interface {
-	HandleRequest(context.Context, Request, Responder) bool
+	HandleRequest(ctx context.Context, req Request, next Invoker) Responsible
 }
 
 // HandlerFunc converts function into Handler
-type HandlerFunc func(context.Context, Request, Responder) bool
+type HandlerFunc func(ctx context.Context, req Request, next Invoker) Responsible
 
 // HandleRequest is an interface method required by Handler
-func (h HandlerFunc) HandleRequest(ctx context.Context, req Request, resp Responder) bool {
-	return h(ctx, req, resp)
+func (h HandlerFunc) HandleRequest(ctx context.Context, req Request, next Invoker) Responsible {
+	return h(ctx, req, next)
 }
 
-// HandlerChain : A chain of handlers
-type handlerChain struct {
-	index    int
-	handlers []Handler
+type Invoker func(ctx context.Context, req Request) Responsible
+
+type handlerElement struct {
+	handler Handler
+	next *handlerElement
 }
 
-// NewHandlerChain : Create handler chain
-func newHandlerChain(handlers []Handler) *handlerChain {
-	hc := &handlerChain{}
-	hc.handlers = handlers
-	return hc
+func (h *handlerElement) Invoke(ctx context.Context, req Request) Responsible {
+	return  h.handler.HandleRequest(ctx, req, h.next.Invoke)
 }
 
-// Next : Get next handler
-func (h *handlerChain) Next() Handler {
-	if h.index >= len(h.handlers) {
-		return nil
+type handlerList struct {
+	head *handlerElement
+	tail *handlerElement
+	mu sync.Mutex
+}
+
+func (l *handlerList) Head() *handlerElement  {
+	return l.head
+}
+
+func (l *handlerList) Tail() *handlerElement  {
+	return l.tail
+}
+
+func (l *handlerList) PushBack(v Handler)  {
+	l.mu.Lock()
+	e := &handlerElement{handler:v, next:nil}
+	if l.tail == nil {
+		l.head = e
+		l.tail = e
+	} else {
+		l.tail.next = e
 	}
-
-	index := h.index
-	h.index++
-	return h.handlers[index]
+	l.mu.Unlock()
 }
