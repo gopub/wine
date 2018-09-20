@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/gopub/utils"
-	"github.com/gopub/wine/render"
+	"github.com/gopub/wine/v2/render"
 )
 
 // responderImpl is a default implementation of Context interface
