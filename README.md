@@ -11,7 +11,7 @@ Create ./hello.go
         
         package main
         
-        import "github.com/gopub/wine/v2"
+        import "github.com/gopub/wine/v3"
         
         func main() {
         	s := wine.DefaultServer()

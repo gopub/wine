@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gopub/wine/v2"
+	"github.com/gopub/wine/v3"
 )
 
 var server *wine.Server

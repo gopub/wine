@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/gopub/types"
-	"github.com/gopub/wine/v2"
+	"github.com/gopub/wine/v3"
 )
 
 type User struct {
