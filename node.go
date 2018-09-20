@@ -32,11 +32,11 @@ type node struct {
 	t          nodeType
 	path       string
 	paramNames []string
-	handlers   []Handler
+	handlers   *handlerList
 	children   []*node
 }
 
-func newNodeList(path string, handlers ...Handler) []*node {
+func newNodeList(path string, handlers *handlerList) []*node {
 	path = normalizePath(path)
 	segs := strings.Split(path, "/")
 	nodes := make([]*node, len(segs))
@@ -44,6 +44,7 @@ func newNodeList(path string, handlers ...Handler) []*node {
 		nodes[i] = newNode(s)
 	}
 
+	log.Info(handlers.Empty())
 	nodes[len(nodes)-1].handlers = handlers
 	return nodes
 }
@@ -53,8 +54,9 @@ func newNode(pathSegment string) *node {
 		panic("invalid path segment: " + pathSegment)
 	}
 	n := &node{
-		t:    getNodeType(pathSegment),
-		path: pathSegment,
+		t:        getNodeType(pathSegment),
+		path:     pathSegment,
+		handlers: &handlerList{},
 	}
 	switch n.t {
 	case _ParamNode:
@@ -87,7 +89,7 @@ func (n *node) conflict(nodes []*node) bool {
 	//n.t == node.t
 
 	if n.t == _StaticNode {
-		return n.path == nod.path && len(n.handlers) > 0 && len(nod.handlers) > 0
+		return n.path == nod.path && !n.handlers.Empty() && !nod.handlers.Empty()
 	}
 
 	if n.t == _ParamNode {
@@ -95,7 +97,7 @@ func (n *node) conflict(nodes []*node) bool {
 			return false
 		}
 
-		if len(n.handlers) > 0 && len(nod.handlers) > 0 {
+		if !n.handlers.Empty() && !nod.handlers.Empty() {
 			return true
 		}
 
@@ -171,7 +173,7 @@ func (n *node) add(nodes []*node) bool {
 	return true
 }
 
-func (n *node) match(pathSegments []string) ([]Handler, map[string]string) {
+func (n *node) match(pathSegments []string) (*handlerList, map[string]string) {
 	if len(pathSegments) == 0 {
 		log.Panic("pathSegments is empty")
 	}
@@ -184,32 +186,32 @@ func (n *node) match(pathSegments []string) ([]Handler, map[string]string) {
 			return nil, nil
 		case len(pathSegments) == 1:
 			return n.handlers, nil
-		case pathSegments[1] == "" && len(n.handlers) > 0:
+		case pathSegments[1] == "" && !n.handlers.Empty():
 			return n.handlers, nil
 		default:
 			for _, child := range n.children {
 				handlers, params := child.match(pathSegments[1:])
-				if len(handlers) > 0 {
+				if !handlers.Empty() {
 					return handlers, params
 				}
 			}
 			return nil, nil
 		}
 	case _ParamNode:
-		var handlers []Handler
+		var handlers *handlerList
 		var params map[string]string
-		if len(pathSegments) == 1 || (pathSegments[1] == "" && len(n.handlers) > 0) {
+		if len(pathSegments) == 1 || (pathSegments[1] == "" && !n.handlers.Empty()) {
 			handlers = n.handlers
 		} else {
 			for _, child := range n.children {
 				handlers, params = child.match(pathSegments[1:])
-				if len(handlers) > 0 {
+				if !handlers.Empty() {
 					break
 				}
 			}
 		}
 
-		if len(handlers) > 0 {
+		if !handlers.Empty() {
 			if params == nil {
 				params = map[string]string{}
 			}
@@ -243,14 +245,14 @@ func (n *node) Print(method string, parentPath string) {
 
 	path = normalizePath(path)
 
-	if len(n.handlers) > 0 {
+	if !n.handlers.Empty() {
 		var hNames string
-		for _, h := range n.handlers {
+		for h := n.handlers.Head(); h != nil; h = h.next {
 			if len(hNames) != 0 {
 				hNames += ", "
 			}
 
-			if f, ok := h.(HandlerFunc); ok {
+			if f, ok := h.handler.(HandlerFunc); ok {
 				hNames += runtime.FuncForPC(reflect.ValueOf(f).Pointer()).Name()
 			} else {
 				hNames += reflect.TypeOf(h).Name()

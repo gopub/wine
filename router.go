@@ -58,7 +58,7 @@ func (r *Router) Use(funcs ...HandlerFunc) *Router {
 }
 
 // Match finds handlers and parses path parameters according to method and path
-func (r *Router) Match(method string, path string) (handlers []Handler, params map[string]string) {
+func (r *Router) Match(method string, path string) (handlers *handlerList, params map[string]string) {
 	n := r.methodTrees[method]
 	if n == nil {
 		return
@@ -95,16 +95,17 @@ func (r *Router) Bind(method string, path string, handlers ...Handler) {
 	hs := make([]Handler, len(r.handlers))
 	copy(hs, r.handlers)
 	hs = append(hs, handlers...)
+	hl := newHandlerList(hs)
 
 	path = normalizePath(r.basePath + "/" + path)
 	if path == "" {
-		if len(n.handlers) == 0 {
-			n.handlers = hs
+		if n.handlers.Empty() {
+			n.handlers = hl
 		} else {
 			panic("binding conflict: " + path)
 		}
 	} else {
-		nodes := newNodeList(path, hs...)
+		nodes := newNodeList(path, hl)
 		if !n.add(nodes) {
 			panic("binding conflict: " + path)
 		}
@@ -113,9 +114,8 @@ func (r *Router) Bind(method string, path string, handlers ...Handler) {
 
 // StaticFile binds path to a file
 func (r *Router) StaticFile(path, filePath string) {
-	r.Get(path, func(ctx context.Context, request Request, responder Responder) bool {
-		responder.File(filePath)
-		return true
+	r.Get(path, func(ctx context.Context, request Request, invoker Invoker) Responsible {
+		return File(request.RawRequest(), filePath)
 	})
 	return
 }
@@ -147,9 +147,8 @@ func (r *Router) StaticFS(path string, fs http.FileSystem) {
 	}
 
 	fileServer := http.StripPrefix(prefix, http.FileServer(fs))
-	r.Get(path, func(ctx context.Context, request Request, responder Responder) bool {
-		responder.Handle(fileServer)
-		return true
+	r.Get(path, func(ctx context.Context, request Request, invoker Invoker) Responsible {
+		return Handle(request.RawRequest(), fileServer)
 	})
 	return
 }

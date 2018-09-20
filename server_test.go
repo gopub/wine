@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/gopub/utils"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -36,9 +37,8 @@ func TestJSON(t *testing.T) {
 		Name: "tom",
 		Age:  19,
 	}
-	server.Get("/json", func(ctx context.Context, request wine.Request, responder wine.Responder) bool {
-		responder.JSON(http.StatusOK, obj)
-		return true
+	server.Get("/json", func(ctx context.Context, _ wine.Request, _ wine.Invoker) wine.Responsible {
+		return wine.JSON(http.StatusOK, obj)
 	})
 
 	resp, err := http.DefaultClient.Get("http://localhost:8000/json")
@@ -54,6 +54,7 @@ func TestJSON(t *testing.T) {
 	var result testJSONObj
 	err = json.Unmarshal(data, &result)
 	if err != nil {
+		t.Log(string(data))
 		t.Fatal(err)
 	}
 
@@ -61,8 +62,8 @@ func TestJSON(t *testing.T) {
 		t.Fatal(result, *obj)
 	}
 
-	if resp.Header["Content-Type"][0] != "application/json; charset=utf-8" {
-		t.Fatal(resp.Header["Content-Type"])
+	if resp.Header[utils.ContentType][0] != utils.MIMEJSON {
+		t.Fatal(resp.Header[utils.ContentType])
 	}
 }
 
@@ -76,9 +77,8 @@ func TestHTML(t *testing.T) {
 		</body>
 	</html>
 	`
-	server.Get("/html/hello.html", func(ctx context.Context, request wine.Request, responder wine.Responder) bool {
-		responder.HTML(http.StatusOK, htmlText)
-		return true
+	server.Get("/html/hello.html", func(ctx context.Context, _ wine.Request, _ wine.Invoker) wine.Responsible {
+		return wine.HTML(http.StatusOK, htmlText)
 	})
 
 	resp, err := http.DefaultClient.Get("http://localhost:8000/html/hello.html")
@@ -95,25 +95,23 @@ func TestHTML(t *testing.T) {
 		t.Fatal(string(data))
 	}
 
-	if resp.Header["Content-Type"][0] != "text/html; charset=utf-8" {
-		t.Fatal(resp.Header["Content-Type"])
+	if resp.Header[utils.ContentType][0] != utils.MIMEHTML {
+		t.Fatal(resp.Header[utils.ContentType])
 	}
 }
 
 func TestPathParams(t *testing.T) {
-	server.Get("/sum/:a,:b", func(ctx context.Context, request wine.Request, responder wine.Responder) bool {
+	server.Get("/sum/:a,:b", func(ctx context.Context, request wine.Request, invoker wine.Invoker) wine.Responsible {
 		a := request.Parameters().Int("a")
 		b := request.Parameters().Int("b")
-		responder.Text(http.StatusOK, fmt.Sprint(a+b))
-		return true
+		return wine.Text(http.StatusOK, fmt.Sprint(a+b))
 	})
 
-	server.Get("/sum/:a,:b,:c", func(ctx context.Context, request wine.Request, responder wine.Responder) bool {
+	server.Get("/sum/:a,:b,:c", func(ctx context.Context, request wine.Request, invoker wine.Invoker) wine.Responsible {
 		a := request.Parameters().Int("a")
 		b := request.Parameters().Int("b")
 		cc := request.Parameters().Int("c")
-		responder.Text(http.StatusOK, fmt.Sprint(a+b+cc))
-		return true
+		return wine.Text(http.StatusOK, fmt.Sprint(a+b+cc))
 	})
 
 	{

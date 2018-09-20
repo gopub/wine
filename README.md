@@ -15,8 +15,8 @@ Create ./hello.go
         
         func main() {
         	s := wine.DefaultServer()
-        	s.Get("/hello", func(ctx context.Context, request wine.Request, responder wine.Responder) bool {
-        		responder.Text("Hello, Wine!")
+        	s.Get("/hello", func(ctx context.Context, request wine.Request, invoker wine.Invoker) wine.Responsible {
+        		return wine.Text("Hello, Wine!")
         	})
         	s.Run(":8000")
         }
@@ -30,8 +30,8 @@ Run and test:
 ## JSON Rendering
 
         s := wine.DefaultServer()
-        s.Get("/time", func(ctx context.Context, request wine.Request, responder wine.Responder) bool {
-        	responder.JSON(map[string]interface{}{"time":time.Now().Unix()})
+        s.Get("/time", func(ctx context.Context, request wine.Request, invoker wine.Invoker) wine.Responsible {
+        	return wine.JSON(map[string]interface{}{"time":time.Now().Unix()})
         })
         s.Run(":8000")
 
@@ -39,10 +39,10 @@ Run and test:
 Context.Params() provides an uniform interface to retrieve request parameters.  
 
         s := wine.DefaultServer()
-        s.Post("feedback", func(ctx context.Context, request wine.Request, responder wine.Responder) bool {
+        s.Post("feedback", func(ctx context.Context, request wine.Request, invoker wine.Invoker) wine.Responsible {
             text := request.Parameters().String("text")
             email := request.Parameters().String("email")
-            responder.Text("Feedback:" + text + " from " + email)
+            return wine.Text("Feedback:" + text + " from " + email)
         })
         s.Run(":8000")
 Test parameters in query string
@@ -61,9 +61,9 @@ Path parameters are also supported in order to provide elegant RESTful apis.
 Single parameter in one segment:
 <pre>
     s := wine.DefaultServer() 
-    s.Get("/items/<b>:id</b>", func(ctx context.Context, request wine.Request, responder wine.Responder) bool {
+    s.Get("/items/<b>:id</b>", func(ctx context.Context, request wine.Request, invoker wine.Invoker) wine.Responsible {
         id := request.Parameters().String("id")
-        responder.Text("item id: " + id)
+        return wine.Text("item id: " + id)
     }) 
     s.Run(":8000")
 </pre>
@@ -71,10 +71,10 @@ Single parameter in one segment:
 Multiple parameters in one segment:   
 <pre>
     s := wine.DefaultServer() 
-    s.Get("/items/<b>:page,:size</b>", func(ctx context.Context, request wine.Request, responder wine.Responder) bool {
+    s.Get("/items/<b>:page,:size</b>", func(ctx context.Context, request wine.Request, invoker wine.Invoker) wine.Responsible {
         page := request.Parameters().Int("page")
         size := request.Parameters().Int("size")
-        responder.Text("page:" + strconv.Itoa(page) + " size:" + strconv.Itoa(size))
+        return wine.Text("page:" + strconv.Itoa(page) + " size:" + strconv.Itoa(size))
     }) 
     s.Run(":8000")
 </pre>
@@ -84,48 +84,46 @@ Use middlewares to intercept and preprocess requests
 
 Custom middleware
 <pre>
-    func Logger(ctx context.Context, request wine.Request, responder wine.Responder) bool {
+    func Logger(ctx context.Context, request wine.Request, invoker wine.Invoker) wine.Responsible {
     	st := time.Now()  
     	//pass request to the next handler
-    	<b>handled := responder.Next(ctx, request, responder)</b>
+    	<b>result := invoker(ctx, request)</b>
     	cost := float32((time.Since(st) / time.Microsecond)) / 1000.0
-    	req := responder.Request()
+    	req := return wine.Request()
     	log.Printf("%.3fms %s %s", cost, req.Method, req.RequestURI)
-    	return handled
+    	return result
     } <br/>
     func main() {
     	s := wine.NewServer() 
     	//Use middleware Logger
     	<b>s.Use(Logger)</b> 
-    	s.Get("/hello", func(ctx context.Context, request wine.Request, responder wine.Responder) bool {
-    		responder.Text("Hello, Wine!")
-    		return true
+    	s.Get("/hello", func(ctx context.Context, request wine.Request, invoker wine.Invoker) wine.Responsible {
+    		return wine.Text("Hello, Wine!")
         })
         s.Run(":8000")
     }
 </pre>
 ## Grouping Route
 <pre>  
-    func CheckSessionID(ctx context.Context, request wine.Request, responder wine.Responder) bool {
+    func CheckSessionID(ctx context.Context, request wine.Request, invoker wine.Invoker) wine.Responsible {
     	sid := request.Parameters().String("sid")
     	//check sid
     	if len(sid) == 0 {
-    		responder.JSON(map[string]interface{}{"error":"need sid"})
-    		return true
+    		return wine.JSON(map[string]interface{}{"error":"need sid"})
     	} else {
-    		return responder.Next(ctx, request, responder)
+    		return invoker(ctx, request)
     	}
     }
     
-    func GetUserProfile(ctx context.Context, request wine.Request, responder wine.Responder) bool  {
+    func GetUserProfile(ctx context.Context, request wine.Request, invoker wine.Invoker) wine.Responsible  {
     	//...
     }
     
-    func GetUserFriends(ctx context.Context, request wine.Request, responder wine.Responder) bool  {
+    func GetUserFriends(ctx context.Context, request wine.Request, invoker wine.Invoker) wine.Responsible  {
     	//...
     }
     
-    func GetServerTime(ctx context.Context, request wine.Request, responder wine.Responder) bool  {
+    func GetServerTime(ctx context.Context, request wine.Request, invoker wine.Invoker) wine.Responsible  {
     	//...
     }
     
@@ -167,11 +165,10 @@ Run it:
     
     func main() {
     	s := wine.DefaultServer()
-    	s.Post("register", func(ctx context.Context, request wine.Request, responder wine.Responder) bool {
+    	s.Post("register", func(ctx context.Context, request wine.Request, invoker wine.Invoker) wine.Responsible {
     		u := &User{}
     		request.Parameters().AssignTo(u, "param")
-    		responder.JSON(u)
-        	return true
+    		return wine.JSON(u)
     	})
     	s.Run(":8000")
     }
@@ -200,30 +197,6 @@ It's easy to turn on basic auth.
 	}, ""))
 	s.StaticDir("/", "./html")
 	s.Run(":8000")
-## Custom Responder
-Custom responder to add more features.   
-e.g. Replace wine.DefaultResponder with wine.APIResponder
-    
-    
-    func main() {
-        s := wine.DefaultServer()
-        s.RegisterResponder(&wine.APIResponder{})
-        s.Get("time", func(ctx context.Context, request wine.Request, responder wine.Responder) bool {
-        	r := responder.Responder.(*wine.APIResponder)
-        	r.SendResponse(0, "", time.Now().Unix())
-        	return true
-        })
-        s.Run(":8000")
-    }
-Test:  
 
-    $ curl http://localhost:8000/time
-Response:  
-
-    {
-        "code": 0,
-        "data": 1459404100,
-        "msg": ""
-    }    
 ## Recommendations
 Wine designed for modular web applications/services is not a general purpose web server. It should be used behind a web server such as Nginx, Caddy which provide compression, security features.

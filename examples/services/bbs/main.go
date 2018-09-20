@@ -26,38 +26,33 @@ type Topic struct {
 
 func main() {
 	s := wine.DefaultServer()
-	s.Get("hello", func(ctx context.Context, request wine.Request, responder wine.Responder) bool {
-		responder.JSON(http.StatusOK, types.M{"code": 0, "msg": "hello"})
-		return true
+	s.Get("hello", func(ctx context.Context, request wine.Request, invoker wine.Invoker) wine.Responsible {
+		return wine.JSON(http.StatusOK, types.M{"code": 0, "msg": "hello"})
 	})
 
-	s.Get("login", func(ctx context.Context, request wine.Request, responder wine.Responder) bool {
+	s.Get("login", func(ctx context.Context, request wine.Request, invoker wine.Invoker) wine.Responsible {
 		username := request.Parameters().String("username")
 		password := request.Parameters().String("password")
 		if len(username) == 0 || len(password) == 0 {
-			responder.JSON(http.StatusOK, types.M{"code": 1, "msg": "login error"})
-			return true
+			return wine.JSON(http.StatusOK, types.M{"code": 1, "msg": "login error"})
 		}
 		u := &User{}
 		u.ID = 1
 		u.Name = "guest"
 		u.CreatedAt = time.Now().Unix()
-		responder.JSON(http.StatusOK, types.M{"code": 0, "msg": "success", "data": u})
-		return true
+		return wine.JSON(http.StatusOK, types.M{"code": 0, "msg": "success", "data": u})
 	})
 
-	s.Post("topic", func(ctx context.Context, request wine.Request, responder wine.Responder) bool {
+	s.Post("topic", func(ctx context.Context, request wine.Request, invoker wine.Invoker) wine.Responsible {
 		title := request.Parameters().String("title")
 		if len(title) == 0 {
-			responder.JSON(http.StatusOK, types.M{"code": 1, "msg": "no title"})
-			return true
+			return wine.JSON(http.StatusOK, types.M{"code": 1, "msg": "no title"})
 		}
 		t := &Topic{}
 		t.ID = 2
 		t.User = &User{ID: 1, Name: "guest", CreatedAt: time.Now().Unix()}
 		t.CreatedAt = time.Now().Unix()
-		responder.JSON(http.StatusOK, types.M{"code": 2, "msg": "success", "data": t})
-		return true
+		return wine.JSON(http.StatusOK, types.M{"code": 2, "msg": "success", "data": t})
 	})
 
 	go func() {

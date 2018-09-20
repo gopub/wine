@@ -18,9 +18,9 @@ var (
 )
 
 // Logger calculates cost time and output to console
-func Logger(ctx context.Context, request Request, responder Responder) bool {
+func Logger(ctx context.Context, request Request, invoker Invoker) Responsible {
 	st := time.Now()
-	handled := responder.Next(ctx, request, responder)
+	resp := invoker(ctx, request)
 	cost := float32(time.Since(st)/time.Microsecond) / 1000.0
 	log.Infof("%.3fms %v%s%v %s",
 		cost,
@@ -28,5 +28,5 @@ func Logger(ctx context.Context, request Request, responder Responder) bool {
 		request.RawRequest().Method,
 		_resetColor,
 		request.RawRequest().RequestURI)
-	return handled
+	return resp
 }

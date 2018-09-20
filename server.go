@@ -21,11 +21,11 @@ var defaultServer *Server
 // Server implements web server
 type Server struct {
 	*Router
+	*TemplateManager
+
 	Header           http.Header
 	MaxRequestMemory int64         //max memory for request, default value is 8M
 	RequestTimeout   time.Duration //timeout for each request, default value is 5s
-	templates        []*template.Template
-	templateFuncs    template.FuncMap
 	server           *http.Server
 }
 
@@ -33,6 +33,7 @@ type Server struct {
 func NewServer() *Server {
 	s := &Server{}
 	s.Router = NewRouter()
+	s.TemplateManager = NewTemplateManager()
 	s.MaxRequestMemory = defaultMaxRequestMemory
 	s.RequestTimeout = defaultRequestTimeout
 	s.Header = make(http.Header)
@@ -112,7 +113,7 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	path = normalizePath(path)
 	method := strings.ToUpper(req.Method)
 	handlers, pathParams := s.Match(method, path)
-	if len(handlers) == 0 {
+	if handlers.Empty() {
 		if path == "favicon.ico" {
 			rw.Header()["Content-Type"] = []string{"image/x-icon"}
 			rw.WriteHeader(http.StatusOK)
@@ -124,81 +125,20 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	request, responder := s.makePair(rw, req, handlers)
+	request := &requestImpl{
+		req:             req,
+		reqParams:       utils.ParseHTTPRequestParameters(req, s.MaxRequestMemory),
+		keyValues:       types.M{},
+		templateManager: s.TemplateManager,
+	}
+
 	ctx, cancel := context.WithTimeout(req.Context(), s.RequestTimeout)
 	defer cancel()
 	request.Parameters().AddMapObj(pathParams)
-	if !responder.Next(ctx, request, responder) {
-		responder.Status(http.StatusNotFound)
-	}
-}
 
-// AddGlobTemplate adds a template by parsing template files with pattern
-func (s *Server) AddGlobTemplate(pattern string) {
-	tmpl := template.Must(template.ParseGlob(pattern))
-	s.AddTemplate(tmpl)
-}
-
-// AddFilesTemplate adds a template by parsing template files
-func (s *Server) AddFilesTemplate(files ...string) {
-	tmpl := template.Must(template.ParseFiles(files...))
-	s.AddTemplate(tmpl)
-}
-
-// AddTextTemplate adds a template by parsing texts
-func (s *Server) AddTextTemplate(name string, texts ...string) {
-	tmpl := template.New(name)
-	for _, txt := range texts {
-		tmpl = template.Must(tmpl.Parse(txt))
-	}
-	s.AddTemplate(tmpl)
-}
-
-// AddTemplate adds a template
-func (s *Server) AddTemplate(tmpl *template.Template) {
-	if s.templateFuncs != nil {
-		tmpl.Funcs(s.templateFuncs)
-	}
-	s.templates = append(s.templates, tmpl)
-}
-
-// AddTemplateFuncs adds template functions
-func (s *Server) AddTemplateFuncMap(funcMap template.FuncMap) {
-	if funcMap == nil {
-		log.Panic("funcMap is nil")
-	}
-
-	if s.templateFuncs == nil {
-		s.templateFuncs = funcMap
-	} else {
-		for name, f := range funcMap {
-			s.templateFuncs[name] = f
-		}
-	}
-
-	for _, tmpl := range s.templates {
-		tmpl.Funcs(funcMap)
-	}
-}
-
-func (s *Server) makePair(rw http.ResponseWriter, req *http.Request, handlers []Handler) (Request, Responder) {
-	request := &requestImpl{
-		req:       req,
-		reqParams: utils.ParseHTTPRequestParameters(req, s.MaxRequestMemory),
-		keyValues: types.M{},
-	}
-
-	responder := &responderImpl{
-		handlers:  newHandlerChain(handlers),
-		req:       req,
-		writer:    rw,
-		templates: s.templates,
-	}
-
-	// Set global headers
 	for k, v := range s.Header {
-		responder.Header()[k] = v
+		rw.Header()[k] = v
 	}
-
-	return request, responder
+	resp := handlers.head.Invoke(ctx, request)
+	resp.Respond(ctx, rw)
 }
