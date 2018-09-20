@@ -8,19 +8,15 @@ import (
 
 // Request is a wrapper of http.Request, aims to provide more convenient interface
 type Request interface {
-	SetValue(key string, value interface{})
-	Value(key string) interface{}
 	RawRequest() *http.Request
 	Parameters() types.M
-	TemplateManager() *TemplateManager
 }
 
 // requestImpl is a wrapper of http.requestImpl, aims to provide more convenient interface
 type requestImpl struct {
-	req             *http.Request
-	reqParams       types.M
-	keyValues       types.M
-	templateManager *TemplateManager
+	req       *http.Request
+	reqParams types.M
+	keyValues types.M
 }
 
 // Set sets key:value
@@ -41,9 +37,4 @@ func (c *requestImpl) RawRequest() *http.Request {
 // Params returns request's parameters including queries, body
 func (c *requestImpl) Parameters() types.M {
 	return c.reqParams
-}
-
-// Params returns request's parameters including queries, body
-func (c *requestImpl) TemplateManager() *TemplateManager {
-	return c.templateManager
 }

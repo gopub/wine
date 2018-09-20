@@ -126,13 +126,13 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	}
 
 	request := &requestImpl{
-		req:             req,
-		reqParams:       utils.ParseHTTPRequestParameters(req, s.MaxRequestMemory),
-		keyValues:       types.M{},
-		templateManager: s.TemplateManager,
+		req:       req,
+		reqParams: utils.ParseHTTPRequestParameters(req, s.MaxRequestMemory),
+		keyValues: types.M{},
 	}
 
 	ctx, cancel := context.WithTimeout(req.Context(), s.RequestTimeout)
+	ctx = context.WithValue(ctx, "templates", s.templates)
 	defer cancel()
 	request.Parameters().AddMapObj(pathParams)
 

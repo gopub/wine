@@ -41,7 +41,7 @@ func BasicAuth(userToPassword map[string]string, realm string) HandlerFunc {
 			header.Set("WWW-Authenticate", authHeaderValue)
 			return NewResponse(http.StatusUnauthorized, header, nil)
 		} else {
-			request.SetValue(BasicAuthUser, foundUser)
+			ctx := context.WithValue(ctx, BasicAuthUser, foundUser)
 			return invoker(ctx, request)
 		}
 	}
