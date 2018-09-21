@@ -134,8 +134,8 @@ Custom middleware
     	<b>g := s.Group("accounts")</b>
     	//Use CheckSessionID to process all requests in this route group
     	<b>g.Use(CheckSessionID)</b>
-    	g.Get(":user_id/profile", GetUserProfile)
-    	g.Get(":user_id/friends/:page,:size", GetUserFriends)
+    	g.Get("{user_id}/profile", GetUserProfile)
+    	g.Get("{user_id}/friends/{page}/{size}", GetUserFriends)
     
     	s.Get("time", GetServerTime)
     
@@ -146,8 +146,8 @@ Run it:
 
     Running at :8000 ...
     GET   /time/ main.GetServerTime
-    GET   /accounts/:user_id/friends/:page,:size/    main.CheckSessionID, main.GetUserFriends
-    GET   /accounts/:user_id/profile/    main.CheckSessionID, main.GetUserProfile
+    GET   /accounts/{user_id}/friends/{page}/{size}    main.CheckSessionID, main.GetUserFriends
+    GET   /accounts/{user_id}/profile/    main.CheckSessionID, main.GetUserProfile
 
 ## Model Binding
 

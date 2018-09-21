@@ -13,19 +13,14 @@ func TestNewNode(t *testing.T) {
 		t.FailNow()
 	}
 
-	n = newNode(":a,:b")
+	n = newNode("{a}")
 	if n.t != _ParamNode {
 		t.FailNow()
 	}
 
-	if n.paramNames[0] != "a" {
+	if n.paramName != "a" {
 		t.FailNow()
 	}
-
-	if n.paramNames[1] != "b" {
-		t.FailNow()
-	}
-
 }
 
 func TestNewNodeList(t *testing.T) {

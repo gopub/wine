@@ -11,8 +11,8 @@ type nodeType int
 
 const (
 	_StaticNode   nodeType = 0 // /users
-	_ParamNode    nodeType = 1 // /users/:id
-	_WildcardNode nodeType = 2 // /users/:id/photos/*
+	_ParamNode    nodeType = 1 // /users/{id}
+	_WildcardNode nodeType = 2 // /users/{id}/photos/*
 )
 
 func (n nodeType) String() string {
@@ -29,11 +29,11 @@ func (n nodeType) String() string {
 }
 
 type node struct {
-	t          nodeType
-	path       string
-	paramNames []string
-	handlers   *handlerList
-	children   []*node
+	t         nodeType
+	path      string
+	paramName string
+	handlers  *handlerList
+	children  []*node
 }
 
 func newNodeList(path string, handlers *handlerList) []*node {
@@ -60,10 +60,7 @@ func newNode(pathSegment string) *node {
 	}
 	switch n.t {
 	case _ParamNode:
-		n.paramNames = strings.Split(pathSegment, ",")
-		for i, pn := range n.paramNames {
-			n.paramNames[i] = pn[1:]
-		}
+		n.paramName = pathSegment[1 : len(pathSegment)-1]
 	case _WildcardNode:
 		n.path = pathSegment[1:]
 	default:
@@ -93,10 +90,6 @@ func (n *node) conflict(nodes []*node) bool {
 	}
 
 	if n.t == _ParamNode {
-		if len(n.paramNames) != len(nod.paramNames) {
-			return false
-		}
-
 		if !n.handlers.Empty() && !nod.handlers.Empty() {
 			return true
 		}
@@ -216,13 +209,7 @@ func (n *node) match(pathSegments []string) (*handlerList, map[string]string) {
 				params = map[string]string{}
 			}
 
-			segs := strings.Split(segment, ",")
-			if len(segs) != len(n.paramNames) {
-				return nil, nil
-			}
-			for i, s := range n.paramNames {
-				params[s] = segs[i]
-			}
+			params[n.paramName] = segment
 		}
 		return handlers, params
 	case _WildcardNode:

@@ -101,21 +101,14 @@ func TestHTML(t *testing.T) {
 }
 
 func TestPathParams(t *testing.T) {
-	server.Get("/sum/:a,:b", func(ctx context.Context, req *wine.Request, next wine.Invoker) wine.Responsible {
+	server.Get("/sum/{a}/{b}", func(ctx context.Context, req *wine.Request, next wine.Invoker) wine.Responsible {
 		a := req.Parameters.Int("a")
 		b := req.Parameters.Int("b")
 		return wine.Text(http.StatusOK, fmt.Sprint(a+b))
 	})
 
-	server.Get("/sum/:a,:b,:c", func(ctx context.Context, req *wine.Request, next wine.Invoker) wine.Responsible {
-		a := req.Parameters.Int("a")
-		b := req.Parameters.Int("b")
-		cc := req.Parameters.Int("c")
-		return wine.Text(http.StatusOK, fmt.Sprint(a+b+cc))
-	})
-
 	{
-		resp, err := http.DefaultClient.Get("http://localhost:8000/sum/1,2")
+		resp, err := http.DefaultClient.Get("http://localhost:8000/sum/1/2")
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -126,22 +119,6 @@ func TestPathParams(t *testing.T) {
 		}
 		resp.Body.Close()
 		if string(data) != "3" {
-			t.Fatal(string(data))
-		}
-	}
-
-	{
-		resp, err := http.DefaultClient.Get("http://localhost:8000/sum/1,2,-9")
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		data, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			t.Fatal(err)
-		}
-		resp.Body.Close()
-		if string(data) != "-6" {
 			t.Fatal(string(data))
 		}
 	}
