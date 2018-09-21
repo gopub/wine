@@ -10,41 +10,41 @@ import (
 
 func main() {
 	s := wine.DefaultServer()
-	s.Get("/", func(ctx context.Context, req *wine.Request, invoker wine.Invoker) wine.Responsible {
+	s.Get("/", func(ctx context.Context, req *wine.Request, next wine.Invoker) wine.Responsible {
 		return wine.Text(http.StatusOK, "root")
 	})
 
-	s.Get("hi", func(ctx context.Context, req *wine.Request, invoker wine.Invoker) wine.Responsible {
+	s.Get("hi", func(ctx context.Context, req *wine.Request, next wine.Invoker) wine.Responsible {
 		return wine.Text(http.StatusOK, "hi")
 	})
 
-	s.Get("hello", func(ctx context.Context, req *wine.Request, invoker wine.Invoker) wine.Responsible {
+	s.Get("hello", func(ctx context.Context, req *wine.Request, next wine.Invoker) wine.Responsible {
 		return wine.Text(http.StatusOK, "Hello, wine!")
 	})
 
-	s.Get("docs/create", func(ctx context.Context, req *wine.Request, invoker wine.Invoker) wine.Responsible {
+	s.Get("docs/create", func(ctx context.Context, req *wine.Request, next wine.Invoker) wine.Responsible {
 		return wine.Text(http.StatusOK, "Create doc")
 	})
 
-	s.Get("docs/:s/a", func(ctx context.Context, req *wine.Request, invoker wine.Invoker) wine.Responsible {
+	s.Get("docs/:s/a", func(ctx context.Context, req *wine.Request, next wine.Invoker) wine.Responsible {
 		return wine.Text(http.StatusOK, "Create doc: "+req.Parameters.String("s"))
 	})
 
-	s.Get("docs/:doc_id", func(ctx context.Context, req *wine.Request, invoker wine.Invoker) wine.Responsible {
+	s.Get("docs/:doc_id", func(ctx context.Context, req *wine.Request, next wine.Invoker) wine.Responsible {
 		return wine.Text(http.StatusOK, "doc id is "+req.Parameters.String("doc_id"))
 	})
 
-	s.Get("sum/:a,:b", func(ctx context.Context, req *wine.Request, invoker wine.Invoker) wine.Responsible {
+	s.Get("sum/:a,:b", func(ctx context.Context, req *wine.Request, next wine.Invoker) wine.Responsible {
 		r := req.Parameters.Int("a") + req.Parameters.Int("b")
 		return wine.Text(http.StatusOK, fmt.Sprint(r))
 	})
 
-	s.Get("sum/:a,:b/hehe", func(ctx context.Context, req *wine.Request, invoker wine.Invoker) wine.Responsible {
+	s.Get("sum/:a,:b/hehe", func(ctx context.Context, req *wine.Request, next wine.Invoker) wine.Responsible {
 		r := req.Parameters.Int("a") * req.Parameters.Int("b")
 		return wine.Text(http.StatusOK, fmt.Sprint(r))
 	})
 
-	s.Get("sum/:a,:b,:c", func(ctx context.Context, req *wine.Request, invoker wine.Invoker) wine.Responsible {
+	s.Get("sum/:a,:b,:c", func(ctx context.Context, req *wine.Request, next wine.Invoker) wine.Responsible {
 		r := req.Parameters.Int("a") + req.Parameters.Int("b") + req.Parameters.Int("c")
 		return wine.Text(http.StatusOK, fmt.Sprint(r))
 	})

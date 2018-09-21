@@ -15,7 +15,7 @@ Create ./hello.go
         
         func main() {
         	s := wine.DefaultServer()
-        	s.Get("/hello", func(ctx context.Context, req *wine.Request, invoker wine.Invoker) wine.Responsible {
+        	s.Get("/hello", func(ctx context.Context, req *wine.Request, next wine.Invoker) wine.Responsible {
         		return wine.Text("Hello, Wine!")
         	})
         	s.Run(":8000")
@@ -30,7 +30,7 @@ Run and test:
 ## JSON Rendering
 
         s := wine.DefaultServer()
-        s.Get("/time", func(ctx context.Context, req *wine.Request, invoker wine.Invoker) wine.Responsible {
+        s.Get("/time", func(ctx context.Context, req *wine.Request, next wine.Invoker) wine.Responsible {
         	return wine.JSON(map[string]interface{}{"time":time.Now().Unix()})
         })
         s.Run(":8000")
@@ -39,7 +39,7 @@ Run and test:
 Context.Params() provides an uniform interface to retrieve request parameters.  
 
         s := wine.DefaultServer()
-        s.Post("feedback", func(ctx context.Context, req *wine.Request, invoker wine.Invoker) wine.Responsible {
+        s.Post("feedback", func(ctx context.Context, req *wine.Request, next wine.Invoker) wine.Responsible {
             text := req.Parameters.String("text")
             email := req.Parameters.String("email")
             return wine.Text("Feedback:" + text + " from " + email)
@@ -61,7 +61,7 @@ Path parameters are also supported in order to provide elegant RESTful apis.
 Single parameter in one segment:
 <pre>
     s := wine.DefaultServer() 
-    s.Get("/items/<b>:id</b>", func(ctx context.Context, req *wine.Request, invoker wine.Invoker) wine.Responsible {
+    s.Get("/items/<b>:id</b>", func(ctx context.Context, req *wine.Request, next wine.Invoker) wine.Responsible {
         id := req.Parameters.String("id")
         return wine.Text("item id: " + id)
     }) 
@@ -71,7 +71,7 @@ Single parameter in one segment:
 Multiple parameters in one segment:   
 <pre>
     s := wine.DefaultServer() 
-    s.Get("/items/<b>:page,:size</b>", func(ctx context.Context, req *wine.Request, invoker wine.Invoker) wine.Responsible {
+    s.Get("/items/<b>:page,:size</b>", func(ctx context.Context, req *wine.Request, next wine.Invoker) wine.Responsible {
         page := req.Parameters.Int("page")
         size := req.Parameters.Int("size")
         return wine.Text("page:" + strconv.Itoa(page) + " size:" + strconv.Itoa(size))
@@ -84,10 +84,10 @@ Use middlewares to intercept and preprocess requests
 
 Custom middleware
 <pre>
-    func Logger(ctx context.Context, req *wine.Request, invoker wine.Invoker) wine.Responsible {
+    func Logger(ctx context.Context, req *wine.Request, next wine.Invoker) wine.Responsible {
     	st := time.Now()  
     	//pass request to the next handler
-    	<b>result := invoker(ctx, request)</b>
+    	<b>result := next(ctx, request)</b>
     	cost := float32((time.Since(st) / time.Microsecond)) / 1000.0
     	req := return wine.Request()
     	log.Printf("%.3fms %s %s", cost, req.Method, req.RequestURI)
@@ -97,7 +97,7 @@ Custom middleware
     	s := wine.NewServer() 
     	//Use middleware Logger
     	<b>s.Use(Logger)</b> 
-    	s.Get("/hello", func(ctx context.Context, req *wine.Request, invoker wine.Invoker) wine.Responsible {
+    	s.Get("/hello", func(ctx context.Context, req *wine.Request, next wine.Invoker) wine.Responsible {
     		return wine.Text("Hello, Wine!")
         })
         s.Run(":8000")
@@ -105,25 +105,25 @@ Custom middleware
 </pre>
 ## Grouping Route
 <pre>  
-    func CheckSessionID(ctx context.Context, req *wine.Request, invoker wine.Invoker) wine.Responsible {
+    func CheckSessionID(ctx context.Context, req *wine.Request, next wine.Invoker) wine.Responsible {
     	sid := req.Parameters.String("sid")
     	//check sid
     	if len(sid) == 0 {
     		return wine.JSON(map[string]interface{}{"error":"need sid"})
     	} else {
-    		return invoker(ctx, request)
+    		return next(ctx, request)
     	}
     }
     
-    func GetUserProfile(ctx context.Context, req *wine.Request, invoker wine.Invoker) wine.Responsible  {
+    func GetUserProfile(ctx context.Context, req *wine.Request, next wine.Invoker) wine.Responsible  {
     	//...
     }
     
-    func GetUserFriends(ctx context.Context, req *wine.Request, invoker wine.Invoker) wine.Responsible  {
+    func GetUserFriends(ctx context.Context, req *wine.Request, next wine.Invoker) wine.Responsible  {
     	//...
     }
     
-    func GetServerTime(ctx context.Context, req *wine.Request, invoker wine.Invoker) wine.Responsible  {
+    func GetServerTime(ctx context.Context, req *wine.Request, next wine.Invoker) wine.Responsible  {
     	//...
     }
     
@@ -165,7 +165,7 @@ Run it:
     
     func main() {
     	s := wine.DefaultServer()
-    	s.Post("register", func(ctx context.Context, req *wine.Request, invoker wine.Invoker) wine.Responsible {
+    	s.Post("register", func(ctx context.Context, req *wine.Request, next wine.Invoker) wine.Responsible {
     		u := &User{}
     		req.Parameters.AssignTo(u, "param")
     		return wine.JSON(u)

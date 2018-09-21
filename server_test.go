@@ -37,7 +37,7 @@ func TestJSON(t *testing.T) {
 		Name: "tom",
 		Age:  19,
 	}
-	server.Get("/json", func(ctx context.Context, _ wine.Request, _ wine.Invoker) wine.Responsible {
+	server.Get("/json", func(ctx context.Context, _ *wine.Request, _ wine.Invoker) wine.Responsible {
 		return wine.JSON(http.StatusOK, obj)
 	})
 
@@ -77,7 +77,7 @@ func TestHTML(t *testing.T) {
 		</body>
 	</html>
 	`
-	server.Get("/html/hello.html", func(ctx context.Context, _ wine.Request, _ wine.Invoker) wine.Responsible {
+	server.Get("/html/hello.html", func(ctx context.Context, _ *wine.Request, _ wine.Invoker) wine.Responsible {
 		return wine.HTML(http.StatusOK, htmlText)
 	})
 
@@ -101,13 +101,13 @@ func TestHTML(t *testing.T) {
 }
 
 func TestPathParams(t *testing.T) {
-	server.Get("/sum/:a,:b", func(ctx context.Context, req *wine.Request, invoker wine.Invoker) wine.Responsible {
+	server.Get("/sum/:a,:b", func(ctx context.Context, req *wine.Request, next wine.Invoker) wine.Responsible {
 		a := req.Parameters.Int("a")
 		b := req.Parameters.Int("b")
 		return wine.Text(http.StatusOK, fmt.Sprint(a+b))
 	})
 
-	server.Get("/sum/:a,:b,:c", func(ctx context.Context, req *wine.Request, invoker wine.Invoker) wine.Responsible {
+	server.Get("/sum/:a,:b,:c", func(ctx context.Context, req *wine.Request, next wine.Invoker) wine.Responsible {
 		a := req.Parameters.Int("a")
 		b := req.Parameters.Int("b")
 		cc := req.Parameters.Int("c")

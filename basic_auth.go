@@ -26,7 +26,7 @@ func BasicAuth(userToPassword map[string]string, realm string) HandlerFunc {
 	}
 
 	authHeaderValue := "Basic realm=" + strconv.Quote(realm)
-	return func(ctx context.Context, req *Request, invoker Invoker) Responsible {
+	return func(ctx context.Context, req *Request, next Invoker) Responsible {
 		authValue := req.HTTPRequest.Header.Get("Authorization")
 		var foundUser string
 		for user, info := range userToAuthInfo {
@@ -42,7 +42,7 @@ func BasicAuth(userToPassword map[string]string, realm string) HandlerFunc {
 			return NewResponse(http.StatusUnauthorized, header, nil)
 		} else {
 			ctx := context.WithValue(ctx, BasicAuthUser, foundUser)
-			return invoker(ctx, req)
+			return next(ctx, req)
 		}
 	}
 }
