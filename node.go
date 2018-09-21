@@ -44,7 +44,6 @@ func newNodeList(path string, handlers *handlerList) []*node {
 		nodes[i] = newNode(s)
 	}
 
-	log.Info(handlers.Empty())
 	nodes[len(nodes)-1].handlers = handlers
 	return nodes
 }
