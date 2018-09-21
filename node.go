@@ -219,6 +219,8 @@ func (n *node) match(pathSegments []string) (*handlerList, map[string]string) {
 	}
 }
 
+var printer = log.NewLogger(log.GetOutput(), log.GetLevel(), log.Ldate|log.Ltime)
+
 func (n *node) Print(method string, parentPath string) {
 	var path string
 	switch n.t {
@@ -245,7 +247,7 @@ func (n *node) Print(method string, parentPath string) {
 				hNames += reflect.TypeOf(h).Name()
 			}
 		}
-		log.Infof("%-5s %s\t%s", method, path, hNames)
+		printer.Infof("%-5s %s\t%s", method, path, hNames)
 	}
 
 	for _, nod := range n.children {

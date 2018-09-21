@@ -3,6 +3,8 @@ github.com/disintegration/imaging v1.5.0/go.mod h1:9B/deIUIrliYkyMTuXJd6OUFLcrZ2
 github.com/gopub/log v1.0.0/go.mod h1:C6ijpHVzwY9Rpai9P0cDhDKTImQIFy+IWBqOfzH5cIs=
 github.com/gopub/log v1.0.3 h1:OUIbPMYdwJI08k+bKy3jPZPxJbu/3ArCHCJjvc4TMSk=
 github.com/gopub/log v1.0.3/go.mod h1:C6ijpHVzwY9Rpai9P0cDhDKTImQIFy+IWBqOfzH5cIs=
+github.com/gopub/log v1.0.4 h1:fcbxw9pqYlSG1e5EajyzKyRnUD46eqnSjhUgm5s6o+g=
+github.com/gopub/log v1.0.4/go.mod h1:C6ijpHVzwY9Rpai9P0cDhDKTImQIFy+IWBqOfzH5cIs=
 github.com/gopub/types v1.0.7 h1:AR5MeO1A7FqtC2uXEpnhkdsB8KjspxGMkiHAYgvfZec=
 github.com/gopub/types v1.0.7/go.mod h1:Fe1/7+5HRBCB0arBtAGAF9HbUw/RnJFoGVZxo8X/Jww=
 github.com/gopub/utils v1.0.1 h1:RiCCiHFKEIdGl1Y60FkP1gvbHF1E9UPt+yg0GoyBGb4=
