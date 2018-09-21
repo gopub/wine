@@ -7,25 +7,25 @@ import (
 
 // Handler defines interface for interceptor
 type Handler interface {
-	HandleRequest(ctx context.Context, req Request, next Invoker) Responsible
+	HandleRequest(ctx context.Context, req *Request, next Invoker) Responsible
 }
 
 // HandlerFunc converts function into Handler
-type HandlerFunc func(ctx context.Context, req Request, next Invoker) Responsible
+type HandlerFunc func(ctx context.Context, req *Request, next Invoker) Responsible
 
 // HandleRequest is an interface method required by Handler
-func (h HandlerFunc) HandleRequest(ctx context.Context, req Request, next Invoker) Responsible {
+func (h HandlerFunc) HandleRequest(ctx context.Context, req *Request, next Invoker) Responsible {
 	return h(ctx, req, next)
 }
 
-type Invoker func(ctx context.Context, req Request) Responsible
+type Invoker func(ctx context.Context, req *Request) Responsible
 
 type handlerElement struct {
 	handler Handler
 	next    *handlerElement
 }
 
-func (h *handlerElement) Invoke(ctx context.Context, req Request) Responsible {
+func (h *handlerElement) Invoke(ctx context.Context, req *Request) Responsible {
 	return h.handler.HandleRequest(ctx, req, h.next.Invoke)
 }
 

@@ -101,16 +101,16 @@ func TestHTML(t *testing.T) {
 }
 
 func TestPathParams(t *testing.T) {
-	server.Get("/sum/:a,:b", func(ctx context.Context, request wine.Request, invoker wine.Invoker) wine.Responsible {
-		a := request.Parameters().Int("a")
-		b := request.Parameters().Int("b")
+	server.Get("/sum/:a,:b", func(ctx context.Context, req *wine.Request, invoker wine.Invoker) wine.Responsible {
+		a := req.Parameters.Int("a")
+		b := req.Parameters.Int("b")
 		return wine.Text(http.StatusOK, fmt.Sprint(a+b))
 	})
 
-	server.Get("/sum/:a,:b,:c", func(ctx context.Context, request wine.Request, invoker wine.Invoker) wine.Responsible {
-		a := request.Parameters().Int("a")
-		b := request.Parameters().Int("b")
-		cc := request.Parameters().Int("c")
+	server.Get("/sum/:a,:b,:c", func(ctx context.Context, req *wine.Request, invoker wine.Invoker) wine.Responsible {
+		a := req.Parameters.Int("a")
+		b := req.Parameters.Int("b")
+		cc := req.Parameters.Int("c")
 		return wine.Text(http.StatusOK, fmt.Sprint(a+b+cc))
 	})
 

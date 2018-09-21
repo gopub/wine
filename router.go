@@ -114,8 +114,8 @@ func (r *Router) Bind(method string, path string, handlers ...Handler) {
 
 // StaticFile binds path to a file
 func (r *Router) StaticFile(path, filePath string) {
-	r.Get(path, func(ctx context.Context, request Request, invoker Invoker) Responsible {
-		return File(request.RawRequest(), filePath)
+	r.Get(path, func(ctx context.Context, req *Request, invoker Invoker) Responsible {
+		return File(req.HTTPRequest, filePath)
 	})
 	return
 }
@@ -147,8 +147,8 @@ func (r *Router) StaticFS(path string, fs http.FileSystem) {
 	}
 
 	fileServer := http.StripPrefix(prefix, http.FileServer(fs))
-	r.Get(path, func(ctx context.Context, request Request, invoker Invoker) Responsible {
-		return Handle(request.RawRequest(), fileServer)
+	r.Get(path, func(ctx context.Context, req *Request, invoker Invoker) Responsible {
+		return Handle(req.HTTPRequest, fileServer)
 	})
 	return
 }

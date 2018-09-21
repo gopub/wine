@@ -9,8 +9,8 @@ import (
 
 func main() {
 	s := wine.DefaultServer()
-	s.Get("/fibonacci", func(ctx context.Context, request wine.Request, invoker wine.Invoker) wine.Responsible {
-		n := request.Parameters().Int("n")
+	s.Get("/fibonacci", func(ctx context.Context, req *wine.Request, invoker wine.Invoker) wine.Responsible {
+		n := req.Parameters.Int("n")
 		result := fibonacci(n)
 		return wine.JSON(http.StatusOK, types.M{"result": result})
 	})

@@ -26,13 +26,13 @@ type Topic struct {
 
 func main() {
 	s := wine.DefaultServer()
-	s.Get("hello", func(ctx context.Context, request wine.Request, invoker wine.Invoker) wine.Responsible {
+	s.Get("hello", func(ctx context.Context, req *wine.Request, invoker wine.Invoker) wine.Responsible {
 		return wine.JSON(http.StatusOK, types.M{"code": 0, "msg": "hello"})
 	})
 
-	s.Get("login", func(ctx context.Context, request wine.Request, invoker wine.Invoker) wine.Responsible {
-		username := request.Parameters().String("username")
-		password := request.Parameters().String("password")
+	s.Get("login", func(ctx context.Context, req *wine.Request, invoker wine.Invoker) wine.Responsible {
+		username := req.Parameters.String("username")
+		password := req.Parameters.String("password")
 		if len(username) == 0 || len(password) == 0 {
 			return wine.JSON(http.StatusOK, types.M{"code": 1, "msg": "login error"})
 		}
@@ -43,8 +43,8 @@ func main() {
 		return wine.JSON(http.StatusOK, types.M{"code": 0, "msg": "success", "data": u})
 	})
 
-	s.Post("topic", func(ctx context.Context, request wine.Request, invoker wine.Invoker) wine.Responsible {
-		title := request.Parameters().String("title")
+	s.Post("topic", func(ctx context.Context, req *wine.Request, invoker wine.Invoker) wine.Responsible {
+		title := req.Parameters.String("title")
 		if len(title) == 0 {
 			return wine.JSON(http.StatusOK, types.M{"code": 1, "msg": "no title"})
 		}

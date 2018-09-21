@@ -8,7 +8,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gopub/types"
 	"github.com/gopub/utils"
 )
 
@@ -110,35 +109,36 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	if i > 0 {
 		path = req.RequestURI[:i]
 	}
+
 	path = normalizePath(path)
 	method := strings.ToUpper(req.Method)
 	handlers, pathParams := s.Match(method, path)
+
 	if handlers.Empty() {
 		if path == "favicon.ico" {
-			rw.Header()["Content-Type"] = []string{"image/x-icon"}
+			rw.Header()[utils.ContentType] = []string{"image/x-icon"}
 			rw.WriteHeader(http.StatusOK)
 			rw.Write(_faviconBytes)
 		} else {
-			log.Warnf("Not found. path=%s, request=%v", path, req)
+			log.Warnf("Not found. path=%s, parsedReq=%v", path, req)
 			http.Error(rw, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 		}
 		return
 	}
 
-	request := &requestImpl{
-		req:       req,
-		reqParams: utils.ParseHTTPRequestParameters(req, s.MaxRequestMemory),
-		keyValues: types.M{},
+	parsedReq := &Request{
+		HTTPRequest: req,
+		Parameters:  utils.ParseHTTPRequestParameters(req, s.MaxRequestMemory),
 	}
+	parsedReq.Parameters.AddMapObj(pathParams)
 
 	ctx, cancel := context.WithTimeout(req.Context(), s.RequestTimeout)
 	ctx = context.WithValue(ctx, "templates", s.templates)
 	defer cancel()
-	request.Parameters().AddMapObj(pathParams)
 
 	for k, v := range s.Header {
 		rw.Header()[k] = v
 	}
-	resp := handlers.head.Invoke(ctx, request)
+	resp := handlers.head.Invoke(ctx, parsedReq)
 	resp.Respond(ctx, rw)
 }
