@@ -58,10 +58,10 @@ func (r *Router) Use(funcs ...HandlerFunc) *Router {
 }
 
 // Match finds handlers and parses path parameters according to method and path
-func (r *Router) Match(method string, path string) (handlers *handlerList, params map[string]string) {
+func (r *Router) Match(method string, path string) (*handlerList, map[string]string) {
 	n := r.methodTrees[method]
 	if n == nil {
-		return
+		return nil, nil
 	}
 
 	segments := strings.Split(path, "/")

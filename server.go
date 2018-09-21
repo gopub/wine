@@ -44,6 +44,7 @@ func NewServer() *Server {
 		"divide":   divide,
 		"join":     join,
 	})
+	s.Get("favicon.ico", handleFavIcon)
 	return s
 }
 
@@ -115,15 +116,9 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	handlers, pathParams := s.Match(method, path)
 
 	if handlers.Empty() {
-		if path == "favicon.ico" {
-			rw.Header()[utils.ContentType] = []string{"image/x-icon"}
-			rw.WriteHeader(http.StatusOK)
-			rw.Write(_faviconBytes)
-		} else {
-			log.Warnf("Not found. path=%s, parsedReq=%v", path, req)
-			http.Error(rw, http.StatusText(http.StatusNotFound), http.StatusNotFound)
-		}
-		return
+		handlers = newHandlerList([]Handler{HandlerFunc(handleNotFound)})
+	} else {
+		handlers.PushBack(HandlerFunc(handleNotImplemented))
 	}
 
 	parsedReq := &Request{
@@ -139,6 +134,32 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	for k, v := range s.Header {
 		rw.Header()[k] = v
 	}
-	resp := handlers.head.Invoke(ctx, parsedReq)
+
+	resp := handlers.Head().Invoke(ctx, parsedReq)
+	if resp == nil {
+		resp = handleNotImplemented(ctx, parsedReq, nil)
+	}
 	resp.Respond(ctx, rw)
+}
+
+func handleFavIcon(ctx context.Context, req *Request, next Invoker) Responsible {
+	return ResponsibleFunc(func(ctx context.Context, rw http.ResponseWriter) {
+		rw.Header()[utils.ContentType] = []string{"image/x-icon"}
+		rw.WriteHeader(http.StatusOK)
+		rw.Write(_faviconBytes)
+	})
+}
+
+func handleNotFound(ctx context.Context, req *Request, next Invoker) Responsible {
+	return ResponsibleFunc(func(ctx context.Context, rw http.ResponseWriter) {
+		log.Warnf("Not found. path=%s", req.HTTPRequest.URL.Path)
+		http.Error(rw, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+	})
+}
+
+func handleNotImplemented(ctx context.Context, req *Request, next Invoker) Responsible {
+	return ResponsibleFunc(func(ctx context.Context, rw http.ResponseWriter) {
+		log.Warnf("Not implemented. path=%s", req.HTTPRequest.URL.Path)
+		http.Error(rw, http.StatusText(http.StatusNotImplemented), http.StatusNotImplemented)
+	})
 }
