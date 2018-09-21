@@ -74,6 +74,10 @@ func (r *responseImpl) getBytes() []byte {
 	case strings.Contains(contentType, utils.MIMETEXT):
 		fallthrough
 	case strings.Contains(contentType, utils.MIMEHTML):
+		fallthrough
+	case strings.Contains(contentType, utils.MIMEXML):
+		fallthrough
+	case strings.Contains(contentType, utils.MIMEXML2):
 		if s, ok := r.value.(string); ok {
 			return []byte(s)
 		}
