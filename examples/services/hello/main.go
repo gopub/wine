@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/gopub/wine/v3"
+	"github.com/gopub/wine"
 )
 
 func main() {

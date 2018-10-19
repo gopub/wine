@@ -5,7 +5,7 @@ package main
  * go run ./main.go
  */
 
-import "github.com/gopub/wine/v3"
+import "github.com/gopub/wine"
 
 func main() {
 	s := wine.DefaultServer()

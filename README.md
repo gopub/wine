@@ -11,7 +11,7 @@ Create ./hello.go
         
         package main
         
-        import "github.com/gopub/wine/v3"
+        import "github.com/gopub/wine"
         
         func main() {
         	s := wine.DefaultServer()
@@ -36,7 +36,7 @@ Run and test:
         s.Run(":8000")
 
 ## Parameters
-Context.Params() provides an uniform interface to retrieve request parameters.  
+Request.Parameters contains all request parameters (query/body/header).
 
         s := wine.DefaultServer()
         s.Post("feedback", func(ctx context.Context, req *wine.Request, next wine.Invoker) wine.Responsible {
