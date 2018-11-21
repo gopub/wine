@@ -240,10 +240,17 @@ func (n *node) Print(method string, parentPath string) {
 				hNames += ", "
 			}
 
+			var handlerName string
 			if f, ok := h.handler.(HandlerFunc); ok {
-				hNames += runtime.FuncForPC(reflect.ValueOf(f).Pointer()).Name()
+				handlerName = runtime.FuncForPC(reflect.ValueOf(f).Pointer()).Name()
 			} else {
-				hNames += reflect.TypeOf(h).Name()
+				handlerName = reflect.TypeOf(h).Name()
+			}
+
+			if ShortHandlerNameFlag {
+				hNames += getShortFileName(handlerName)
+			} else {
+				hNames += handlerName
 			}
 		}
 		printer.Infof("%-5s %s\t%s", method, path, hNames)
@@ -252,4 +259,23 @@ func (n *node) Print(method string, parentPath string) {
 	for _, nod := range n.children {
 		nod.Print(method, path)
 	}
+}
+
+func getShortFileName(filename string) string {
+	if len(log.PackagePath) > 0 {
+		filename = strings.TrimPrefix(filename, log.PackagePath)
+	} else {
+		start := strings.Index(filename, log.GoSrc)
+		if start > 0 {
+			start += len(log.GoSrc)
+		}
+		filename = filename[start:]
+	}
+
+	names := strings.Split(filename, "/")
+	for i := 1; i < len(names)-1; i++ {
+		names[i] = names[i][0:1]
+	}
+	filename = strings.Join(names, "/")
+	return filename
 }

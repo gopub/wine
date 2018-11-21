@@ -16,6 +16,7 @@ const defaultRequestTimeout = time.Second * 5
 
 var acceptEncodings = [2]string{"gzip", "defalte"}
 var defaultServer *Server
+var ShortHandlerNameFlag = true
 
 // Server implements web server
 type Server struct {
