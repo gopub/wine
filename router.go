@@ -23,17 +23,18 @@ func NewRouter() *Router {
 
 // Group returns a new router whose basePath is r.basePath+path
 func (r *Router) Group(path string) *Router {
-	if len(path) == 0 {
-		log.Panic("group path is empty")
-	}
-
 	if path == "/" {
 		log.Panic("don't create default group \"/\"")
 	}
 
 	nr := &Router{}
 	nr.methodTrees = r.methodTrees
-	nr.basePath = normalizePath(r.basePath + "/" + path)
+
+	// support empty path
+	if len(path) > 0 {
+		nr.basePath = normalizePath(r.basePath + "/" + path)
+	}
+
 	nr.handlers = make([]Handler, len(r.handlers))
 	copy(nr.handlers, r.handlers)
 	return nr
