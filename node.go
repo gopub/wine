@@ -165,7 +165,7 @@ func (n *node) add(nodes []*node) bool {
 	return true
 }
 
-func (n *node) match(pathSegments []string) (*handlerList, map[string]string) {
+func (n *node) matchPath(pathSegments []string) (*handlerList, map[string]string) {
 	if len(pathSegments) == 0 {
 		log.Panic("pathSegments is empty")
 	}
@@ -182,7 +182,7 @@ func (n *node) match(pathSegments []string) (*handlerList, map[string]string) {
 			return n.handlers, nil
 		default:
 			for _, child := range n.children {
-				handlers, params := child.match(pathSegments[1:])
+				handlers, params := child.matchPath(pathSegments[1:])
 				if !handlers.Empty() {
 					return handlers, params
 				}
@@ -196,7 +196,7 @@ func (n *node) match(pathSegments []string) (*handlerList, map[string]string) {
 			handlers = n.handlers
 		} else {
 			for _, child := range n.children {
-				handlers, params = child.match(pathSegments[1:])
+				handlers, params = child.matchPath(pathSegments[1:])
 				if !handlers.Empty() {
 					break
 				}
@@ -216,6 +216,34 @@ func (n *node) match(pathSegments []string) (*handlerList, map[string]string) {
 	default:
 		return nil, nil
 	}
+}
+
+func (n *node) matchNodes(nodes []*node) *node {
+	if len(nodes) == 0 {
+		log.Panic("nodes is empty")
+	}
+
+	nod := nodes[0]
+	if nod.t != n.t {
+		return nil
+	}
+
+	if n.t == _StaticNode && n.path != nod.path {
+		return nil
+	}
+
+	if len(nodes) == 1 {
+		return n
+	}
+
+	childNodes := nodes[1:]
+	for _, child := range n.children {
+		if v := child.matchNodes(childNodes); v != nil {
+			return v
+		}
+	}
+
+	return nil
 }
 
 var printer = log.NewLogger(log.GetOutput(), log.GetLevel(), log.Ldate|log.Ltime)

@@ -68,7 +68,7 @@ func (r *Router) Match(method string, path string) (*handlerList, map[string]str
 	if segments[0] != "" {
 		segments = append([]string{""}, segments...)
 	}
-	return n.match(segments)
+	return n.matchPath(segments)
 }
 
 // Bind binds method, path with handlers
@@ -85,11 +85,11 @@ func (r *Router) Bind(method string, path string, handlers ...Handler) {
 		log.Panic("no handler")
 	}
 
-	n := r.methodTrees[method]
-	if n == nil {
-		n = &node{}
-		n.t = _StaticNode
-		r.methodTrees[method] = n
+	root := r.methodTrees[method]
+	if root == nil {
+		root = &node{}
+		root.t = _StaticNode
+		r.methodTrees[method] = root
 	}
 
 	hs := make([]Handler, len(r.handlers))
@@ -99,17 +99,48 @@ func (r *Router) Bind(method string, path string, handlers ...Handler) {
 
 	path = normalizePath(r.basePath + "/" + path)
 	if path == "" {
-		if n.handlers.Empty() {
-			n.handlers = hl
+		if root.handlers.Empty() {
+			root.handlers = hl
 		} else {
 			panic("binding conflict: " + path)
 		}
 	} else {
 		nodes := newNodeList(path, hl)
-		if !n.add(nodes) {
+		if !root.add(nodes) {
 			panic("binding conflict: " + path)
 		}
 	}
+}
+
+// Unbind unbinds method, path
+func (r *Router) Unbind(method string, path string) {
+	if path == "" {
+		log.Panic("invalid path")
+	}
+
+	if len(method) == 0 {
+		log.Panic("invalid method")
+	}
+
+	root := r.methodTrees[method]
+	if root == nil {
+		root = &node{}
+		root.t = _StaticNode
+		r.methodTrees[method] = root
+	}
+
+	path = normalizePath(r.basePath + "/" + path)
+	if path == "" {
+		root.handlers = nil
+		return
+	}
+
+	nodes := newNodeList(path, nil)
+	n := root.matchNodes(nodes)
+	if n != nil {
+		n.handlers = nil
+	}
+	return
 }
 
 // StaticFile binds path to a file
