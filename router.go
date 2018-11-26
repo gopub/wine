@@ -136,6 +136,16 @@ func (r *Router) Unbind(method string, path string) {
 	}
 
 	nodes := newNodeList(path, nil)
+	if len(nodes) == 0 {
+		log.Panic("node list is empty")
+	}
+
+	if nodes[0].path != "" {
+		emptyNode := &node{}
+		emptyNode.t = _StaticNode
+		nodes = append([]*node{emptyNode}, nodes...)
+	}
+
 	n := root.matchNodes(nodes)
 	if n != nil {
 		n.handlers = nil
