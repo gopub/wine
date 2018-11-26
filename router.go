@@ -85,6 +85,7 @@ func (r *Router) Bind(method string, path string, handlers ...Handler) {
 		log.Panic("no handler")
 	}
 
+	method = strings.ToUpper(method)
 	root := r.methodTrees[method]
 	if root == nil {
 		root = &node{}
@@ -122,6 +123,7 @@ func (r *Router) Unbind(method string, path string) {
 		log.Panic("invalid method")
 	}
 
+	method = strings.ToUpper(method)
 	root := r.methodTrees[method]
 	if root == nil {
 		root = &node{}
@@ -149,6 +151,7 @@ func (r *Router) Unbind(method string, path string) {
 	n := root.matchNodes(nodes)
 	if n != nil {
 		n.handlers = nil
+		log.With("method", method, "path", path).Info("succeeded")
 	}
 	return
 }
