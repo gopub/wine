@@ -246,8 +246,6 @@ func (n *node) matchNodes(nodes []*node) *node {
 	return nil
 }
 
-var printer = log.NewLogger(log.GetOutput(), log.GetLevel(), log.Ldate|log.Ltime)
-
 func (n *node) Print(method string, parentPath string) {
 	var path string
 	switch n.t {
@@ -281,7 +279,7 @@ func (n *node) Print(method string, parentPath string) {
 				hNames += handlerName
 			}
 		}
-		printer.Infof("%-5s %s\t%s", method, path, hNames)
+		log.Infof("%-5s %s\t%s", method, path, hNames)
 	}
 
 	for _, nod := range n.children {
