@@ -17,6 +17,7 @@ const defaultRequestTimeout = time.Second * 5
 var acceptEncodings = [2]string{"gzip", "defalte"}
 var defaultServer *Server
 var ShortHandlerNameFlag = true
+var Debug = false
 
 // Server implements web server
 type Server struct {
@@ -82,11 +83,13 @@ func (s *Server) Shutdown() {
 
 // ServeHTTP implements for http.Handler interface, which will handle each http request
 func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
-	defer func() {
-		if e := recover(); e != nil {
-			log.Error(e, req)
-		}
-	}()
+	if !Debug {
+		defer func() {
+			if e := recover(); e != nil {
+				log.Error(e, req)
+			}
+		}()
+	}
 
 	defer func() {
 		if cw, ok := rw.(*compressedResponseWriter); ok {
