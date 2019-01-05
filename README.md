@@ -45,13 +45,13 @@ Request.Parameters contains all request parameters (query/body/header).
             return wine.Text("Feedback:" + text + " from " + email)
         })
         s.Run(":8000")
-Test parameters in query string
+Support parameters in query string
 
         $ curl -X POST "http://localhost:8000/feedback?text=crash&email=wine@wine.com"
-Test parameters in form
+Support parameters in form
 
         $ curl -X POST -d "text=crash&email=wine@wine.com" http://localhost:8000/feedback
-Test parameters in json
+Support parameters in json
 
         $ curl -X POST -H "Content-Type:application/json" 
                -d '{"text":"crash", "email":"wine@wine.com"}' 
@@ -61,24 +61,13 @@ Path parameters are also supported in order to provide elegant RESTful apis.
 Single parameter in one segment:
 <pre>
     s := wine.DefaultServer() 
-    s.Get("/items/<b>:id</b>", func(ctx context.Context, req *wine.Request, next wine.Invoker) wine.Responsible {
+    s.Get("/items/<b>{id}</b>", func(ctx context.Context, req *wine.Request, next wine.Invoker) wine.Responsible {
         id := req.Parameters.String("id")
         return wine.Text("item id: " + id)
     }) 
     s.Run(":8000")
 </pre>
-        
-Multiple parameters in one segment:   
-<pre>
-    s := wine.DefaultServer() 
-    s.Get("/items/<b>:page,:size</b>", func(ctx context.Context, req *wine.Request, next wine.Invoker) wine.Responsible {
-        page := req.Parameters.Int("page")
-        size := req.Parameters.Int("size")
-        return wine.Text("page:" + strconv.Itoa(page) + " size:" + strconv.Itoa(size))
-    }) 
-    s.Run(":8000")
-</pre>
-
+       
 ## Use Middlewares
 Use middlewares to intercept and preprocess requests  
 
@@ -149,44 +138,7 @@ Run it:
     GET   /accounts/{user_id}/friends/{page}/{size}    main.CheckSessionID, main.GetUserFriends
     GET   /accounts/{user_id}/profile/    main.CheckSessionID, main.GetUserProfile
 
-## Model Binding
 
-    type Coordinate struct {
-    	Lat float64 `json:"lat" param:"lat"`
-    	Lng float64 `json:"lng" param:"lng"`
-    }
-    
-    type User struct {
-    	ID         int         `json:"id" param:"-"`
-    	Name       string      `json:"name" param:"name"`
-    	Password   string      `json:"-" param:"password"`
-    	Coordinate *Coordinate `json:"coordinate" param:"coordinate"`
-    }
-    
-    func main() {
-    	s := wine.DefaultServer()
-    	s.Post("register", func(ctx context.Context, req *wine.Request, next wine.Invoker) wine.Responsible {
-    		u := &User{}
-    		req.Parameters.AssignTo(u, "param")
-    		return wine.JSON(u)
-    	})
-    	s.Run(":8000")
-    }
-Test:
-    
-    $ curl -X POST -H "Content-Type:application/json" 
-           -d '{"name":"tom", "password":"123", "coordinate":{"lat":21, "lng":90.0}}' 
-           http://localhost:8000/register
-Response:
-
-    {
-         "id": 1,
-         "name": "tom",
-         "coordinate": {
-             "lat": 21,
-             "lng": 90
-         }
-    }
 ## Basic Auth
 It's easy to turn on basic auth.
 
