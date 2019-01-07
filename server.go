@@ -13,6 +13,7 @@ import (
 
 const defaultMaxRequestMemory = 8 << 20
 const defaultRequestTimeout = time.Second * 5
+const KeyHTTPResponseWriter = "http_response_writer"
 
 var acceptEncodings = [2]string{"gzip", "defalte"}
 var defaultServer *Server
@@ -139,6 +140,8 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		rw.Header()[k] = v
 	}
 
+	// In case http/2 stream handler needs "responseWriter" to push data to client continuously
+	ctx = context.WithValue(ctx, KeyHTTPResponseWriter, rw)
 	resp := handlers.Head().Invoke(ctx, parsedReq)
 	if resp == nil {
 		resp = handleNotImplemented(ctx, parsedReq, nil)
