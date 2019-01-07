@@ -9,6 +9,10 @@ import (
 	"strings"
 )
 
+type compressedFlusher interface {
+	Flush() error
+}
+
 type compressedResponseWriter struct {
 	http.ResponseWriter
 	compressedWriter io.Writer
@@ -37,6 +41,16 @@ func newCompressedResponseWriter(w http.ResponseWriter, compressionName string) 
 
 func (w *compressedResponseWriter) Write(data []byte) (int, error) {
 	return w.compressedWriter.Write(data)
+}
+
+func (w *compressedResponseWriter) Flush() {
+	// Flush the compressed writer, then flush httpResponseWriter
+	if f, ok := w.compressedWriter.(compressedFlusher); ok {
+		f.Flush()
+		if ff, ok := w.ResponseWriter.(http.Flusher); ok {
+			ff.Flush()
+		}
+	}
 }
 
 func (w *compressedResponseWriter) Close() error {
