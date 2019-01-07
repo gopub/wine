@@ -9,7 +9,8 @@ import (
 	"strings"
 )
 
-type compressedFlusher interface {
+// http.Flusher doesn't return error, however gzip.Writer/deflate.Writer only implement `Flush() error`
+type flusher interface {
 	Flush() error
 }
 
@@ -18,8 +19,8 @@ type compressedResponseWriter struct {
 	compressedWriter io.Writer
 }
 
-func newCompressedResponseWriter(w http.ResponseWriter, compressionName string) (*compressedResponseWriter, error) {
-	switch compressionName {
+func newCompressedResponseWriter(w http.ResponseWriter, encoding string) (*compressedResponseWriter, error) {
+	switch encoding {
 	case "gzip":
 		cw := &compressedResponseWriter{}
 		cw.ResponseWriter = w
@@ -35,7 +36,7 @@ func newCompressedResponseWriter(w http.ResponseWriter, compressionName string) 
 		cw.ResponseWriter = w
 		return cw, nil
 	default:
-		return nil, errors.New("Unsupported compressionName")
+		return nil, errors.New("Unsupported encoding")
 	}
 }
 
@@ -45,7 +46,7 @@ func (w *compressedResponseWriter) Write(data []byte) (int, error) {
 
 func (w *compressedResponseWriter) Flush() {
 	// Flush the compressed writer, then flush httpResponseWriter
-	if f, ok := w.compressedWriter.(compressedFlusher); ok {
+	if f, ok := w.compressedWriter.(flusher); ok {
 		f.Flush()
 		if ff, ok := w.ResponseWriter.(http.Flusher); ok {
 			ff.Flush()
