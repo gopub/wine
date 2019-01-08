@@ -6,14 +6,17 @@ import (
 	"html/template"
 	"net/http"
 	"strings"
+	"sync"
 	"time"
 
+	"github.com/gopub/types"
 	"github.com/gopub/utils"
 )
 
 const defaultMaxRequestMemory = 8 << 20
 const defaultRequestTimeout = time.Second * 5
-const KeyHTTPResponseWriter = "http_response_writer"
+const KeyHTTPResponseWriter = "wine_http_response_writer"
+const KeyHTTP2ConnID = "wine_http2_conn_id"
 
 var acceptEncodings = [2]string{"gzip", "defalte"}
 var defaultServer *Server
@@ -29,16 +32,22 @@ type Server struct {
 	MaxRequestMemory int64         //max memory for request, default value is 8M
 	RequestTimeout   time.Duration //timeout for each request, default value is 5s
 	server           *http.Server
+
+	http2connsToIDs *sync.Map
+	idGenerator     types.IDGenerator
 }
 
 // NewServer returns a server
 func NewServer() *Server {
-	s := &Server{}
-	s.Router = NewRouter()
-	s.TemplateManager = NewTemplateManager()
-	s.MaxRequestMemory = defaultMaxRequestMemory
-	s.RequestTimeout = defaultRequestTimeout
-	s.Header = make(http.Header)
+	s := &Server{
+		Router:           NewRouter(),
+		TemplateManager:  NewTemplateManager(),
+		Header:           make(http.Header),
+		MaxRequestMemory: defaultMaxRequestMemory,
+		RequestTimeout:   defaultRequestTimeout,
+		http2connsToIDs:  &sync.Map{},
+	}
+
 	s.Header.Set("Server", "Wine")
 	s.AddTemplateFuncMap(template.FuncMap{
 		"plus":     plus,
@@ -47,6 +56,9 @@ func NewServer() *Server {
 		"divide":   divide,
 		"join":     join,
 	})
+
+	// 100K ids per second for each shard
+	s.idGenerator = types.NewSnakeIDGenerator(types.DefaultShardBitSize, 10, types.NextMilliseconds, types.GetShardIDByIP, &types.Counter{})
 	s.Get("favicon.ico", handleFavIcon)
 	return s
 }
@@ -76,6 +88,22 @@ func (s *Server) Run(addr string) error {
 	return err
 }
 
+// RunTLS starts server with tls
+func (s *Server) RunTLS(addr, certFile, keyFile string) error {
+	if s.server != nil {
+		log.Panic("Server is running")
+	}
+
+	log.Info("Running at", addr, "...")
+	s.Router.Print()
+	s.server = &http.Server{Addr: addr, Handler: s}
+	err := s.server.ListenAndServeTLS(certFile, keyFile)
+	if err != nil {
+		log.Error(err)
+	}
+	return err
+}
+
 // Shutdown stops server
 func (s *Server) Shutdown() {
 	s.server.Shutdown(context.Background())
@@ -84,6 +112,16 @@ func (s *Server) Shutdown() {
 
 // ServeHTTP implements for http.Handler interface, which will handle each http request
 func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
+	var http2ConnID types.ID
+	if http2Conn := utils.GetHTTP2Conn(rw); http2Conn != nil {
+		if idVal, ok := s.http2connsToIDs.Load(http2Conn); ok {
+			http2ConnID = idVal.(types.ID)
+		} else {
+			http2ConnID = s.idGenerator.NextID()
+			s.http2connsToIDs.Store(http2Conn, id)
+		}
+	}
+
 	if !Debug {
 		defer func() {
 			if e := recover(); e != nil {
@@ -142,6 +180,10 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 
 	// In case http/2 stream handler needs "responseWriter" to push data to client continuously
 	ctx = context.WithValue(ctx, KeyHTTPResponseWriter, rw)
+	if http2ConnID > 0 {
+		ctx = context.WithValue(ctx, KeyHTTP2ConnID, http2ConnID)
+	}
+
 	resp := handlers.Head().Invoke(ctx, parsedReq)
 	if resp == nil {
 		resp = handleNotImplemented(ctx, parsedReq, nil)
