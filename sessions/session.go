@@ -16,6 +16,7 @@ type Session interface {
 }
 
 func NewSession(store Store, id string, expiration time.Duration) Session {
+	log.Debugf("New session:%s", id)
 	return &session{
 		id:         id,
 		store:      store,
@@ -75,5 +76,6 @@ func (s *session) Set(key string, value interface{}) error {
 }
 
 func (s *session) Destroy() error {
+	log.Debugf("Destroyed session:%s", s.id)
 	return s.store.Delete(s.id)
 }
