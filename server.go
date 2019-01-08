@@ -113,12 +113,13 @@ func (s *Server) Shutdown() {
 // ServeHTTP implements for http.Handler interface, which will handle each http request
 func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	var http2ConnID types.ID
-	if http2Conn := utils.GetHTTP2Conn(rw); http2Conn != nil {
+	http2Conn := utils.GetHTTP2Conn(rw)
+	if http2Conn != nil {
 		if idVal, ok := s.http2connsToIDs.Load(http2Conn); ok {
 			http2ConnID = idVal.(types.ID)
 		} else {
 			http2ConnID = s.idGenerator.NextID()
-			s.http2connsToIDs.Store(http2Conn, id)
+			s.http2connsToIDs.Store(http2Conn, http2ConnID)
 		}
 	}
 
@@ -131,6 +132,10 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	}
 
 	defer func() {
+		if http2Conn != nil {
+			s.http2connsToIDs.Delete(http2Conn)
+		}
+
 		if cw, ok := rw.(*compressedResponseWriter); ok {
 			cw.Close()
 		}
