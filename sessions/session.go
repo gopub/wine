@@ -53,9 +53,8 @@ func GetSession(sid string) Session {
 func GetContextSession(ctx context.Context) Session {
 	if sid, ok := ctx.Value(KeySid).(string); ok {
 		return GetSession(sid)
-	} else {
-		panic("No sid found in context")
 	}
+	return nil
 }
 
 type session struct {
