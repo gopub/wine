@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-func HandleSession(ctx context.Context, req *wine.Request, next wine.Invoker) wine.Responsible {
+func InitSession(ctx context.Context, req *wine.Request, next wine.Invoker) wine.Responsible {
 	sid := req.Parameters.String(KeySid)
 	if len(sid) == 0 {
 		sid = utils.UniqueID()
