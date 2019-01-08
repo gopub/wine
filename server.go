@@ -58,7 +58,7 @@ func NewServer() *Server {
 	})
 
 	// 100K ids per second for each shard
-	s.idGenerator = types.NewSnakeIDGenerator(types.DefaultShardBitSize, 10, types.NextMilliseconds, types.GetShardIDByIP, &types.Counter{})
+	s.idGenerator = types.NewSnakeIDGenerator(0, 10, types.NextMilliseconds, nil, &types.Counter{})
 	s.Get("favicon.ico", handleFavIcon)
 	return s
 }
@@ -112,13 +112,13 @@ func (s *Server) Shutdown() {
 
 // ServeHTTP implements for http.Handler interface, which will handle each http request
 func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
-	var http2ConnID types.ID
+	var http2ConnID int64
 	http2Conn := utils.GetHTTP2Conn(rw)
 	if http2Conn != nil {
 		if idVal, ok := s.http2connsToIDs.Load(http2Conn); ok {
-			http2ConnID = idVal.(types.ID)
+			http2ConnID = idVal.(int64)
 		} else {
-			http2ConnID = s.idGenerator.NextID()
+			http2ConnID = int64(s.idGenerator.NextID())
 			s.http2connsToIDs.Store(http2Conn, http2ConnID)
 		}
 	}
