@@ -12,6 +12,7 @@ var minimumExpiration = time.Minute
 const KeySid = "sid"
 
 type Session interface {
+	ID() string
 	Get(key string, ptrValue interface{}) error
 	Set(key string, value interface{}) error
 	Destroy() error
@@ -61,6 +62,10 @@ type session struct {
 	id         string
 	store      Store
 	expiration time.Duration
+}
+
+func (s *session) ID() string {
+	return s.id
 }
 
 func (s *session) Get(key string, ptrValue interface{}) error {
