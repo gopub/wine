@@ -19,7 +19,7 @@ type Session interface {
 }
 
 func NewSession(store Store, id string, expiration time.Duration) Session {
-	log.Debugf("New session:%s", id)
+	log.Debugf("Session:%s", id)
 	return &session{
 		id:         id,
 		store:      store,
