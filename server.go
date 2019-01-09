@@ -9,7 +9,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/gopub/types"
 	"github.com/gopub/utils"
 )
 
@@ -33,8 +32,8 @@ type Server struct {
 	RequestTimeout   time.Duration //timeout for each request, default value is 5s
 	server           *http.Server
 
-	http2connsToIDs *sync.Map
-	idGenerator     types.IDGenerator
+	h2connToIDMu sync.RWMutex
+	h2connToID   map[interface{}]string
 }
 
 // NewServer returns a server
@@ -45,7 +44,7 @@ func NewServer() *Server {
 		Header:           make(http.Header),
 		MaxRequestMemory: defaultMaxRequestMemory,
 		RequestTimeout:   defaultRequestTimeout,
-		http2connsToIDs:  &sync.Map{},
+		h2connToID:       make(map[interface{}]string, 1024),
 	}
 
 	s.Header.Set("Server", "Wine")
@@ -57,8 +56,6 @@ func NewServer() *Server {
 		"join":     join,
 	})
 
-	// 100K ids per second for each shard
-	s.idGenerator = types.NewSnakeIDGenerator(0, 10, types.NextMilliseconds, nil, &types.Counter{})
 	s.Get("favicon.ico", handleFavIcon)
 	return s
 }
@@ -112,14 +109,20 @@ func (s *Server) Shutdown() {
 
 // ServeHTTP implements for http.Handler interface, which will handle each http request
 func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
-	var http2ConnID int64
-	http2Conn := utils.GetHTTP2Conn(rw)
-	if http2Conn != nil {
-		if idVal, ok := s.http2connsToIDs.Load(http2Conn); ok {
-			http2ConnID = idVal.(int64)
-		} else {
-			http2ConnID = int64(s.idGenerator.NextID())
-			s.http2connsToIDs.Store(http2Conn, http2ConnID)
+	var h2connID string
+	h2conn := utils.GetHTTP2Conn(rw)
+	if h2conn != nil {
+		// Hope RLock is faster than Lock?
+		s.h2connToIDMu.RLock()
+		_, ok := s.h2connToID[h2conn]
+		s.h2connToIDMu.RUnlock()
+		if !ok {
+			s.h2connToIDMu.Lock()
+			_, ok = s.h2connToID[h2conn]
+			if !ok {
+				s.h2connToID[h2conn] = utils.UniqueID()
+			}
+			s.h2connToIDMu.Unlock()
 		}
 	}
 
@@ -132,8 +135,10 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	}
 
 	defer func() {
-		if http2Conn != nil {
-			s.http2connsToIDs.Delete(http2Conn)
+		if h2conn != nil {
+			s.h2connToIDMu.Lock()
+			delete(s.h2connToID, h2conn)
+			s.h2connToIDMu.Unlock()
 		}
 
 		if cw, ok := rw.(*compressedResponseWriter); ok {
@@ -185,8 +190,8 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 
 	// In case http/2 stream handler needs "responseWriter" to push data to client continuously
 	ctx = context.WithValue(ctx, KeyHTTPResponseWriter, rw)
-	if http2ConnID > 0 {
-		ctx = context.WithValue(ctx, KeyHTTP2ConnID, http2ConnID)
+	if len(h2connID) > 0 {
+		ctx = context.WithValue(ctx, KeyHTTP2ConnID, h2connID)
 	}
 
 	resp := handlers.Head().Invoke(ctx, parsedReq)
