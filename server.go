@@ -112,15 +112,18 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	var h2connID string
 	h2conn := utils.GetHTTP2Conn(rw)
 	if h2conn != nil {
+		var ok bool
 		// Hope RLock is faster than Lock?
 		s.h2connToIDMu.RLock()
-		_, ok := s.h2connToID[h2conn]
+		h2connID, ok = s.h2connToID[h2conn]
 		s.h2connToIDMu.RUnlock()
 		if !ok {
 			s.h2connToIDMu.Lock()
-			_, ok = s.h2connToID[h2conn]
+			h2connID, ok = s.h2connToID[h2conn]
 			if !ok {
-				s.h2connToID[h2conn] = utils.UniqueID()
+				h2connID = utils.UniqueID()
+				s.h2connToID[h2conn] = h2connID
+				log.Debug("New http/2 conn:", h2connID)
 			}
 			s.h2connToIDMu.Unlock()
 		}
