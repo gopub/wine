@@ -46,7 +46,21 @@ func (r *Router) UseHandlers(handlers ...Handler) *Router {
 	if len(handlers) == 0 {
 		return r
 	}
-	r.handlers = append(r.handlers, handlers...)
+
+	for _, h := range handlers {
+		found := false
+		for _, rh := range r.handlers {
+			if rh == h {
+				found = true
+				break
+			}
+		}
+
+		if !found {
+			r.handlers = append(r.handlers, h)
+		}
+	}
+
 	return r
 }
 
