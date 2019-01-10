@@ -294,8 +294,8 @@ func getShortFileName(filename string) string {
 		start := strings.Index(filename, log.GoSrc)
 		if start > 0 {
 			start += len(log.GoSrc)
+			filename = filename[start:]
 		}
-		filename = filename[start:]
 	}
 
 	names := strings.Split(filename, "/")
