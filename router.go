@@ -48,9 +48,16 @@ func (r *Router) UseHandlers(handlers ...Handler) *Router {
 		return r
 	}
 
+	nr := &Router{
+		methodTrees: r.methodTrees,
+		basePath:    r.basePath,
+	}
+	nr.handlers = make([]Handler, len(r.handlers))
+	copy(nr.handlers, r.handlers)
+
 	for _, h := range handlers {
 		found := false
-		for _, rh := range r.handlers {
+		for _, rh := range nr.handlers {
 			if reflect.TypeOf(rh).Comparable() && reflect.TypeOf(h).Comparable() && rh == h {
 				found = true
 				break
@@ -58,11 +65,11 @@ func (r *Router) UseHandlers(handlers ...Handler) *Router {
 		}
 
 		if !found {
-			r.handlers = append(r.handlers, h)
+			nr.handlers = append(nr.handlers, h)
 		}
 	}
 
-	return r
+	return nr
 }
 
 // Use is similar with UseHandlers
