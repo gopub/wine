@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/gopub/log"
 	"net/http"
+	"reflect"
 	"strings"
 )
 
@@ -50,7 +51,7 @@ func (r *Router) UseHandlers(handlers ...Handler) *Router {
 	for _, h := range handlers {
 		found := false
 		for _, rh := range r.handlers {
-			if rh == h {
+			if reflect.TypeOf(rh).Comparable() && reflect.TypeOf(h).Comparable() && rh == h {
 				found = true
 				break
 			}
