@@ -11,7 +11,7 @@ import (
 )
 
 func InitSession(ctx context.Context, req *wine.Request, next wine.Invoker) wine.Responsible {
-	sid := req.Parameters.String(keySid)
+	sid := req.Parameters.String("sid")
 	var session Session
 	if len(sid) == 0 {
 		sid = wine.GetHTTP2ConnID(ctx)

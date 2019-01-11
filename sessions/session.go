@@ -10,7 +10,6 @@ import (
 var defaultExpiration = time.Minute * 30
 var minimumExpiration = time.Minute
 
-const keySid = "sid"
 const keySession = "session"
 
 type Session interface {
@@ -22,6 +21,10 @@ type Session interface {
 
 func NewSession(id string) (Session, error) {
 	return newSession(defaultStore, id, defaultExpiration)
+}
+
+func ContextWithSession(ctx context.Context, s Session) context.Context {
+	return context.WithValue(ctx, keySession, s)
 }
 
 func newSession(store Store, id string, expiration time.Duration) (Session, error) {
