@@ -96,6 +96,9 @@ type session struct {
 }
 
 func (s *session) ID() string {
+	if s == nil {
+		return ""
+	}
 	return s.id
 }
 
