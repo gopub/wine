@@ -44,7 +44,6 @@ func newSession(store Store, id string, expiration time.Duration) (Session, erro
 
 	if b {
 		logger.Warn("Session already exists")
-		return nil, err
 	}
 
 	// Just save a key-val in order to create hmap in redis server
