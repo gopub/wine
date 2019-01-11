@@ -9,7 +9,7 @@ import (
 var defaultExpiration = time.Minute * 30
 var minimumExpiration = time.Minute
 
-const KeySid = "sid"
+const keySid = "sid"
 
 type Session interface {
 	ID() string
@@ -39,6 +39,11 @@ func DefaultExpiration() time.Duration {
 	return defaultExpiration
 }
 
+func GetSessionID(ctx context.Context) string {
+	id, _ := ctx.Value(keySid).(string)
+	return id
+}
+
 func GetSession(sid string) Session {
 	if defaultStore == nil {
 		panic("DefaultStore is nil")
@@ -51,7 +56,7 @@ func GetSession(sid string) Session {
 }
 
 func GetContextSession(ctx context.Context) Session {
-	if sid, ok := ctx.Value(KeySid).(string); ok {
+	if sid, ok := ctx.Value(keySid).(string); ok {
 		return GetSession(sid)
 	}
 	return nil

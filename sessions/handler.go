@@ -11,16 +11,15 @@ import (
 )
 
 func InitSession(ctx context.Context, req *wine.Request, next wine.Invoker) wine.Responsible {
-	sid := req.Parameters.String(KeySid)
+	sid := req.Parameters.String(keySid)
 	if len(sid) == 0 {
-		var ok bool
-		sid, ok = ctx.Value(wine.keyHTTP2ConnID).(string)
-		if !ok || len(sid) == 0 { // http1.x
+		sid = wine.GetHTTP2ConnID(ctx)
+		if len(sid) == 0 { // http1.x
 			sid = utils.UniqueID()
 		}
 	}
 
-	ctx = context.WithValue(ctx, KeySid, sid)
+	ctx = context.WithValue(ctx, keySid, sid)
 
 	resp := next(ctx, req)
 
