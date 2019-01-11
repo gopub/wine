@@ -16,6 +16,7 @@ const defaultMaxRequestMemory = 8 << 20
 const defaultRequestTimeout = time.Second * 5
 const keyHTTPResponseWriter = "wine_http_response_writer"
 const keyHTTP2ConnID = "wine_http2_conn_id"
+const keyTemplates = "wine_templates"
 
 var acceptEncodings = [2]string{"gzip", "defalte"}
 var defaultServer *Server
@@ -134,24 +135,9 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	}()
 
 	// Add compression to responseWriter
-	ae := req.Header.Get("Accept-Encoding")
-	for _, enc := range acceptEncodings {
-		if strings.Contains(ae, enc) {
-			rw.Header().Set("Content-Encoding", enc)
-			if cw, err := newCompressedResponseWriter(rw, enc); err == nil {
-				rw = cw
-			}
-			break
-		}
-	}
+	rw = wrapperCompressedWriter(rw, req)
 
-	path := req.RequestURI
-	i := strings.Index(path, "?")
-	if i > 0 {
-		path = req.RequestURI[:i]
-	}
-
-	path = normalizePath(path)
+	path := getRequestPath(req)
 	method := strings.ToUpper(req.Method)
 	handlers, pathParams := s.Match(method, path)
 
@@ -173,13 +159,13 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	}
 
 	ctx, cancel := context.WithTimeout(req.Context(), s.RequestTimeout)
-	ctx = context.WithValue(ctx, "templates", s.templates)
 	defer cancel()
 
 	for k, v := range s.Header {
 		rw.Header()[k] = v
 	}
 
+	ctx = context.WithValue(ctx, keyTemplates, s.templates)
 	// In case http/2 stream handler needs "responseWriter" to push data to client continuously
 	ctx = context.WithValue(ctx, keyHTTPResponseWriter, rw)
 	if len(h2connID) > 0 {
@@ -217,6 +203,31 @@ func (s *Server) detectHTTP2(rw http.ResponseWriter) (conn interface{}, connID s
 	return h2conn, h2connID
 }
 
+func wrapperCompressedWriter(rw http.ResponseWriter, req *http.Request) http.ResponseWriter {
+	// Add compression to responseWriter
+	ae := req.Header.Get("Accept-Encoding")
+	for _, enc := range acceptEncodings {
+		if strings.Contains(ae, enc) {
+			rw.Header().Set("Content-Encoding", enc)
+			if cw, err := newCompressedResponseWriter(rw, enc); err == nil {
+				return cw
+			}
+		}
+	}
+
+	return rw
+}
+
+func getRequestPath(req *http.Request) string {
+	path := req.RequestURI
+	i := strings.Index(path, "?")
+	if i > 0 {
+		path = req.RequestURI[:i]
+	}
+
+	return normalizePath(path)
+}
+
 func handleFavIcon(ctx context.Context, req *Request, next Invoker) Responsible {
 	return ResponsibleFunc(func(ctx context.Context, rw http.ResponseWriter) {
 		rw.Header()[ContentType] = []string{"image/x-icon"}
@@ -247,4 +258,9 @@ func GetHTTP2ConnID(ctx context.Context) string {
 func GetResponseWriter(ctx context.Context) http.ResponseWriter {
 	rw, _ := ctx.Value(keyHTTPResponseWriter).(http.ResponseWriter)
 	return rw
+}
+
+func GetTemplates(ctx context.Context) []*template.Template {
+	v, _ := ctx.Value(keyTemplates).([]*template.Template)
+	return v
 }
