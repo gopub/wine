@@ -152,7 +152,7 @@ It's easy to turn on basic auth.
 	
 ## HTTP/2 Server Push
     func CheckSessionID(ctx context.Context, req *wine.Request, next wine.Invoker) wine.Responsible {
-        rw := ctx.Value(wine.KeyHTTPResponseWriter).(http.ResponseWriter)
+        rw := wine.GetResponseWriter(ctx)
         for {
             payload := "test"
             _, err := rw.Write(payload)
