@@ -13,16 +13,18 @@ import (
 func InitSession(ctx context.Context, req *wine.Request, next wine.Invoker) wine.Responsible {
 	sid := req.Parameters.String("sid")
 	var session Session
+
 	if len(sid) == 0 {
 		sid = wine.GetHTTP2ConnID(ctx)
-		if len(sid) == 0 { // http1.x
-			sid = utils.UniqueID()
-			session, _ = NewSession(sid)
-		}
+	}
+
+	if len(sid) > 0 {
+		session, _ = RestoreSession(sid)
 	}
 
 	if session == nil {
-		session, _ = RestoreSession(sid)
+		sid = utils.UniqueID()
+		session, _ = NewSession(sid)
 	}
 
 	if session == nil {
