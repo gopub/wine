@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"github.com/gopub/log"
+	"github.com/gopub/utils"
 	"time"
 )
 
@@ -11,12 +12,17 @@ var defaultExpiration = time.Minute * 30
 var minimumExpiration = time.Minute
 
 const keySession = "session"
+const SidLength = 40
 
 type Session interface {
 	ID() string
 	Get(key string, ptrValue interface{}) error
 	Set(key string, value interface{}) error
 	Destroy() error
+}
+
+func GenerateSid() string {
+	return utils.UniqueID()
 }
 
 func NewSession(id string) (Session, error) {
@@ -37,10 +43,12 @@ func newSession(store Store, id string, expiration time.Duration) (Session, erro
 	}
 
 	if b {
-		err = errors.New("session already exists")
-		logger.Error(err)
+		logger.Warn("Session already exists")
 		return nil, err
 	}
+
+	// Just save a key-val in order to create hmap in redis server
+	go store.Set(id, "created_at", time.Now().Unix())
 
 	logger.Info("New session:", id)
 	return &session{
