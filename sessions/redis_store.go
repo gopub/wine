@@ -118,10 +118,24 @@ func (s *RedisStore) Set(sid, key string, value interface{}) error {
 	return nil
 }
 
+func (s *RedisStore) Exists(sid string) (bool, error) {
+	n, err := s.client.Exists(sid).Result()
+	return n > 0, err
+}
+
 func (s *RedisStore) Delete(sid string) error {
 	return s.client.Del(sid).Err()
 }
 
-func (s *RedisStore) SetExpiration(sid string, expiration time.Duration) error {
+func (s *RedisStore) ExistsKey(sid, key string) (bool, error) {
+	cmd := s.client.HExists(sid, key)
+	return cmd.Result()
+}
+
+func (s *RedisStore) DeleteKey(sid, key string) error {
+	return s.client.HDel(sid, key).Err()
+}
+
+func (s *RedisStore) Expire(sid string, expiration time.Duration) error {
 	return s.client.Expire(sid, expiration).Err()
 }

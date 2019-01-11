@@ -12,14 +12,24 @@ import (
 
 func InitSession(ctx context.Context, req *wine.Request, next wine.Invoker) wine.Responsible {
 	sid := req.Parameters.String(keySid)
+	var session Session
 	if len(sid) == 0 {
 		sid = wine.GetHTTP2ConnID(ctx)
 		if len(sid) == 0 { // http1.x
 			sid = utils.UniqueID()
+			session, _ = NewSession(sid)
 		}
 	}
 
-	ctx = context.WithValue(ctx, keySid, sid)
+	if session == nil {
+		session, _ = RestoreSession(sid)
+	}
+
+	if session == nil {
+		return wine.Status(http.StatusInternalServerError)
+	}
+
+	ctx = context.WithValue(ctx, keySession, session)
 
 	resp := next(ctx, req)
 

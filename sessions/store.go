@@ -8,8 +8,11 @@ import (
 type Store interface {
 	Get(sid, key string, ptrValue interface{}) error
 	Set(sid, key string, value interface{}) error
+	DeleteKey(sid, key string) error
+	ExistsKey(sid, key string) (bool, error)
+	Exists(sid string) (bool, error)
 	Delete(sid string) error
-	SetExpiration(sid string, expiration time.Duration) error
+	Expire(sid string, expiration time.Duration) error
 }
 
 var defaultStore Store
