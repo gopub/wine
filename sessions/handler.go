@@ -14,7 +14,7 @@ func InitSession(ctx context.Context, req *wine.Request, next wine.Invoker) wine
 	sid := req.Parameters.String(KeySid)
 	if len(sid) == 0 {
 		var ok bool
-		sid, ok = ctx.Value(wine.KeyHTTP2ConnID).(string)
+		sid, ok = ctx.Value(wine.keyHTTP2ConnID).(string)
 		if !ok || len(sid) == 0 { // http1.x
 			sid = utils.UniqueID()
 		}

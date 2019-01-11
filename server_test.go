@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/gopub/utils"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -62,8 +61,8 @@ func TestJSON(t *testing.T) {
 		t.Fatal(result, *obj)
 	}
 
-	if resp.Header[utils.ContentType][0] != utils.MIMEJSON {
-		t.Fatal(resp.Header[utils.ContentType])
+	if resp.Header[wine.ContentType][0] != wine.MIMEJSON {
+		t.Fatal(resp.Header[wine.ContentType])
 	}
 }
 
@@ -95,8 +94,8 @@ func TestHTML(t *testing.T) {
 		t.Fatal(string(data))
 	}
 
-	if resp.Header[utils.ContentType][0] != utils.MIMEHTML {
-		t.Fatal(resp.Header[utils.ContentType])
+	if resp.Header[wine.ContentType][0] != wine.MIMEHTML {
+		t.Fatal(resp.Header[wine.ContentType])
 	}
 }
 

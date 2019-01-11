@@ -14,8 +14,8 @@ import (
 
 const defaultMaxRequestMemory = 8 << 20
 const defaultRequestTimeout = time.Second * 5
-const KeyHTTPResponseWriter = "wine_http_response_writer"
-const KeyHTTP2ConnID = "wine_http2_conn_id"
+const keyHTTPResponseWriter = "wine_http_response_writer"
+const keyHTTP2ConnID = "wine_http2_conn_id"
 
 var acceptEncodings = [2]string{"gzip", "defalte"}
 var defaultServer *Server
@@ -34,6 +34,8 @@ type Server struct {
 
 	h2connToIDMu sync.RWMutex
 	h2connToID   map[interface{}]string
+
+	RequestParser RequestParser
 }
 
 // NewServer returns a server
@@ -45,6 +47,7 @@ func NewServer() *Server {
 		MaxRequestMemory: defaultMaxRequestMemory,
 		RequestTimeout:   defaultRequestTimeout,
 		h2connToID:       make(map[interface{}]string, 1024),
+		RequestParser:    NewDefaultRequestParser(),
 	}
 
 	s.Header.Set("Server", "Wine")
@@ -109,26 +112,7 @@ func (s *Server) Shutdown() {
 
 // ServeHTTP implements for http.Handler interface, which will handle each http request
 func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
-	var h2connID string
-	h2conn := utils.GetHTTP2Conn(rw)
-	if h2conn != nil {
-		var ok bool
-		// Hope RLock is faster than Lock?
-		s.h2connToIDMu.RLock()
-		h2connID, ok = s.h2connToID[h2conn]
-		s.h2connToIDMu.RUnlock()
-		if !ok {
-			s.h2connToIDMu.Lock()
-			h2connID, ok = s.h2connToID[h2conn]
-			if !ok {
-				h2connID = utils.UniqueID()
-				s.h2connToID[h2conn] = h2connID
-				log.Debug("New http/2 conn:", h2connID)
-			}
-			s.h2connToIDMu.Unlock()
-		}
-	}
-
+	h2conn, h2connID := s.detectHTTP2(rw)
 	if !Debug {
 		defer func() {
 			if e := recover(); e != nil {
@@ -177,11 +161,16 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		handlers.PushBack(HandlerFunc(handleNotImplemented))
 	}
 
+	params, err := s.RequestParser.ParseHTTPRequest(req, s.MaxRequestMemory)
+	if err != nil {
+		return
+	}
+	params.AddMapObj(pathParams)
+
 	parsedReq := &Request{
 		HTTPRequest: req,
-		Parameters:  utils.ParseHTTPRequestParameters(req, s.MaxRequestMemory),
+		Parameters:  params,
 	}
-	parsedReq.Parameters.AddMapObj(pathParams)
 
 	ctx, cancel := context.WithTimeout(req.Context(), s.RequestTimeout)
 	ctx = context.WithValue(ctx, "templates", s.templates)
@@ -192,9 +181,9 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	}
 
 	// In case http/2 stream handler needs "responseWriter" to push data to client continuously
-	ctx = context.WithValue(ctx, KeyHTTPResponseWriter, rw)
+	ctx = context.WithValue(ctx, keyHTTPResponseWriter, rw)
 	if len(h2connID) > 0 {
-		ctx = context.WithValue(ctx, KeyHTTP2ConnID, h2connID)
+		ctx = context.WithValue(ctx, keyHTTP2ConnID, h2connID)
 	}
 
 	resp := handlers.Head().Invoke(ctx, parsedReq)
@@ -204,9 +193,33 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	resp.Respond(ctx, rw)
 }
 
+func (s *Server) detectHTTP2(rw http.ResponseWriter) (conn interface{}, connID string) {
+	h2conn := GetHTTP2Conn(rw)
+	if h2conn == nil {
+		return nil, ""
+	}
+
+	// Hope RLock is faster than Lock?
+	s.h2connToIDMu.RLock()
+	h2connID, ok := s.h2connToID[h2conn]
+	s.h2connToIDMu.RUnlock()
+	if !ok {
+		s.h2connToIDMu.Lock()
+		h2connID, ok = s.h2connToID[h2conn]
+		if !ok {
+			h2connID = utils.UniqueID()
+			s.h2connToID[h2conn] = h2connID
+			log.Debug("New http/2 conn:", h2connID)
+		}
+		s.h2connToIDMu.Unlock()
+	}
+
+	return h2conn, h2connID
+}
+
 func handleFavIcon(ctx context.Context, req *Request, next Invoker) Responsible {
 	return ResponsibleFunc(func(ctx context.Context, rw http.ResponseWriter) {
-		rw.Header()[utils.ContentType] = []string{"image/x-icon"}
+		rw.Header()[ContentType] = []string{"image/x-icon"}
 		rw.WriteHeader(http.StatusOK)
 		rw.Write(_faviconBytes)
 	})
@@ -224,4 +237,14 @@ func handleNotImplemented(ctx context.Context, req *Request, next Invoker) Respo
 		log.Warnf("Not implemented. path=%s", req.HTTPRequest.URL.Path)
 		http.Error(rw, http.StatusText(http.StatusNotImplemented), http.StatusNotImplemented)
 	})
+}
+
+func GetHTTP2ConnID(ctx context.Context) string {
+	id, _ := ctx.Value(keyHTTP2ConnID).(string)
+	return id
+}
+
+func GetResponseWriter(ctx context.Context) http.ResponseWriter {
+	rw, _ := ctx.Value(keyHTTPResponseWriter).(http.ResponseWriter)
+	return rw
 }

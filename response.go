@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"github.com/gopub/log"
-	"github.com/gopub/utils"
 	"html/template"
 	"net/http"
 	"strings"
@@ -59,10 +58,10 @@ func (r *responseImpl) getBytes() []byte {
 		return body
 	}
 
-	contentType := r.header.Get(utils.ContentType)
+	contentType := r.header.Get(ContentType)
 
 	switch {
-	case strings.Contains(contentType, utils.MIMEJSON):
+	case strings.Contains(contentType, MIMEJSON):
 		if r.value != nil {
 			body, err := json.Marshal(r.value)
 			if err != nil {
@@ -71,13 +70,13 @@ func (r *responseImpl) getBytes() []byte {
 				return body
 			}
 		}
-	case strings.Contains(contentType, utils.MIMETEXT):
+	case strings.Contains(contentType, MIMETEXT):
 		fallthrough
-	case strings.Contains(contentType, utils.MIMEHTML):
+	case strings.Contains(contentType, MIMEHTML):
 		fallthrough
-	case strings.Contains(contentType, utils.MIMEXML):
+	case strings.Contains(contentType, MIMEXML):
 		fallthrough
-	case strings.Contains(contentType, utils.MIMEXML2):
+	case strings.Contains(contentType, MIMEXML2):
 		if s, ok := r.value.(string); ok {
 			return []byte(s)
 		}
@@ -112,7 +111,7 @@ func Status(status int) Responsible {
 func Redirect(location string, permanent bool) Responsible {
 	header := make(http.Header)
 	header.Set("Location", location)
-	header.Set(utils.ContentType, utils.MIMETEXT)
+	header.Set(ContentType, MIMETEXT)
 	var status int
 	if permanent {
 		status = http.StatusMovedPermanently
@@ -129,7 +128,7 @@ func Redirect(location string, permanent bool) Responsible {
 // Text sends a text response
 func Text(status int, text string) Responsible {
 	header := make(http.Header)
-	header.Set(utils.ContentType, utils.MIMETEXT)
+	header.Set(ContentType, MIMETEXT)
 	return &responseImpl{
 		status: status,
 		header: header,
@@ -140,7 +139,7 @@ func Text(status int, text string) Responsible {
 // HTML sends a HTML response
 func HTML(status int, html string) Responsible {
 	header := make(http.Header)
-	header.Set(utils.ContentType, utils.MIMEHTML)
+	header.Set(ContentType, MIMEHTML)
 	return &responseImpl{
 		status: status,
 		header: header,
@@ -150,7 +149,7 @@ func HTML(status int, html string) Responsible {
 
 func JSON(status int, value interface{}) Responsible {
 	header := make(http.Header)
-	header.Set(utils.ContentType, utils.MIMEJSON)
+	header.Set(ContentType, MIMEJSON)
 	return &responseImpl{
 		status: status,
 		header: header,
