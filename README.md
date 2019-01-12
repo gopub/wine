@@ -150,8 +150,12 @@ It's easy to turn on basic auth.
 	s.StaticDir("/", "./html")
 	s.Run(":8000")
 	
-## HTTP/2 Server Push
-    func CheckSessionID(ctx context.Context, req *wine.Request, next wine.Invoker) wine.Responsible {
+## Push stream data in HTTP/2
+    func HandleStream(ctx context.Context, req *wine.Request, next wine.Invoker) wine.Responsible {
+        if wine.GetHTTP2Conn(ctx) == nil {
+            return nil
+        }
+        
         rw := wine.GetResponseWriter(ctx)
         for {
             payload := "test"
