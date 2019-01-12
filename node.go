@@ -159,7 +159,7 @@ func (n *node) add(nodes []*node) bool {
 		n.children = append(n.children, nod)
 		break
 	default:
-		log.Panic("invalid node type")
+		logger.Panic("invalid node type")
 	}
 
 	return true
@@ -167,7 +167,7 @@ func (n *node) add(nodes []*node) bool {
 
 func (n *node) matchPath(pathSegments []string) (*handlerList, map[string]string) {
 	if len(pathSegments) == 0 {
-		log.Panic("pathSegments is empty")
+		logger.Panic("pathSegments is empty")
 	}
 
 	segment := pathSegments[0]
@@ -220,7 +220,7 @@ func (n *node) matchPath(pathSegments []string) (*handlerList, map[string]string
 
 func (n *node) matchNodes(nodes []*node) *node {
 	if len(nodes) == 0 {
-		log.Panic("nodes is empty")
+		logger.Panic("nodes is empty")
 	}
 
 	nod := nodes[0]
@@ -279,7 +279,7 @@ func (n *node) Print(method string, parentPath string) {
 				hNames += handlerName
 			}
 		}
-		log.Infof("%-5s %s\t%s", method, path, hNames)
+		logger.Infof("%-5s %s\t%s", method, path, hNames)
 	}
 
 	for _, nod := range n.children {

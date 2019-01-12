@@ -70,15 +70,15 @@ func NewServer(config *Config) *Server {
 // Run starts server
 func (s *Server) Run(addr string) error {
 	if s.server != nil {
-		log.Panic("Server is running")
+		logger.Panic("Server is running")
 	}
 
-	log.Info("Running at", addr, "...")
+	logger.Info("Running at", addr, "...")
 	s.Router.Print()
 	s.server = &http.Server{Addr: addr, Handler: s}
 	err := s.server.ListenAndServe()
 	if err != nil {
-		log.Error(err)
+		logger.Error(err)
 	}
 	return err
 }
@@ -86,15 +86,15 @@ func (s *Server) Run(addr string) error {
 // RunTLS starts server with tls
 func (s *Server) RunTLS(addr, certFile, keyFile string) error {
 	if s.server != nil {
-		log.Panic("Server is running")
+		logger.Panic("Server is running")
 	}
 
-	log.Info("Running at", addr, "...")
+	logger.Info("Running at", addr, "...")
 	s.Router.Print()
 	s.server = &http.Server{Addr: addr, Handler: s}
 	err := s.server.ListenAndServeTLS(certFile, keyFile)
 	if err != nil {
-		log.Error(err)
+		logger.Error(err)
 	}
 	return err
 }
@@ -102,7 +102,7 @@ func (s *Server) RunTLS(addr, certFile, keyFile string) error {
 // Shutdown stops server
 func (s *Server) Shutdown() {
 	s.server.Shutdown(context.Background())
-	log.Info("Shutdown")
+	logger.Info("Shutdown")
 }
 
 // ServeHTTP implements for http.Handler interface, which will handle each http request
@@ -111,7 +111,7 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	if !Debug {
 		defer func() {
 			if e := recover(); e != nil {
-				log.Error(e, req)
+				logger.Error(e, req)
 			}
 		}()
 	}
@@ -189,7 +189,7 @@ func (s *Server) detectHTTP2(rw http.ResponseWriter) (conn interface{}, connID s
 		if !ok {
 			h2connID = utils.UniqueID()
 			s.h2connToID[h2conn] = h2connID
-			log.Debug("New http/2 conn:", h2connID)
+			logger.Debug("New http/2 conn:", h2connID)
 		}
 		s.h2connToIDMu.Unlock()
 	}

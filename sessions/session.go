@@ -88,7 +88,7 @@ func SetDefaultExpiration(expiration time.Duration) {
 	if expiration < minimumExpiration {
 		panic("Minimum expiration is 1 minute")
 	}
-	log.Debugf("Set default session expiration: %v", expiration)
+	logger.Debugf("Set default session expiration: %v", expiration)
 	defaultExpiration = expiration
 }
 
@@ -124,6 +124,6 @@ func (s *session) Set(key string, value interface{}) error {
 }
 
 func (s *session) Destroy() error {
-	log.Debugf("Destroyed session:%s", s.id)
+	logger.Debugf("Destroyed session:%s", s.id)
 	return s.store.Delete(s.id)
 }

@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/gopub/log"
 	"github.com/gopub/types"
 )
 
@@ -79,7 +78,7 @@ func (p *DefaultRequestParser) ParseHTTPRequest(req *http.Request, maxMemory int
 	case MIMEJSON:
 		d, e := ioutil.ReadAll(req.Body)
 		if e != nil {
-			log.Error(e)
+			logger.Error(e)
 			break
 		}
 
@@ -94,14 +93,14 @@ func (p *DefaultRequestParser) ParseHTTPRequest(req *http.Request, maxMemory int
 	case MIMEPOSTForm:
 		err := req.ParseForm()
 		if err != nil {
-			log.Error(err)
+			logger.Error(err)
 			return nil, err
 		}
 		params.AddMap(convertToM(req.Form))
 	case MIMEMultipartPOSTForm:
 		err := req.ParseMultipartForm(maxMemory)
 		if err != nil {
-			log.Error(err)
+			logger.Error(err)
 			return nil, err
 		}
 
@@ -111,7 +110,7 @@ func (p *DefaultRequestParser) ParseHTTPRequest(req *http.Request, maxMemory int
 	default:
 		if len(contentType) > 0 {
 			err := errors.New(fmt.Sprintf("unsupported content type: %s", contentType))
-			log.Error(err)
+			logger.Error(err)
 			return nil, err
 		}
 	}
@@ -145,7 +144,7 @@ func jsonUnmarshal(data []byte, pJSONObj interface{}) error {
 	decoder.UseNumber()
 	err := decoder.Decode(pJSONObj)
 	if err != nil {
-		log.Error(err)
+		logger.Error(err)
 	}
 	return err
 }

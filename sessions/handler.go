@@ -25,7 +25,7 @@ func InitSession(ctx context.Context, req *wine.Request, next wine.Invoker) wine
 	if session == nil {
 		if len(sid) != SidLength {
 			if len(sid) > 0 {
-				log.Error("Invalid length of sid")
+				logger.Error("Invalid length of sid")
 			}
 			sid = utils.UniqueID()
 		}

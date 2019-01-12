@@ -1,7 +1,6 @@
 package sessions
 
 import (
-	"github.com/gopub/log"
 	"time"
 )
 
@@ -18,7 +17,7 @@ type Store interface {
 var defaultStore Store
 
 func SetDefaultStore(s Store) {
-	log.Debugf("Set default session store: %v", s)
+	logger.Debugf("Set default session store: %v", s)
 	defaultStore = s
 }
 

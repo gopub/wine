@@ -1,7 +1,6 @@
 package wine
 
 import (
-	"github.com/gopub/log"
 	"html/template"
 )
 
@@ -49,7 +48,7 @@ func (m *TemplateManager) AddTemplate(tmpl *template.Template) {
 // AddTemplateFuncs adds template functions
 func (m *TemplateManager) AddTemplateFuncMap(funcMap template.FuncMap) {
 	if funcMap == nil {
-		log.Panic("funcMap is nil")
+		logger.Panic("funcMap is nil")
 	}
 
 	if m.templateFuncs == nil {

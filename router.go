@@ -25,7 +25,7 @@ func NewRouter() *Router {
 // Group returns a new router whose basePath is r.basePath+path
 func (r *Router) Group(path string) *Router {
 	if path == "/" {
-		log.Panic("don't create default group \"/\"")
+		logger.Panic("don't create default group \"/\"")
 	}
 
 	nr := &Router{}
@@ -97,15 +97,15 @@ func (r *Router) Match(method string, path string) (*handlerList, map[string]str
 // Bind binds method, path with handlers
 func (r *Router) Bind(method string, path string, handlers ...Handler) {
 	if path == "" {
-		log.Panic("invalid path")
+		logger.Panic("invalid path")
 	}
 
 	if len(method) == 0 {
-		log.Panic("invalid method")
+		logger.Panic("invalid method")
 	}
 
 	if len(handlers) == 0 {
-		log.Panic("no handler")
+		logger.Panic("no handler")
 	}
 
 	method = strings.ToUpper(method)
@@ -139,11 +139,11 @@ func (r *Router) Bind(method string, path string, handlers ...Handler) {
 // Unbind unbinds method, path
 func (r *Router) Unbind(method string, path string) {
 	if path == "" {
-		log.Panic("invalid path")
+		logger.Panic("invalid path")
 	}
 
 	if len(method) == 0 {
-		log.Panic("invalid method")
+		logger.Panic("invalid method")
 	}
 
 	method = strings.ToUpper(method)
@@ -162,7 +162,7 @@ func (r *Router) Unbind(method string, path string) {
 
 	nodes := newNodeList(path, nil)
 	if len(nodes) == 0 {
-		log.Panic("node list is empty")
+		logger.Panic("node list is empty")
 	}
 
 	if nodes[0].path != "" {
@@ -253,7 +253,7 @@ func (r *Router) BindControllers(controllers ...Controller) {
 		for s, h := range c.RouteMap() {
 			strs := strings.Fields(s)
 			if len(strs) != 2 {
-				log.Panic("invalid route key: " + s)
+				logger.Panic("invalid route key: " + s)
 			}
 			methods := strings.Split(strs[0], "|")
 			path := c.RoutePath() + "/" + strs[1]

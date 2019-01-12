@@ -65,7 +65,7 @@ func (r *responseImpl) getBytes() []byte {
 		if r.value != nil {
 			body, err := json.Marshal(r.value)
 			if err != nil {
-				log.Error(err)
+				logger.Error(err)
 			} else {
 				return body
 			}
