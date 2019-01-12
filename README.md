@@ -83,7 +83,7 @@ Custom middleware
     	return result
     } <br/>
     func main() {
-    	s := wine.NewServer() 
+    	s := wine.NewServer(nil) 
     	//Use middleware Logger
     	<b>s.Use(Logger)</b> 
     	s.Get("/hello", func(ctx context.Context, req *wine.Request, next wine.Invoker) wine.Responsible {
@@ -117,7 +117,7 @@ Custom middleware
     }
     
     func main() {
-    	s := wine.NewServer()
+    	s := wine.NewServer(wine.DefaultConfig())
     
     	//Create "accounts" group
     	<b>g := s.Group("accounts")</b>
