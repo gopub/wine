@@ -68,7 +68,7 @@ func NewServer() *Server {
 func DefaultServer() *Server {
 	if defaultServer == nil {
 		defaultServer = NewServer()
-		defaultServer.Use(Logger)
+		defaultServer.Router = defaultServer.Use(Logger)
 	}
 	return defaultServer
 }

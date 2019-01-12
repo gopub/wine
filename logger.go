@@ -22,8 +22,9 @@ func Logger(ctx context.Context, req *Request, next Invoker) Responsible {
 	st := time.Now()
 	resp := next(ctx, req)
 	cost := float32(time.Since(st)/time.Microsecond) / 1000.0
-	log.Infof("%.3fms %v%s%v %s",
+	log.Infof("%.3fms %s %v%s%v %s",
 		cost,
+		req.HTTPRequest.RemoteAddr,
 		_greenColor,
 		req.HTTPRequest.Method,
 		_resetColor,
