@@ -17,17 +17,36 @@ var (
 	_resetColor   = string([]byte{27, 91, 48, 109})
 )
 
+type logHandler struct {
+	logger log.Logger
+}
+
+func Logger() Handler {
+	l := &logHandler{}
+	l.logger = log.Default().Derive()
+	l.logger.SetFlags(log.LstdFlags ^ log.Lfunction ^ log.Lshortfile)
+	return l
+}
+
 // Logger calculates cost time and output to console
-func Logger(ctx context.Context, req *Request, next Invoker) Responsible {
+func (l *logHandler) HandleRequest(ctx context.Context, req *Request, next Invoker) Responsible {
 	st := time.Now()
 	resp := next(ctx, req)
 	cost := float32(time.Since(st)/time.Microsecond) / 1000.0
-	log.Infof("%.3fms %s %v%s%v %s",
-		cost,
+	//l.logger.Infof("[WINE] %s %v%s%v %s %v%.3fms%v",
+	//	req.HTTPRequest.RemoteAddr,
+	//	_greenColor,
+	//	req.HTTPRequest.Method,
+	//	_resetColor,
+	//	req.HTTPRequest.RequestURI,
+	//	_yellowColor,
+	//	cost,
+	//	_resetColor)
+
+	l.logger.Infof("[WINE] %s %s %s %.3fms",
 		req.HTTPRequest.RemoteAddr,
-		_greenColor,
 		req.HTTPRequest.Method,
-		_resetColor,
-		req.HTTPRequest.RequestURI)
+		req.HTTPRequest.RequestURI,
+		cost)
 	return resp
 }
