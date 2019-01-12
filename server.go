@@ -19,7 +19,6 @@ const keyHTTP2ConnID = "wine_http2_conn_id"
 const keyTemplates = "wine_templates"
 
 var acceptEncodings = [2]string{"gzip", "defalte"}
-var defaultServer *Server
 var ShortHandlerNameFlag = true
 var Debug = false
 
@@ -40,7 +39,7 @@ type Server struct {
 }
 
 // NewServer returns a server
-func NewServer() *Server {
+func NewServer(config *Config) *Server {
 	s := &Server{
 		Router:           NewRouter(),
 		TemplateManager:  NewTemplateManager(),
@@ -60,17 +59,12 @@ func NewServer() *Server {
 		"join":     join,
 	})
 
+	if config != nil {
+		s.handlers = config.Handlers
+	}
+
 	s.Get("favicon.ico", handleFavIcon)
 	return s
-}
-
-// DefaultServer returns a default server with Logger interceptor
-func DefaultServer() *Server {
-	if defaultServer == nil {
-		defaultServer = NewServer()
-		defaultServer.Router = defaultServer.UseHandlers(Logger())
-	}
-	return defaultServer
 }
 
 // Run starts server

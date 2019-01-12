@@ -8,7 +8,7 @@ package main
 import "github.com/gopub/wine"
 
 func main() {
-	s := wine.DefaultServer()
+	s := wine.NewServer(wine.DefaultConfig())
 	s.StaticDir("/", "./html")
 	s.Run(":8000")
 }

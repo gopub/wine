@@ -21,7 +21,7 @@ type testJSONObj struct {
 }
 
 func TestMain(m *testing.M) {
-	server = wine.DefaultServer()
+	server = wine.NewServer(wine.DefaultConfig())
 	go func() {
 		server.Run(":8000")
 	}()

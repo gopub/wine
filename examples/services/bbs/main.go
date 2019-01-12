@@ -24,7 +24,7 @@ type Topic struct {
 }
 
 func main() {
-	s := wine.DefaultServer()
+	s := wine.NewServer(wine.DefaultConfig())
 	s.Get("hello", func(ctx context.Context, req *wine.Request, next wine.Invoker) wine.Responsible {
 		return wine.JSON(http.StatusOK, map[string]interface{}{"code": 0, "msg": "hello"})
 	})
