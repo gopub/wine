@@ -102,6 +102,7 @@ func (p *DefaultRequestParser) ParseHTTPRequest(req *http.Request, maxMemory int
 		params.AddMap(convertToM(req.Form))
 	case MIMEMultipartPOSTForm:
 		startAt := time.Now()
+		// ParseMultipartForm is very slow sometimes. Why???
 		err := req.ParseMultipartForm(maxMemory)
 		logger.Debug("Cost:", time.Since(startAt))
 		if err != nil {
