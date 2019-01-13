@@ -75,6 +75,7 @@ func restoreSession(store Store, id string, expiration time.Duration) (Session, 
 		return nil, err
 	}
 
+	logger.Info("OK")
 	return &session{
 		id:         id,
 		store:      store,
