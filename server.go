@@ -117,6 +117,8 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	}
 
 	defer func() {
+		logger.Debugf("Cost:", time.Since(startAt))
+
 		if h2conn != nil {
 			s.h2connToIDMu.Lock()
 			delete(s.h2connToID, h2conn)
@@ -127,12 +129,11 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 			cw.Close()
 		}
 
-		cost := float32(time.Since(startAt)/time.Microsecond) / 1000.0
-		logger.Infof("%s %s %s %.3fms",
+		logger.Infof("%s %s %s %v",
 			req.RemoteAddr,
 			req.Method,
 			req.RequestURI,
-			cost)
+			time.Since(startAt))
 	}()
 
 	// Add compression to responseWriter
@@ -141,6 +142,7 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	path := getRequestPath(req)
 	method := strings.ToUpper(req.Method)
 	handlers, pathParams := s.Match(method, path)
+	logger.Debugf("Cost:", time.Since(startAt))
 
 	if handlers.Empty() {
 		handlers = newHandlerList([]Handler{HandlerFunc(handleNotFound)})
@@ -174,6 +176,7 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	}
 
 	resp := handlers.Head().Invoke(ctx, parsedReq)
+	logger.Debugf("Cost:", time.Since(startAt))
 	if resp == nil {
 		resp = handleNotImplemented(ctx, parsedReq, nil)
 	}
