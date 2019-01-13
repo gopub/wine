@@ -35,7 +35,7 @@ func (s *RedisStore) Get(sid, key string, ptrValue interface{}) error {
 	if logger.Level() <= log.DebugLevel {
 		startAt := time.Now()
 		defer func() {
-			logger.Debug("Cost:%v", time.Since(startAt))
+			logger.Debug("Cost:", time.Since(startAt))
 		}()
 	}
 
@@ -94,7 +94,7 @@ func (s *RedisStore) Set(sid, key string, value interface{}) error {
 	if logger.Level() <= log.DebugLevel {
 		startAt := time.Now()
 		defer func() {
-			logger.Debug("Cost:%v", time.Since(startAt))
+			logger.Debug("Cost:", time.Since(startAt))
 		}()
 	}
 
@@ -137,7 +137,7 @@ func (s *RedisStore) Exists(sid string) (bool, error) {
 	if logger.Level() <= log.DebugLevel {
 		startAt := time.Now()
 		defer func() {
-			logger.Debug("Cost:%v", time.Since(startAt))
+			logger.Debug("Cost:", time.Since(startAt))
 		}()
 	}
 	n, err := s.client.Exists(sid).Result()
