@@ -6,6 +6,5 @@ type Config struct {
 
 func DefaultConfig() *Config {
 	c := &Config{}
-	c.Handlers = []Handler{Logger()}
 	return c
 }

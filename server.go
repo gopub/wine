@@ -107,6 +107,7 @@ func (s *Server) Shutdown() {
 
 // ServeHTTP implements for http.Handler interface, which will handle each http request
 func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
+	startAt := time.Now()
 	h2conn, h2connID := s.detectHTTP2(rw)
 	if !Debug {
 		defer func() {
@@ -126,6 +127,13 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		if cw, ok := rw.(*compressedResponseWriter); ok {
 			cw.Close()
 		}
+
+		cost := float32(time.Since(startAt)/time.Microsecond) / 1000.0
+		logger.Infof("%s %s %s %.3fms",
+			req.RemoteAddr,
+			req.Method,
+			req.RequestURI,
+			cost)
 	}()
 
 	// Add compression to responseWriter
@@ -232,14 +240,17 @@ func handleFavIcon(ctx context.Context, req *Request, next Invoker) Responsible 
 
 func handleNotFound(ctx context.Context, req *Request, next Invoker) Responsible {
 	return ResponsibleFunc(func(ctx context.Context, rw http.ResponseWriter) {
-		log.Warnf("Not found. path=%s", req.HTTPRequest.URL.Path)
+		log.Warnf("%s %s: %d %s", req.HTTPRequest.Method, req.HTTPRequest.URL.Path,
+			http.StatusNotFound, http.StatusText(http.StatusNotFound))
 		http.Error(rw, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 	})
 }
 
 func handleNotImplemented(ctx context.Context, req *Request, next Invoker) Responsible {
 	return ResponsibleFunc(func(ctx context.Context, rw http.ResponseWriter) {
-		log.Warnf("Not implemented. path=%s", req.HTTPRequest.URL.Path)
+		log.Warnf("%s %s: %d %s", req.HTTPRequest.Method, req.HTTPRequest.URL.Path,
+			http.StatusNotFound, http.StatusText(http.StatusNotFound))
+		http.Error(rw, http.StatusText(http.StatusNotImplemented), http.StatusNotImplemented)
 		http.Error(rw, http.StatusText(http.StatusNotImplemented), http.StatusNotImplemented)
 	})
 }
