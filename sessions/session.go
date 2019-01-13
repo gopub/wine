@@ -52,7 +52,7 @@ func newSession(store Store, id string, expiration time.Duration) (Session, erro
 		return nil, err
 	}
 
-	logger.Info("New session:", id)
+	logger.Info("OK")
 	return &session{
 		id:         id,
 		store:      store,
