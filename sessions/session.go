@@ -47,7 +47,10 @@ func newSession(store Store, id string, expiration time.Duration) (Session, erro
 	}
 
 	// Just save a key-val in order to create hmap in redis server
-	go store.Set(id, "created_at", time.Now().Unix())
+	if err := store.Set(id, "created_at", time.Now().Unix()); err != nil {
+		logger.Error(err)
+		return nil, err
+	}
 
 	logger.Info("New session:", id)
 	return &session{
