@@ -299,7 +299,7 @@ func getShortFileName(filename string) string {
 	}
 
 	names := strings.Split(filename, "/")
-	for i := 1; i < len(names)-1; i++ {
+	for i := 0; i < len(names)-1; i++ {
 		names[i] = names[i][0:1]
 	}
 	filename = strings.Join(names, "/")
