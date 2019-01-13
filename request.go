@@ -52,20 +52,17 @@ func NewDefaultRequestParser() *DefaultRequestParser {
 }
 
 func (p *DefaultRequestParser) ParseHTTPRequest(req *http.Request, maxMemory int64) (types.M, error) {
-	startAt := time.Now()
 	params := types.M{}
 	for _, cookie := range req.Cookies() {
 		params[cookie.Name] = cookie.Value
 	}
 
-	logger.Debug("Cost:", time.Since(startAt))
 	for k, v := range req.Header {
 		if strings.HasPrefix(k, "x-") || strings.HasPrefix(k, "X-") || p.headerFields[k] {
 			params[strings.ToLower(k[2:])] = v
 		}
 	}
 
-	logger.Debug("Cost:", time.Since(startAt))
 	params.AddMap(convertToM(req.URL.Query()))
 
 	contentType := req.Header.Get(ContentType)
@@ -76,7 +73,6 @@ func (p *DefaultRequestParser) ParseHTTPRequest(req *http.Request, maxMemory int
 		}
 	}
 
-	logger.Debug("Cost:", time.Since(startAt))
 	switch contentType {
 	case MIMEHTML, MIMETEXT:
 		break
@@ -87,7 +83,6 @@ func (p *DefaultRequestParser) ParseHTTPRequest(req *http.Request, maxMemory int
 			break
 		}
 
-		logger.Debug("Cost:", time.Since(startAt))
 		if len(d) > 0 {
 			var m types.M
 			e = jsonUnmarshal(d, &m)
@@ -96,30 +91,27 @@ func (p *DefaultRequestParser) ParseHTTPRequest(req *http.Request, maxMemory int
 			}
 			params.AddMap(m)
 		}
-		logger.Debug("Cost:", time.Since(startAt))
 	case MIMEPOSTForm:
-		logger.Debug("Cost:", time.Since(startAt))
+		startAt := time.Now()
 		err := req.ParseForm()
+		logger.Debug("Cost:", time.Since(startAt))
 		if err != nil {
 			logger.Error(err)
 			return nil, err
 		}
-		logger.Debug("Cost:", time.Since(startAt))
 		params.AddMap(convertToM(req.Form))
-		logger.Debug("Cost:", time.Since(startAt))
 	case MIMEMultipartPOSTForm:
-		logger.Debug("Cost:", time.Since(startAt))
+		startAt := time.Now()
 		err := req.ParseMultipartForm(maxMemory)
+		logger.Debug("Cost:", time.Since(startAt))
 		if err != nil {
 			logger.Error(err)
 			return nil, err
 		}
 
-		logger.Debug("Cost:", time.Since(startAt))
 		if req.MultipartForm != nil && req.MultipartForm.File != nil {
 			params.AddMap(convertToM(req.MultipartForm.Value))
 		}
-		logger.Debug("Cost:", time.Since(startAt))
 	default:
 		if len(contentType) > 0 {
 			err := errors.New(fmt.Sprintf("unsupported content type: %s", contentType))
@@ -128,7 +120,6 @@ func (p *DefaultRequestParser) ParseHTTPRequest(req *http.Request, maxMemory int
 		}
 	}
 
-	logger.Debug("Cost:", time.Since(startAt))
 	return params, nil
 }
 

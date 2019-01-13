@@ -12,7 +12,7 @@ import (
 	"github.com/gopub/utils"
 )
 
-const defaultMaxRequestMemory = 8 << 20
+const defaultMaxRequestMemory = 1 << 20
 const defaultRequestTimeout = time.Second * 5
 const keyHTTPResponseWriter = "wine_http_response_writer"
 const keyHTTP2ConnID = "wine_http2_conn_id"
@@ -117,8 +117,6 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	}
 
 	defer func() {
-		logger.Debug("Cost:", time.Since(startAt))
-
 		if h2conn != nil {
 			s.h2connToIDMu.Lock()
 			delete(s.h2connToID, h2conn)
@@ -143,17 +141,14 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	method := strings.ToUpper(req.Method)
 	handlers, pathParams := s.Match(method, path)
 
-	logger.Debug("Cost:", time.Since(startAt))
-
 	if handlers.Empty() {
 		handlers = newHandlerList([]Handler{HandlerFunc(handleNotFound)})
 	} else {
 		handlers.PushBack(HandlerFunc(handleNotImplemented))
 	}
 
-	logger.Debug("Cost:", time.Since(startAt))
 	params, err := s.RequestParser.ParseHTTPRequest(req, s.MaxRequestMemory)
-	logger.Debug("Cost:", time.Since(startAt))
+
 	if err != nil {
 		return
 	}
@@ -178,9 +173,8 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		ctx = context.WithValue(ctx, keyHTTP2ConnID, h2connID)
 	}
 
-	logger.Debug("Cost:", time.Since(startAt))
 	resp := handlers.Head().Invoke(ctx, parsedReq)
-	logger.Debug("Cost:", time.Since(startAt))
+
 	if resp == nil {
 		resp = handleNotImplemented(ctx, parsedReq, nil)
 	}
