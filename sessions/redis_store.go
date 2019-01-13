@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/go-redis/redis"
+	"github.com/gopub/log"
 	"reflect"
 	"time"
 )
@@ -31,6 +32,13 @@ func NewRedisStoreWithClient(client *redis.Client) *RedisStore {
 }
 
 func (s *RedisStore) Get(sid, key string, ptrValue interface{}) error {
+	if logger.Level() <= log.DebugLevel {
+		startAt := time.Now()
+		defer func() {
+			logger.Debug("Cost:%v", time.Since(startAt))
+		}()
+	}
+
 	cmd := s.client.HGet(sid, key)
 
 	pv := reflect.ValueOf(ptrValue)
@@ -83,6 +91,13 @@ func (s *RedisStore) Get(sid, key string, ptrValue interface{}) error {
 }
 
 func (s *RedisStore) Set(sid, key string, value interface{}) error {
+	if logger.Level() <= log.DebugLevel {
+		startAt := time.Now()
+		defer func() {
+			logger.Debug("Cost:%v", time.Since(startAt))
+		}()
+	}
+
 	switch v := reflect.ValueOf(value); v.Kind() {
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 		fallthrough
@@ -119,6 +134,12 @@ func (s *RedisStore) Set(sid, key string, value interface{}) error {
 }
 
 func (s *RedisStore) Exists(sid string) (bool, error) {
+	if logger.Level() <= log.DebugLevel {
+		startAt := time.Now()
+		defer func() {
+			logger.Debug("Cost:%v", time.Since(startAt))
+		}()
+	}
 	n, err := s.client.Exists(sid).Result()
 	return n > 0, err
 }
