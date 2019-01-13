@@ -71,7 +71,7 @@ func restoreSession(store Store, id string, expiration time.Duration) (Session, 
 		return nil, err
 	} else if !b {
 		err := errors.New("session doesn't exist")
-		logger.Error(err)
+		logger.Warn(err)
 		return nil, err
 	}
 
