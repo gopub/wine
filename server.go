@@ -20,7 +20,6 @@ const keyTemplates = "wine_templates"
 
 var acceptEncodings = [2]string{"gzip", "defalte"}
 var ShortHandlerNameFlag = true
-var Debug = false
 
 // Server implements web server
 type Server struct {
@@ -109,7 +108,7 @@ func (s *Server) Shutdown() {
 func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	startAt := time.Now()
 	h2conn, h2connID := s.detectHTTP2(rw)
-	if !Debug {
+	if logger.Level() <= log.DebugLevel {
 		defer func() {
 			if e := recover(); e != nil {
 				logger.Error(e, req)
