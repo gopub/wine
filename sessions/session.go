@@ -3,7 +3,6 @@ package sessions
 import (
 	"context"
 	"errors"
-	"github.com/gopub/log"
 	"github.com/gopub/utils"
 	"time"
 )
@@ -34,7 +33,7 @@ func ContextWithSession(ctx context.Context, s Session) context.Context {
 }
 
 func newSession(store Store, id string, expiration time.Duration) (Session, error) {
-	logger := log.With("id", id, "expiration", expiration)
+	logger := logger.With("id", id, "expiration", expiration)
 	b, err := store.Exists(id)
 
 	if err != nil {
@@ -65,7 +64,7 @@ func RestoreSession(id string) (Session, error) {
 }
 
 func restoreSession(store Store, id string, expiration time.Duration) (Session, error) {
-	logger := log.With("id", id, "expiration", expiration)
+	logger := logger.With("id", id, "expiration", expiration)
 	if b, err := store.Exists(id); err != nil {
 		logger.Error(err)
 		return nil, err
