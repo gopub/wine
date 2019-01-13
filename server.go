@@ -117,7 +117,7 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	}
 
 	defer func() {
-		logger.Debugf("Cost:", time.Since(startAt))
+		logger.Debug("Cost:", time.Since(startAt))
 
 		if h2conn != nil {
 			s.h2connToIDMu.Lock()
@@ -142,7 +142,8 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	path := getRequestPath(req)
 	method := strings.ToUpper(req.Method)
 	handlers, pathParams := s.Match(method, path)
-	logger.Debugf("Cost:", time.Since(startAt))
+
+	logger.Debug("Cost:", time.Since(startAt))
 
 	if handlers.Empty() {
 		handlers = newHandlerList([]Handler{HandlerFunc(handleNotFound)})
@@ -150,7 +151,9 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		handlers.PushBack(HandlerFunc(handleNotImplemented))
 	}
 
+	logger.Debug("Cost:", time.Since(startAt))
 	params, err := s.RequestParser.ParseHTTPRequest(req, s.MaxRequestMemory)
+	logger.Debug("Cost:", time.Since(startAt))
 	if err != nil {
 		return
 	}
@@ -175,8 +178,9 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		ctx = context.WithValue(ctx, keyHTTP2ConnID, h2connID)
 	}
 
+	logger.Debug("Cost:", time.Since(startAt))
 	resp := handlers.Head().Invoke(ctx, parsedReq)
-	logger.Debugf("Cost:", time.Since(startAt))
+	logger.Debug("Cost:", time.Since(startAt))
 	if resp == nil {
 		resp = handleNotImplemented(ctx, parsedReq, nil)
 	}
