@@ -240,7 +240,7 @@ func handleFavIcon(ctx context.Context, req *Request, next Invoker) Responsible 
 
 func handleNotFound(ctx context.Context, req *Request, next Invoker) Responsible {
 	return ResponsibleFunc(func(ctx context.Context, rw http.ResponseWriter) {
-		log.Warnf("%s %s: %d %s", req.HTTPRequest.Method, req.HTTPRequest.URL.Path,
+		log.Warnf("%s %s %d %s", req.HTTPRequest.Method, req.HTTPRequest.URL.Path,
 			http.StatusNotFound, http.StatusText(http.StatusNotFound))
 		http.Error(rw, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 	})
@@ -248,7 +248,7 @@ func handleNotFound(ctx context.Context, req *Request, next Invoker) Responsible
 
 func handleNotImplemented(ctx context.Context, req *Request, next Invoker) Responsible {
 	return ResponsibleFunc(func(ctx context.Context, rw http.ResponseWriter) {
-		log.Warnf("%s %s: %d %s", req.HTTPRequest.Method, req.HTTPRequest.URL.Path,
+		log.Warnf("%s %s %d %s", req.HTTPRequest.Method, req.HTTPRequest.URL.Path,
 			http.StatusNotFound, http.StatusText(http.StatusNotFound))
 		http.Error(rw, http.StatusText(http.StatusNotImplemented), http.StatusNotImplemented)
 		http.Error(rw, http.StatusText(http.StatusNotImplemented), http.StatusNotImplemented)
