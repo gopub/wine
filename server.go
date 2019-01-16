@@ -214,7 +214,7 @@ func (s *Server) detectHTTP2(rw http.ResponseWriter) (conn interface{}, connID s
 		if !ok {
 			h2connID = utils.UniqueID()
 			s.h2connToID[h2conn] = h2connID
-			logger.Debug("New http/2 conn:", h2connID)
+			logger.Debug("New http/2 conn:", h2connID, h2conn)
 		}
 		s.h2connToIDMu.Unlock()
 	}
