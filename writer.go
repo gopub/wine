@@ -9,9 +9,40 @@ import (
 	"strings"
 )
 
+type statusGetter interface {
+	Status() int
+}
+
 // http.Flusher doesn't return error, however gzip.Writer/deflate.Writer only implement `Flush() error`
 type flusher interface {
 	Flush() error
+}
+
+var _ statusGetter = (*responseWriterWrapper)(nil)
+
+type responseWriterWrapper struct {
+	http.ResponseWriter
+	status int
+}
+
+func (w *responseWriterWrapper) WriteHeader(statusCode int) {
+	if w.status > 0 {
+		logger.Warnf("Failed to overwrite status code")
+		return
+	}
+	w.status = statusCode
+	w.ResponseWriter.WriteHeader(statusCode)
+}
+
+func (w *responseWriterWrapper) Write(data []byte) (int, error) {
+	if w.status == 0 {
+		w.status = http.StatusOK
+	}
+	return w.ResponseWriter.Write(data)
+}
+
+func (w *responseWriterWrapper) Status() int {
+	return w.status
 }
 
 type compressedResponseWriter struct {

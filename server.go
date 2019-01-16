@@ -123,18 +123,30 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 			s.h2connToIDMu.Unlock()
 		}
 
+		var statGetter statusGetter
 		if cw, ok := rw.(*compressedResponseWriter); ok {
 			cw.Close()
+			statGetter = cw.ResponseWriter.(statusGetter)
 		}
 
-		logger.Infof("%s %s %s %v",
+		if statGetter == nil {
+			statGetter = rw.(statusGetter)
+		}
+
+		if statGetter.Status() >= 400 {
+			logger.Errorf("%v", req)
+		}
+
+		logger.Infof("%s %s %s %d %v",
 			req.RemoteAddr,
 			req.Method,
 			req.RequestURI,
+			statGetter.Status(),
 			time.Since(startAt))
 	}()
 
 	// Add compression to responseWriter
+	rw = &responseWriterWrapper{ResponseWriter: rw}
 	rw = wrapperCompressedWriter(rw, req)
 
 	path := getRequestPath(req)
