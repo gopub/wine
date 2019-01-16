@@ -134,15 +134,20 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		}
 
 		if statGetter.Status() >= 400 {
-			logger.Errorf("%v", req)
+			logger.Errorf("%s %s %s %d %v : request=%v",
+				req.RemoteAddr,
+				req.Method,
+				req.RequestURI,
+				statGetter.Status(),
+				time.Since(startAt), req)
+		} else {
+			logger.Infof("%s %s %s %d %v",
+				req.RemoteAddr,
+				req.Method,
+				req.RequestURI,
+				statGetter.Status(),
+				time.Since(startAt))
 		}
-
-		logger.Infof("%s %s %s %d %v",
-			req.RemoteAddr,
-			req.Method,
-			req.RequestURI,
-			statGetter.Status(),
-			time.Since(startAt))
 	}()
 
 	// Add compression to responseWriter
