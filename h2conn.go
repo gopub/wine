@@ -44,10 +44,11 @@ func (c *h2connCache) GetConnID(rw http.ResponseWriter) string {
 		entry, ok = c.conns[conn]
 		if !ok {
 			connID := utils.UniqueID()
-			c.conns[conn] = &h2connEntry{
+			entry = &h2connEntry{
 				id:       connID,
 				accessAt: time.Now(),
 			}
+			c.conns[conn] = entry
 			logger.Debugf("Detected new http/2 conn: %s, %v", connID, conn)
 
 			if len(c.conns) > c.threshold {
