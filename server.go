@@ -31,6 +31,9 @@ type Server struct {
 	h2conns *h2connCache
 
 	RequestParser RequestParser
+
+	faviconHandlerList  *handlerList
+	notfoundHandlerList *handlerList
 }
 
 // NewServer returns a server
@@ -43,6 +46,9 @@ func NewServer(config *Config) *Server {
 		RequestTimeout:   defaultRequestTimeout,
 		h2conns:          newH2ConnCache(),
 		RequestParser:    NewDefaultRequestParser(),
+
+		faviconHandlerList:  newHandlerList([]Handler{HandlerFunc(handleFavIcon)}),
+		notfoundHandlerList: newHandlerList([]Handler{HandlerFunc(handleNotFound)}),
 	}
 
 	s.Header.Set("Server", "Wine")
@@ -57,8 +63,6 @@ func NewServer(config *Config) *Server {
 	if config != nil {
 		s.handlers = config.Handlers
 	}
-
-	s.Get("favicon.ico", handleFavIcon)
 	return s
 }
 
@@ -149,7 +153,11 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	handlers, pathParams := s.Match(method, path)
 
 	if handlers.Empty() {
-		handlers = newHandlerList([]Handler{HandlerFunc(handleNotFound)})
+		if path == "/favicon.ico" {
+			handlers = s.faviconHandlerList
+		} else {
+			handlers = s.notfoundHandlerList
+		}
 	} else {
 		handlers.PushBack(HandlerFunc(handleNotImplemented))
 	}

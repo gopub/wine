@@ -126,11 +126,13 @@ func (r *Router) Bind(method string, path string, handlers ...Handler) {
 		if root.handlers.Empty() {
 			root.handlers = hl
 		} else {
+			root.Print(method, r.basePath)
 			panic("binding conflict: " + path)
 		}
 	} else {
 		nodes := newNodeList(path, hl)
 		if !root.add(nodes) {
+			root.Print(method, r.basePath)
 			panic("binding conflict: " + path)
 		}
 	}
