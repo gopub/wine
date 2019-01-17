@@ -153,7 +153,7 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	handlers, pathParams := s.Match(method, path)
 
 	if handlers.Empty() {
-		if path == "/favicon.ico" {
+		if path == "favicon.ico" {
 			handlers = s.faviconHandlerList
 		} else {
 			handlers = s.notfoundHandlerList
