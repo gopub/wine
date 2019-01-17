@@ -9,6 +9,7 @@ import (
 )
 
 const h2connExpirationTime = time.Minute * 20
+const h2connInitSize = 1024
 
 type h2connEntry struct {
 	id       string
@@ -24,8 +25,8 @@ type h2connCache struct {
 
 func newH2ConnCache() *h2connCache {
 	c := &h2connCache{}
-	c.conns = make(map[interface{}]*h2connEntry, 1024)
-	c.threshold = 1024
+	c.conns = make(map[interface{}]*h2connEntry, h2connInitSize)
+	c.threshold = h2connInitSize
 	return c
 }
 
@@ -51,7 +52,7 @@ func (c *h2connCache) GetConnID(rw http.ResponseWriter) string {
 			c.conns[conn] = entry
 			logger.Debugf("Detected new http/2 conn: %s, %v", connID, conn)
 
-			if len(c.conns) > c.threshold {
+			if len(c.conns) > c.threshold || time.Since(c.purgedAt) > h2connExpirationTime {
 				for k, v := range c.conns {
 					if time.Since(v.accessAt) > h2connExpirationTime {
 						delete(c.conns, k)
@@ -59,8 +60,10 @@ func (c *h2connCache) GetConnID(rw http.ResponseWriter) string {
 				}
 
 				if len(c.conns) > int(float64(c.threshold)*0.8) {
-					c.threshold *= 2
+					c.threshold += h2connInitSize
 				}
+
+				c.purgedAt = time.Now()
 			}
 		}
 		c.mu.Unlock()
