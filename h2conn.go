@@ -30,7 +30,7 @@ func newH2ConnCache() *h2connCache {
 }
 
 func (c *h2connCache) GetConnID(rw http.ResponseWriter) string {
-	conn := getHTTP2Conn(rw)
+	conn := GetHTTP2Conn(rw)
 	if conn == nil {
 		return ""
 	}
@@ -70,7 +70,7 @@ func (c *h2connCache) GetConnID(rw http.ResponseWriter) string {
 	return entry.id
 }
 
-func getHTTP2Conn(w http.ResponseWriter) interface{} {
+func GetHTTP2Conn(w http.ResponseWriter) interface{} {
 	if reflect.TypeOf(w).String() != "*http.http2responseWriter" {
 		return nil
 	}
