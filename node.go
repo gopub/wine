@@ -167,7 +167,12 @@ func (n *node) add(nodes []*node) bool {
 
 func (n *node) matchPath(pathSegments []string) (*handlerList, map[string]string) {
 	if len(pathSegments) == 0 {
-		logger.Panic("pathSegments is empty")
+		if n.t == _WildcardNode {
+			return n.handlers, nil
+		}
+
+		logger.Warn("pathSegments is empty")
+		return nil, nil
 	}
 
 	segment := pathSegments[0]
@@ -177,6 +182,15 @@ func (n *node) matchPath(pathSegments []string) (*handlerList, map[string]string
 		case n.path != segment:
 			return nil, nil
 		case len(pathSegments) == 1:
+			if n.handlers.Empty() {
+				// Perhaps some child nodes are wildcard node, which could match empty path
+				for _, child := range n.children {
+					handlers, params := child.matchPath(pathSegments[1:])
+					if !handlers.Empty() {
+						return handlers, params
+					}
+				}
+			}
 			return n.handlers, nil
 		case pathSegments[1] == "" && !n.handlers.Empty():
 			return n.handlers, nil
