@@ -45,6 +45,12 @@ func (w *responseWriterWrapper) Status() int {
 	return w.status
 }
 
+func (w *responseWriterWrapper) Flush() {
+	if f, ok := w.ResponseWriter.(http.Flusher); ok {
+		f.Flush()
+	}
+}
+
 type compressedResponseWriter struct {
 	http.ResponseWriter
 	compressedWriter io.Writer
