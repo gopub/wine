@@ -6,10 +6,7 @@ import (
 	"html/template"
 	"net/http"
 	"strings"
-	"sync"
 	"time"
-
-	"github.com/gopub/utils"
 )
 
 const defaultMaxRequestMemory = 1 << 20
@@ -31,8 +28,7 @@ type Server struct {
 	RequestTimeout   time.Duration //timeout for each request, default value is 5s
 	server           *http.Server
 
-	h2connToIDMu sync.RWMutex
-	h2connToID   map[interface{}]string
+	h2conns *h2connCache
 
 	RequestParser RequestParser
 }
@@ -45,7 +41,7 @@ func NewServer(config *Config) *Server {
 		Header:           make(http.Header),
 		MaxRequestMemory: defaultMaxRequestMemory,
 		RequestTimeout:   defaultRequestTimeout,
-		h2connToID:       make(map[interface{}]string, 1024),
+		h2conns:          newH2ConnCache(),
 		RequestParser:    NewDefaultRequestParser(),
 	}
 
@@ -107,7 +103,7 @@ func (s *Server) Shutdown() {
 // ServeHTTP implements for http.Handler interface, which will handle each http request
 func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	startAt := time.Now()
-	h2conn, h2connID := s.detectHTTP2(rw)
+	h2connID := s.h2conns.GetConnID(rw)
 	if logger.Level() <= log.DebugLevel {
 		defer func() {
 			if e := recover(); e != nil {
@@ -117,12 +113,6 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	}
 
 	defer func() {
-		if h2conn != nil {
-			s.h2connToIDMu.Lock()
-			delete(s.h2connToID, h2conn)
-			s.h2connToIDMu.Unlock()
-		}
-
 		var statGetter statusGetter
 		if cw, ok := rw.(*compressedResponseWriter); ok {
 			cw.Close()
@@ -196,31 +186,6 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		resp = handleNotImplemented(ctx, parsedReq, nil)
 	}
 	resp.Respond(ctx, rw)
-}
-
-func (s *Server) detectHTTP2(rw http.ResponseWriter) (conn interface{}, connID string) {
-	h2conn := GetHTTP2Conn(rw)
-	if h2conn == nil {
-		return nil, ""
-	}
-
-	// Hope RLock is faster than Lock?
-	s.h2connToIDMu.RLock()
-	h2connID, ok := s.h2connToID[h2conn]
-	s.h2connToIDMu.RUnlock()
-	if !ok {
-		s.h2connToIDMu.Lock()
-		h2connID, ok = s.h2connToID[h2conn]
-		if !ok {
-			logger.Debugf("%v", s.h2connToID)
-			h2connID = utils.UniqueID()
-			s.h2connToID[h2conn] = h2connID
-			logger.Debugf("New http/2 conn: %s, %v", h2connID, h2conn)
-		}
-		s.h2connToIDMu.Unlock()
-	}
-
-	return h2conn, h2connID
 }
 
 func wrapperCompressedWriter(rw http.ResponseWriter, req *http.Request) http.ResponseWriter {
