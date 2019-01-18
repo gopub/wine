@@ -46,6 +46,7 @@ func (r *responseImpl) Respond(ctx context.Context, w http.ResponseWriter) {
 	if !ok {
 		body = r.getBytes()
 	}
+
 	for k, v := range r.header {
 		w.Header()[k] = v
 	}
@@ -81,7 +82,7 @@ func (r *responseImpl) getBytes() []byte {
 			return []byte(s)
 		}
 	default:
-		log.Warn("unsupported Content-Type:", contentType)
+		log.Warn("Unsupported Content-Type:", contentType)
 	}
 
 	return nil

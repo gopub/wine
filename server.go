@@ -127,16 +127,18 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 			statGetter = rw.(statusGetter)
 		}
 
-		if statGetter.Status() >= 400 {
-			logger.Errorf("%s %s %s %d %v : request=%v",
+		if statGetter.Status() >= 400 && statGetter.Status() != http.StatusUnauthorized {
+			logger.Errorf("%s %s %s %s %d %v : request=%v",
 				req.RemoteAddr,
+				req.UserAgent(),
 				req.Method,
 				req.RequestURI,
 				statGetter.Status(),
 				time.Since(startAt), req)
 		} else {
-			logger.Infof("%s %s %s %d %v",
+			logger.Infof("%s %s %s %s %d %v",
 				req.RemoteAddr,
+				req.UserAgent(),
 				req.Method,
 				req.RequestURI,
 				statGetter.Status(),
