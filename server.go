@@ -35,6 +35,8 @@ type Server struct {
 
 	faviconHandlerList  *handlerList
 	notfoundHandlerList *handlerList
+
+	logger log.Logger
 }
 
 // NewServer returns a server
@@ -50,7 +52,11 @@ func NewServer(config *Config) *Server {
 
 		faviconHandlerList:  newHandlerList([]Handler{HandlerFunc(handleFavIcon)}),
 		notfoundHandlerList: newHandlerList([]Handler{HandlerFunc(handleNotFound)}),
+
+		logger: log.GetLogger("Wine"),
 	}
+
+	s.logger.SetFlags(logger.Flags() ^ log.Lfunction)
 
 	s.Header.Set("Server", "Wine")
 	s.AddTemplateFuncMap(template.FuncMap{
@@ -128,7 +134,7 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 			statGetter = rw.(statusGetter)
 		}
 
-		info := fmt.Sprintf("%s %s %s %s %d %v",
+		info := fmt.Sprintf("%s %s %s %s | %d %v",
 			req.RemoteAddr,
 			req.UserAgent(),
 			req.Method,
@@ -138,12 +144,12 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 
 		if statGetter.Status() >= 400 {
 			if statGetter.Status() != http.StatusUnauthorized {
-				logger.Errorf("%s request: %v", info, req)
+				s.logger.Errorf("%s request: %v", info, req)
 			} else {
-				logger.Error(info)
+				s.logger.Error(info)
 			}
 		} else {
-			logger.Info(info)
+			s.logger.Info(info)
 		}
 	}()
 
