@@ -56,7 +56,7 @@ func NewServer(config *Config) *Server {
 		logger: log.GetLogger("Wine"),
 	}
 
-	s.logger.SetFlags(logger.Flags() ^ log.Lfunction)
+	s.logger.SetFlags(logger.Flags() ^ log.Lfunction ^ log.Lshortfile)
 
 	s.Header.Set("Server", "Wine")
 	s.AddTemplateFuncMap(template.FuncMap{
@@ -134,7 +134,7 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 			statGetter = rw.(statusGetter)
 		}
 
-		info := fmt.Sprintf("%s %s %s %s | %d %v",
+		info := fmt.Sprintf("%s %s %s %s | return %d in %v",
 			req.RemoteAddr,
 			req.UserAgent(),
 			req.Method,
@@ -239,20 +239,11 @@ func handleFavIcon(ctx context.Context, req *Request, next Invoker) Responsible 
 }
 
 func handleNotFound(ctx context.Context, req *Request, next Invoker) Responsible {
-	return ResponsibleFunc(func(ctx context.Context, rw http.ResponseWriter) {
-		log.Warnf("%s %s %d %s", req.HTTPRequest.Method, req.HTTPRequest.URL.Path,
-			http.StatusNotFound, http.StatusText(http.StatusNotFound))
-		http.Error(rw, http.StatusText(http.StatusNotFound), http.StatusNotFound)
-	})
+	return Text(http.StatusNotFound, http.StatusText(http.StatusNotFound))
 }
 
 func handleNotImplemented(ctx context.Context, req *Request, next Invoker) Responsible {
-	return ResponsibleFunc(func(ctx context.Context, rw http.ResponseWriter) {
-		log.Warnf("%s %s %d %s", req.HTTPRequest.Method, req.HTTPRequest.URL.Path,
-			http.StatusNotFound, http.StatusText(http.StatusNotFound))
-		http.Error(rw, http.StatusText(http.StatusNotImplemented), http.StatusNotImplemented)
-		http.Error(rw, http.StatusText(http.StatusNotImplemented), http.StatusNotImplemented)
-	})
+	return Text(http.StatusNotImplemented, http.StatusText(http.StatusNotImplemented))
 }
 
 func GetHTTP2ConnID(ctx context.Context) string {
