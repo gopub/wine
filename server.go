@@ -2,6 +2,7 @@ package wine
 
 import (
 	"context"
+	"fmt"
 	"github.com/gopub/log"
 	"html/template"
 	"net/http"
@@ -127,22 +128,22 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 			statGetter = rw.(statusGetter)
 		}
 
-		if statGetter.Status() >= 400 && statGetter.Status() != http.StatusUnauthorized {
-			logger.Errorf("%s %s %s %s %d %v : request=%v",
-				req.RemoteAddr,
-				req.UserAgent(),
-				req.Method,
-				req.RequestURI,
-				statGetter.Status(),
-				time.Since(startAt), req)
+		info := fmt.Sprintf("%s %s %s %s %d %v",
+			req.RemoteAddr,
+			req.UserAgent(),
+			req.Method,
+			req.RequestURI,
+			statGetter.Status(),
+			time.Since(startAt))
+
+		if statGetter.Status() >= 400 {
+			if statGetter.Status() != http.StatusUnauthorized {
+				logger.Errorf("%s request: %v", info, req)
+			} else {
+				logger.Error(info)
+			}
 		} else {
-			logger.Infof("%s %s %s %s %d %v",
-				req.RemoteAddr,
-				req.UserAgent(),
-				req.Method,
-				req.RequestURI,
-				statGetter.Status(),
-				time.Since(startAt))
+			logger.Info(info)
 		}
 	}()
 
