@@ -115,7 +115,7 @@ func (s *Server) Shutdown() {
 func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	startAt := time.Now()
 	h2connID := s.h2conns.GetConnID(rw)
-	if logger.Level() <= log.DebugLevel {
+	if logger.Level() > log.DebugLevel {
 		defer func() {
 			if e := recover(); e != nil {
 				logger.Error(e, req)

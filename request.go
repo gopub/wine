@@ -5,12 +5,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/gopub/types"
 	"io/ioutil"
 	"net/http"
 	"strings"
-	"time"
-
-	"github.com/gopub/types"
 )
 
 const (
@@ -92,19 +90,19 @@ func (p *DefaultRequestParser) ParseHTTPRequest(req *http.Request, maxMemory int
 			params.AddMap(m)
 		}
 	case MIMEPOSTForm:
-		startAt := time.Now()
+		//startAt := time.Now()
 		err := req.ParseForm()
-		logger.Debug("Cost:", time.Since(startAt))
+		//logger.Debug("Cost:", time.Since(startAt))
 		if err != nil {
 			logger.Error(err)
 			return nil, err
 		}
 		params.AddMap(convertToM(req.Form))
 	case MIMEMultipartPOSTForm:
-		startAt := time.Now()
+		//startAt := time.Now()
 		// ParseMultipartForm is very slow sometimes. Why???
 		err := req.ParseMultipartForm(maxMemory)
-		logger.Debug("Cost:", time.Since(startAt))
+		//logger.Debug("Cost:", time.Since(startAt))
 		if err != nil {
 			logger.Error(err)
 			return nil, err
