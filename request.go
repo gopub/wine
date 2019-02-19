@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/gopub/types"
+	"github.com/gopub/wine/mime"
 	"io/ioutil"
 	"net/http"
 	"strings"
@@ -13,17 +14,6 @@ import (
 
 const (
 	ContentType = "Content-Type"
-)
-
-const (
-	MIMETEXT              = "text/plain"
-	MIMEJSON              = "application/json"
-	MIMEHTML              = "text/html"
-	MIMEXML               = "application/xml"
-	MIMEXML2              = "text/xml"
-	MIMEPOSTForm          = "application/x-www-form-urlencoded"
-	MIMEMultipartPOSTForm = "multipart/form-data"
-	MIMEOctetStream       = "application/octet-stream"
 )
 
 // Request is a wrapper of http.Request, aims to provide more convenient interface
@@ -72,9 +62,9 @@ func (p *DefaultRequestParser) ParseHTTPRequest(req *http.Request, maxMemory int
 	}
 
 	switch contentType {
-	case MIMEHTML, MIMETEXT:
+	case mime.HTML, mime.Plain:
 		break
-	case MIMEJSON:
+	case mime.JSON:
 		d, e := ioutil.ReadAll(req.Body)
 		if e != nil {
 			logger.Error(e)
@@ -89,7 +79,7 @@ func (p *DefaultRequestParser) ParseHTTPRequest(req *http.Request, maxMemory int
 			}
 			params.AddMap(m)
 		}
-	case MIMEPOSTForm:
+	case mime.FormURLEncoded:
 		//startAt := time.Now()
 		err := req.ParseForm()
 		//logger.Debug("Cost:", time.Since(startAt))
@@ -98,7 +88,7 @@ func (p *DefaultRequestParser) ParseHTTPRequest(req *http.Request, maxMemory int
 			return nil, err
 		}
 		params.AddMap(convertToM(req.Form))
-	case MIMEMultipartPOSTForm:
+	case mime.FormData:
 		//startAt := time.Now()
 		// ParseMultipartForm is very slow sometimes. Why???
 		err := req.ParseMultipartForm(maxMemory)
