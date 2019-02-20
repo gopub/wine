@@ -50,7 +50,7 @@ func NewServer(config *Config) *Server {
 		h2conns:          newH2ConnCache(),
 		RequestParser:    NewDefaultRequestParser(),
 
-		faviconHandlerList:  newHandlerList([]Handler{HandlerFunc(handleFavIcon)}),
+		faviconHandlerList:  newHandlerList([]Handler{HandlerFunc(HandleFavIcon)}),
 		notfoundHandlerList: newHandlerList([]Handler{HandlerFunc(handleNotFound)}),
 
 		logger: log.GetLogger("Wine"),
@@ -232,7 +232,7 @@ func getRequestPath(req *http.Request) string {
 	return normalizePath(path)
 }
 
-func handleFavIcon(ctx context.Context, req *Request, next Invoker) Responsible {
+func HandleFavIcon(ctx context.Context, req *Request, next Invoker) Responsible {
 	return ResponsibleFunc(func(ctx context.Context, rw http.ResponseWriter) {
 		rw.Header()[ContentType] = []string{"image/x-icon"}
 		rw.WriteHeader(http.StatusOK)
