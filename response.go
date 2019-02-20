@@ -130,7 +130,7 @@ func Redirect(location string, permanent bool) Responsible {
 // Text sends a text response
 func Text(status int, text string) Responsible {
 	header := make(http.Header)
-	header.Set(ContentType, mime.Plain)
+	header.Set(ContentType, mime.PlainContentType)
 	return &responseImpl{
 		status: status,
 		header: header,
@@ -141,7 +141,7 @@ func Text(status int, text string) Responsible {
 // HTML sends a HTML response
 func HTML(status int, html string) Responsible {
 	header := make(http.Header)
-	header.Set(ContentType, mime.HTML)
+	header.Set(ContentType, mime.HTMLContentType)
 	return &responseImpl{
 		status: status,
 		header: header,

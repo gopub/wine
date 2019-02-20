@@ -1,7 +1,5 @@
 package mime
 
-import "strings"
-
 // types
 //const (
 //	Text        = "text"
@@ -17,8 +15,8 @@ import "strings"
 const (
 	Plain = "text/plain"
 	HTML  = "text/html"
-	XML   = "text/xml"
-	XML2  = "application/xml"
+	XML2  = "text/xml"
+	XML   = "application/xml"
 	XHTML = "application/xhtml+xml"
 
 	FormData = "multipart/form-data"
@@ -37,28 +35,9 @@ const (
 	GZIP           = "application/x-gzip"
 )
 
-func TypeOfFileExt(ext string) string {
-	ext = strings.ToLower(ext)
-	switch ext {
-	case "txt", "md":
-		return Plain
-	case "html", "htm":
-		return HTML
-	case "json":
-		return JSON
-	case "zip":
-		return GZIP
-	case "jpg", "jpeg":
-		return JPEG
-	case "png":
-		return PNG
-	case "webp":
-		return WEBP
-	case "pdf":
-		return PDF
-	case "word":
-		return MSWord
-	default:
-		return ""
-	}
-}
+const charsetSuffix = "; charset=utf-8"
+
+const (
+	PlainContentType = Plain + charsetSuffix
+	HTMLContentType  = HTML + charsetSuffix
+)
