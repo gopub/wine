@@ -2,8 +2,8 @@ package sessions
 
 import (
 	"context"
+	"github.com/gopub/gox"
 	"github.com/gopub/log"
-	"github.com/gopub/utils"
 	"github.com/gopub/wine"
 	"net/http"
 	"reflect"
@@ -27,7 +27,7 @@ func InitSession(ctx context.Context, req *wine.Request, next wine.Invoker) wine
 			if len(sid) > 0 {
 				logger.Error("Invalid length of sid")
 			}
-			sid = utils.UniqueID()
+			sid = gox.UniqueID()
 		}
 		var err error
 		session, err = NewSession(sid)

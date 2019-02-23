@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/gopub/types"
+	"github.com/gopub/gox"
 	"github.com/gopub/wine/mime"
 	"io/ioutil"
 	"net/http"
@@ -19,11 +19,11 @@ const (
 // Request is a wrapper of http.Request, aims to provide more convenient interface
 type Request struct {
 	HTTPRequest *http.Request
-	Parameters  types.M
+	Parameters  gox.M
 }
 
 type RequestParser interface {
-	ParseHTTPRequest(req *http.Request, maxMemory int64) (parameters types.M, err error)
+	ParseHTTPRequest(req *http.Request, maxMemory int64) (parameters gox.M, err error)
 }
 
 type DefaultRequestParser struct {
@@ -39,8 +39,8 @@ func NewDefaultRequestParser() *DefaultRequestParser {
 	}
 }
 
-func (p *DefaultRequestParser) ParseHTTPRequest(req *http.Request, maxMemory int64) (types.M, error) {
-	params := types.M{}
+func (p *DefaultRequestParser) ParseHTTPRequest(req *http.Request, maxMemory int64) (gox.M, error) {
+	params := gox.M{}
 	for _, cookie := range req.Cookies() {
 		params[cookie.Name] = cookie.Value
 	}
@@ -72,7 +72,7 @@ func (p *DefaultRequestParser) ParseHTTPRequest(req *http.Request, maxMemory int
 		}
 
 		if len(d) > 0 {
-			var m types.M
+			var m gox.M
 			e = jsonUnmarshal(d, &m)
 			if e != nil {
 				break
@@ -112,8 +112,8 @@ func (p *DefaultRequestParser) ParseHTTPRequest(req *http.Request, maxMemory int
 	return params, nil
 }
 
-func convertToM(values map[string][]string) types.M {
-	m := types.M{}
+func convertToM(values map[string][]string) gox.M {
+	m := gox.M{}
 	for k, v := range values {
 		i := strings.Index(k, "[]")
 		if i >= 0 && i == len(k)-2 {

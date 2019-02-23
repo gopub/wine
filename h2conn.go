@@ -1,7 +1,7 @@
 package wine
 
 import (
-	"github.com/gopub/utils"
+	"github.com/gopub/gox"
 	"net/http"
 	"reflect"
 	"sync"
@@ -44,7 +44,7 @@ func (c *h2connCache) GetConnID(rw http.ResponseWriter) string {
 		c.mu.Lock()
 		entry, ok = c.conns[conn]
 		if !ok {
-			connID := utils.UniqueID()
+			connID := gox.UniqueID()
 			entry = &h2connEntry{
 				id:       connID,
 				accessAt: time.Now(),

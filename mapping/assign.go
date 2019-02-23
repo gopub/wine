@@ -3,8 +3,8 @@ package mapping
 import (
 	"errors"
 	"fmt"
+	"github.com/gopub/gox"
 	"github.com/gopub/log"
-	"github.com/gopub/types"
 	"reflect"
 )
 
@@ -64,28 +64,28 @@ func assignValue(dst reflect.Value, src reflect.Value, namer Namer) error {
 
 	switch v.Kind() {
 	case reflect.Bool:
-		b, err := types.ParseBool(src.Interface())
+		b, err := gox.ParseBool(src.Interface())
 		if err != nil {
 			log.Error(err)
 			return err
 		}
 		v.SetBool(b)
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		i, err := types.ParseInt(src.Interface())
+		i, err := gox.ParseInt(src.Interface())
 		if err != nil {
 			log.Error(err)
 			return err
 		}
 		v.SetInt(i)
 	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-		i, err := types.ParseInt(src.Interface())
+		i, err := gox.ParseInt(src.Interface())
 		if err != nil {
 			log.Error(err)
 			return err
 		}
 		v.SetUint(uint64(i))
 	case reflect.Float32, reflect.Float64:
-		i, err := types.ParseFloat(src.Interface())
+		i, err := gox.ParseFloat(src.Interface())
 		if err != nil {
 			log.Debug(err)
 			return err

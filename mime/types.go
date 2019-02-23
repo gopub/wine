@@ -1,6 +1,6 @@
 package mime
 
-// types
+// gox
 //const (
 //	Text        = "text"
 //	Multipart   = "multipart"
@@ -11,7 +11,7 @@ package mime
 //	Video       = "video"
 //)
 
-// subtypes
+// subgox
 const (
 	Plain = "text/plain"
 	HTML  = "text/html"

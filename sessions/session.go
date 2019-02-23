@@ -3,7 +3,7 @@ package sessions
 import (
 	"context"
 	"errors"
-	"github.com/gopub/utils"
+	"github.com/gopub/gox"
 	"time"
 )
 
@@ -21,7 +21,7 @@ type Session interface {
 }
 
 func GenerateSid() string {
-	return utils.UniqueID()
+	return gox.UniqueID()
 }
 
 func NewSession(id string) (Session, error) {

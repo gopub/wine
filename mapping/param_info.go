@@ -3,7 +3,7 @@ package mapping
 import (
 	"errors"
 	"fmt"
-	"github.com/gopub/types"
+	"github.com/gopub/gox"
 	"log"
 	"reflect"
 	"strings"
@@ -140,13 +140,13 @@ func parseParamInfo(f reflect.StructField, tagName string) (*paramInfo, error) {
 func parseValueByType(t reflect.Type, s string) (interface{}, error) {
 	switch t.Kind() {
 	case reflect.Float32, reflect.Float64:
-		return types.ParseFloat(s)
+		return gox.ParseFloat(s)
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		return types.ParseInt(s)
+		return gox.ParseInt(s)
 	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-		return types.ParseInt(s)
+		return gox.ParseInt(s)
 	case reflect.String:
-		return types.ParseInt(s)
+		return gox.ParseInt(s)
 	default:
 		return nil, errors.New("min and max properties are not available for field type: " + t.String())
 	}

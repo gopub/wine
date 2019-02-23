@@ -2,7 +2,7 @@ package mapping
 
 import (
 	"fmt"
-	"github.com/gopub/types/errors"
+	"github.com/gopub/gox/errors"
 	"reflect"
 )
 
@@ -88,7 +88,7 @@ func Validate(model interface{}) errors.Error {
 			}
 			continue
 		case reflect.Struct:
-			err := v.Validate(fv.Interface())
+			err := Validate(fv.Interface())
 			if err != nil {
 				return err
 			}
