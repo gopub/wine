@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"github.com/gopub/gox"
 	"github.com/gopub/wine/mime"
 	"io/ioutil"
@@ -102,11 +101,7 @@ func (p *DefaultRequestParser) ParseHTTPRequest(req *http.Request, maxMemory int
 			params.AddMap(convertToM(req.MultipartForm.Value))
 		}
 	default:
-		if len(contentType) > 0 {
-			err := errors.New(fmt.Sprintf("unsupported content type: %s", contentType))
-			logger.Error(err)
-			return nil, err
-		}
+		logger.Infof("unprocessed content type=%s", contentType)
 	}
 
 	return params, nil
