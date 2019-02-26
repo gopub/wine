@@ -11,7 +11,7 @@ import (
 )
 
 const defaultMaxRequestMemory = 1 << 20
-const defaultRequestTimeout = time.Second * 5
+const defaultRequestTimeout = 20 * time.Second
 const keyHTTPResponseWriter = "wine_http_response_writer"
 const keyHTTP2ConnID = "wine_http2_conn_id"
 const keyTemplates = "wine_templates"
@@ -26,7 +26,7 @@ type Server struct {
 
 	Header           http.Header
 	MaxRequestMemory int64         //max memory for request, default value is 8M
-	RequestTimeout   time.Duration //timeout for each request, default value is 5s
+	RequestTimeout   time.Duration //timeout for each request, default value is 20s
 	server           *http.Server
 
 	h2conns *h2connCache
