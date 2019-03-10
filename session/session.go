@@ -2,7 +2,6 @@ package session
 
 import (
 	"context"
-	"errors"
 	"github.com/gopub/gox"
 	"time"
 )
@@ -10,8 +9,10 @@ import (
 var defaultExpiration = time.Minute * 30
 var minimumExpiration = time.Minute
 
-const keySession = "session"
-const SidLength = 40
+const (
+	keySession = "session"
+	sidLength  = 40
+)
 
 type Session interface {
 	ID() string
@@ -37,8 +38,8 @@ func newSession(store Store, id string, expiration time.Duration) (Session, erro
 	b, err := store.Exists(id)
 
 	if err != nil {
-		logger.Error(err)
-		return nil, err
+		logger.Error("Failed to new session:", err)
+		return nil, normalizeErr(err)
 	}
 
 	if b {
@@ -48,10 +49,10 @@ func newSession(store Store, id string, expiration time.Duration) (Session, erro
 	// Just save a key-val in order to create hmap in redis server
 	if err := store.Set(id, "created_at", time.Now().Unix()); err != nil {
 		logger.Error(err)
-		return nil, err
+		return nil, normalizeErr(err)
 	}
 
-	logger.Info("OK")
+	logger.Info("New session")
 	return &session{
 		id:         id,
 		store:      store,
@@ -69,12 +70,11 @@ func restoreSession(store Store, id string, expiration time.Duration) (Session, 
 		logger.Error(err)
 		return nil, err
 	} else if !b {
-		err := errors.New("session doesn't exist")
-		logger.Warn(err)
-		return nil, err
+		logger.Warn("session doesn't exist")
+		return nil, ErrNoValue
 	}
 
-	logger.Info("OK")
+	logger.Info("Restored session")
 	return &session{
 		id:         id,
 		store:      store,
@@ -89,9 +89,9 @@ func GetSession(ctx context.Context) Session {
 
 func SetDefaultExpiration(expiration time.Duration) {
 	if expiration < minimumExpiration {
-		panic("Minimum expiration is 1 minute")
+		logger.Panic("Minimum expiration is 1 minute")
 	}
-	logger.Debugf("Set default session expiration: %v", expiration)
+	logger.Infof("Set default session expiration: %v", expiration)
 	defaultExpiration = expiration
 }
 
@@ -114,19 +114,25 @@ func (s *session) ID() string {
 
 func (s *session) Get(key string, ptrValue interface{}) error {
 	if err := s.store.Get(s.id, key, ptrValue); err != nil {
-		return err
+		return normalizeErr(err)
 	}
-	return s.store.Expire(s.id, s.expiration)
+	return normalizeErr(s.store.Expire(s.id, s.expiration))
 }
 
 func (s *session) Set(key string, value interface{}) error {
 	if err := s.store.Set(s.id, key, value); err != nil {
+		logger.Errorf("Failed to set: key=%s, err=%v", key, err)
 		return err
 	}
-	return s.store.Expire(s.id, s.expiration)
+	return normalizeErr(s.store.Expire(s.id, s.expiration))
 }
 
 func (s *session) Destroy() error {
-	logger.Debugf("Destroyed session:%s", s.id)
-	return s.store.Delete(s.id)
+	err := normalizeErr(s.store.Delete(s.id))
+	if err != nil {
+		logger.Errorf("Failed to destroy session: id=%s", s.id)
+	} else {
+		logger.Infof("Destroyed session: id=%s", s.id)
+	}
+	return err
 }
