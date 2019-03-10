@@ -52,7 +52,7 @@ func TestJSON(t *testing.T) {
 	}
 	resp.Body.Close()
 	var result testJSONObj
-	err = json.Unmarshal(data, &result)
+	err = gox.JSONUnmarshal(data, &result)
 	if err != nil {
 		t.Log(string(data))
 		t.Fatal(err)

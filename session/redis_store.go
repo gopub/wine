@@ -1,9 +1,10 @@
-package sessions
+package session
 
 import (
 	"encoding/json"
 	"fmt"
 	"github.com/go-redis/redis"
+	"github.com/gopub/gox"
 	"reflect"
 	"time"
 )
@@ -78,7 +79,7 @@ func (s *RedisStore) Get(sid, key string, ptrValue interface{}) error {
 		return nil
 	default:
 		data, _ := cmd.Bytes()
-		return json.Unmarshal(data, ptrValue)
+		return gox.JSONUnmarshal(data, ptrValue)
 	}
 }
 
