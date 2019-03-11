@@ -101,7 +101,9 @@ func (p *DefaultRequestParser) ParseHTTPRequest(req *http.Request, maxMemory int
 			params.AddMap(convertToM(req.MultipartForm.Value))
 		}
 	default:
-		logger.Infof("unprocessed content type=%s", contentType)
+		if len(contentType) != 0 {
+			logger.Infof("Unprocessed content type=%s", contentType)
+		}
 	}
 
 	return params, nil
