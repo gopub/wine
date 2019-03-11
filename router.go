@@ -10,10 +10,6 @@ import (
 	"strings"
 )
 
-const (
-	routesPath = "_routes"
-)
-
 // Router implements routing function
 type Router struct {
 	methodTrees map[string]*node
@@ -25,19 +21,19 @@ type Router struct {
 func NewRouter() *Router {
 	r := &Router{}
 	r.methodTrees = make(map[string]*node, 4)
-	r.Get(routesPath, r.GetRoutes)
+	r.Get("_endpoints", r.GetEndpoints)
 	return r
 }
 
-func (r *Router) GetRoutes(ctx context.Context, req *Request, next Invoker) Responsible {
+func (r *Router) GetEndpoints(ctx context.Context, req *Request, next Invoker) Responsible {
 	b := new(strings.Builder)
 	for method, node := range r.methodTrees {
-		pl := node.PathList()
+		pl := node.Endpoints()
 		for _, p := range pl {
-			if p == routesPath {
+			if method == http.MethodGet && strings.HasPrefix(p, "_endpoints\t") {
 				continue
 			}
-			line := fmt.Sprintf("%-5s %s\n", method, path.Join(r.basePath, p))
+			line := fmt.Sprintf("%s\t%s\n", method, path.Join(r.basePath, p))
 			b.WriteString(line)
 		}
 	}

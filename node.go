@@ -1,6 +1,7 @@
 package wine
 
 import (
+	"fmt"
 	"github.com/gopub/log"
 	"path"
 	"reflect"
@@ -261,6 +262,29 @@ func (n *node) matchNodes(nodes []*node) *node {
 	return nil
 }
 
+func (n *node) handlerNames() string {
+	s := new(strings.Builder)
+	for h := n.handlers.Head(); h != nil; h = h.next {
+		if s.Len() > 0 {
+			s.WriteString(", ")
+		}
+
+		var name string
+		if f, ok := h.handler.(HandlerFunc); ok {
+			name = runtime.FuncForPC(reflect.ValueOf(f).Pointer()).Name()
+		} else {
+			name = reflect.TypeOf(h).Name()
+		}
+
+		if ShortHandlerNameFlag {
+			s.WriteString(getShortFileName(name))
+		} else {
+			s.WriteString(name)
+		}
+	}
+	return s.String()
+}
+
 func (n *node) Print(method string, parentPath string) {
 	var path string
 	switch n.t {
@@ -275,26 +299,7 @@ func (n *node) Print(method string, parentPath string) {
 	path = normalizePath(path)
 
 	if !n.handlers.Empty() {
-		var hNames string
-		for h := n.handlers.Head(); h != nil; h = h.next {
-			if len(hNames) != 0 {
-				hNames += ", "
-			}
-
-			var handlerName string
-			if f, ok := h.handler.(HandlerFunc); ok {
-				handlerName = runtime.FuncForPC(reflect.ValueOf(f).Pointer()).Name()
-			} else {
-				handlerName = reflect.TypeOf(h).Name()
-			}
-
-			if ShortHandlerNameFlag {
-				hNames += getShortFileName(handlerName)
-			} else {
-				hNames += handlerName
-			}
-		}
-		logger.Infof("%-5s %s\t%s", method, path, hNames)
+		logger.Infof("%-5s %s\t%s", method, path, n.handlerNames())
 	}
 
 	for _, nod := range n.children {
@@ -302,7 +307,7 @@ func (n *node) Print(method string, parentPath string) {
 	}
 }
 
-func (n *node) PathList() []string {
+func (n *node) Endpoints() []string {
 	var list []string
 	var p string
 	switch n.t {
@@ -314,11 +319,11 @@ func (n *node) PathList() []string {
 
 	p = normalizePath(p)
 	if !n.handlers.Empty() {
-		list = append(list, p)
+		list = append(list, fmt.Sprintf("%s\t%s", p, n.handlerNames()))
 	}
 
 	for _, nod := range n.children {
-		subList := nod.PathList()
+		subList := nod.Endpoints()
 		for _, sp := range subList {
 			list = append(list, path.Join(p, sp))
 		}
