@@ -2,10 +2,16 @@ package wine
 
 import (
 	"context"
+	"fmt"
 	"github.com/gopub/log"
 	"net/http"
+	"path"
 	"reflect"
 	"strings"
+)
+
+const (
+	routesPath = "_routes"
 )
 
 // Router implements routing function
@@ -19,7 +25,23 @@ type Router struct {
 func NewRouter() *Router {
 	r := &Router{}
 	r.methodTrees = make(map[string]*node, 4)
+	r.Get(routesPath, r.GetRoutes)
 	return r
+}
+
+func (r *Router) GetRoutes(ctx context.Context, req *Request, next Invoker) Responsible {
+	b := new(strings.Builder)
+	for method, node := range r.methodTrees {
+		pl := node.PathList()
+		for _, p := range pl {
+			if p == routesPath {
+				continue
+			}
+			line := fmt.Sprintf("%-5s %s\n", method, path.Join(r.basePath, p))
+			b.WriteString(line)
+		}
+	}
+	return Text(http.StatusOK, b.String())
 }
 
 // Group returns a new router whose basePath is r.basePath+path

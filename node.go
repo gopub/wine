@@ -2,6 +2,7 @@ package wine
 
 import (
 	"github.com/gopub/log"
+	"path"
 	"reflect"
 	"runtime"
 	"strings"
@@ -299,6 +300,31 @@ func (n *node) Print(method string, parentPath string) {
 	for _, nod := range n.children {
 		nod.Print(method, path)
 	}
+}
+
+func (n *node) PathList() []string {
+	var list []string
+	var p string
+	switch n.t {
+	case _StaticNode, _ParamNode:
+		p = "/" + n.path
+	default:
+		p = "/*" + n.path
+	}
+
+	p = normalizePath(p)
+	if !n.handlers.Empty() {
+		list = append(list, p)
+	}
+
+	for _, nod := range n.children {
+		subList := nod.PathList()
+		for _, sp := range subList {
+			list = append(list, path.Join(p, sp))
+		}
+	}
+
+	return list
 }
 
 func getShortFileName(filename string) string {
