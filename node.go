@@ -276,6 +276,10 @@ func (n *node) handlerNames() string {
 			name = reflect.TypeOf(h).Name()
 		}
 
+		if strings.HasSuffix(name, "-fm") {
+			name = name[0 : len(name)-3]
+		}
+
 		if ShortHandlerNameFlag {
 			s.WriteString(getShortFileName(name))
 		} else {
