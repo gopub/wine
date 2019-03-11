@@ -33,7 +33,7 @@ func (r *Router) GetEndpoints(ctx context.Context, req *Request, next Invoker) R
 			if method == http.MethodGet && strings.HasPrefix(p, "_endpoints\t") {
 				continue
 			}
-			line := fmt.Sprintf("%s\t%s\n", method, path.Join(r.basePath, p))
+			line := fmt.Sprintf("%s\t%s\n\n", method, path.Join(r.basePath, p))
 			b.WriteString(line)
 		}
 	}
