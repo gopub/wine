@@ -30,7 +30,7 @@ func (f PatternMatchFunc) MatchPattern(pattern string, val interface{}) bool {
 	return f(pattern, val)
 }
 
-var patternMatchers []PatternMatcher
+var patternMatchers = []PatternMatcher{defaultPatternMatcher}
 var patternRegexp = map[string]*regexp.Regexp{
 	"version":  versionRegexp,
 	"email":    emailRegexp,
