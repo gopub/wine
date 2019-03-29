@@ -2,11 +2,11 @@ package mapping
 
 import (
 	"fmt"
-	"github.com/gopub/gox/errors"
+	"github.com/gopub/gox"
 	"reflect"
 )
 
-func Validate(model interface{}) errors.Error {
+func Validate(model interface{}) gox.Error {
 	val := reflect.ValueOf(model)
 	if val.IsValid() == false {
 		panic("not valid")
@@ -51,7 +51,7 @@ func Validate(model interface{}) errors.Error {
 				continue
 			}
 
-			return errors.BadRequest("missing parameter:" + pi.name)
+			return gox.BadRequest("missing parameter:" + pi.name)
 		}
 
 		switch fv.Kind() {
@@ -61,7 +61,7 @@ func Validate(model interface{}) errors.Error {
 					continue
 				}
 
-				return errors.BadRequest("missing parameter:" + pi.name)
+				return gox.BadRequest("missing parameter:" + pi.name)
 			}
 
 			for i := 0; i < fv.Len(); i++ {
@@ -76,7 +76,7 @@ func Validate(model interface{}) errors.Error {
 				if pi.optional {
 					continue
 				} else {
-					return errors.BadRequest("missing parameter:" + pi.name)
+					return gox.BadRequest("missing parameter:" + pi.name)
 				}
 			}
 
@@ -95,7 +95,7 @@ func Validate(model interface{}) errors.Error {
 			continue
 		case reflect.String:
 			if !pi.optional && len(fv.String()) == 0 {
-				return errors.BadRequest("missing parameter:" + pi.name)
+				return gox.BadRequest("missing parameter:" + pi.name)
 			}
 		}
 
@@ -108,21 +108,21 @@ func Validate(model interface{}) errors.Error {
 			switch fv.Kind() {
 			case reflect.Float32, reflect.Float64:
 				if fv.Float() < pi.minVal.(float64) {
-					return errors.BadRequest(fmt.Sprintf("%s's value must be larger than %v", pi.name, pi.minVal))
+					return gox.BadRequest(fmt.Sprintf("%s's value must be larger than %v", pi.name, pi.minVal))
 				}
 			case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 				if fv.Int() < pi.minVal.(int64) {
-					return errors.BadRequest(fmt.Sprintf("%s's value must be larger than %v", pi.name, pi.minVal))
+					return gox.BadRequest(fmt.Sprintf("%s's value must be larger than %v", pi.name, pi.minVal))
 
 				}
 			case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
 				if fv.Uint() < pi.minVal.(uint64) {
-					return errors.BadRequest(fmt.Sprintf("%s's value must be larger than %v", pi.name, pi.minVal))
+					return gox.BadRequest(fmt.Sprintf("%s's value must be larger than %v", pi.name, pi.minVal))
 				}
 			case reflect.String:
 				i := pi.minVal.(int64)
 				if len(fv.String()) < int(i) {
-					return errors.BadRequest(fmt.Sprintf("%s's len must be larger than %v", pi.name, pi.minVal))
+					return gox.BadRequest(fmt.Sprintf("%s's len must be larger than %v", pi.name, pi.minVal))
 
 				}
 			default:
@@ -134,20 +134,20 @@ func Validate(model interface{}) errors.Error {
 			switch fv.Kind() {
 			case reflect.Float32, reflect.Float64:
 				if fv.Float() > pi.maxVal.(float64) {
-					return errors.BadRequest(fmt.Sprintf("%s's value must be less than %v", pi.name, pi.maxVal))
+					return gox.BadRequest(fmt.Sprintf("%s's value must be less than %v", pi.name, pi.maxVal))
 				}
 			case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 				if fv.Int() > pi.maxVal.(int64) {
-					return errors.BadRequest(fmt.Sprintf("%s's value must be less than %v", pi.name, pi.maxVal))
+					return gox.BadRequest(fmt.Sprintf("%s's value must be less than %v", pi.name, pi.maxVal))
 				}
 			case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
 				if fv.Uint() > pi.maxVal.(uint64) {
-					return errors.BadRequest(fmt.Sprintf("%s's value must be less than %v", pi.name, pi.maxVal))
+					return gox.BadRequest(fmt.Sprintf("%s's value must be less than %v", pi.name, pi.maxVal))
 				}
 			case reflect.String:
 				i := pi.maxVal.(int64)
 				if len(fv.String()) > int(i) {
-					return errors.BadRequest(fmt.Sprintf("%s's len must be less than %v", pi.name, pi.maxVal))
+					return gox.BadRequest(fmt.Sprintf("%s's len must be less than %v", pi.name, pi.maxVal))
 				}
 			default:
 				panic("invalid kind: " + fv.Kind().String())
@@ -156,7 +156,7 @@ func Validate(model interface{}) errors.Error {
 
 		for _, pattern := range pi.patterns {
 			if !MatchPattern(pattern, fv.Interface()) {
-				return errors.BadRequest(fmt.Sprintf("%s mismatches pattern=%s", pi.name, pattern))
+				return gox.BadRequest(fmt.Sprintf("%s mismatches pattern=%s", pi.name, pattern))
 			}
 		}
 	}
