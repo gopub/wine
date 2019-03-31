@@ -32,9 +32,9 @@ func (f PatternMatchFunc) MatchPattern(pattern string, val interface{}) bool {
 
 var patternMatchers = []PatternMatcher{defaultPatternMatcher}
 var patternRegexp = map[string]*regexp.Regexp{
-	"version":  versionRegexp,
-	"email":    emailRegexp,
-	"variable": variableRegexp,
+	PatternVersion:  versionRegexp,
+	PatternEmail:    emailRegexp,
+	PatternVariable: variableRegexp,
 }
 
 func PrependPatternMatcher(m PatternMatcher) {
