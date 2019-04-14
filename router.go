@@ -242,29 +242,22 @@ func (r *Router) StaticFS(path string, fs http.FileSystem) {
 
 // Get binds funcs to path with GET method
 func (r *Router) Get(path string, funcs ...HandlerFunc) {
-	r.Bind("GET", path, convertToHandlers(funcs...)...)
+	r.Bind(http.MethodGet, path, convertToHandlers(funcs...)...)
 }
 
 // Post binds funcs to path with POST method
 func (r *Router) Post(path string, funcs ...HandlerFunc) {
-	r.Bind("POST", path, convertToHandlers(funcs...)...)
+	r.Bind(http.MethodPost, path, convertToHandlers(funcs...)...)
 }
 
 // Put binds funcs to path with PUT method
 func (r *Router) Put(path string, funcs ...HandlerFunc) {
-	r.Bind("PUT", path, convertToHandlers(funcs...)...)
+	r.Bind(http.MethodPut, path, convertToHandlers(funcs...)...)
 }
 
 // Delete binds funcs to path with DELETE method
 func (r *Router) Delete(path string, funcs ...HandlerFunc) {
-	r.Bind("DELETE", path, convertToHandlers(funcs...)...)
-}
-
-// Any binds funcs to path with GET/POST methods
-func (r *Router) Any(path string, funcs ...HandlerFunc) {
-	handlers := convertToHandlers(funcs...)
-	r.Bind("GET", path, handlers...)
-	r.Bind("POST", path, handlers...)
+	r.Bind(http.MethodDelete, path, convertToHandlers(funcs...)...)
 }
 
 // BindControllers binds controllers

@@ -35,6 +35,7 @@ type Server struct {
 
 	faviconHandlerList  *handlerList
 	notfoundHandlerList *handlerList
+	optionsHandlerList  *handlerList
 
 	logger log.Logger
 }
@@ -50,11 +51,12 @@ func NewServer(config *Config) *Server {
 		h2conns:          newH2ConnCache(),
 		RequestParser:    NewDefaultRequestParser(),
 
-		faviconHandlerList:  newHandlerList([]Handler{HandlerFunc(HandleFavIcon)}),
-		notfoundHandlerList: newHandlerList([]Handler{HandlerFunc(handleNotFound)}),
-
 		logger: log.GetLogger("Wine"),
 	}
+
+	s.faviconHandlerList = newHandlerList([]Handler{HandlerFunc(s.handleFavIcon)})
+	s.notfoundHandlerList = newHandlerList([]Handler{HandlerFunc(s.handleNotFound)})
+	s.optionsHandlerList = newHandlerList([]Handler{HandlerFunc(s.handleOptions)})
 
 	s.logger.SetFlags(logger.Flags() ^ log.Lfunction ^ log.Lshortfile)
 
@@ -113,10 +115,39 @@ func (s *Server) Shutdown() {
 	logger.Info("Shutdown")
 }
 
+func (s *Server) logHTTP(rw http.ResponseWriter, req *http.Request, startAt time.Time) {
+	var statGetter statusGetter
+	if cw, ok := rw.(*compressedResponseWriter); ok {
+		cw.Close()
+		statGetter = cw.ResponseWriter.(statusGetter)
+	}
+
+	if statGetter == nil {
+		statGetter = rw.(statusGetter)
+	}
+
+	info := fmt.Sprintf("%s %s %s %s | return %d in %v",
+		req.RemoteAddr,
+		req.UserAgent(),
+		req.Method,
+		req.RequestURI,
+		statGetter.Status(),
+		time.Since(startAt))
+
+	if statGetter.Status() >= 400 {
+		if statGetter.Status() != http.StatusUnauthorized {
+			s.logger.Errorf("%s request: %v", info, req)
+		} else {
+			s.logger.Error(info)
+		}
+	} else {
+		s.logger.Info(info)
+	}
+}
+
 // ServeHTTP implements for http.Handler interface, which will handle each http request
 func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	startAt := time.Now()
-	h2connID := s.h2conns.GetConnID(rw)
 	if logger.Level() > log.DebugLevel {
 		defer func() {
 			if e := recover(); e != nil {
@@ -125,61 +156,32 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		}()
 	}
 
-	defer func() {
-		var statGetter statusGetter
-		if cw, ok := rw.(*compressedResponseWriter); ok {
-			cw.Close()
-			statGetter = cw.ResponseWriter.(statusGetter)
-		}
-
-		if statGetter == nil {
-			statGetter = rw.(statusGetter)
-		}
-
-		info := fmt.Sprintf("%s %s %s %s | return %d in %v",
-			req.RemoteAddr,
-			req.UserAgent(),
-			req.Method,
-			req.RequestURI,
-			statGetter.Status(),
-			time.Since(startAt))
-
-		if statGetter.Status() >= 400 {
-			if statGetter.Status() != http.StatusUnauthorized {
-				s.logger.Errorf("%s request: %v", info, req)
-			} else {
-				s.logger.Error(info)
-			}
-		} else {
-			s.logger.Info(info)
-		}
-	}()
-
 	// Add compression to responseWriter
 	rw = &responseWriterWrapper{ResponseWriter: rw}
 	rw = wrapperCompressedWriter(rw, req)
+	defer s.logHTTP(rw, req, startAt)
 
 	path := getRequestPath(req)
 	method := strings.ToUpper(req.Method)
 	handlers, pathParams := s.Match(method, path)
 
 	if handlers.Empty() {
-		if path == "favicon.ico" {
+		if method == http.MethodOptions {
+			handlers = s.optionsHandlerList
+		} else if path == "favicon.ico" {
 			handlers = s.faviconHandlerList
 		} else {
 			handlers = s.notfoundHandlerList
 		}
 	} else {
-		handlers.PushBack(HandlerFunc(handleNotImplemented))
+		handlers.PushBack(HandlerFunc(s.handleNotImplemented))
 	}
 
 	params, err := s.RequestParser.ParseHTTPRequest(req, s.MaxRequestMemory)
-
 	if err != nil {
 		return
 	}
 	params.AddMapObj(pathParams)
-
 	parsedReq := &Request{
 		HTTPRequest: req,
 		Parameters:  params,
@@ -195,14 +197,9 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	ctx = context.WithValue(ctx, keyTemplates, s.templates)
 	// In case http/2 stream handler needs "responseWriter" to push data to client continuously
 	ctx = context.WithValue(ctx, keyHTTPResponseWriter, rw)
-	if len(h2connID) > 0 {
-		ctx = context.WithValue(ctx, keyHTTP2ConnID, h2connID)
-	}
-
 	resp := handlers.Head().Invoke(ctx, parsedReq)
-
 	if resp == nil {
-		resp = handleNotImplemented(ctx, parsedReq, nil)
+		resp = s.handleNotImplemented(ctx, parsedReq, nil)
 	}
 	resp.Respond(ctx, rw)
 }
@@ -232,7 +229,7 @@ func getRequestPath(req *http.Request) string {
 	return normalizePath(path)
 }
 
-func HandleFavIcon(ctx context.Context, req *Request, next Invoker) Responsible {
+func (s *Server) handleFavIcon(ctx context.Context, req *Request, next Invoker) Responsible {
 	return ResponsibleFunc(func(ctx context.Context, rw http.ResponseWriter) {
 		rw.Header()[ContentType] = []string{"image/x-icon"}
 		rw.WriteHeader(http.StatusOK)
@@ -240,12 +237,37 @@ func HandleFavIcon(ctx context.Context, req *Request, next Invoker) Responsible 
 	})
 }
 
-func handleNotFound(ctx context.Context, req *Request, next Invoker) Responsible {
+func (s *Server) handleNotFound(ctx context.Context, req *Request, next Invoker) Responsible {
 	return Text(http.StatusNotFound, http.StatusText(http.StatusNotFound))
 }
 
-func handleNotImplemented(ctx context.Context, req *Request, next Invoker) Responsible {
+func (s *Server) handleNotImplemented(ctx context.Context, req *Request, next Invoker) Responsible {
 	return Text(http.StatusNotImplemented, http.StatusText(http.StatusNotImplemented))
+}
+
+func (s *Server) handleOptions(ctx context.Context, req *Request, next Invoker) Responsible {
+	path := getRequestPath(req.HTTPRequest)
+	var allowedMethods []string
+	for routeMethod := range s.Router.methodTrees {
+		if handlers, _ := s.Match(routeMethod, path); !handlers.Empty() {
+			allowedMethods = append(allowedMethods, routeMethod)
+		}
+	}
+
+	if len(allowedMethods) > 0 {
+		allowedMethods = append(allowedMethods, http.MethodOptions)
+	}
+
+	return ResponsibleFunc(func(ctx context.Context, rw http.ResponseWriter) {
+		if len(allowedMethods) > 0 {
+			val := []string{strings.Join(allowedMethods, ",")}
+			rw.Header()["Allow"] = val
+			rw.Header()["Access-Control-Allow-Methods"] = val
+			rw.WriteHeader(http.StatusNoContent)
+		} else {
+			rw.WriteHeader(http.StatusNotFound)
+		}
+	})
 }
 
 func GetHTTP2ConnID(ctx context.Context) string {
