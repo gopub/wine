@@ -81,8 +81,8 @@ func (s *Server) Run(addr string) error {
 		logger.Panic("Server is running")
 	}
 
-	logger.Info("Running at", addr, "...")
 	s.Router.Print()
+	logger.Info("Running at", addr, "...")
 	s.server = &http.Server{Addr: addr, Handler: s}
 	err := s.server.ListenAndServe()
 	if err != nil {
@@ -98,8 +98,8 @@ func (s *Server) RunTLS(addr, certFile, keyFile string) error {
 		logger.Panic("Server is running")
 	}
 
-	logger.Info("Running at", addr, "...")
 	s.Router.Print()
+	logger.Info("Running at", addr, "...")
 	s.server = &http.Server{Addr: addr, Handler: s}
 	err := s.server.ListenAndServeTLS(certFile, keyFile)
 	if err != nil {
