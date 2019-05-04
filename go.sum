@@ -1,0 +1,16 @@
+github.com/aws/aws-lambda-go v1.8.1/go.mod h1:zUsUQhAUjYzR8AuduJPCfhBuKWUaDbQiPOG+ouzmE1A=
+github.com/go-redis/redis v6.15.2+incompatible h1:9SpNVG76gr6InJGxoZ6IuuxaCOQwDAhzyXg+Bs+0Sb4=
+github.com/go-redis/redis v6.15.2+incompatible/go.mod h1:NAIEuMOZ/fxfXJIrKDQDz8wamY7mA7PouImQ2Jvg6kA=
+github.com/golang/protobuf v1.2.0/go.mod h1:6lQm79b+lXiMfvg/cZm0SGofjICqVBUtrP5yJMmIC1U=
+github.com/golang/protobuf v1.3.1 h1:YF8+flBXS5eO826T4nzqPrxfhQThhXl0YzfuUPu4SBg=
+github.com/golang/protobuf v1.3.1/go.mod h1:6lQm79b+lXiMfvg/cZm0SGofjICqVBUtrP5yJMmIC1U=
+github.com/gopub/gox v1.14.1 h1:2cH7eGl4cJKpbg0niZ7c7inaaq1MDHj4yPhwTKsbry0=
+github.com/gopub/gox v1.14.1/go.mod h1:yXGf/AeiFfNOG/NFeNLfutX5B1azCbfdggAVMHqi5Bw=
+github.com/gopub/gox v1.15.0 h1:twIiIWqEo0ySZf+oALY4slypwID1LfxOt5wegVfw/6I=
+github.com/gopub/gox v1.15.0/go.mod h1:g58rk8PumLEJNeE0p2bq0Kz8YC8TV820HqavlXHHa8k=
+github.com/gopub/log v1.3.1 h1:zMKqcVbj00B7tXJhj0si6iwGGaFu1Nm6FgVaAjfX6SY=
+github.com/gopub/log v1.3.1/go.mod h1:N7GzW/a2tgyQp/wSwd9YzUN5AbVB2G1yE7+nZUGL46A=
+github.com/nyaruka/phonenumbers v1.0.40 h1:ZuuuSsbJi251jvzjIJA1zo9VIMtQi/uOqyJP5uVfX0s=
+github.com/nyaruka/phonenumbers v1.0.40/go.mod h1:Hhae+eypC1YKMaQlBJUCGZDzBrIHHNWhJX1xG/8sOC8=
+golang.org/x/net v0.0.0-20180921000356-2f5d2388922f/go.mod h1:mL1N/T3taQHkDXs73rZJwtUhF3w3ftmwwsq0BUmARs4=
+golang.org/x/sync v0.0.0-20180314180146-1d60e4601c6f/go.mod h1:RxMgew5VJxzue5/jJTE5uejpjVlOe/izrB70Jof72aM=
