@@ -54,8 +54,8 @@ func NewServer(config *Config) *Server {
 		logger: log.GetLogger("Wine"),
 	}
 
-	s.faviconHandlerList = newHandlerList([]Handler{HandlerFunc(s.handleFavIcon)})
-	s.notfoundHandlerList = newHandlerList([]Handler{HandlerFunc(s.handleNotFound)})
+	s.faviconHandlerList = newHandlerList([]Handler{HandlerFunc(handleFavIcon)})
+	s.notfoundHandlerList = newHandlerList([]Handler{HandlerFunc(handleNotFound)})
 	s.optionsHandlerList = newHandlerList([]Handler{HandlerFunc(s.handleOptions)})
 
 	s.logger.SetFlags(logger.Flags() ^ log.Lfunction ^ log.Lshortfile)
@@ -173,8 +173,6 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		} else {
 			handlers = s.notfoundHandlerList
 		}
-	} else {
-		handlers.PushBack(HandlerFunc(s.handleNotImplemented))
 	}
 
 	params, err := s.RequestParser.ParseHTTPRequest(req, s.MaxRequestMemory)
@@ -198,7 +196,7 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	ctx = context.WithValue(ctx, keyHTTPResponseWriter, rw)
 	resp := handlers.Head().Invoke(ctx, parsedReq)
 	if resp == nil {
-		resp = s.handleNotImplemented(ctx, parsedReq, nil)
+		resp = handleNotImplemented(ctx, parsedReq, nil)
 	}
 	resp.Respond(ctx, rw)
 }
@@ -228,22 +226,6 @@ func getRequestPath(req *http.Request) string {
 	return normalizePath(path)
 }
 
-func (s *Server) handleFavIcon(ctx context.Context, req *Request, next Invoker) Responsible {
-	return ResponsibleFunc(func(ctx context.Context, rw http.ResponseWriter) {
-		rw.Header()[ContentType] = []string{"image/x-icon"}
-		rw.WriteHeader(http.StatusOK)
-		rw.Write(_faviconBytes)
-	})
-}
-
-func (s *Server) handleNotFound(ctx context.Context, req *Request, next Invoker) Responsible {
-	return Text(http.StatusNotFound, http.StatusText(http.StatusNotFound))
-}
-
-func (s *Server) handleNotImplemented(ctx context.Context, req *Request, next Invoker) Responsible {
-	return Text(http.StatusNotImplemented, http.StatusText(http.StatusNotImplemented))
-}
-
 func (s *Server) handleOptions(ctx context.Context, req *Request, next Invoker) Responsible {
 	path := getRequestPath(req.HTTPRequest)
 	var allowedMethods []string
@@ -267,6 +249,22 @@ func (s *Server) handleOptions(ctx context.Context, req *Request, next Invoker) 
 			rw.WriteHeader(http.StatusNotFound)
 		}
 	})
+}
+
+func handleFavIcon(ctx context.Context, req *Request, next Invoker) Responsible {
+	return ResponsibleFunc(func(ctx context.Context, rw http.ResponseWriter) {
+		rw.Header()[ContentType] = []string{"image/x-icon"}
+		rw.WriteHeader(http.StatusOK)
+		rw.Write(_faviconBytes)
+	})
+}
+
+func handleNotFound(ctx context.Context, req *Request, next Invoker) Responsible {
+	return Text(http.StatusNotFound, http.StatusText(http.StatusNotFound))
+}
+
+func handleNotImplemented(ctx context.Context, req *Request, next Invoker) Responsible {
+	return Text(http.StatusNotImplemented, http.StatusText(http.StatusNotImplemented))
 }
 
 func GetResponseWriter(ctx context.Context) http.ResponseWriter {
