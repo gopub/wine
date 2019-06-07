@@ -4,11 +4,12 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	"github.com/gopub/gox"
-	"github.com/gopub/wine/mime"
 	"io/ioutil"
 	"net/http"
 	"strings"
+
+	"github.com/gopub/gox"
+	"github.com/gopub/wine/mime"
 )
 
 const (

@@ -2,11 +2,12 @@ package wine
 
 import (
 	"fmt"
-	"github.com/gopub/log"
 	"path"
 	"reflect"
 	"runtime"
 	"strings"
+
+	"github.com/gopub/log"
 )
 
 type nodeType int

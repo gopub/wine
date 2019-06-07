@@ -2,10 +2,11 @@ package main
 
 import (
 	"context"
-	"github.com/gopub/log"
 	"net/http"
 	_ "net/http/pprof"
 	"time"
+
+	"github.com/gopub/log"
 
 	"github.com/gopub/wine"
 )

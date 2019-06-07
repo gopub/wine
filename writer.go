@@ -1,10 +1,12 @@
 package wine
 
 import (
+	"bufio"
 	"compress/flate"
 	"compress/gzip"
 	"errors"
 	"io"
+	"net"
 	"net/http"
 	"strings"
 )
@@ -19,6 +21,7 @@ type flusher interface {
 }
 
 var _ statusGetter = (*responseWriterWrapper)(nil)
+var _ http.Hijacker = (*responseWriterWrapper)(nil)
 
 type responseWriterWrapper struct {
 	http.ResponseWriter
@@ -49,6 +52,13 @@ func (w *responseWriterWrapper) Flush() {
 	if f, ok := w.ResponseWriter.(http.Flusher); ok {
 		f.Flush()
 	}
+}
+
+func (w *responseWriterWrapper) Hijack() (net.Conn, *bufio.ReadWriter, error) {
+	if h, ok := w.ResponseWriter.(http.Hijacker); ok {
+		return h.Hijack()
+	}
+	return nil, nil, errors.New("hijack not supported")
 }
 
 type compressedResponseWriter struct {
@@ -89,6 +99,13 @@ func (w *compressedResponseWriter) Flush() {
 			ff.Flush()
 		}
 	}
+}
+
+func (w *compressedResponseWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
+	if h, ok := w.ResponseWriter.(http.Hijacker); ok {
+		return h.Hijack()
+	}
+	return nil, nil, errors.New("hijack not supported")
 }
 
 func (w *compressedResponseWriter) Close() error {

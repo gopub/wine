@@ -2,8 +2,9 @@ package session
 
 import (
 	"context"
-	"github.com/gopub/gox"
 	"time"
+
+	"github.com/gopub/gox"
 )
 
 var defaultExpiration = time.Minute * 30

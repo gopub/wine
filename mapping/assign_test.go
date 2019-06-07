@@ -1,8 +1,9 @@
 package mapping_test
 
 import (
-	"github.com/gopub/mapper"
 	"testing"
+
+	"github.com/gopub/mapper"
 )
 
 type Image struct {

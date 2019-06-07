@@ -2,8 +2,9 @@ package mapping
 
 import (
 	"fmt"
-	"github.com/gopub/gox"
 	"reflect"
+
+	"github.com/gopub/gox"
 )
 
 func Validate(model interface{}) gox.Error {

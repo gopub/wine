@@ -3,10 +3,11 @@ package session
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/go-redis/redis"
-	"github.com/gopub/gox"
 	"reflect"
 	"time"
+
+	"github.com/go-redis/redis"
+	"github.com/gopub/gox"
 )
 
 var _ Store = (*RedisStore)(nil)

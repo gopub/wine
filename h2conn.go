@@ -1,11 +1,12 @@
 package wine
 
 import (
-	"github.com/gopub/gox"
 	"net/http"
 	"reflect"
 	"sync"
 	"time"
+
+	"github.com/gopub/gox"
 )
 
 const h2connExpirationTime = time.Minute * 20

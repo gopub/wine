@@ -3,11 +3,12 @@ package mapping
 import (
 	"errors"
 	"fmt"
-	"github.com/gopub/gox"
 	"log"
 	"reflect"
 	"strings"
 	"sync"
+
+	"github.com/gopub/gox"
 )
 
 const paramTag = "param"

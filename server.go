@@ -3,17 +3,17 @@ package wine
 import (
 	"context"
 	"fmt"
-	"github.com/gopub/log"
 	"html/template"
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/gopub/log"
 )
 
 const defaultMaxRequestMemory = 1 << 20
 const defaultRequestTimeout = 20 * time.Second
 const keyHTTPResponseWriter = "wine_http_response_writer"
-const keyRawHTTPResponseWriter = "wine_raw_http_response_writer"
 const keyTemplates = "wine_templates"
 
 var acceptEncodings = [2]string{"gzip", "defalte"}
@@ -157,7 +157,6 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	}
 
 	// Add compression to responseWriter
-	rawWriter := rw
 	rw = &responseWriterWrapper{ResponseWriter: rw}
 	rw = wrapperCompressedWriter(rw, req)
 	defer s.logHTTP(rw, req, startAt)
@@ -197,7 +196,6 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 
 	ctx = context.WithValue(ctx, keyTemplates, s.templates)
 	ctx = context.WithValue(ctx, keyHTTPResponseWriter, rw)
-	ctx = context.WithValue(ctx, keyRawHTTPResponseWriter, rawWriter)
 	resp := handlers.Head().Invoke(ctx, parsedReq)
 	if resp == nil {
 		resp = s.handleNotImplemented(ctx, parsedReq, nil)
@@ -273,11 +271,6 @@ func (s *Server) handleOptions(ctx context.Context, req *Request, next Invoker) 
 
 func GetResponseWriter(ctx context.Context) http.ResponseWriter {
 	rw, _ := ctx.Value(keyHTTPResponseWriter).(http.ResponseWriter)
-	return rw
-}
-
-func GetRawResponseWriter(ctx context.Context) http.ResponseWriter {
-	rw, _ := ctx.Value(keyRawHTTPResponseWriter).(http.ResponseWriter)
 	return rw
 }
 

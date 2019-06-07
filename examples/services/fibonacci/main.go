@@ -2,9 +2,10 @@ package main
 
 import (
 	"context"
+	"net/http"
+
 	"github.com/gopub/gox"
 	"github.com/gopub/wine"
-	"net/http"
 )
 
 func main() {

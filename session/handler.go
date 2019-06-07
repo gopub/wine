@@ -2,12 +2,13 @@ package session
 
 import (
 	"context"
-	"github.com/gopub/gox"
-	"github.com/gopub/log"
-	"github.com/gopub/wine"
 	"net/http"
 	"reflect"
 	"time"
+
+	"github.com/gopub/gox"
+	"github.com/gopub/log"
+	"github.com/gopub/wine"
 )
 
 func InitSession(ctx context.Context, req *wine.Request, next wine.Invoker) wine.Responsible {

@@ -3,11 +3,12 @@ package wine
 import (
 	"context"
 	"fmt"
-	"github.com/gopub/log"
 	"net/http"
 	"path"
 	"reflect"
 	"strings"
+
+	"github.com/gopub/log"
 )
 
 // Router implements routing function

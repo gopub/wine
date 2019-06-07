@@ -3,9 +3,10 @@ package mapping
 import (
 	"errors"
 	"fmt"
+	"reflect"
+
 	"github.com/gopub/gox"
 	"github.com/gopub/log"
-	"reflect"
 )
 
 // Assign assigns src to dst

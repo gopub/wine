@@ -2,14 +2,15 @@ package wine_test
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"github.com/gopub/wine/mime"
 	"io/ioutil"
 	"net/http"
 	"os"
 	"testing"
 	"time"
+
+	"github.com/gopub/gox"
+	"github.com/gopub/wine/mime"
 
 	"github.com/gopub/wine"
 )

@@ -3,11 +3,12 @@ package wine
 import (
 	"context"
 	"encoding/json"
-	"github.com/gopub/log"
-	"github.com/gopub/wine/mime"
 	"html/template"
 	"net/http"
 	"strings"
+
+	"github.com/gopub/log"
+	"github.com/gopub/wine/mime"
 )
 
 type Responsible interface {
