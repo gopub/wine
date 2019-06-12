@@ -7,4 +7,5 @@ require (
 	github.com/gopub/gox v1.0.1
 	github.com/gopub/log v1.0.2
 	github.com/pkg/errors v0.8.1
+	github.com/stretchr/testify v1.3.0
 )

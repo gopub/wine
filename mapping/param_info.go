@@ -1,11 +1,12 @@
 package mapping
 
 import (
-	"github.com/pkg/errors"
 	"log"
 	"reflect"
 	"strings"
 	"sync"
+
+	"github.com/pkg/errors"
 
 	"github.com/gopub/gox"
 )
