@@ -41,10 +41,10 @@ func NewDefaultRequestParser() *DefaultRequestParser {
 
 func (p *DefaultRequestParser) ParseHTTPRequest(req *http.Request, maxMemory int64) (gox.M, error) {
 	params := gox.M{}
-	params.AddMap(parseCookieParams(req))
-	params.AddMap(parseHeaderParams(req))
-	params.AddMap(parseURLValues(req.URL.Query()))
-	bp, err := parseBodyParams(req, maxMemory)
+	params.AddMap(p.parseCookieParams(req))
+	params.AddMap(p.parseHeaderParams(req))
+	params.AddMap(p.parseURLValues(req.URL.Query()))
+	bp, err := p.parseBodyParams(req, maxMemory)
 	if err != nil {
 		return nil, errors.Wrap(err, "cannot parse body")
 	}
@@ -52,7 +52,7 @@ func (p *DefaultRequestParser) ParseHTTPRequest(req *http.Request, maxMemory int
 	return params, nil
 }
 
-func parseCookieParams(req *http.Request) gox.M {
+func (p *DefaultRequestParser) parseCookieParams(req *http.Request) gox.M {
 	params := gox.M{}
 	for _, cookie := range req.Cookies() {
 		params[cookie.Name] = cookie.Value
@@ -60,7 +60,7 @@ func parseCookieParams(req *http.Request) gox.M {
 	return params
 }
 
-func parseHeaderParams(req *http.Request) gox.M {
+func (p *DefaultRequestParser) parseHeaderParams(req *http.Request) gox.M {
 	params := gox.M{}
 	for k, v := range req.Header {
 		if strings.HasPrefix(k, "x-") || strings.HasPrefix(k, "X-") || p.headerFields[k] {
@@ -70,7 +70,7 @@ func parseHeaderParams(req *http.Request) gox.M {
 	return params
 }
 
-func parseURLValues(values url.Values) gox.M {
+func (p *DefaultRequestParser) parseURLValues(values url.Values) gox.M {
 	m := gox.M{}
 	for k, v := range values {
 		i := strings.Index(k, "[]")
@@ -88,7 +88,7 @@ func parseURLValues(values url.Values) gox.M {
 	return m
 }
 
-func parseContentType(req *http.Request) string {
+func (p *DefaultRequestParser) parseContentType(req *http.Request) string {
 	t := req.Header.Get(ContentType)
 	for i, ch := range t {
 		if ch == ' ' || ch == ';' {
@@ -99,8 +99,8 @@ func parseContentType(req *http.Request) string {
 	return t
 }
 
-func parseBodyParams(req *http.Request, maxMemory int64) (gox.M, error) {
-	typ := parseContentType(req)
+func (p *DefaultRequestParser) parseBodyParams(req *http.Request, maxMemory int64) (gox.M, error) {
+	typ := p.parseContentType(req)
 	params := gox.M{}
 	switch typ {
 	case mime.HTML, mime.Plain:
@@ -124,7 +124,7 @@ func parseBodyParams(req *http.Request, maxMemory int64) (gox.M, error) {
 		if err != nil {
 			return nil, errors.Wrap(err, "cannot parse form")
 		}
-		return parseURLValues(req.Form), nil
+		return p.parseURLValues(req.Form), nil
 	case mime.FormData:
 		err := req.ParseMultipartForm(maxMemory)
 		if err != nil {
@@ -132,7 +132,7 @@ func parseBodyParams(req *http.Request, maxMemory int64) (gox.M, error) {
 		}
 
 		if req.MultipartForm != nil && req.MultipartForm.File != nil {
-			return parseURLValues(req.MultipartForm.Value), nil
+			return p.parseURLValues(req.MultipartForm.Value), nil
 		}
 		return params, nil
 	default:

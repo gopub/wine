@@ -1,10 +1,12 @@
 package mapping_test
 
 import (
+	"encoding/json"
 	"testing"
 
 	"github.com/gopub/wine/mapping"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestAssignPlainTypes(t *testing.T) {
@@ -160,9 +162,33 @@ func TestAssignEmbeddedPtrStruct(t *testing.T) {
 		i2 := &Item{}
 		err := mapping.Assign(i2, i1)
 		assert.NoError(t, err)
-		assert.Equal(t, i2.SubItem, i1.SubItem)
-		i2.SubItem = nil
-		i1.SubItem = nil
 		assert.Equal(t, i2, i1)
+	})
+
+	t.Run("MapToPtrStruct", func(t *testing.T) {
+		m := map[string]interface{}{
+			"Int":     1,
+			"Uint":    2,
+			"Float64": 3.3,
+			"String":  "This is a string",
+			"Bytes":   []byte("abc"),
+			"SubItem": &Item{
+				Int:     4,
+				Uint:    5,
+				Float64: 6.6,
+				String:  "This is another string",
+				Bytes:   []byte("def"),
+			},
+		}
+
+		i := &Item{}
+		err := mapping.Assign(i, m)
+		assert.NoError(t, err)
+		assert.Equal(t, i.SubItem, m["SubItem"])
+		jm, err := json.Marshal(m)
+		require.NoError(t, err)
+		ji, err := json.Marshal(i)
+		require.NoError(t, err)
+		assert.JSONEq(t, string(ji), string(jm))
 	})
 }
