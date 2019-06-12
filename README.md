@@ -150,21 +150,5 @@ It's easy to turn on basic auth.
 	s.StaticDir("/", "./html")
 	s.Run(":8000")
 	
-## Push stream data in HTTP/2
-    func HandleStream(ctx context.Context, req *wine.Request, next wine.Invoker) wine.Responsible {
-        if wine.GetHTTP2Conn(ctx) == nil {
-            return nil
-        }
-        
-        rw := wine.GetResponseWriter(ctx)
-        for {
-            payload := "test"
-            _, err := rw.Write(payload)
-            if err != nil {
-                //...
-            }
-        }
-    }
-
 ## Recommendations
 Wine designed for modular web applications/services is not a general purpose web server. It should be used behind a web server such as Nginx, Caddy which provide compression, security features.
