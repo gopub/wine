@@ -3,6 +3,7 @@ package wine
 import (
 	"context"
 	"encoding/json"
+	"github.com/gopub/gox"
 	"html/template"
 	"net/http"
 	"strings"
@@ -53,7 +54,9 @@ func (r *responseImpl) Respond(ctx context.Context, w http.ResponseWriter) {
 		w.Header()[k] = v
 	}
 	w.WriteHeader(r.status)
-	w.Write(body)
+	if err := gox.WriteAll(w, body); err != nil {
+		log.Error(err)
+	}
 }
 
 func (r *responseImpl) getBytes() []byte {
@@ -69,9 +72,8 @@ func (r *responseImpl) getBytes() []byte {
 			body, err := json.Marshal(r.value)
 			if err != nil {
 				logger.Error(err)
-			} else {
-				return body
 			}
+			return body
 		}
 	case strings.Contains(contentType, mime.Plain):
 		fallthrough

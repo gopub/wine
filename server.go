@@ -87,7 +87,6 @@ func (s *Server) Run(addr string) error {
 	err := s.server.ListenAndServe()
 	if err != nil {
 		s.server = nil
-		logger.Error(err)
 	}
 	return err
 }
@@ -104,7 +103,6 @@ func (s *Server) RunTLS(addr, certFile, keyFile string) error {
 	err := s.server.ListenAndServeTLS(certFile, keyFile)
 	if err != nil {
 		s.server = nil
-		logger.Error(err)
 	}
 	return err
 }

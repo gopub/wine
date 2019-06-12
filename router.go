@@ -131,7 +131,7 @@ func (r *Router) Bind(method string, path string, handlers ...Handler) {
 	root := r.methodTrees[method]
 	if root == nil {
 		root = &node{}
-		root.t = _StaticNode
+		root.t = StaticNode
 		r.methodTrees[method] = root
 	}
 
@@ -171,7 +171,7 @@ func (r *Router) Unbind(method string, path string) {
 	root := r.methodTrees[method]
 	if root == nil {
 		root = &node{}
-		root.t = _StaticNode
+		root.t = StaticNode
 		r.methodTrees[method] = root
 	}
 
@@ -188,7 +188,7 @@ func (r *Router) Unbind(method string, path string) {
 
 	if nodes[0].path != "" {
 		emptyNode := &node{}
-		emptyNode.t = _StaticNode
+		emptyNode.t = StaticNode
 		nodes = append([]*node{emptyNode}, nodes...)
 	}
 

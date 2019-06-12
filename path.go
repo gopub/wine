@@ -48,11 +48,11 @@ func isParamPath(path string) bool {
 func getNodeType(path string) nodeType {
 	switch {
 	case isStaticPath(path):
-		return _StaticNode
+		return StaticNode
 	case isParamPath(path):
-		return _ParamNode
+		return ParamNode
 	case isWildcardPath(path):
-		return _WildcardNode
+		return WildcardNode
 	default:
 		panic("invalid path: " + path)
 	}

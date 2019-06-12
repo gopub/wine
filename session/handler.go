@@ -29,13 +29,13 @@ func InitSession(ctx context.Context, req *wine.Request, next wine.Invoker) wine
 		var err error
 		session, err = NewSession(sid)
 		if err != nil {
-			logger.Fatal("Failed to create session: %v", err)
+			logger.Fatal("Cannot create session: %v", err)
 			return wine.Status(http.StatusInternalServerError)
 		}
 	}
 
 	if session == nil {
-		logger.Fatal("Failed to create session")
+		logger.Fatal("Session is nil")
 		return wine.Status(http.StatusInternalServerError)
 	}
 
