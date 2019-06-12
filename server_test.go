@@ -9,6 +9,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/gopub/log"
+
 	"github.com/gopub/gox"
 	"github.com/gopub/wine/mime"
 
@@ -25,7 +27,9 @@ type testJSONObj struct {
 func TestMain(m *testing.M) {
 	server = wine.NewServer(wine.DefaultConfig())
 	go func() {
-		server.Run(":8000")
+		if err := server.Run(":8000"); err != nil {
+			log.Panic(err)
+		}
 	}()
 
 	time.Sleep(time.Second)

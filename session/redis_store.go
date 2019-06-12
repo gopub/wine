@@ -6,6 +6,8 @@ import (
 	"reflect"
 	"time"
 
+	"github.com/pkg/errors"
+
 	"github.com/go-redis/redis"
 	"github.com/gopub/gox"
 )
@@ -37,13 +39,13 @@ func (s *RedisStore) Get(sid, key string, ptrValue interface{}) error {
 
 	pv := reflect.ValueOf(ptrValue)
 	if pv.Kind() != reflect.Ptr {
-		panic("ptrValue must be a pointer")
+		return errors.New("ptrValue must be a pointer")
 	}
 
 	if b, ok := ptrValue.(*[]byte); ok {
 		data, err := cmd.Bytes()
 		if err != nil {
-			return err
+			return errors.Wrap(err, "cannot get cmd bytes")
 		}
 		*b = data
 		return nil
@@ -53,33 +55,36 @@ func (s *RedisStore) Get(sid, key string, ptrValue interface{}) error {
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 		i, err := cmd.Int64()
 		if err != nil {
-			return err
+			return errors.Wrap(err, "cannot get cmd int64")
 		}
 		v.SetInt(i)
 		return nil
 	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
 		i, err := cmd.Uint64()
 		if err != nil {
-			return err
+			return errors.Wrap(err, "cannot get cmd uint64")
 		}
 		v.SetUint(i)
 		return nil
 	case reflect.Float32, reflect.Float64:
 		i, err := cmd.Float64()
 		if err != nil {
-			return err
+			return errors.Wrap(err, "cannot get cmd float64")
 		}
 		v.SetFloat(i)
 		return nil
 	case reflect.String:
 		i, err := cmd.Result()
 		if err != nil {
-			return err
+			return errors.Wrap(err, "cannot get cmd result")
 		}
 		v.SetString(i)
 		return nil
 	default:
-		data, _ := cmd.Bytes()
+		data, err := cmd.Bytes()
+		if err != nil {
+			return errors.Wrap(err, "cannot get cmd bytes")
+		}
 		return gox.JSONUnmarshal(data, ptrValue)
 	}
 }

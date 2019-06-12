@@ -15,9 +15,9 @@ const (
 )
 
 var (
-	versionRegexp  = regexp.MustCompile("^[1-9]\\d*(\\.\\d*)*([\\w-]+)?$")
-	emailRegexp    = regexp.MustCompile("^[_a-zA-Z0-9-\\+\\.]+@[a-zA-Z0-9-]+(\\.[a-zA-Z0-9-]+)*(\\.[a-zA-Z]{2,3})$")
-	variableRegexp = regexp.MustCompile("^[_a-zA-Z][_a-zA-Z0-9]*$")
+	versionRegexp  = regexp.MustCompile(`^[1-9]\\d*(\\.\\d*)*([\\w-]+)?$`)
+	emailRegexp    = regexp.MustCompile(`^[_a-zA-Z0-9-\\+\\.]+@[a-zA-Z0-9-]+(\\.[a-zA-Z0-9-]+)*(\\.[a-zA-Z]{2,3})$`)
+	variableRegexp = regexp.MustCompile(`^[_a-zA-Z][_a-zA-Z0-9]*$`)
 )
 
 type PatternMatcher interface {

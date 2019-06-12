@@ -1,109 +1,194 @@
 package mapping_test
 
 import (
+	"encoding/json"
 	"testing"
 
-	"github.com/gopub/mapper"
+	"github.com/gopub/wine/mapping"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
-type Image struct {
-	Width  int    `mapper:"w,min=100,max=800"`
-	Height int    `mapper:"h,min=100,max=800"`
-	Link   string `mapper:"pattern=url"`
+func TestAssignPlainTypes(t *testing.T) {
+	type Item struct {
+		Int     int
+		Int8    int8
+		Int16   int16
+		Int32   int32
+		Int64   int64
+		Uint    uint
+		Uint8   uint8
+		Uint16  uint16
+		Uint32  uint32
+		Uint64  uint64
+		Float32 float32
+		Float64 float64
+		String  string
+		Bytes   []byte
+	}
+
+	t.Run("StructToPtrStruct", func(t *testing.T) {
+		i1 := Item{
+			Int:     1,
+			Int8:    2,
+			Int16:   3,
+			Int32:   4,
+			Int64:   5,
+			Uint:    6,
+			Uint8:   7,
+			Uint16:  8,
+			Uint32:  9,
+			Uint64:  10,
+			Float32: 11.1,
+			Float64: 12.2,
+			String:  "This is a string",
+			Bytes:   []byte("This is a slice of bytes"),
+		}
+
+		i2 := Item{}
+		err := mapping.Assign(&i2, i1)
+		assert.NoError(t, err)
+		assert.Equal(t, i2, i1)
+	})
+
+	t.Run("PtrStructToPtrStruct", func(t *testing.T) {
+		i1 := &Item{
+			Int:     1,
+			Uint:    6,
+			Float32: 11.1,
+			Float64: 12.2,
+			String:  "This is a string",
+			Bytes:   []byte("This is a slice of bytes"),
+		}
+
+		i2 := &Item{}
+		err := mapping.Assign(i2, i1)
+		assert.NoError(t, err)
+		assert.Equal(t, i2, i1)
+	})
+
+	t.Run("StructToStructError", func(t *testing.T) {
+		i1 := &Item{
+			Int:     1,
+			Uint:    6,
+			Float32: 11.1,
+			Float64: 12.2,
+			String:  "This is a string",
+			Bytes:   []byte("This is a slice of bytes"),
+		}
+
+		i2 := Item{}
+		err := mapping.Assign(i2, i1)
+		assert.Error(t, err)
+	})
+
+	t.Run("MapToStruct", func(t *testing.T) {
+		m := map[string]interface{}{
+			"Int": 1, "Uint": 2, "Float32": 3.3, "String": "s", "Bytes": []byte("bytes"),
+		}
+		i := &Item{}
+		err := mapping.Assign(i, m)
+		assert.NoError(t, err)
+	})
 }
 
-type Topic struct {
-	Title      string   `mapper:"min=2,max=30"`
-	CoverImage *Image   `mapper:"optional"`
-	MoreImages []*Image `mapper:"optional"`
-}
+func TestAssignEmbeddedStruct(t *testing.T) {
+	type SubItem struct {
+		Int     int
+		Uint    uint
+		Float64 float64
+		String  string
+		Bytes   []byte
+	}
 
-func TestAssign(t *testing.T) {
-	params := map[string]interface{}{
-		"title": "this is title",
-		"cover_image": map[string]interface{}{
-			"w":    100,
-			"h":    200,
-			"link": "https://www.image.com",
-		},
-		"more_images": []map[string]interface{}{
-			{
-				"w":    100,
-				"h":    200,
-				"link": "https://www.image.com",
+	type Item struct {
+		Int     int
+		Uint    uint
+		Float64 float64
+		String  string
+		Bytes   []byte
+		SubItem SubItem
+	}
+
+	t.Run("StructToPtrStruct", func(t *testing.T) {
+		i1 := &Item{
+			Int:     1,
+			Uint:    2,
+			Float64: 3.3,
+			String:  "This is a string",
+			Bytes:   []byte("abc"),
+			SubItem: SubItem{
+				Int:     4,
+				Uint:    5,
+				Float64: 6.6,
+				String:  "This is another string",
+				Bytes:   []byte("def"),
 			},
-		},
-	}
+		}
 
-	var topic *Topic
-	err := mapper.Assign(&topic, params)
-	if err != nil {
-		t.FailNow()
-	}
+		i2 := &Item{}
+		err := mapping.Assign(i2, i1)
+		assert.NoError(t, err)
+		assert.Equal(t, i2, i1)
+	})
 }
 
-func TestAssignSlice(t *testing.T) {
-	params := map[string]interface{}{
-		"title": "this is title",
-		"cover_image": map[string]interface{}{
-			"w":    100,
-			"h":    200,
-			"link": "https://www.image.com",
-		},
-		"more_images": []map[string]interface{}{
-			{
-				"w":    100,
-				"h":    200,
-				"link": "https://www.image.com",
+func TestAssignEmbeddedPtrStruct(t *testing.T) {
+	type Item struct {
+		Int     int
+		Uint    uint
+		Float64 float64
+		String  string
+		Bytes   []byte
+		SubItem *Item
+	}
+
+	t.Run("StructToPtrStruct", func(t *testing.T) {
+		i1 := &Item{
+			Int:     1,
+			Uint:    2,
+			Float64: 3.3,
+			String:  "This is a string",
+			Bytes:   []byte("abc"),
+			SubItem: &Item{
+				Int:     4,
+				Uint:    5,
+				Float64: 6.6,
+				String:  "This is another string",
+				Bytes:   []byte("def"),
 			},
-		},
-	}
+		}
 
-	values := []interface{}{params}
-	var topics []*Topic
-	err := mapper.Assign(&topics, values)
-	if err != nil || len(topics) == 0 {
-		t.FailNow()
-	}
-}
+		i2 := &Item{}
+		err := mapping.Assign(i2, i1)
+		assert.NoError(t, err)
+		assert.Equal(t, i2, i1)
+	})
 
-type User struct {
-	Id       int
-	Name     string
-	OpenAuth *OpenAuth
-}
+	t.Run("MapToPtrStruct", func(t *testing.T) {
+		m := map[string]interface{}{
+			"Int":     1,
+			"Uint":    2,
+			"Float64": 3.3,
+			"String":  "This is a string",
+			"Bytes":   []byte("abc"),
+			"SubItem": &Item{
+				Int:     4,
+				Uint:    5,
+				Float64: 6.6,
+				String:  "This is another string",
+				Bytes:   []byte("def"),
+			},
+		}
 
-type OpenAuth struct {
-	Provider string
-	OpenID   string
-}
-
-type UserInfo struct {
-	Id       int
-	Name     string
-	OpenAuth *OpenAuthInfo
-}
-
-type OpenAuthInfo struct {
-	Provider string
-	OpenID   string
-}
-
-func TestAssignStruct(t *testing.T) {
-	user := &User{}
-	userInfo := &UserInfo{
-		Id:   1,
-		Name: "tom",
-		OpenAuth: &OpenAuthInfo{
-			Provider: "wechat",
-			OpenID:   "open_id_123",
-		},
-	}
-
-	err := mapper.Assign(user, userInfo)
-	if err != nil {
-		t.Error(err)
-		t.FailNow()
-	}
-	t.Logf("%#v", user)
+		i := &Item{}
+		err := mapping.Assign(i, m)
+		assert.NoError(t, err)
+		assert.Equal(t, i.SubItem, m["SubItem"])
+		jm, err := json.Marshal(m)
+		require.NoError(t, err)
+		ji, err := json.Marshal(i)
+		require.NoError(t, err)
+		assert.JSONEq(t, string(ji), string(jm))
+	})
 }

@@ -5,10 +5,10 @@ import (
 )
 
 var (
-	_compactSlashRegexp = regexp.MustCompile("/{2,}")
-	_staticPathRegexp   = regexp.MustCompile("^[^\\{\\}\\*]+$")
-	_wildcardPathRegexp = regexp.MustCompile("^\\*[0-9a-zA-Z_\\-]*$")
-	_paramPathRegexp    = regexp.MustCompile("^\\{([a-zA-Z][a-zA-Z_0-9]*|_[a-zA-Z_0-9]*[a-zA-Z0-9]+[a-zA-Z_0-9]*)\\}$")
+	_compactSlashRegexp = regexp.MustCompile(`/{2,}`)
+	_staticPathRegexp   = regexp.MustCompile(`^[^\\{\\}\\*]+$`)
+	_wildcardPathRegexp = regexp.MustCompile(`^\\*[0-9a-zA-Z_\\-]*$`)
+	_paramPathRegexp    = regexp.MustCompile(`^\\{([a-zA-Z][a-zA-Z_0-9]*|_[a-zA-Z_0-9]*[a-zA-Z0-9]+[a-zA-Z_0-9]*)\\}$`)
 )
 
 func normalizePath(path string) string {
@@ -48,11 +48,11 @@ func isParamPath(path string) bool {
 func getNodeType(path string) nodeType {
 	switch {
 	case isStaticPath(path):
-		return _StaticNode
+		return StaticNode
 	case isParamPath(path):
-		return _ParamNode
+		return ParamNode
 	case isWildcardPath(path):
-		return _WildcardNode
+		return WildcardNode
 	default:
 		panic("invalid path: " + path)
 	}

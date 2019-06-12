@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/gopub/gox"
+
 	"github.com/gopub/log"
 	"github.com/gopub/wine/mime"
 )
@@ -53,7 +55,9 @@ func (r *responseImpl) Respond(ctx context.Context, w http.ResponseWriter) {
 		w.Header()[k] = v
 	}
 	w.WriteHeader(r.status)
-	w.Write(body)
+	if err := gox.WriteAll(w, body); err != nil {
+		log.Error(err)
+	}
 }
 
 func (r *responseImpl) getBytes() []byte {
@@ -69,9 +73,8 @@ func (r *responseImpl) getBytes() []byte {
 			body, err := json.Marshal(r.value)
 			if err != nil {
 				logger.Error(err)
-			} else {
-				return body
 			}
+			return body
 		}
 	case strings.Contains(contentType, mime.Plain):
 		fallthrough

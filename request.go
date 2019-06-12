@@ -1,15 +1,15 @@
 package wine
 
 import (
-	"bytes"
 	"encoding/json"
-	"errors"
-	"io/ioutil"
 	"net/http"
+	"net/url"
 	"strings"
 
 	"github.com/gopub/gox"
+	"github.com/gopub/log"
 	"github.com/gopub/wine/mime"
+	"github.com/pkg/errors"
 )
 
 const (
@@ -41,76 +41,36 @@ func NewDefaultRequestParser() *DefaultRequestParser {
 
 func (p *DefaultRequestParser) ParseHTTPRequest(req *http.Request, maxMemory int64) (gox.M, error) {
 	params := gox.M{}
+	params.AddMap(p.parseCookieParams(req))
+	params.AddMap(p.parseHeaderParams(req))
+	params.AddMap(p.parseURLValues(req.URL.Query()))
+	bp, err := p.parseBodyParams(req, maxMemory)
+	if err != nil {
+		return nil, errors.Wrap(err, "cannot parse body")
+	}
+	params.AddMap(bp)
+	return params, nil
+}
+
+func (p *DefaultRequestParser) parseCookieParams(req *http.Request) gox.M {
+	params := gox.M{}
 	for _, cookie := range req.Cookies() {
 		params[cookie.Name] = cookie.Value
 	}
+	return params
+}
 
+func (p *DefaultRequestParser) parseHeaderParams(req *http.Request) gox.M {
+	params := gox.M{}
 	for k, v := range req.Header {
 		if strings.HasPrefix(k, "x-") || strings.HasPrefix(k, "X-") || p.headerFields[k] {
 			params[strings.ToLower(k[2:])] = v
 		}
 	}
-
-	params.AddMap(convertToM(req.URL.Query()))
-
-	contentType := req.Header.Get(ContentType)
-	for i, ch := range contentType {
-		if ch == ' ' || ch == ';' {
-			contentType = contentType[:i]
-			break
-		}
-	}
-
-	switch contentType {
-	case mime.HTML, mime.Plain:
-		break
-	case mime.JSON:
-		d, e := ioutil.ReadAll(req.Body)
-		if e != nil {
-			logger.Error(e)
-			break
-		}
-
-		if len(d) > 0 {
-			var m gox.M
-			e = jsonUnmarshal(d, &m)
-			if e != nil {
-				break
-			}
-			params.AddMap(m)
-		}
-	case mime.FormURLEncoded:
-		//startAt := time.Now()
-		err := req.ParseForm()
-		//logger.Debug("Cost:", time.Since(startAt))
-		if err != nil {
-			logger.Error(err)
-			return nil, err
-		}
-		params.AddMap(convertToM(req.Form))
-	case mime.FormData:
-		//startAt := time.Now()
-		// ParseMultipartForm is very slow sometimes. Why???
-		err := req.ParseMultipartForm(maxMemory)
-		//logger.Debug("Cost:", time.Since(startAt))
-		if err != nil {
-			logger.Error(err)
-			return nil, err
-		}
-
-		if req.MultipartForm != nil && req.MultipartForm.File != nil {
-			params.AddMap(convertToM(req.MultipartForm.Value))
-		}
-	default:
-		if len(contentType) != 0 {
-			logger.Infof("Unprocessed content type=%s", contentType)
-		}
-	}
-
-	return params, nil
+	return params
 }
 
-func convertToM(values map[string][]string) gox.M {
+func (p *DefaultRequestParser) parseURLValues(values url.Values) gox.M {
 	m := gox.M{}
 	for k, v := range values {
 		i := strings.Index(k, "[]")
@@ -128,15 +88,57 @@ func convertToM(values map[string][]string) gox.M {
 	return m
 }
 
-func jsonUnmarshal(data []byte, pJSONObj interface{}) error {
-	if len(data) == 0 {
-		return errors.New("data is empty")
+func (p *DefaultRequestParser) parseContentType(req *http.Request) string {
+	t := req.Header.Get(ContentType)
+	for i, ch := range t {
+		if ch == ' ' || ch == ';' {
+			t = t[:i]
+			break
+		}
 	}
-	decoder := json.NewDecoder(bytes.NewBuffer(data))
-	decoder.UseNumber()
-	err := decoder.Decode(pJSONObj)
-	if err != nil {
-		logger.Error(err)
+	return t
+}
+
+func (p *DefaultRequestParser) parseBodyParams(req *http.Request, maxMemory int64) (gox.M, error) {
+	typ := p.parseContentType(req)
+	params := gox.M{}
+	switch typ {
+	case mime.HTML, mime.Plain:
+		return params, nil
+	case mime.JSON:
+		decoder := json.NewDecoder(req.Body)
+		decoder.UseNumber()
+		defer func() {
+			if err := req.Body.Close(); err != nil {
+				log.Errorf("cannot close request body: %v", err)
+			}
+		}()
+
+		err := decoder.Decode(&params)
+		if err != nil {
+			return nil, errors.Wrap(err, "cannot decode")
+		}
+		return params, nil
+	case mime.FormURLEncoded:
+		err := req.ParseForm()
+		if err != nil {
+			return nil, errors.Wrap(err, "cannot parse form")
+		}
+		return p.parseURLValues(req.Form), nil
+	case mime.FormData:
+		err := req.ParseMultipartForm(maxMemory)
+		if err != nil {
+			return nil, errors.Wrap(err, "cannot parse multipart form")
+		}
+
+		if req.MultipartForm != nil && req.MultipartForm.File != nil {
+			return p.parseURLValues(req.MultipartForm.Value), nil
+		}
+		return params, nil
+	default:
+		if len(typ) != 0 {
+			logger.Warnf("Ignored content type=%s", typ)
+		}
+		return params, nil
 	}
-	return err
 }

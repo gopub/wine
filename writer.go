@@ -83,7 +83,7 @@ func newCompressedResponseWriter(w http.ResponseWriter, encoding string) (*compr
 		cw.ResponseWriter = w
 		return cw, nil
 	default:
-		return nil, errors.New("Unsupported encoding")
+		return nil, errors.New("unsupported encoding")
 	}
 }
 
@@ -115,7 +115,7 @@ func (w *compressedResponseWriter) Close() error {
 	return nil
 }
 
-func compressionHandler(h http.Handler) http.Handler {
+func CompressionHandler(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		enc := r.Header.Get("Accept-Encoding")
 		if strings.Contains(enc, "gzip") {

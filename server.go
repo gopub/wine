@@ -8,6 +8,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gopub/gox"
+
 	"github.com/gopub/log"
 )
 
@@ -87,7 +89,6 @@ func (s *Server) Run(addr string) error {
 	err := s.server.ListenAndServe()
 	if err != nil {
 		s.server = nil
-		logger.Error(err)
 	}
 	return err
 }
@@ -104,15 +105,13 @@ func (s *Server) RunTLS(addr, certFile, keyFile string) error {
 	err := s.server.ListenAndServeTLS(certFile, keyFile)
 	if err != nil {
 		s.server = nil
-		logger.Error(err)
 	}
 	return err
 }
 
 // Shutdown stops server
-func (s *Server) Shutdown() {
-	s.server.Shutdown(context.Background())
-	logger.Info("Shutdown")
+func (s *Server) Shutdown() error {
+	return s.server.Shutdown(context.Background())
 }
 
 func (s *Server) logHTTP(rw http.ResponseWriter, req *http.Request, startAt time.Time) {
@@ -255,7 +254,9 @@ func handleFavIcon(ctx context.Context, req *Request, next Invoker) Responsible 
 	return ResponsibleFunc(func(ctx context.Context, rw http.ResponseWriter) {
 		rw.Header()[ContentType] = []string{"image/x-icon"}
 		rw.WriteHeader(http.StatusOK)
-		rw.Write(_faviconBytes)
+		if err := gox.WriteAll(rw, _faviconBytes); err != nil {
+			log.ContextLogger(ctx).Error("cannot write bytes: %v", err)
+		}
 	})
 }
 
