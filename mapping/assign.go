@@ -12,6 +12,10 @@ type Assigner interface {
 	Assign(v interface{}) error
 }
 
+type Validator interface {
+	Validate() error
+}
+
 // Assign assigns src to dst
 func Assign(dst interface{}, src interface{}) error {
 	return AssignWithNamer(dst, src, defaultNamer)
@@ -131,6 +135,10 @@ func assignValue(dst reflect.Value, src reflect.Value, namer Namer) error {
 
 	if dst.Kind() == reflect.Ptr && dst.IsNil() {
 		dst.Set(v.Addr())
+	}
+
+	if vr, ok := dst.Interface().(Validator); ok {
+		return vr.Validate()
 	}
 	return nil
 }
