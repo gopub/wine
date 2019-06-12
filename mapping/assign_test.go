@@ -3,19 +3,19 @@ package mapping_test
 import (
 	"testing"
 
-	"github.com/gopub/mapper"
+	"github.com/gopub/wine/mapping"
 )
 
 type Image struct {
-	Width  int    `mapper:"w,min=100,max=800"`
-	Height int    `mapper:"h,min=100,max=800"`
-	Link   string `mapper:"pattern=url"`
+	Width  int    `mapping:"w,min=100,max=800"`
+	Height int    `mapping:"h,min=100,max=800"`
+	Link   string `mapping:"pattern=url"`
 }
 
 type Topic struct {
-	Title      string   `mapper:"min=2,max=30"`
-	CoverImage *Image   `mapper:"optional"`
-	MoreImages []*Image `mapper:"optional"`
+	Title      string   `mapping:"min=2,max=30"`
+	CoverImage *Image   `mapping:"optional"`
+	MoreImages []*Image `mapping:"optional"`
 }
 
 func TestAssign(t *testing.T) {
@@ -36,7 +36,7 @@ func TestAssign(t *testing.T) {
 	}
 
 	var topic *Topic
-	err := mapper.Assign(&topic, params)
+	err := mapping.Assign(&topic, params)
 	if err != nil {
 		t.FailNow()
 	}
@@ -61,7 +61,7 @@ func TestAssignSlice(t *testing.T) {
 
 	values := []interface{}{params}
 	var topics []*Topic
-	err := mapper.Assign(&topics, values)
+	err := mapping.Assign(&topics, values)
 	if err != nil || len(topics) == 0 {
 		t.FailNow()
 	}
@@ -100,7 +100,7 @@ func TestAssignStruct(t *testing.T) {
 		},
 	}
 
-	err := mapper.Assign(user, userInfo)
+	err := mapping.Assign(user, userInfo)
 	if err != nil {
 		t.Error(err)
 		t.FailNow()

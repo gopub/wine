@@ -1,8 +1,7 @@
 package mapping
 
 import (
-	"errors"
-	"fmt"
+	"github.com/pkg/errors"
 	"log"
 	"reflect"
 	"strings"
@@ -62,7 +61,7 @@ func parseParamInfo(f reflect.StructField, tagName string) (*paramInfo, error) {
 
 	if f.Name[0] < 'A' || f.Name[0] > 'Z' {
 		if len(tag) > 0 {
-			return nil, errors.New(fmt.Sprintf("unexported field: name=%s" + f.Name))
+			return nil, errors.Errorf("unexported field: name=%s" + f.Name)
 		}
 		return nil, nil
 	}
@@ -83,7 +82,7 @@ func parseParamInfo(f reflect.StructField, tagName string) (*paramInfo, error) {
 
 		if MatchPattern("variable", s) {
 			if len(info.name) > 0 {
-				return nil, errors.New(fmt.Sprintf("duplicate mapping name=%s", s))
+				return nil, errors.Errorf("duplicate mapping name=%s", s)
 			}
 			info.name = s
 			continue
@@ -91,12 +90,12 @@ func parseParamInfo(f reflect.StructField, tagName string) (*paramInfo, error) {
 
 		kv := strings.SplitN(s, "=", 2)
 		if len(kv) != 2 {
-			return nil, errors.New(fmt.Sprintf("invalid tag property=%s", s))
+			return nil, errors.Errorf("invalid tag property=%s", s)
 		}
 		key := strings.TrimSpace(kv[0])
 		val := strings.TrimSpace(kv[1])
 		if len(key) == 0 || len(val) == 0 {
-			return nil, errors.New(fmt.Sprintf("invalid tag key=%s", key))
+			return nil, errors.Errorf("invalid tag key=%s", key)
 		}
 
 		switch key {
@@ -114,17 +113,17 @@ func parseParamInfo(f reflect.StructField, tagName string) (*paramInfo, error) {
 			info.maxVal = maxVal
 		case "pattern":
 			if !MatchPattern("variable", val) {
-				return nil, errors.New(fmt.Sprintf("invalid pattern: name=%f", val))
+				return nil, errors.Errorf("invalid pattern: name=%s", val)
 			}
 
 			info.patterns = append(info.patterns, val)
 		case "trans", "transformer":
 			if !MatchPattern("variable", val) {
-				return nil, errors.New(fmt.Sprintf("invalid transformer: name=%s", val))
+				return nil, errors.Errorf("invalid transformer: name=%s", val)
 			}
 
 			if len(info.transformName) > 0 {
-				return nil, errors.New(fmt.Sprintf("duplicate transformer: name=%s", val))
+				return nil, errors.Errorf("duplicate transformer: name=%s", val)
 			}
 
 			info.transformName = val

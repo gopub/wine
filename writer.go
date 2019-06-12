@@ -83,7 +83,7 @@ func newCompressedResponseWriter(w http.ResponseWriter, encoding string) (*compr
 		cw.ResponseWriter = w
 		return cw, nil
 	default:
-		return nil, errors.New("Unsupported encoding")
+		return nil, errors.New("unsupported encoding")
 	}
 }
 
