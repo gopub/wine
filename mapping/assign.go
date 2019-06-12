@@ -53,7 +53,19 @@ func assignValue(dst reflect.Value, src reflect.Value, namer Namer) error {
 	}
 
 	if a, ok := dst.Interface().(Assigner); ok {
-		return a.Assign(src.Interface())
+		if a != nil && (dst.Kind() != reflect.Ptr || !dst.IsNil()) {
+			return a.Assign(src.Interface())
+		}
+
+		if dst.Kind() == reflect.Ptr && dst.CanSet() {
+			dst.Set(reflect.New(dst.Type().Elem()))
+			if err := dst.Interface().(Assigner).Assign(src.Interface()); err != nil {
+				dst.Set(reflect.Zero(dst.Type()))
+				return err
+			}
+			return nil
+		}
+		return errors.New("cannot assign")
 	}
 
 	v := dst
@@ -239,7 +251,7 @@ func mapToStruct(dst reflect.Value, src reflect.Value, namer Namer) error {
 
 			err := assignValue(fieldVal, reflect.ValueOf(fieldSrcVal.Interface()), namer)
 			if err != nil {
-				return err
+				return errors.Wrapf(err, "cannot assignValue: %s", key.String())
 			}
 			break
 		}

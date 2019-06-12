@@ -2,6 +2,7 @@ package mapping_test
 
 import (
 	"encoding/json"
+	"github.com/gopub/gox"
 	"testing"
 
 	"github.com/gopub/wine/mapping"
@@ -190,5 +191,28 @@ func TestAssignEmbeddedPtrStruct(t *testing.T) {
 		ji, err := json.Marshal(i)
 		require.NoError(t, err)
 		assert.JSONEq(t, string(ji), string(jm))
+	})
+}
+
+func TestAssigner(t *testing.T) {
+	type Contact struct {
+		Name        string
+		PhoneNumber *gox.PhoneNumber
+	}
+
+	t.Run("Success", func(t *testing.T) {
+		c := &Contact{}
+		err := mapping.Assign(c, map[string]interface{}{
+			"Name":        "Tom",
+			"PhoneNumber": "+8613800000001",
+		})
+		require.NoError(t, err)
+		assert.Equal(t, &Contact{
+			Name: "Tom",
+			PhoneNumber: &gox.PhoneNumber{
+				CountryCode:    86,
+				NationalNumber: 13800000001,
+			},
+		}, c)
 	})
 }
