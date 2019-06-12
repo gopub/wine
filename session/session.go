@@ -2,8 +2,9 @@ package session
 
 import (
 	"context"
-	"github.com/pkg/errors"
 	"time"
+
+	"github.com/pkg/errors"
 
 	"github.com/gopub/gox"
 )
@@ -138,7 +139,7 @@ func (s *session) Set(key string, value interface{}) error {
 func (s *session) Destroy() error {
 	err := normalizeErr(s.store.Delete(s.id))
 	if err != nil {
-		return errors.Wrapf(err, "cannot delete session: id=%d", s.id)
+		return errors.Wrapf(err, "cannot delete session: id=%s", s.id)
 	}
 	logger.Infof("Destroyed session: id=%s", s.id)
 	return err

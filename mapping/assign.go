@@ -29,7 +29,7 @@ func AssignWithNamer(dst interface{}, src interface{}, namer Namer) error {
 	}
 
 	dstVal := reflect.ValueOf(dst)
-	if dstVal.IsValid() == false {
+	if !dstVal.IsValid() {
 		return errors.New("dst is invalid")
 	}
 
@@ -213,7 +213,7 @@ func mapToStruct(dst reflect.Value, src reflect.Value, namer Namer) error {
 
 	for i := 0; i < dst.NumField(); i++ {
 		fieldVal := dst.Field(i)
-		if fieldVal.IsValid() == false || fieldVal.CanSet() == false {
+		if !fieldVal.IsValid() || !fieldVal.CanSet() {
 			continue
 		}
 
@@ -262,7 +262,7 @@ func structToStruct(dst reflect.Value, src reflect.Value, namer Namer) error {
 
 	for i := 0; i < dst.NumField(); i++ {
 		dstFieldVal := dst.Field(i)
-		if dstFieldVal.IsValid() == false || dstFieldVal.CanSet() == false {
+		if !dstFieldVal.IsValid() || !dstFieldVal.CanSet() {
 			continue
 		}
 
@@ -278,7 +278,7 @@ func structToStruct(dst reflect.Value, src reflect.Value, namer Namer) error {
 		for i := 0; i < src.NumField(); i++ {
 			srcFieldVal := src.Field(i)
 			srcFieldName := src.Type().Field(i).Name
-			if srcFieldVal.IsValid() == false || srcFieldName[0] < 'A' || srcFieldName[0] > 'Z' {
+			if !srcFieldVal.IsValid() || srcFieldName[0] < 'A' || srcFieldName[0] > 'Z' {
 				continue
 			}
 
@@ -297,7 +297,7 @@ func structToStruct(dst reflect.Value, src reflect.Value, namer Namer) error {
 	for i := 0; i < src.NumField(); i++ {
 		sfv := src.Field(i)
 		sfName := src.Type().Field(i).Name
-		if sfv.IsValid() == false || sfName[0] < 'A' || sfName[0] > 'Z' {
+		if !sfv.IsValid() || sfName[0] < 'A' || sfName[0] > 'Z' {
 			continue
 		}
 

@@ -3,10 +3,11 @@ package wine
 import (
 	"context"
 	"encoding/json"
-	"github.com/gopub/gox"
 	"html/template"
 	"net/http"
 	"strings"
+
+	"github.com/gopub/gox"
 
 	"github.com/gopub/log"
 	"github.com/gopub/wine/mime"

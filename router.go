@@ -197,7 +197,6 @@ func (r *Router) Unbind(method string, path string) {
 		n.handlers = nil
 		log.With("method", method, "path", path).Info("succeeded")
 	}
-	return
 }
 
 // StaticFile binds path to a file
@@ -205,13 +204,11 @@ func (r *Router) StaticFile(path, filePath string) {
 	r.Get(path, func(ctx context.Context, req *Request, next Invoker) Responsible {
 		return File(req.HTTPRequest, filePath)
 	})
-	return
 }
 
 // StaticDir binds path to a directory
 func (r *Router) StaticDir(path, dirPath string) {
 	r.StaticFS(path, http.Dir(dirPath))
-	return
 }
 
 // StaticFS binds path to an abstract file system
@@ -238,7 +235,6 @@ func (r *Router) StaticFS(path string, fs http.FileSystem) {
 	r.Get(path, func(ctx context.Context, req *Request, next Invoker) Responsible {
 		return Handle(req.HTTPRequest, fileServer)
 	})
-	return
 }
 
 // Get binds funcs to path with GET method

@@ -3,9 +3,10 @@ package session
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/pkg/errors"
 	"reflect"
 	"time"
+
+	"github.com/pkg/errors"
 
 	"github.com/go-redis/redis"
 	"github.com/gopub/gox"

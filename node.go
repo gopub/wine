@@ -138,7 +138,6 @@ func (n *node) add(nodes []*node) bool {
 	switch nod.t {
 	case StaticNode:
 		n.children = append([]*node{nod}, n.children...)
-		break
 	case ParamNode:
 		i := len(n.children) - 1
 		for i >= 0 {
@@ -157,10 +156,8 @@ func (n *node) add(nodes []*node) bool {
 			copy(n.children[i+2:], n.children[i+1:])
 			n.children[i+1] = nod
 		}
-		break
 	case WildcardNode:
 		n.children = append(n.children, nod)
-		break
 	default:
 		logger.Panic("invalid node type")
 	}
