@@ -44,7 +44,7 @@ func assignValue(dst reflect.Value, src reflect.Value, namer Namer) error {
 	}
 
 	if a, ok := dst.Interface().(Assigner); ok {
-		if a != nil && (dst.Kind() != reflect.Ptr || !dst.IsNil()) {
+		if dst.Kind() != reflect.Ptr || !dst.IsNil() {
 			return a.Assign(src.Interface())
 		}
 
@@ -52,7 +52,7 @@ func assignValue(dst reflect.Value, src reflect.Value, namer Namer) error {
 			dst.Set(reflect.New(dst.Type().Elem()))
 			if err := dst.Interface().(Assigner).Assign(src.Interface()); err != nil {
 				dst.Set(reflect.Zero(dst.Type()))
-				return err
+				return errors.Wrap(err, "cannot assign via Assigner interface")
 			}
 			return nil
 		}
