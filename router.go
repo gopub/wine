@@ -261,14 +261,14 @@ func (r *Router) Delete(path string, funcs ...HandlerFunc) {
 func (r *Router) BindControllers(controllers ...Controller) {
 	for _, c := range controllers {
 		for s, h := range c.RouteMap() {
-			strs := strings.Fields(s)
-			if len(strs) != 2 {
+			fields := strings.Fields(s)
+			if len(fields) != 2 {
 				logger.Panic("invalid route key: " + s)
 			}
-			methods := strings.Split(strs[0], "|")
-			path := c.RoutePath() + "/" + strs[1]
+			methods := strings.Split(fields[0], "|")
+			p := c.RoutePath() + "/" + fields[1]
 			for _, method := range methods {
-				r.Bind(method, path, h)
+				r.Bind(method, p, h)
 			}
 		}
 	}
