@@ -94,7 +94,9 @@ func (w *compressedResponseWriter) Write(data []byte) (int, error) {
 func (w *compressedResponseWriter) Flush() {
 	// Flush the compressed writer, then flush httpResponseWriter
 	if f, ok := w.compressedWriter.(flusher); ok {
-		f.Flush()
+		if err := f.Flush(); err != nil {
+			logger.Errorf("cannot flush: %v", err)
+		}
 		if ff, ok := w.ResponseWriter.(http.Flusher); ok {
 			ff.Flush()
 		}
