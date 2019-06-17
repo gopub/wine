@@ -2,6 +2,7 @@ package mapping_test
 
 import (
 	"encoding/json"
+	"errors"
 	"github.com/gopub/gox"
 	"github.com/gopub/gox/protobuf/base"
 	"testing"
@@ -234,5 +235,48 @@ func TestAssigner(t *testing.T) {
 				NationalNumber: 13800000001,
 			},
 		}, c)
+
+		t.Run("AssignString", func(t *testing.T) {
+			pn := &gox.PhoneNumber{}
+			err := mapping.Assign(pn, "+8618600000001")
+			assert.NoError(t, err)
+			assert.Equal(t, pn, &gox.PhoneNumber{
+				CountryCode:    86,
+				NationalNumber: 18600000001,
+			})
+		})
+	})
+}
+
+type Item struct {
+	ID    int64
+	Score int
+}
+
+func (i *Item) Validate() error {
+	if i.ID < 0 {
+		return errors.New("invalid id")
+	}
+
+	if i.Score < 0 {
+		return errors.New("invalid score")
+	}
+
+	return nil
+}
+
+func TestValidator(t *testing.T) {
+	t.Run("Success", func(t *testing.T) {
+		i := &Item{}
+		m := map[string]interface{}{"id": 123, "score": 100}
+		err := mapping.Assign(i, m)
+		assert.NoError(t, err)
+	})
+
+	t.Run("Error", func(t *testing.T) {
+		i := &Item{}
+		m := map[string]interface{}{"id": 123, "score": -10}
+		err := mapping.AssignWithNamer(i, m, mapping.SnakeToCamelNamer)
+		assert.Error(t, err)
 	})
 }

@@ -30,21 +30,15 @@ func BasicAuth(userToPassword map[string]string, realm string) HandlerFunc {
 	authHeaderValue := "Basic realm=" + strconv.Quote(realm)
 	return func(ctx context.Context, req *Request, next Invoker) Responsible {
 		authValue := req.HTTPRequest.Header.Get("Authorization")
-		var foundUser string
 		for user, info := range userToAuthInfo {
 			if info == authValue {
-				foundUser = user
-				break
+				ctx = context.WithValue(ctx, BasicAuthUser, user)
+				return next(ctx, req)
 			}
 		}
 
-		if len(foundUser) == 0 {
-			header := make(http.Header)
-			header.Set("WWW-Authenticate", authHeaderValue)
-			return NewResponse(http.StatusUnauthorized, header, nil)
-		}
-
-		ctx = context.WithValue(ctx, BasicAuthUser, foundUser)
-		return next(ctx, req)
+		header := make(http.Header)
+		header.Set("WWW-Authenticate", authHeaderValue)
+		return NewResponse(http.StatusUnauthorized, header, nil)
 	}
 }

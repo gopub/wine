@@ -2,6 +2,7 @@ package mapping
 
 import (
 	"reflect"
+	"strings"
 
 	"github.com/pkg/errors"
 
@@ -28,17 +29,7 @@ func AssignWithNamer(dst interface{}, src interface{}, namer Namer) error {
 		return errors.New("namer is nil")
 	}
 
-	dstVal := reflect.ValueOf(dst)
-	if !dstVal.IsValid() {
-		return errors.New("dst is invalid")
-	}
-
-	for dstVal.Kind() == reflect.Ptr && !dstVal.IsNil() {
-		dstVal = dstVal.Elem()
-	}
-
-	// dst must be a nil pointer or a valid value
-	err := assignValue(dstVal, reflect.ValueOf(src), namer)
+	err := assignValue(reflect.ValueOf(dst), reflect.ValueOf(src), namer)
 	return errors.Wrap(err, "cannot assignValue")
 }
 
@@ -53,7 +44,7 @@ func assignValue(dst reflect.Value, src reflect.Value, namer Namer) error {
 	}
 
 	if a, ok := dst.Interface().(Assigner); ok {
-		if a != nil && (dst.Kind() != reflect.Ptr || !dst.IsNil()) {
+		if dst.Kind() != reflect.Ptr || !dst.IsNil() {
 			return a.Assign(src.Interface())
 		}
 
@@ -61,7 +52,7 @@ func assignValue(dst reflect.Value, src reflect.Value, namer Namer) error {
 			dst.Set(reflect.New(dst.Type().Elem()))
 			if err := dst.Interface().(Assigner).Assign(src.Interface()); err != nil {
 				dst.Set(reflect.Zero(dst.Type()))
-				return errors.Wrap(err, "cannot assign")
+				return errors.Wrap(err, "cannot assign via Assigner interface")
 			}
 			return nil
 		}
@@ -69,7 +60,7 @@ func assignValue(dst reflect.Value, src reflect.Value, namer Namer) error {
 	}
 
 	v := dst
-	if v.Kind() == reflect.Ptr {
+	for v.Kind() == reflect.Ptr {
 		if v.IsNil() && v.CanSet() {
 			v = reflect.New(v.Type().Elem())
 		}
@@ -206,17 +197,14 @@ func mapToMap(dst reflect.Value, src reflect.Value, namer Namer) error {
 	return nil
 }
 
+// mapToStruct assign map to struct, panic if src is not map or dst is not struct
 func mapToStruct(dst reflect.Value, src reflect.Value, namer Namer) error {
 	if dst.Kind() != reflect.Struct {
-		return errors.Errorf("dst isn't struct: kind=%v", dst.Kind())
-	}
-
-	if src.Kind() == reflect.Interface {
-		src = src.Elem()
+		log.Panicf("dst is %v instead of struct", dst.Kind())
 	}
 
 	if src.Kind() != reflect.Map {
-		return errors.Errorf("src: kind=%v isn't map", src.Kind())
+		log.Panicf("src is %v instead of struct", src.Kind())
 	}
 
 	if src.Type().Key().Kind() != reflect.String {
@@ -238,8 +226,9 @@ func mapToStruct(dst reflect.Value, src reflect.Value, namer Namer) error {
 			continue
 		}
 
+		lcFieldName := strings.ToLower(fieldType.Name)
 		for _, key := range src.MapKeys() {
-			if namer.Name(key.String()) != fieldType.Name {
+			if strings.ToLower(namer.Name(key.String())) != lcFieldName {
 				continue
 			}
 
@@ -259,17 +248,14 @@ func mapToStruct(dst reflect.Value, src reflect.Value, namer Namer) error {
 	return nil
 }
 
+// structToStruct assign struct to struct, panic if src or dst is not struct
 func structToStruct(dst reflect.Value, src reflect.Value, namer Namer) error {
 	if dst.Kind() != reflect.Struct {
-		log.Panicf("dst: kind=%s isn't struct", dst.Kind())
-	}
-
-	if src.Kind() == reflect.Interface {
-		src = src.Elem()
+		log.Panicf("dst is %v instead of struct", dst.Kind())
 	}
 
 	if src.Kind() != reflect.Struct {
-		return errors.New("src isn't struct")
+		log.Panicf("src is %v instead of struct", dst.Kind())
 	}
 
 	for i := 0; i < dst.NumField(); i++ {
@@ -287,6 +273,7 @@ func structToStruct(dst reflect.Value, src reflect.Value, namer Namer) error {
 			continue
 		}
 
+		lcDstFieldName := strings.ToLower(dstFieldType.Name)
 		for i := 0; i < src.NumField(); i++ {
 			srcFieldVal := src.Field(i)
 			srcFieldName := src.Type().Field(i).Name
@@ -294,7 +281,7 @@ func structToStruct(dst reflect.Value, src reflect.Value, namer Namer) error {
 				continue
 			}
 
-			if namer.Name(srcFieldName) != dstFieldType.Name {
+			if strings.ToLower(namer.Name(srcFieldName)) != lcDstFieldName {
 				continue
 			}
 
@@ -307,15 +294,15 @@ func structToStruct(dst reflect.Value, src reflect.Value, namer Namer) error {
 	}
 
 	for i := 0; i < src.NumField(); i++ {
-		sfv := src.Field(i)
-		sfName := src.Type().Field(i).Name
-		if !sfv.IsValid() || sfName[0] < 'A' || sfName[0] > 'Z' {
+		srcFieldVal := src.Field(i)
+		srcFieldName := src.Type().Field(i).Name
+		if !srcFieldVal.IsValid() || srcFieldName[0] < 'A' || srcFieldName[0] > 'Z' {
 			continue
 		}
 
 		if src.Type().Field(i).Anonymous {
-			if err := assignValue(dst, reflect.ValueOf(sfv.Interface()), namer); err != nil {
-				log.Warnf("cannot assignValue: %s %v", sfName, err)
+			if err := assignValue(dst, reflect.ValueOf(srcFieldVal.Interface()), namer); err != nil {
+				log.Warnf("cannot assignValue: %s %v", srcFieldName, err)
 			}
 		}
 	}
