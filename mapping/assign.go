@@ -4,10 +4,9 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/pkg/errors"
-
 	"github.com/gopub/gox"
 	"github.com/gopub/log"
+	"github.com/pkg/errors"
 )
 
 type Assigner interface {
@@ -20,11 +19,11 @@ type Validator interface {
 
 // Assign assigns src to dst
 func Assign(dst interface{}, src interface{}) error {
-	return AssignWithNamer(dst, src, defaultNamer)
+	return NamedAssign(dst, src, defaultNamer)
 }
 
-// Assign assigns src to dst with namer
-func AssignWithNamer(dst interface{}, src interface{}, namer Namer) error {
+// NamedAssign assigns src to dst with namer
+func NamedAssign(dst interface{}, src interface{}, namer Namer) error {
 	if namer == nil {
 		return errors.New("namer is nil")
 	}
@@ -147,6 +146,7 @@ func assignValue(dst reflect.Value, src reflect.Value, namer Namer) error {
 	if vr, ok := dst.Interface().(Validator); ok {
 		return vr.Validate()
 	}
+
 	return nil
 }
 

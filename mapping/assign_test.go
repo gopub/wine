@@ -3,9 +3,10 @@ package mapping_test
 import (
 	"encoding/json"
 	"errors"
+	"testing"
+
 	"github.com/gopub/gox"
 	"github.com/gopub/gox/protobuf/base"
-	"testing"
 
 	"github.com/gopub/wine/mapping"
 	"github.com/stretchr/testify/assert"
@@ -276,7 +277,7 @@ func TestValidator(t *testing.T) {
 	t.Run("Error", func(t *testing.T) {
 		i := &Item{}
 		m := map[string]interface{}{"id": 123, "score": -10}
-		err := mapping.AssignWithNamer(i, m, mapping.SnakeToCamelNamer)
+		err := mapping.NamedAssign(i, m, mapping.SnakeToCamelNamer)
 		assert.Error(t, err)
 	})
 }
