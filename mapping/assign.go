@@ -61,7 +61,7 @@ func assignValue(dst reflect.Value, src reflect.Value, namer Namer) error {
 			dst.Set(reflect.New(dst.Type().Elem()))
 			if err := dst.Interface().(Assigner).Assign(src.Interface()); err != nil {
 				dst.Set(reflect.Zero(dst.Type()))
-				return err
+				return errors.Wrap(err, "cannot assign")
 			}
 			return nil
 		}

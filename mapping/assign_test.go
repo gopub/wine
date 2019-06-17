@@ -3,6 +3,7 @@ package mapping_test
 import (
 	"encoding/json"
 	"github.com/gopub/gox"
+	"github.com/gopub/gox/protobuf/base"
 	"testing"
 
 	"github.com/gopub/wine/mapping"
@@ -200,11 +201,30 @@ func TestAssigner(t *testing.T) {
 		PhoneNumber *gox.PhoneNumber
 	}
 
-	t.Run("Success", func(t *testing.T) {
+	t.Run("MapToStruct", func(t *testing.T) {
 		c := &Contact{}
 		err := mapping.Assign(c, map[string]interface{}{
 			"Name":        "Tom",
 			"PhoneNumber": "+8613800000001",
+		})
+		require.NoError(t, err)
+		assert.Equal(t, &Contact{
+			Name: "Tom",
+			PhoneNumber: &gox.PhoneNumber{
+				CountryCode:    86,
+				NationalNumber: 13800000001,
+			},
+		}, c)
+	})
+
+	t.Run("StructToStruct", func(t *testing.T) {
+		c := &Contact{}
+		err := mapping.Assign(c, map[string]interface{}{
+			"Name": "Tom",
+			"PhoneNumber": &base.PhoneNumber{
+				CountryCode:    86,
+				NationalNumber: 13800000001,
+			},
 		})
 		require.NoError(t, err)
 		assert.Equal(t, &Contact{
