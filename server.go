@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/gopub/gox"
-
 	"github.com/gopub/log"
 )
 
@@ -176,6 +175,7 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 
 	params, err := s.RequestParser.ParseHTTPRequest(req, s.MaxRequestMemory)
 	if err != nil {
+		logger.Errorf("ParseHTTPRequest failed: %v", err)
 		return
 	}
 	params.AddMapObj(pathParams)
@@ -206,9 +206,11 @@ func wrapperCompressedWriter(rw http.ResponseWriter, req *http.Request) http.Res
 	for _, enc := range acceptEncodings {
 		if strings.Contains(ae, enc) {
 			rw.Header().Set("Content-Encoding", enc)
-			if cw, err := newCompressedResponseWriter(rw, enc); err == nil {
-				return cw
+			cw, err := newCompressedResponseWriter(rw, enc)
+			if err != nil {
+				log.Errorf("newCompressedResponseWriter failed: %v", err)
 			}
+			return cw
 		}
 	}
 
