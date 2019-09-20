@@ -2,6 +2,7 @@ package api
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"github.com/gopub/gox"
 	"github.com/gopub/wine"
@@ -19,15 +20,15 @@ func NewClient(client *http.Client) *Client {
 	return &Client{client: client}
 }
 
-func (c *Client) Get(url string, params interface{}, result interface{}) error {
-	return c.Call(http.MethodGet, url, params, result)
+func (c *Client) Get(ctx context.Context, url string, params interface{}, result interface{}) error {
+	return c.call(ctx, http.MethodGet, url, params, result)
 }
 
-func (c *Client) Post(url string, params interface{}, result interface{}) error {
-	return c.Call(http.MethodPost, url, params, result)
+func (c *Client) Post(ctx context.Context, url string, params interface{}, result interface{}) error {
+	return c.call(ctx, http.MethodPost, url, params, result)
 }
 
-func (c *Client) Call(method string, url string, params interface{}, result interface{}) error {
+func (c *Client) call(ctx context.Context, method string, url string, params interface{}, result interface{}) error {
 	data, err := json.Marshal(params)
 	if err != nil {
 		return errors.Wrap(err, "marshal failed")
