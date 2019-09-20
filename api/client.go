@@ -70,6 +70,10 @@ func HandleResponse(resp *http.Response, result interface{}) error {
 		return gox.NewError(respObj.Error.Code, respObj.Error.Message)
 	}
 
+	if result == nil {
+		return nil
+	}
+
 	jsonData, err := json.Marshal(respObj.Data)
 	if err != nil {
 		return errors.Wrap(err, "marshal response data failed")
