@@ -8,6 +8,7 @@ import (
 	"github.com/gopub/wine"
 	"github.com/gopub/wine/mime"
 	"github.com/pkg/errors"
+	"io"
 	"io/ioutil"
 	"net/http"
 )
@@ -29,12 +30,15 @@ func (c *Client) Post(ctx context.Context, url string, params interface{}, resul
 }
 
 func (c *Client) call(ctx context.Context, method string, url string, params interface{}, result interface{}) error {
-	data, err := json.Marshal(params)
-	if err != nil {
-		return errors.Wrap(err, "marshal failed")
+	var body io.Reader
+	if params != nil {
+		data, err := json.Marshal(params)
+		if err != nil {
+			return errors.Wrap(err, "marshal failed")
+		}
+		body = bytes.NewBuffer(data)
 	}
-	buf := bytes.NewBuffer(data)
-	req, err := http.NewRequest(method, url, buf)
+	req, err := http.NewRequest(method, url, body)
 	if err != nil {
 		return errors.Wrap(err, "create request failed")
 	}
