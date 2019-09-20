@@ -29,6 +29,18 @@ func (c *Client) Post(ctx context.Context, url string, params interface{}, resul
 	return c.call(ctx, http.MethodPost, url, params, result)
 }
 
+func (c *Client) Put(ctx context.Context, url string, params interface{}, result interface{}) error {
+	return c.call(ctx, http.MethodPut, url, params, result)
+}
+
+func (c *Client) Patch(ctx context.Context, url string, params interface{}, result interface{}) error {
+	return c.call(ctx, http.MethodPatch, url, params, result)
+}
+
+func (c *Client) Delete(ctx context.Context, url string, result interface{}) error {
+	return c.call(ctx, http.MethodDelete, url, nil, result)
+}
+
 func (c *Client) call(ctx context.Context, method string, url string, params interface{}, result interface{}) error {
 	var body io.Reader
 	if params != nil {
