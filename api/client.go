@@ -47,6 +47,10 @@ func (c *Client) Do(req *http.Request, result interface{}) error {
 	if err != nil {
 		return errors.Wrap(err, "do request failed")
 	}
+	return HandleResponse(resp, result)
+}
+
+func HandleResponse(resp *http.Response, result interface{}) error {
 	defer resp.Body.Close()
 	respData, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
