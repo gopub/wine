@@ -38,6 +38,7 @@ func (c *Client) call(ctx context.Context, method string, url string, params int
 	if err != nil {
 		return errors.Wrap(err, "create request failed")
 	}
+	req = req.WithContext(ctx)
 	req.Header = http.Header{}
 	req.Header.Set(wine.ContentType, mime.JSON)
 	return c.Do(req, result)
