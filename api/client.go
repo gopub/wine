@@ -11,6 +11,7 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 )
 
 type Client struct {
@@ -21,16 +22,29 @@ func NewClient(client *http.Client) *Client {
 	return &Client{client: client}
 }
 
-func (c *Client) Get(ctx context.Context, url string, params interface{}, result interface{}) error {
-	return c.call(ctx, http.MethodGet, url, params, result)
+func (c *Client) Get(ctx context.Context, endpoint string, query url.Values, result interface{}) error {
+	if query == nil {
+		return c.call(ctx, http.MethodGet, endpoint, nil, result)
+	}
+
+	u, err := url.Parse(endpoint)
+	if err != nil {
+		return errors.Wrap(err, "parse url failed")
+	}
+	for k, vs := range query {
+		for _, v := range vs {
+			u.Query().Add(k, v)
+		}
+	}
+	return c.call(ctx, http.MethodGet, endpoint, u.String(), result)
 }
 
-func (c *Client) Post(ctx context.Context, url string, params interface{}, result interface{}) error {
-	return c.call(ctx, http.MethodPost, url, params, result)
+func (c *Client) Post(ctx context.Context, endpoint string, params interface{}, result interface{}) error {
+	return c.call(ctx, http.MethodPost, endpoint, params, result)
 }
 
-func (c *Client) Put(ctx context.Context, url string, params interface{}, result interface{}) error {
-	return c.call(ctx, http.MethodPut, url, params, result)
+func (c *Client) Put(ctx context.Context, endpoint string, params interface{}, result interface{}) error {
+	return c.call(ctx, http.MethodPut, endpoint, params, result)
 }
 
 func (c *Client) Patch(ctx context.Context, url string, params interface{}, result interface{}) error {
@@ -41,7 +55,7 @@ func (c *Client) Delete(ctx context.Context, url string, result interface{}) err
 	return c.call(ctx, http.MethodDelete, url, nil, result)
 }
 
-func (c *Client) call(ctx context.Context, method string, url string, params interface{}, result interface{}) error {
+func (c *Client) call(ctx context.Context, method string, endpoint string, params interface{}, result interface{}) error {
 	var body io.Reader
 	if params != nil {
 		data, err := json.Marshal(params)
@@ -50,7 +64,7 @@ func (c *Client) call(ctx context.Context, method string, url string, params int
 		}
 		body = bytes.NewBuffer(data)
 	}
-	req, err := http.NewRequest(method, url, body)
+	req, err := http.NewRequest(method, endpoint, body)
 	if err != nil {
 		return errors.Wrap(err, "create request failed")
 	}
