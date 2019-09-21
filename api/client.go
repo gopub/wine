@@ -16,10 +16,18 @@ import (
 
 type Client struct {
 	client *http.Client
+	header http.Header
 }
 
 func NewClient(client *http.Client) *Client {
-	return &Client{client: client}
+	return &Client{
+		client: client,
+		header: make(http.Header),
+	}
+}
+
+func (c *Client) Header() http.Header {
+	return c.header
 }
 
 func (c *Client) Get(ctx context.Context, endpoint string, query url.Values, result interface{}) error {
@@ -75,6 +83,11 @@ func (c *Client) call(ctx context.Context, method string, endpoint string, param
 }
 
 func (c *Client) Do(req *http.Request, result interface{}) error {
+	for k, vs := range c.header {
+		for _, v := range vs {
+			req.Header.Add(k, v)
+		}
+	}
 	resp, err := c.client.Do(req)
 	if err != nil {
 		return errors.Wrap(err, "do request failed")
