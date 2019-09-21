@@ -76,6 +76,9 @@ func (p *DefaultRequestParser) parseURLValues(values url.Values) gox.M {
 		i := strings.Index(k, "[]")
 		if i >= 0 && i == len(k)-2 {
 			k = k[0 : len(k)-2]
+			if len(v) == 1 {
+				v = strings.Split(v[0], ",")
+			}
 		}
 		k = strings.ToLower(k)
 		if len(v) > 1 || i >= 0 {

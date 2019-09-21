@@ -7,8 +7,8 @@ import (
 var (
 	_compactSlashRegexp = regexp.MustCompile(`/{2,}`)
 	_staticPathRegexp   = regexp.MustCompile(`^[^\\{\\}\\*]+$`)
-	_wildcardPathRegexp = regexp.MustCompile(`^\\*[0-9a-zA-Z_\\-]*$`)
-	_paramPathRegexp    = regexp.MustCompile(`^\\{([a-zA-Z][a-zA-Z_0-9]*|_[a-zA-Z_0-9]*[a-zA-Z0-9]+[a-zA-Z_0-9]*)\\}$`)
+	_wildcardPathRegexp = regexp.MustCompile(`^*[0-9a-zA-Z_\\-]*$`)
+	_paramPathRegexp    = regexp.MustCompile(`^{([a-zA-Z][a-zA-Z_0-9]*|_[a-zA-Z_0-9]*[a-zA-Z0-9]+[a-zA-Z_0-9]*)}$`)
 )
 
 func normalizePath(path string) string {

@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"github.com/gopub/wine/api"
 	"net/http"
 
 	"github.com/gopub/wine"
@@ -10,6 +11,10 @@ import (
 
 func main() {
 	s := wine.NewServer(wine.DefaultConfig())
+	s.Get("echo", func(ctx context.Context, req *wine.Request, next wine.Invoker) wine.Responsible {
+		return api.Data(req.Parameters)
+	})
+
 	s.Get("/", func(ctx context.Context, req *wine.Request, next wine.Invoker) wine.Responsible {
 		return wine.Text(http.StatusOK, "root")
 	})
