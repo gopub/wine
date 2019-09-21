@@ -252,9 +252,34 @@ func (r *Router) Put(path string, funcs ...HandlerFunc) {
 	r.Bind(http.MethodPut, path, convertToHandlers(funcs...)...)
 }
 
+// Patch binds funcs to path with PATCH method
+func (r *Router) Patch(path string, funcs ...HandlerFunc) {
+	r.Bind(http.MethodPatch, path, convertToHandlers(funcs...)...)
+}
+
 // Delete binds funcs to path with DELETE method
 func (r *Router) Delete(path string, funcs ...HandlerFunc) {
 	r.Bind(http.MethodDelete, path, convertToHandlers(funcs...)...)
+}
+
+// Options binds funcs to path with OPTIONS method
+func (r *Router) Options(path string, funcs ...HandlerFunc) {
+	r.Bind(http.MethodOptions, path, convertToHandlers(funcs...)...)
+}
+
+// Head binds funcs to path with HEAD method
+func (r *Router) Head(path string, funcs ...HandlerFunc) {
+	r.Bind(http.MethodHead, path, convertToHandlers(funcs...)...)
+}
+
+// Trace binds funcs to path with TRACE method
+func (r *Router) Trace(path string, funcs ...HandlerFunc) {
+	r.Bind(http.MethodTrace, path, convertToHandlers(funcs...)...)
+}
+
+// Connect binds funcs to path with CONNECT method
+func (r *Router) Connect(path string, funcs ...HandlerFunc) {
+	r.Bind(http.MethodConnect, path, convertToHandlers(funcs...)...)
 }
 
 // BindControllers binds controllers
