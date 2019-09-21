@@ -3,6 +3,7 @@ package api
 import (
 	"github.com/gopub/wine"
 	"github.com/gopub/wine/mime"
+	"github.com/pkg/errors"
 	"net/http"
 )
 
@@ -60,6 +61,7 @@ func ErrorMessage(code int, message string) wine.Responsible {
 }
 
 func Error(err error) wine.Responsible {
+	err = errors.Cause(err)
 	if e, ok := err.(coderMessager); ok {
 		return ErrorMessage(e.Code(), e.Message())
 	} else if e, ok := err.(coder); ok {
