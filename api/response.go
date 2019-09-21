@@ -6,6 +6,15 @@ import (
 	"net/http"
 )
 
+type coder interface {
+	Code() int
+}
+
+type coderMessager interface {
+	coder
+	Message() string
+}
+
 type errorInfo struct {
 	Code    int    `json:"code"`
 	Message string `json:"message"`
@@ -34,7 +43,7 @@ func StatusData(status int, data interface{}) wine.Responsible {
 	return wine.NewResponse(status, header, val)
 }
 
-func Error(code int, message string) wine.Responsible {
+func ErrorMessage(code int, message string) wine.Responsible {
 	header := make(http.Header)
 	header.Set(wine.ContentType, mime.JSON)
 	val := &responseInfo{
@@ -48,4 +57,14 @@ func Error(code int, message string) wine.Responsible {
 		status /= 10
 	}
 	return wine.NewResponse(status, header, val)
+}
+
+func Error(err error) wine.Responsible {
+	if e, ok := err.(coderMessager); ok {
+		return ErrorMessage(e.Code(), e.Message())
+	} else if e, ok := err.(coder); ok {
+		return ErrorMessage(e.Code(), err.Error())
+	} else {
+		return ErrorMessage(http.StatusInternalServerError, err.Error())
+	}
 }
