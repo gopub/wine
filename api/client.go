@@ -26,6 +26,10 @@ func NewClient(client *http.Client) *Client {
 	}
 }
 
+func (c *Client) HTTPClient() *http.Client {
+	return c.client
+}
+
 func (c *Client) Header() http.Header {
 	return c.header
 }
