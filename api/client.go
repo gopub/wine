@@ -59,12 +59,25 @@ func (c *Client) Put(ctx context.Context, endpoint string, params interface{}, r
 	return c.call(ctx, http.MethodPut, endpoint, params, result)
 }
 
-func (c *Client) Patch(ctx context.Context, url string, params interface{}, result interface{}) error {
-	return c.call(ctx, http.MethodPatch, url, params, result)
+func (c *Client) Patch(ctx context.Context, endpoint string, params interface{}, result interface{}) error {
+	return c.call(ctx, http.MethodPatch, endpoint, params, result)
 }
 
-func (c *Client) Delete(ctx context.Context, url string, result interface{}) error {
-	return c.call(ctx, http.MethodDelete, url, nil, result)
+func (c *Client) Delete(ctx context.Context, endpoint string, query url.Values, result interface{}) error {
+	if query == nil {
+		return c.call(ctx, http.MethodDelete, endpoint, nil, result)
+	}
+
+	u, err := url.Parse(endpoint)
+	if err != nil {
+		return errors.Wrap(err, "parse url failed")
+	}
+	for k, vs := range query {
+		for _, v := range vs {
+			u.Query().Add(k, v)
+		}
+	}
+	return c.call(ctx, http.MethodGet, endpoint, u.String(), result)
 }
 
 func (c *Client) call(ctx context.Context, method string, endpoint string, params interface{}, result interface{}) error {
