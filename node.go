@@ -170,8 +170,6 @@ func (n *node) matchPath(pathSegments []string) (*handlerList, map[string]string
 		if n.t == WildcardNode {
 			return n.handlers, nil
 		}
-
-		logger.Warn("pathSegments is empty")
 		return nil, nil
 	}
 

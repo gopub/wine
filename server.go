@@ -75,7 +75,6 @@ func (s *Server) Run(addr string) error {
 		logger.Panic("Server is running")
 	}
 
-	s.Router.Print()
 	logger.Info("Running at", addr, "...")
 	s.server = &http.Server{Addr: addr, Handler: s}
 	err := s.server.ListenAndServe()
