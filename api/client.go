@@ -15,9 +15,14 @@ import (
 	"github.com/pkg/errors"
 )
 
+type HeaderBuilder interface {
+	Build(header http.Header) http.Header
+}
+
 type Client struct {
-	client *http.Client
-	header http.Header
+	client        *http.Client
+	header        http.Header
+	HeaderBuilder HeaderBuilder
 }
 
 func NewClient(client *http.Client) *Client {
@@ -105,6 +110,9 @@ func (c *Client) Do(req *http.Request, result interface{}) error {
 		for _, v := range vs {
 			req.Header.Add(k, v)
 		}
+	}
+	if c.HeaderBuilder != nil {
+		req.Header = c.HeaderBuilder.Build(req.Header)
 	}
 	resp, err := c.client.Do(req)
 	if err != nil {
