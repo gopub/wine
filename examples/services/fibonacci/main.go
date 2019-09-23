@@ -11,7 +11,7 @@ import (
 func main() {
 	s := wine.NewServer(wine.DefaultConfig())
 	s.Get("/fibonacci", func(ctx context.Context, req *wine.Request, next wine.Invoker) wine.Responsible {
-		n := req.Parameters.Int("n")
+		n := req.Params().Int("n")
 		result := fibonacci(n)
 		return wine.JSON(http.StatusOK, gox.M{"result": result})
 	})

@@ -12,7 +12,7 @@ import (
 func main() {
 	s := wine.NewServer(wine.DefaultConfig())
 	s.Get("echo", func(ctx context.Context, req *wine.Request, next wine.Invoker) wine.Responsible {
-		return api.Data(req.Parameters)
+		return api.Data(req.Params())
 	})
 
 	s.Get("/", func(ctx context.Context, req *wine.Request, next wine.Invoker) wine.Responsible {
@@ -32,20 +32,20 @@ func main() {
 	})
 
 	s.Get("docs/{s}/a", func(ctx context.Context, req *wine.Request, next wine.Invoker) wine.Responsible {
-		return wine.Text(http.StatusOK, "Create doc: "+req.Parameters.String("s"))
+		return wine.Text(http.StatusOK, "Create doc: "+req.Params().String("s"))
 	})
 
 	s.Get("docs/{doc_id}", func(ctx context.Context, req *wine.Request, next wine.Invoker) wine.Responsible {
-		return wine.Text(http.StatusOK, "doc id is "+req.Parameters.String("doc_id"))
+		return wine.Text(http.StatusOK, "doc id is "+req.Params().String("doc_id"))
 	})
 
 	s.Get("sum/{a}/{b}", func(ctx context.Context, req *wine.Request, next wine.Invoker) wine.Responsible {
-		r := req.Parameters.Int("a") + req.Parameters.Int("b")
+		r := req.Params().Int("a") + req.Params().Int("b")
 		return wine.Text(http.StatusOK, fmt.Sprint(r))
 	})
 
 	s.Get("sum/{a}/{b}/hehe", func(ctx context.Context, req *wine.Request, next wine.Invoker) wine.Responsible {
-		r := req.Parameters.Int("a") * req.Parameters.Int("b")
+		r := req.Params().Int("a") * req.Params().Int("b")
 		return wine.Text(http.StatusOK, fmt.Sprint(r))
 	})
 

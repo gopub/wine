@@ -202,7 +202,7 @@ func (r *Router) Unbind(method string, path string) {
 // StaticFile binds path to a file
 func (r *Router) StaticFile(path, filePath string) {
 	r.Get(path, func(ctx context.Context, req *Request, next Invoker) Responsible {
-		return File(req.HTTPRequest, filePath)
+		return File(req.request, filePath)
 	})
 }
 
@@ -233,7 +233,7 @@ func (r *Router) StaticFS(path string, fs http.FileSystem) {
 
 	fileServer := http.StripPrefix(prefix, http.FileServer(fs))
 	r.Get(path, func(ctx context.Context, req *Request, next Invoker) Responsible {
-		return Handle(req.HTTPRequest, fileServer)
+		return Handle(req.request, fileServer)
 	})
 }
 

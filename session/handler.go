@@ -12,7 +12,7 @@ import (
 )
 
 func InitSession(ctx context.Context, req *wine.Request, next wine.Invoker) wine.Responsible {
-	sid := req.Parameters.String("sid")
+	sid := req.Params().String("sid")
 	var session Session
 
 	if len(sid) > 0 {

@@ -29,7 +29,7 @@ func BasicAuth(userToPassword map[string]string, realm string) HandlerFunc {
 
 	authHeaderValue := "Basic realm=" + strconv.Quote(realm)
 	return func(ctx context.Context, req *Request, next Invoker) Responsible {
-		authValue := req.HTTPRequest.Header.Get("Authorization")
+		authValue := req.request.Header.Get("Authorization")
 		for user, info := range userToAuthInfo {
 			if info == authValue {
 				ctx = context.WithValue(ctx, BasicAuthUser, user)

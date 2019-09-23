@@ -12,8 +12,6 @@ import (
 	"github.com/gopub/log"
 )
 
-const defaultMaxRequestMemory = 1 << 20
-const defaultRequestTimeout = 20 * time.Second
 const keyHTTPResponseWriter = "wine_http_response_writer"
 const keyTemplates = "wine_templates"
 
@@ -25,14 +23,11 @@ type Server struct {
 	*Router
 	*TemplateManager
 
-	Header           http.Header
-	MaxRequestMemory int64         //max memory for request, default value is 8M
-	RequestTimeout   time.Duration //timeout for each request, default value is 20s
-	server           *http.Server
+	header  http.Header
+	timeout time.Duration //timeout for each request, default value is 20s
+	server  *http.Server
 
-	h2conns *h2connCache
-
-	RequestParser RequestParser
+	paramsParser ParamsParser
 
 	faviconHandlerList  *handlerList
 	notfoundHandlerList *handlerList
@@ -44,24 +39,18 @@ type Server struct {
 // NewServer returns a server
 func NewServer(config *Config) *Server {
 	s := &Server{
-		Router:           NewRouter(),
-		TemplateManager:  NewTemplateManager(),
-		Header:           make(http.Header),
-		MaxRequestMemory: defaultMaxRequestMemory,
-		RequestTimeout:   defaultRequestTimeout,
-		h2conns:          newH2ConnCache(),
-		RequestParser:    NewDefaultRequestParser(),
-
-		logger: log.GetLogger("Wine"),
+		Router:          NewRouter(),
+		TemplateManager: NewTemplateManager(),
+		header:          config.ResponseHeaders,
+		timeout:         config.RequestTimeout,
+		paramsParser:    config.ParamsParser,
+		logger:          config.Logger,
 	}
 
 	s.faviconHandlerList = newHandlerList([]Handler{HandlerFunc(handleFavIcon)})
 	s.notfoundHandlerList = newHandlerList([]Handler{HandlerFunc(handleNotFound)})
 	s.optionsHandlerList = newHandlerList([]Handler{HandlerFunc(s.handleOptions)})
 
-	s.logger.SetFlags(logger.Flags() ^ log.Lfunction ^ log.Lshortfile)
-
-	s.Header.Set("Server", "Wine")
 	s.AddTemplateFuncMap(template.FuncMap{
 		"plus":     plus,
 		"minus":    minus,
@@ -173,21 +162,17 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		}
 	}
 
-	params, err := s.RequestParser.ParseHTTPRequest(req, s.MaxRequestMemory)
+	parsedReq, err := NewRequest(req, s.paramsParser)
 	if err != nil {
-		logger.Errorf("ParseHTTPRequest failed: %v", err)
+		logger.Errorf("Parse failed: %v", err)
 		return
 	}
-	params.AddMapObj(pathParams)
-	parsedReq := &Request{
-		HTTPRequest: req,
-		Parameters:  params,
-	}
+	parsedReq.params.AddMapObj(pathParams)
 
-	ctx, cancel := context.WithTimeout(req.Context(), s.RequestTimeout)
+	ctx, cancel := context.WithTimeout(req.Context(), s.timeout)
 	defer cancel()
 
-	for k, v := range s.Header {
+	for k, v := range s.header {
 		rw.Header()[k] = v
 	}
 
@@ -228,7 +213,7 @@ func getRequestPath(req *http.Request) string {
 }
 
 func (s *Server) handleOptions(ctx context.Context, req *Request, next Invoker) Responsible {
-	path := getRequestPath(req.HTTPRequest)
+	path := getRequestPath(req.request)
 	var allowedMethods []string
 	for routeMethod := range s.Router.methodTrees {
 		if handlers, _ := s.Match(routeMethod, path); !handlers.Empty() {

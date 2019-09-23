@@ -31,8 +31,8 @@ func main() {
 	})
 
 	s.Get("login", func(ctx context.Context, req *wine.Request, next wine.Invoker) wine.Responsible {
-		username := req.Parameters.String("username")
-		password := req.Parameters.String("password")
+		username := req.Params().String("username")
+		password := req.Params().String("password")
 		if len(username) == 0 || len(password) == 0 {
 			return wine.JSON(http.StatusOK, map[string]interface{}{"code": 1, "msg": "login error"})
 		}
@@ -44,7 +44,7 @@ func main() {
 	})
 
 	s.Post("topic", func(ctx context.Context, req *wine.Request, next wine.Invoker) wine.Responsible {
-		title := req.Parameters.String("title")
+		title := req.Params().String("title")
 		if len(title) == 0 {
 			return wine.JSON(http.StatusOK, map[string]interface{}{"code": 1, "msg": "no title"})
 		}
