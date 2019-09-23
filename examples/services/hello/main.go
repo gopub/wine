@@ -3,8 +3,9 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/gopub/wine/api"
 	"net/http"
+
+	"github.com/gopub/wine/api"
 
 	"github.com/gopub/wine"
 )

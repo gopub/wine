@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"path"
 	"reflect"
+	"sort"
 	"strings"
 
 	"github.com/gopub/log"
@@ -26,17 +26,45 @@ func NewRouter() *Router {
 	return r
 }
 
+type endpointInfo struct {
+	Method       string
+	Path         string
+	HandlerNames string
+}
+
+type endpointInfoList []*endpointInfo
+
+func (l endpointInfoList) Len() int {
+	return len(l)
+}
+
+func (l endpointInfoList) Swap(i, j int) {
+	l[i], l[j] = l[j], l[i]
+}
+
+func (l endpointInfoList) Less(i, j int) bool {
+	return l[i].Path < l[j].Path
+}
+
 func (r *Router) GetEndpoints(ctx context.Context, req *Request, next Invoker) Responsible {
-	b := new(strings.Builder)
+	endpoints := make(endpointInfoList, 0, 10)
+	maxLenOfPath := 0
 	for method, node := range r.methodTrees {
-		pl := node.Endpoints()
+		pl := node.Endpoints(method)
 		for _, p := range pl {
-			if method == http.MethodGet && strings.HasPrefix(p, "_endpoints\t") {
-				continue
+			endpoints = append(endpoints, p)
+			if n := len(p.Path); n > maxLenOfPath {
+				maxLenOfPath = n
 			}
-			line := fmt.Sprintf("%s\t%s\n\n", method, path.Join(r.basePath, p))
-			b.WriteString(line)
 		}
+	}
+	sort.Sort(endpoints)
+
+	b := new(strings.Builder)
+	for i, e := range endpoints {
+		format := fmt.Sprintf("%%3d. %%6s /%%-%ds %%s\n", maxLenOfPath)
+		line := fmt.Sprintf(format, i+1, e.Method, e.Path, e.HandlerNames)
+		b.WriteString(line)
 	}
 	return Text(http.StatusOK, b.String())
 }

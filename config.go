@@ -1,10 +1,11 @@
 package wine
 
 import (
-	"github.com/gopub/gox"
-	"github.com/gopub/log"
 	"net/http"
 	"time"
+
+	"github.com/gopub/gox"
+	"github.com/gopub/log"
 )
 
 type Config struct {

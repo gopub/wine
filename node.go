@@ -1,7 +1,6 @@
 package wine
 
 import (
-	"fmt"
 	"path"
 	"reflect"
 	"runtime"
@@ -307,8 +306,8 @@ func (n *node) Print(method string, parentPath string) {
 	}
 }
 
-func (n *node) Endpoints() []string {
-	var list []string
+func (n *node) Endpoints(method string) endpointInfoList {
+	var list endpointInfoList
 	var p string
 	switch n.t {
 	case StaticNode, ParamNode:
@@ -319,13 +318,18 @@ func (n *node) Endpoints() []string {
 
 	p = normalizePath(p)
 	if !n.handlers.Empty() {
-		list = append(list, fmt.Sprintf("%s\t%s", p, n.handlerNames()))
+		list = append(list, &endpointInfo{
+			Method:       method,
+			Path:         p,
+			HandlerNames: n.handlerNames(),
+		})
 	}
 
 	for _, nod := range n.children {
-		subList := nod.Endpoints()
+		subList := nod.Endpoints(method)
 		for _, sp := range subList {
-			list = append(list, path.Join(p, sp))
+			sp.Path = path.Join(p, sp.Path)
+			list = append(list, sp)
 		}
 	}
 

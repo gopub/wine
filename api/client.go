@@ -4,14 +4,15 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"github.com/gopub/gox"
-	"github.com/gopub/wine"
-	"github.com/gopub/wine/mime"
-	"github.com/pkg/errors"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"net/url"
+
+	"github.com/gopub/gox"
+	"github.com/gopub/wine"
+	"github.com/gopub/wine/mime"
+	"github.com/pkg/errors"
 )
 
 type Client struct {
