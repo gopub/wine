@@ -31,6 +31,10 @@ func (r *Request) Params() gox.M {
 }
 
 func NewRequest(r *http.Request, parser ParamsParser) (*Request, error) {
+	if parser == nil {
+		parser = NewDefaultParamsParser(nil, 8*gox.MB)
+	}
+
 	params, err := parser.Parse(r)
 	if err != nil {
 		return nil, err
