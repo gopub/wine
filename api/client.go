@@ -16,7 +16,7 @@ import (
 )
 
 type HeaderBuilder interface {
-	Build(header http.Header) http.Header
+	Build(ctx context.Context, header http.Header) http.Header
 }
 
 type Client struct {
@@ -112,7 +112,7 @@ func (c *Client) Do(req *http.Request, result interface{}) error {
 		}
 	}
 	if c.HeaderBuilder != nil {
-		req.Header = c.HeaderBuilder.Build(req.Header)
+		req.Header = c.HeaderBuilder.Build(req.Context(), req.Header)
 	}
 	resp, err := c.client.Do(req)
 	if err != nil {
