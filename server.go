@@ -38,6 +38,10 @@ type Server struct {
 
 // NewServer returns a server
 func NewServer(config *Config) *Server {
+	if config == nil {
+		config = DefaultConfig()
+	}
+
 	s := &Server{
 		Router:          NewRouter(),
 		TemplateManager: NewTemplateManager(),
