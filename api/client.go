@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"github.com/gopub/gox"
+	"github.com/gopub/log"
 	"github.com/gopub/wine"
 	"github.com/gopub/wine/mime"
 	"github.com/pkg/errors"
@@ -12,7 +13,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
-	"strings"
 )
 
 type HeaderBuilder interface {
@@ -128,29 +128,38 @@ func HandleResponse(resp *http.Response, result interface{}) error {
 		return errors.Wrap(err, "read response body failed")
 	}
 
-	if strings.Contains(wine.GetContentType(resp.Header), mime.JSON) == false {
-		return errors.Errorf("Content is not json: %s", string(respData))
+	if len(respData) > 0 {
+		switch wine.GetContentType(resp.Header) {
+		case mime.JSON:
+			respObj := new(responseInfo)
+			if err = json.Unmarshal(respData, respObj); err != nil {
+				log.Errorf("Unmarshal response body failed: %v", err)
+				return gox.NewError(StatusInvalidResponse, string(respData))
+			}
+
+			if respObj.Error != nil {
+				return gox.NewError(respObj.Error.Code, respObj.Error.Message)
+			}
+
+			if result != nil {
+				jsonData, err := json.Marshal(respObj.Data)
+				if err != nil {
+					log.Errorf("Marshal failed: %v", err)
+					return gox.NewError(StatusInvalidResponse, string(respData))
+				}
+
+				if err = json.Unmarshal(jsonData, result); err != nil {
+					log.Errorf("Unmarshal failed: %v", err)
+					return gox.NewError(StatusInvalidResponse, string(respData))
+				}
+			}
+		default:
+			break
+		}
 	}
 
-	respObj := new(responseInfo)
-	if err = json.Unmarshal(respData, respObj); err != nil {
-		return errors.Wrap(err, "unmarshal response body failed")
-	}
-	if respObj.Error != nil {
-		return gox.NewError(respObj.Error.Code, respObj.Error.Message)
-	}
-
-	if result == nil {
-		return nil
-	}
-
-	jsonData, err := json.Marshal(respObj.Data)
-	if err != nil {
-		return errors.Wrap(err, "marshal response data failed")
-	}
-
-	if err = json.Unmarshal(jsonData, result); err != nil {
-		return errors.Wrap(err, "unmarshal response data failed")
+	if resp.StatusCode >= 300 {
+		return gox.NewError(resp.StatusCode, string(respData))
 	}
 	return nil
 }
