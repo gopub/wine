@@ -165,15 +165,17 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		}
 	}
 
+	ctx, cancel := context.WithTimeout(req.Context(), s.timeout)
+	defer cancel()
+
 	parsedReq, err := NewRequest(req, s.paramsParser)
 	if err != nil {
 		logger.Errorf("Parse failed: %v", err)
+		resp := Text(http.StatusBadRequest, fmt.Sprintf("Parse request failed: %v", err))
+		resp.Respond(ctx, rw)
 		return
 	}
 	parsedReq.params.AddMapObj(pathParams)
-
-	ctx, cancel := context.WithTimeout(req.Context(), s.timeout)
-	defer cancel()
 
 	for k, v := range s.header {
 		rw.Header()[k] = v

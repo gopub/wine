@@ -1,6 +1,7 @@
 package api
 
 import (
+	"github.com/gopub/gox"
 	"net/http"
 
 	"github.com/gopub/wine"
@@ -67,6 +68,8 @@ func Error(err error) wine.Responsible {
 		return ErrorMessage(e.Code(), e.Message())
 	} else if e, ok := err.(coder); ok {
 		return ErrorMessage(e.Code(), err.Error())
+	} else if e, ok := err.(*gox.Error); ok {
+		return ErrorMessage(e.Code, e.Message)
 	} else {
 		return ErrorMessage(http.StatusInternalServerError, err.Error())
 	}
