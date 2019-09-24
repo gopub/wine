@@ -120,24 +120,17 @@ func (p *DefaultParamsParser) parseURLValues(values url.Values) gox.M {
 	return m
 }
 
-func (p *DefaultParamsParser) parseContentType(req *http.Request) string {
-	t := req.Header.Get(ContentType)
-	for i, ch := range t {
-		if ch == ' ' || ch == ';' {
-			t = t[:i]
-			break
-		}
-	}
-	return t
-}
-
 func (p *DefaultParamsParser) parseBodyParams(req *http.Request) (gox.M, error) {
-	typ := p.parseContentType(req)
+	typ := GetContentType(req.Header)
 	params := gox.M{}
 	switch typ {
 	case mime.HTML, mime.Plain:
 		return params, nil
 	case mime.JSON:
+		if req.ContentLength == 0 {
+			return params, nil
+		}
+
 		decoder := json.NewDecoder(req.Body)
 		decoder.UseNumber()
 		defer func() {
@@ -148,7 +141,7 @@ func (p *DefaultParamsParser) parseBodyParams(req *http.Request) (gox.M, error) 
 
 		err := decoder.Decode(&params)
 		if err != nil {
-			return nil, errors.Wrap(err, "cannot decode")
+			return nil, errors.Wrapf(err, "cannot decode")
 		}
 		return params, nil
 	case mime.FormURLEncoded:
@@ -173,4 +166,15 @@ func (p *DefaultParamsParser) parseBodyParams(req *http.Request) (gox.M, error) 
 		}
 		return params, nil
 	}
+}
+
+func GetContentType(h http.Header) string {
+	t := h.Get(ContentType)
+	for i, ch := range t {
+		if ch == ' ' || ch == ';' {
+			t = t[:i]
+			break
+		}
+	}
+	return t
 }

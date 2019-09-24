@@ -4,15 +4,15 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"io"
-	"io/ioutil"
-	"net/http"
-	"net/url"
-
 	"github.com/gopub/gox"
 	"github.com/gopub/wine"
 	"github.com/gopub/wine/mime"
 	"github.com/pkg/errors"
+	"io"
+	"io/ioutil"
+	"net/http"
+	"net/url"
+	"strings"
 )
 
 type HeaderBuilder interface {
@@ -54,7 +54,7 @@ func (c *Client) Get(ctx context.Context, endpoint string, query url.Values, res
 			u.Query().Add(k, v)
 		}
 	}
-	return c.call(ctx, http.MethodGet, endpoint, u.String(), result)
+	return c.call(ctx, http.MethodGet, u.String(), nil, result)
 }
 
 func (c *Client) Post(ctx context.Context, endpoint string, params interface{}, result interface{}) error {
@@ -127,6 +127,11 @@ func HandleResponse(resp *http.Response, result interface{}) error {
 	if err != nil {
 		return errors.Wrap(err, "read response body failed")
 	}
+
+	if strings.Contains(wine.GetContentType(resp.Header), mime.JSON) == false {
+		return errors.Errorf("Content is not json: %s", string(respData))
+	}
+
 	respObj := new(responseInfo)
 	if err = json.Unmarshal(respData, respObj); err != nil {
 		return errors.Wrap(err, "unmarshal response body failed")
