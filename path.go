@@ -1,7 +1,9 @@
 package wine
 
 import (
+	"path"
 	"regexp"
+	"strings"
 )
 
 var (
@@ -56,4 +58,10 @@ func getNodeType(path string) nodeType {
 	default:
 		panic("invalid path: " + path)
 	}
+}
+
+func JoinURLPath(segment ...string) string {
+	res := path.Join(segment...)
+	res = strings.Replace(res, ":/", "://", 1)
+	return res
 }
