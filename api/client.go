@@ -123,38 +123,5 @@ func (c *Client) Do(req *http.Request, result interface{}) error {
 	if err != nil {
 		return errors.Wrap(err, "do request failed")
 	}
-	return HandleResponse(resp, result)
-}
-
-func HandleResponse(resp *http.Response, result interface{}) error {
-	body, err := ioutil.ReadAll(resp.Body)
-	resp.Body.Close()
-	if err != nil {
-		return errors.Wrap(err, "read response body failed")
-	}
-
-	ct := wine.GetContentType(resp.Header)
-	switch ct {
-	case mime.HTML, mime.Plain, mime.PlainContentType:
-		if resp.StatusCode < http.StatusMultipleChoices {
-			return nil
-		}
-		return gox.NewError(resp.StatusCode, string(body))
-	case mime.JSON:
-		info := new(responseInfo)
-		// Use result (usually is a pointer to a struct) to hold decoded data
-		info.Data = result
-		if err = json.Unmarshal(body, info); err != nil {
-			log.Errorf("Unmarshal response body failed: %s %v", string(body), err)
-			return gox.NewError(StatusInvalidResponse, err.Error())
-		}
-
-		if info.Error != nil {
-			return gox.NewError(info.Error.Code, info.Error.Message)
-		}
-		return nil
-	default:
-		break
-	}
-	return nil
+	return ParseResponse(resp, result)
 }
