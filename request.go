@@ -149,6 +149,9 @@ func (p *DefaultParamsParser) parseBody(req *http.Request) (gox.M, []byte, error
 		if err != nil {
 			return params, nil, errors.Wrap(err, "read json body failed")
 		}
+		if len(body) == 0 {
+			return params, nil, nil
+		}
 		decoder := json.NewDecoder(bytes.NewBuffer(body))
 		decoder.UseNumber()
 		err = decoder.Decode(&params)
