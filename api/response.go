@@ -1,8 +1,9 @@
 package api
 
 import (
-	"github.com/gopub/gox"
 	"net/http"
+
+	"github.com/gopub/gox"
 
 	"github.com/gopub/wine"
 	"github.com/gopub/wine/mime"

@@ -1,13 +1,14 @@
 package wine
 
 import (
+	"bytes"
 	"encoding/json"
+	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strings"
 
 	"github.com/gopub/gox"
-	"github.com/gopub/log"
 	"github.com/gopub/wine/mime"
 	"github.com/pkg/errors"
 )
@@ -18,8 +19,10 @@ const (
 
 // Request is a wrapper of http.Request, aims to provide more convenient interface
 type Request struct {
-	request *http.Request
-	params  gox.M
+	request     *http.Request
+	params      gox.M
+	body        []byte
+	contentType string
 }
 
 func (r *Request) Request() *http.Request {
@@ -30,23 +33,33 @@ func (r *Request) Params() gox.M {
 	return r.params
 }
 
+func (r *Request) Body() []byte {
+	return r.body
+}
+
+func (r *Request) ContentType() string {
+	return r.contentType
+}
+
 func NewRequest(r *http.Request, parser ParamsParser) (*Request, error) {
 	if parser == nil {
 		parser = NewDefaultParamsParser(nil, 8*gox.MB)
 	}
 
-	params, err := parser.Parse(r)
+	params, body, err := parser.Parse(r)
 	if err != nil {
 		return nil, err
 	}
 	return &Request{
-		request: r,
-		params:  params,
+		request:     r,
+		params:      params,
+		body:        body,
+		contentType: GetContentType(r.Header),
 	}, nil
 }
 
 type ParamsParser interface {
-	Parse(req *http.Request) (gox.M, error)
+	Parse(req *http.Request) (gox.M, []byte, error)
 }
 
 type DefaultParamsParser struct {
@@ -68,20 +81,20 @@ func NewDefaultParamsParser(headerParamNames []string, maxMemory gox.ByteUnit) *
 	return p
 }
 
-func (p *DefaultParamsParser) Parse(req *http.Request) (gox.M, error) {
+func (p *DefaultParamsParser) Parse(req *http.Request) (gox.M, []byte, error) {
 	params := gox.M{}
-	params.AddMap(p.parseCookieParams(req))
-	params.AddMap(p.parseHeaderParams(req))
+	params.AddMap(p.parseCookie(req))
+	params.AddMap(p.parseHeader(req))
 	params.AddMap(p.parseURLValues(req.URL.Query()))
-	bp, err := p.parseBodyParams(req)
+	bp, body, err := p.parseBody(req)
 	if err != nil {
-		return nil, errors.Wrap(err, "cannot parse body")
+		return params, body, errors.Wrap(err, "parse body failed")
 	}
 	params.AddMap(bp)
-	return params, nil
+	return params, body, nil
 }
 
-func (p *DefaultParamsParser) parseCookieParams(req *http.Request) gox.M {
+func (p *DefaultParamsParser) parseCookie(req *http.Request) gox.M {
 	params := gox.M{}
 	for _, cookie := range req.Cookies() {
 		params[cookie.Name] = cookie.Value
@@ -89,7 +102,7 @@ func (p *DefaultParamsParser) parseCookieParams(req *http.Request) gox.M {
 	return params
 }
 
-func (p *DefaultParamsParser) parseHeaderParams(req *http.Request) gox.M {
+func (p *DefaultParamsParser) parseHeader(req *http.Request) gox.M {
 	params := gox.M{}
 	for k, v := range req.Header {
 		if strings.HasPrefix(k, "x-") || strings.HasPrefix(k, "X-") || p.headerParamNames.Contains(k) {
@@ -120,51 +133,55 @@ func (p *DefaultParamsParser) parseURLValues(values url.Values) gox.M {
 	return m
 }
 
-func (p *DefaultParamsParser) parseBodyParams(req *http.Request) (gox.M, error) {
+func (p *DefaultParamsParser) parseBody(req *http.Request) (gox.M, []byte, error) {
 	typ := GetContentType(req.Header)
 	params := gox.M{}
 	switch typ {
 	case mime.HTML, mime.Plain:
-		return params, nil
+		body, err := ioutil.ReadAll(req.Body)
+		if err != nil {
+			return params, nil, errors.Wrap(err, "read html or plain body failed")
+		}
+		return params, body, nil
 	case mime.JSON:
-		if req.ContentLength == 0 {
-			return params, nil
+		body, err := ioutil.ReadAll(req.Body)
+		req.Body.Close()
+		if err != nil {
+			return params, nil, errors.Wrap(err, "read json body failed")
 		}
-
-		decoder := json.NewDecoder(req.Body)
+		decoder := json.NewDecoder(bytes.NewBuffer(body))
 		decoder.UseNumber()
-		defer func() {
-			if err := req.Body.Close(); err != nil {
-				log.Errorf("cannot close request body: %v", err)
-			}
-		}()
-
-		err := decoder.Decode(&params)
-		if err != nil {
-			return nil, errors.Wrapf(err, "cannot decode")
-		}
-		return params, nil
+		err = decoder.Decode(&params)
+		return params, body, errors.Wrapf(err, "decoder json failed")
 	case mime.FormURLEncoded:
-		err := req.ParseForm()
+		body, err := req.GetBody()
 		if err != nil {
-			return nil, errors.Wrap(err, "cannot parse form")
+			return params, nil, errors.Wrap(err, "get body failed")
 		}
-		return p.parseURLValues(req.Form), nil
+		bodyData, err := ioutil.ReadAll(body)
+		body.Close()
+		if err != nil {
+			return params, nil, errors.Wrap(err, "read form body failed")
+		}
+		if err = req.ParseForm(); err != nil {
+			return params, bodyData, errors.Wrap(err, "parse form failed")
+		}
+		return p.parseURLValues(req.Form), bodyData, nil
 	case mime.FormData:
 		err := req.ParseMultipartForm(int64(p.maxMemory))
 		if err != nil {
-			return nil, errors.Wrap(err, "cannot parse multipart form")
+			return nil, nil, errors.Wrap(err, "parse multipart form failed")
 		}
 
 		if req.MultipartForm != nil && req.MultipartForm.File != nil {
-			return p.parseURLValues(req.MultipartForm.Value), nil
+			return p.parseURLValues(req.MultipartForm.Value), nil, nil
 		}
-		return params, nil
+		return params, nil, nil
 	default:
 		if len(typ) != 0 {
 			logger.Warnf("Ignored content type=%s", typ)
 		}
-		return params, nil
+		return params, nil, nil
 	}
 }
 

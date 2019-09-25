@@ -4,15 +4,16 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"io"
+	"io/ioutil"
+	"net/http"
+	"net/url"
+
 	"github.com/gopub/gox"
 	"github.com/gopub/log"
 	"github.com/gopub/wine"
 	"github.com/gopub/wine/mime"
 	"github.com/pkg/errors"
-	"io"
-	"io/ioutil"
-	"net/http"
-	"net/url"
 )
 
 type HeaderBuilder interface {
@@ -126,44 +127,34 @@ func (c *Client) Do(req *http.Request, result interface{}) error {
 }
 
 func HandleResponse(resp *http.Response, result interface{}) error {
-	defer resp.Body.Close()
-	respData, err := ioutil.ReadAll(resp.Body)
+	body, err := ioutil.ReadAll(resp.Body)
+	resp.Body.Close()
 	if err != nil {
 		return errors.Wrap(err, "read response body failed")
 	}
 
-	if len(respData) > 0 {
-		switch wine.GetContentType(resp.Header) {
-		case mime.JSON:
-			respObj := new(responseInfo)
-			if err = json.Unmarshal(respData, respObj); err != nil {
-				log.Errorf("Unmarshal response body failed: %v", err)
-				return gox.NewError(StatusInvalidResponse, string(respData))
-			}
-
-			if respObj.Error != nil {
-				return gox.NewError(respObj.Error.Code, respObj.Error.Message)
-			}
-
-			if result != nil {
-				jsonData, err := json.Marshal(respObj.Data)
-				if err != nil {
-					log.Errorf("Marshal failed: %v", err)
-					return gox.NewError(StatusInvalidResponse, string(respData))
-				}
-
-				if err = json.Unmarshal(jsonData, result); err != nil {
-					log.Errorf("Unmarshal failed: %v", err)
-					return gox.NewError(StatusInvalidResponse, string(respData))
-				}
-			}
-		default:
-			break
+	ct := wine.GetContentType(resp.Header)
+	switch ct {
+	case mime.HTML, mime.Plain, mime.PlainContentType:
+		if resp.StatusCode < http.StatusMultipleChoices {
+			return nil
 		}
-	}
+		return gox.NewError(resp.StatusCode, string(body))
+	case mime.JSON:
+		info := new(responseInfo)
+		// Use result (usually is a pointer to a struct) to hold decoded data
+		info.Data = result
+		if err = json.Unmarshal(body, info); err != nil {
+			log.Errorf("Unmarshal response body failed: %s %v", string(body), err)
+			return gox.NewError(StatusInvalidResponse, err.Error())
+		}
 
-	if resp.StatusCode >= 300 {
-		return gox.NewError(resp.StatusCode, string(respData))
+		if info.Error != nil {
+			return gox.NewError(info.Error.Code, info.Error.Message)
+		}
+		return nil
+	default:
+		break
 	}
 	return nil
 }
