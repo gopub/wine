@@ -80,12 +80,14 @@ func (c *Client) Delete(ctx context.Context, endpoint string, query url.Values, 
 	if err != nil {
 		return errors.Wrap(err, "parse url failed")
 	}
+	q := u.Query()
 	for k, vs := range query {
 		for _, v := range vs {
-			u.Query().Add(k, v)
+			q.Add(k, v)
 		}
 	}
-	return c.call(ctx, http.MethodGet, endpoint, u.String(), result)
+	u.RawQuery = q.Encode()
+	return c.call(ctx, http.MethodDelete, endpoint, u.String(), result)
 }
 
 func (c *Client) call(ctx context.Context, method string, endpoint string, params interface{}, result interface{}) error {
