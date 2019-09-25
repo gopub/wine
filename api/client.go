@@ -49,11 +49,13 @@ func (c *Client) Get(ctx context.Context, endpoint string, query url.Values, res
 	if err != nil {
 		return errors.Wrap(err, "parse url failed")
 	}
+	q := u.Query()
 	for k, vs := range query {
 		for _, v := range vs {
-			u.Query().Add(k, v)
+			q.Add(k, v)
 		}
 	}
+	u.RawQuery = q.Encode()
 	return c.call(ctx, http.MethodGet, u.String(), nil, result)
 }
 
