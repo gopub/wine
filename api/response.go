@@ -2,9 +2,10 @@ package api
 
 import (
 	"encoding/json"
-	"github.com/gopub/log"
 	"io/ioutil"
 	"net/http"
+
+	"github.com/gopub/log"
 
 	"github.com/gopub/gox"
 
