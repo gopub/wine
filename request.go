@@ -105,8 +105,18 @@ func (p *DefaultParamsParser) parseCookie(req *http.Request) gox.M {
 func (p *DefaultParamsParser) parseHeader(req *http.Request) gox.M {
 	params := gox.M{}
 	for k, v := range req.Header {
-		if strings.HasPrefix(k, "x-") || strings.HasPrefix(k, "X-") || p.headerParamNames.Contains(k) {
-			params[strings.ToLower(k[2:])] = v
+		k = strings.ToLower(k)
+		if strings.HasPrefix(k, "x-") {
+			k = k[2:]
+		}
+
+		if p.headerParamNames.Contains(k) {
+			params[k] = v
+		}
+
+		k = strings.Replace(k, "-", "_", -1)
+		if p.headerParamNames.Contains(k) {
+			params[k] = v
 		}
 	}
 	return params

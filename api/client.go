@@ -38,6 +38,17 @@ func (c *Client) Header() http.Header {
 	return c.header
 }
 
+func (c *Client) InjectHeader(req *http.Request) {
+	for k, vs := range c.header {
+		for _, v := range vs {
+			req.Header.Add(k, v)
+		}
+	}
+	if c.HeaderBuilder != nil {
+		req.Header = c.HeaderBuilder.Build(req.Context(), req.Header)
+	}
+}
+
 func (c *Client) Get(ctx context.Context, endpoint string, query url.Values, result interface{}) error {
 	if query == nil {
 		return c.call(ctx, http.MethodGet, endpoint, nil, result)
@@ -108,14 +119,7 @@ func (c *Client) call(ctx context.Context, method string, endpoint string, param
 }
 
 func (c *Client) Do(req *http.Request, result interface{}) error {
-	for k, vs := range c.header {
-		for _, v := range vs {
-			req.Header.Add(k, v)
-		}
-	}
-	if c.HeaderBuilder != nil {
-		req.Header = c.HeaderBuilder.Build(req.Context(), req.Header)
-	}
+	c.InjectHeader(req)
 	resp, err := c.client.Do(req)
 	if err != nil {
 		return errors.Wrap(err, "do request failed")

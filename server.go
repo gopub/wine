@@ -124,11 +124,11 @@ func (s *Server) logHTTP(rw http.ResponseWriter, req *http.Request, startAt time
 		statGetter.Status(),
 		time.Since(startAt))
 
-	if statGetter.Status() >= 400 {
+	if statGetter.Status() >= http.StatusBadRequest {
 		if statGetter.Status() != http.StatusUnauthorized {
 			s.logger.Errorf("%s header: %v form: %v", info, req.Header, req.PostForm)
 		} else {
-			s.logger.Error(info)
+			s.logger.Errorf("%s header: %v", info, req.Header)
 		}
 	} else {
 		s.logger.Info(info)
