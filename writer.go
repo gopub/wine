@@ -20,15 +20,22 @@ type flusher interface {
 	Flush() error
 }
 
-var _ statusGetter = (*responseWriterWrapper)(nil)
-var _ http.Hijacker = (*responseWriterWrapper)(nil)
+var _ statusGetter = (*ResponseWriter)(nil)
+var _ http.Hijacker = (*ResponseWriter)(nil)
 
-type responseWriterWrapper struct {
+// ResponseWriter is a wrapper of http.ResponseWriter to make sure write status code only one time
+type ResponseWriter struct {
 	http.ResponseWriter
 	status int
 }
 
-func (w *responseWriterWrapper) WriteHeader(statusCode int) {
+func NewResponseWriter(rw http.ResponseWriter) *ResponseWriter {
+	return &ResponseWriter{
+		ResponseWriter: rw,
+	}
+}
+
+func (w *ResponseWriter) WriteHeader(statusCode int) {
 	if w.status > 0 {
 		logger.Warnf("Failed to overwrite status code")
 		return
@@ -37,39 +44,39 @@ func (w *responseWriterWrapper) WriteHeader(statusCode int) {
 	w.ResponseWriter.WriteHeader(statusCode)
 }
 
-func (w *responseWriterWrapper) Write(data []byte) (int, error) {
+func (w *ResponseWriter) Write(data []byte) (int, error) {
 	if w.status == 0 {
 		w.status = http.StatusOK
 	}
 	return w.ResponseWriter.Write(data)
 }
 
-func (w *responseWriterWrapper) Status() int {
+func (w *ResponseWriter) Status() int {
 	return w.status
 }
 
-func (w *responseWriterWrapper) Flush() {
+func (w *ResponseWriter) Flush() {
 	if f, ok := w.ResponseWriter.(http.Flusher); ok {
 		f.Flush()
 	}
 }
 
-func (w *responseWriterWrapper) Hijack() (net.Conn, *bufio.ReadWriter, error) {
+func (w *ResponseWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
 	if h, ok := w.ResponseWriter.(http.Hijacker); ok {
 		return h.Hijack()
 	}
 	return nil, nil, errors.New("hijack not supported")
 }
 
-type compressedResponseWriter struct {
+type CompressedResponseWriter struct {
 	http.ResponseWriter
 	compressedWriter io.Writer
 }
 
-func newCompressedResponseWriter(w http.ResponseWriter, encoding string) (*compressedResponseWriter, error) {
+func NewCompressedResponseWriter(w http.ResponseWriter, encoding string) (*CompressedResponseWriter, error) {
 	switch encoding {
 	case "gzip":
-		cw := &compressedResponseWriter{}
+		cw := &CompressedResponseWriter{}
 		cw.ResponseWriter = w
 		cw.compressedWriter = gzip.NewWriter(w)
 		return cw, nil
@@ -78,7 +85,7 @@ func newCompressedResponseWriter(w http.ResponseWriter, encoding string) (*compr
 		if err != nil {
 			return nil, err
 		}
-		cw := &compressedResponseWriter{}
+		cw := &CompressedResponseWriter{}
 		cw.compressedWriter = fw
 		cw.ResponseWriter = w
 		return cw, nil
@@ -87,11 +94,11 @@ func newCompressedResponseWriter(w http.ResponseWriter, encoding string) (*compr
 	}
 }
 
-func (w *compressedResponseWriter) Write(data []byte) (int, error) {
+func (w *CompressedResponseWriter) Write(data []byte) (int, error) {
 	return w.compressedWriter.Write(data)
 }
 
-func (w *compressedResponseWriter) Flush() {
+func (w *CompressedResponseWriter) Flush() {
 	// Flush the compressed writer, then flush httpResponseWriter
 	if f, ok := w.compressedWriter.(flusher); ok {
 		if err := f.Flush(); err != nil {
@@ -103,14 +110,14 @@ func (w *compressedResponseWriter) Flush() {
 	}
 }
 
-func (w *compressedResponseWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
+func (w *CompressedResponseWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
 	if h, ok := w.ResponseWriter.(http.Hijacker); ok {
 		return h.Hijack()
 	}
 	return nil, nil, errors.New("hijack not supported")
 }
 
-func (w *compressedResponseWriter) Close() error {
+func (w *CompressedResponseWriter) Close() error {
 	if closer, ok := w.compressedWriter.(io.Closer); ok {
 		return closer.Close()
 	}
@@ -121,7 +128,7 @@ func CompressionHandler(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		enc := r.Header.Get("Accept-Encoding")
 		if strings.Contains(enc, "gzip") {
-			cw, err := newCompressedResponseWriter(w, "gzip")
+			cw, err := NewCompressedResponseWriter(w, "gzip")
 			if err != nil {
 				panic(err)
 			}
@@ -131,7 +138,7 @@ func CompressionHandler(h http.Handler) http.Handler {
 		}
 
 		if strings.Contains(enc, "deflate") {
-			cw, err := newCompressedResponseWriter(w, "deflate")
+			cw, err := NewCompressedResponseWriter(w, "deflate")
 			if err != nil {
 				panic(err)
 			}

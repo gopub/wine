@@ -109,7 +109,7 @@ func (s *Server) Shutdown() error {
 
 func (s *Server) logHTTP(rw http.ResponseWriter, req *http.Request, startAt time.Time) {
 	var statGetter statusGetter
-	if cw, ok := rw.(*compressedResponseWriter); ok {
+	if cw, ok := rw.(*CompressedResponseWriter); ok {
 		cw.Close()
 		statGetter = cw.ResponseWriter.(statusGetter)
 	}
@@ -149,8 +149,7 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	}
 
 	// Add compression to responseWriter
-	rw = &responseWriterWrapper{ResponseWriter: rw}
-	rw = wrapperCompressedWriter(rw, req)
+	rw = createCompressedWriter(NewResponseWriter(rw), req)
 	defer s.logHTTP(rw, req, startAt)
 
 	path := getRequestPath(req)
@@ -198,15 +197,15 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	resp.Respond(ctx, rw)
 }
 
-func wrapperCompressedWriter(rw http.ResponseWriter, req *http.Request) http.ResponseWriter {
+func createCompressedWriter(rw http.ResponseWriter, req *http.Request) http.ResponseWriter {
 	// Add compression to responseWriter
 	ae := req.Header.Get("Accept-Encoding")
 	for _, enc := range acceptEncodings {
 		if strings.Contains(ae, enc) {
 			rw.Header().Set("Content-Encoding", enc)
-			cw, err := newCompressedResponseWriter(rw, enc)
+			cw, err := NewCompressedResponseWriter(rw, enc)
 			if err != nil {
-				log.Errorf("newCompressedResponseWriter failed: %v", err)
+				log.Errorf("NewCompressedResponseWriter failed: %v", err)
 			}
 			return cw
 		}
