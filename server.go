@@ -34,6 +34,8 @@ type Server struct {
 	optionsHandlerList  *handlerList
 
 	logger log.Logger
+
+	BeginHandler Handler
 }
 
 // NewServer returns a server
@@ -183,7 +185,13 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 
 	ctx = context.WithValue(ctx, keyTemplates, s.templates)
 	ctx = context.WithValue(ctx, keyHTTPResponseWriter, rw)
-	resp := handlers.Head().Invoke(ctx, parsedReq)
+	var resp Responsible
+	if s.BeginHandler != nil {
+		resp = s.BeginHandler.HandleRequest(ctx, parsedReq, handlers.Head().Invoke)
+	} else {
+		resp = handlers.Head().Invoke(ctx, parsedReq)
+	}
+
 	if resp == nil {
 		resp = handleNotImplemented(ctx, parsedReq, nil)
 	}
