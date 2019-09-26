@@ -126,7 +126,7 @@ func (s *Server) logHTTP(rw http.ResponseWriter, req *http.Request, startAt time
 
 	if statGetter.Status() >= 400 {
 		if statGetter.Status() != http.StatusUnauthorized {
-			s.logger.Errorf("%s request: %v", info, req)
+			s.logger.Errorf("%s header: %v form: %v", info, req.Header, req.PostForm)
 		} else {
 			s.logger.Error(info)
 		}
