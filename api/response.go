@@ -5,10 +5,8 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"github.com/gopub/log"
-
 	"github.com/gopub/gox"
-
+	"github.com/gopub/log"
 	"github.com/gopub/wine"
 	"github.com/gopub/wine/mime"
 	"github.com/pkg/errors"
@@ -23,20 +21,15 @@ type coderMessager interface {
 	Message() string
 }
 
-type errorInfo struct {
-	Code    int    `json:"code"`
-	Message string `json:"message"`
-}
-
-type responseInfo struct {
-	Error *errorInfo  `json:"error,omitempty"`
+type Result struct {
+	Error *gox.Error  `json:"error,omitempty"`
 	Data  interface{} `json:"data,omitempty"`
 }
 
 func Data(data interface{}) wine.Responsible {
 	header := make(http.Header)
 	header.Set(wine.ContentType, mime.JSON)
-	val := &responseInfo{
+	val := &Result{
 		Data: data,
 	}
 	return wine.NewResponse(http.StatusOK, header, val)
@@ -45,7 +38,7 @@ func Data(data interface{}) wine.Responsible {
 func StatusData(status int, data interface{}) wine.Responsible {
 	header := make(http.Header)
 	header.Set(wine.ContentType, mime.JSON)
-	val := &responseInfo{
+	val := &Result{
 		Data: data,
 	}
 	return wine.NewResponse(status, header, val)
@@ -54,11 +47,8 @@ func StatusData(status int, data interface{}) wine.Responsible {
 func ErrorMessage(code int, message string) wine.Responsible {
 	header := make(http.Header)
 	header.Set(wine.ContentType, mime.JSON)
-	val := &responseInfo{
-		Error: &errorInfo{
-			Code:    code,
-			Message: message,
-		},
+	val := &Result{
+		Error: gox.NewError(code, message),
 	}
 	status := code
 	for status >= 1000 {
@@ -81,7 +71,7 @@ func Error(err error) wine.Responsible {
 }
 
 // ParseResponse parse response at client side
-func ParseResponse(resp *http.Response, result interface{}) error {
+func ParseResponse(resp *http.Response, dataModel interface{}) error {
 	body, err := ioutil.ReadAll(resp.Body)
 	resp.Body.Close()
 	if err != nil {
@@ -96,16 +86,16 @@ func ParseResponse(resp *http.Response, result interface{}) error {
 		}
 		return gox.NewError(resp.StatusCode, string(body))
 	case mime.JSON:
-		info := new(responseInfo)
-		// Use result (usually is a pointer to a struct) to hold decoded data
-		info.Data = result
-		if err = json.Unmarshal(body, info); err != nil {
+		res := new(Result)
+		// Use dataModel (usually is a pointer to a struct) to hold decoded data
+		res.Data = dataModel
+		if err = json.Unmarshal(body, res); err != nil {
 			log.Errorf("Unmarshal response body failed: %s %v", string(body), err)
 			return gox.NewError(StatusInvalidResponse, err.Error())
 		}
 
-		if info.Error != nil {
-			return gox.NewError(info.Error.Code, info.Error.Message)
+		if res.Error != nil {
+			return res.Error
 		}
 		return nil
 	default:
