@@ -80,11 +80,6 @@ func ParseResponse(resp *http.Response, dataModel interface{}) error {
 
 	ct := mime.GetContentType(resp.Header)
 	switch ct {
-	case mime.HTML, mime.Plain, mime.PlainContentType:
-		if resp.StatusCode < http.StatusMultipleChoices {
-			return nil
-		}
-		return gox.NewError(resp.StatusCode, string(body))
 	case mime.JSON:
 		res := new(Result)
 		// Use dataModel (usually is a pointer to a struct) to hold decoded data
@@ -97,9 +92,15 @@ func ParseResponse(resp *http.Response, dataModel interface{}) error {
 		if res.Error != nil {
 			return res.Error
 		}
-		return nil
 	default:
 		break
+	}
+	if resp.StatusCode >= http.StatusBadRequest {
+		ge := gox.NewError(resp.StatusCode, "")
+		if len(body) < 256 {
+			ge.Message = string(body)
+		}
+		return ge
 	}
 	return nil
 }

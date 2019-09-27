@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"github.com/gopub/gox"
 	"io"
 	"net/http"
 	"net/url"
@@ -121,7 +122,7 @@ func (c *Client) Do(req *http.Request, result interface{}) error {
 	c.InjectHeader(req)
 	resp, err := c.client.Do(req)
 	if err != nil {
-		return errors.Wrap(err, "do request failed")
+		return gox.NewError(StatusTransportFailed, err.Error())
 	}
 	return ParseResponse(resp, result)
 }

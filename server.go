@@ -17,6 +17,7 @@ var ShortHandlerNameFlag = true
 
 const (
 	endpointPath = "_endpoints"
+	faviconPath  = "favicon.ico"
 )
 
 // Server implements web server
@@ -37,6 +38,8 @@ type Server struct {
 	logger log.Logger
 
 	BeginHandler Handler
+
+	reservedPaths map[string]bool
 }
 
 // NewServer returns a server
@@ -57,6 +60,10 @@ func NewServer(config *Config) *Server {
 	s.faviconHandlerList = newHandlerList([]Handler{HandlerFunc(handleFavIcon)})
 	s.notfoundHandlerList = newHandlerList([]Handler{HandlerFunc(handleNotFound)})
 	s.optionsHandlerList = newHandlerList([]Handler{HandlerFunc(s.handleOptions)})
+	s.reservedPaths = map[string]bool{
+		endpointPath: true,
+		faviconPath:  true,
+	}
 
 	s.AddTemplateFuncMap(template.FuncMap)
 
@@ -154,7 +161,7 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	if handlers.Empty() {
 		if method == http.MethodOptions {
 			handlers = s.optionsHandlerList
-		} else if path == "favicon.ico" {
+		} else if path == faviconPath {
 			handlers = s.faviconHandlerList
 		} else {
 			handlers = s.notfoundHandlerList
@@ -180,7 +187,7 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	ctx = withTemplate(ctx, s.templates)
 	ctx = withResponseWriter(ctx, rw)
 	var resp Responsible
-	if s.BeginHandler != nil && path != endpointPath {
+	if s.BeginHandler != nil && !s.reservedPaths[path] {
 		resp = s.BeginHandler.HandleRequest(ctx, parsedReq, handlers.Head().Invoke)
 	} else {
 		resp = handlers.Head().Invoke(ctx, parsedReq)
