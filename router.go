@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/gopub/log"
+	pathutil "github.com/gopub/wine/internal/path"
 )
 
 // Router implements routing function
@@ -80,7 +81,7 @@ func (r *Router) Group(path string) *Router {
 
 	// support empty path
 	if len(path) > 0 {
-		nr.basePath = normalizePath(r.basePath + "/" + path)
+		nr.basePath = pathutil.Normalize(r.basePath + "/" + path)
 	}
 
 	nr.handlers = make([]Handler, len(r.handlers))
@@ -168,7 +169,7 @@ func (r *Router) Bind(method string, path string, handlers ...Handler) {
 	hs = append(hs, handlers...)
 	hl := newHandlerList(hs)
 
-	path = normalizePath(r.basePath + "/" + path)
+	path = pathutil.Normalize(r.basePath + "/" + path)
 	if path == "" {
 		if root.handlers.Empty() {
 			root.handlers = hl
@@ -203,7 +204,7 @@ func (r *Router) Unbind(method string, path string) {
 		r.methodTrees[method] = root
 	}
 
-	path = normalizePath(r.basePath + "/" + path)
+	path = pathutil.Normalize(r.basePath + "/" + path)
 	if path == "" {
 		root.handlers = nil
 		return
@@ -241,7 +242,7 @@ func (r *Router) StaticDir(path, dirPath string) {
 
 // StaticFS binds path to an abstract file system
 func (r *Router) StaticFS(path string, fs http.FileSystem) {
-	prefix := normalizePath(r.basePath + "/" + path)
+	prefix := pathutil.Normalize(r.basePath + "/" + path)
 	if len(prefix) == 0 {
 		prefix = "/"
 	} else if prefix[0] != '/' {
@@ -252,7 +253,7 @@ func (r *Router) StaticFS(path string, fs http.FileSystem) {
 	if i > 0 {
 		prefix = prefix[:i]
 	} else {
-		path = normalizePath(path + "/*")
+		path = pathutil.Normalize(path + "/*")
 	}
 
 	if prefix[len(prefix)-1] != '/' {

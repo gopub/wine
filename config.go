@@ -4,6 +4,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/gopub/wine/internal/request"
+
 	"github.com/gopub/gox"
 	"github.com/gopub/log"
 )
@@ -23,7 +25,7 @@ func DefaultConfig() *Config {
 	header.Set("Server", "Wine")
 	c := &Config{
 		Logger:          logger,
-		ParamsParser:    NewDefaultParamsParser([]string{"sid", "device_id"}, 8*gox.MB),
+		ParamsParser:    request.NewParamsParser([]string{"sid", "device_id"}, 8*gox.MB),
 		RequestTimeout:  10 * time.Second,
 		ResponseHeaders: header,
 	}

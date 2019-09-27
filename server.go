@@ -3,17 +3,18 @@ package wine
 import (
 	"context"
 	"fmt"
-	"html/template"
 	"net/http"
 	"strings"
 	"time"
 
+	"github.com/gopub/wine/mime"
+
 	"github.com/gopub/gox"
 	"github.com/gopub/log"
+	pathutil "github.com/gopub/wine/internal/path"
+	"github.com/gopub/wine/internal/resource"
+	"github.com/gopub/wine/internal/template"
 )
-
-const keyHTTPResponseWriter = "wine_http_response_writer"
-const keyTemplates = "wine_templates"
 
 var acceptEncodings = [2]string{"gzip", "defalte"}
 var ShortHandlerNameFlag = true
@@ -57,13 +58,7 @@ func NewServer(config *Config) *Server {
 	s.notfoundHandlerList = newHandlerList([]Handler{HandlerFunc(handleNotFound)})
 	s.optionsHandlerList = newHandlerList([]Handler{HandlerFunc(s.handleOptions)})
 
-	s.AddTemplateFuncMap(template.FuncMap{
-		"plus":     plus,
-		"minus":    minus,
-		"multiple": multiple,
-		"divide":   divide,
-		"join":     join,
-	})
+	s.AddTemplateFuncMap(template.FuncMap)
 
 	if config != nil {
 		s.handlers = config.Handlers
@@ -182,8 +177,8 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		rw.Header()[k] = v
 	}
 
-	ctx = context.WithValue(ctx, keyTemplates, s.templates)
-	ctx = context.WithValue(ctx, keyHTTPResponseWriter, rw)
+	ctx = withTemplate(ctx, s.templates)
+	ctx = withResponseWriter(ctx, rw)
 	var resp Responsible
 	if s.BeginHandler != nil {
 		resp = s.BeginHandler.HandleRequest(ctx, parsedReq, handlers.Head().Invoke)
@@ -221,7 +216,7 @@ func getRequestPath(req *http.Request) string {
 		path = req.RequestURI[:i]
 	}
 
-	return normalizePath(path)
+	return pathutil.Normalize(path)
 }
 
 func (s *Server) handleOptions(ctx context.Context, req *Request, next Invoker) Responsible {
@@ -251,9 +246,9 @@ func (s *Server) handleOptions(ctx context.Context, req *Request, next Invoker) 
 
 func handleFavIcon(ctx context.Context, req *Request, next Invoker) Responsible {
 	return ResponsibleFunc(func(ctx context.Context, rw http.ResponseWriter) {
-		rw.Header()[ContentType] = []string{"image/x-icon"}
+		rw.Header()[mime.ContentType] = []string{"image/x-icon"}
 		rw.WriteHeader(http.StatusOK)
-		if err := gox.WriteAll(rw, _faviconBytes); err != nil {
+		if err := gox.WriteAll(rw, resource.Favicon); err != nil {
 			log.ContextLogger(ctx).Error("cannot write bytes: %v", err)
 		}
 	})
@@ -265,14 +260,4 @@ func handleNotFound(ctx context.Context, req *Request, next Invoker) Responsible
 
 func handleNotImplemented(ctx context.Context, req *Request, next Invoker) Responsible {
 	return Text(http.StatusNotImplemented, http.StatusText(http.StatusNotImplemented))
-}
-
-func GetResponseWriter(ctx context.Context) http.ResponseWriter {
-	rw, _ := ctx.Value(keyHTTPResponseWriter).(http.ResponseWriter)
-	return rw
-}
-
-func GetTemplates(ctx context.Context) []*template.Template {
-	v, _ := ctx.Value(keyTemplates).([]*template.Template)
-	return v
 }

@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/gopub/log"
+	pathutil "github.com/gopub/wine/internal/path"
 )
 
 type nodeType int
@@ -39,7 +40,7 @@ type node struct {
 }
 
 func newNodeList(path string, handlers *handlerList) []*node {
-	path = normalizePath(path)
+	path = pathutil.Normalize(path)
 	segs := strings.Split(path, "/")
 	nodes := make([]*node, len(segs))
 	for i, s := range segs {
@@ -295,7 +296,7 @@ func (n *node) Print(method string, parentPath string) {
 		path = parentPath + "/*" + n.path
 	}
 
-	path = normalizePath(path)
+	path = pathutil.Normalize(path)
 
 	if !n.handlers.Empty() {
 		logger.Infof("%-5s %s\t%s", method, path, n.handlerNames())
@@ -316,7 +317,7 @@ func (n *node) Endpoints(method string) endpointInfoList {
 		p = "/*" + n.path
 	}
 
-	p = normalizePath(p)
+	p = pathutil.Normalize(p)
 	if !n.handlers.Empty() {
 		list = append(list, &endpointInfo{
 			Method:       method,
@@ -353,4 +354,17 @@ func getShortFileName(filename string) string {
 	}
 	filename = strings.Join(names, "/")
 	return filename
+}
+
+func getNodeType(path string) nodeType {
+	switch {
+	case pathutil.IsStatic(path):
+		return StaticNode
+	case pathutil.IsParam(path):
+		return ParamNode
+	case pathutil.IsWildcard(path):
+		return WildcardNode
+	default:
+		panic("invalid path: " + path)
+	}
 }

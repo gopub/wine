@@ -65,7 +65,7 @@ func (r *responseImpl) getBytes() []byte {
 		return body
 	}
 
-	contentType := r.header.Get(ContentType)
+	contentType := r.header.Get(mime.ContentType)
 
 	switch {
 	case strings.Contains(contentType, mime.JSON):
@@ -117,7 +117,7 @@ func Status(status int) Responsible {
 func Redirect(location string, permanent bool) Responsible {
 	header := make(http.Header)
 	header.Set("Location", location)
-	header.Set(ContentType, mime.Plain)
+	header.Set(mime.ContentType, mime.Plain)
 	var status int
 	if permanent {
 		status = http.StatusMovedPermanently
@@ -134,7 +134,7 @@ func Redirect(location string, permanent bool) Responsible {
 // Text sends a text response
 func Text(status int, text string) Responsible {
 	header := make(http.Header)
-	header.Set(ContentType, mime.PlainContentType)
+	header.Set(mime.ContentType, mime.PlainContentType)
 	return &responseImpl{
 		status: status,
 		header: header,
@@ -145,7 +145,7 @@ func Text(status int, text string) Responsible {
 // HTML sends a HTML response
 func HTML(status int, html string) Responsible {
 	header := make(http.Header)
-	header.Set(ContentType, mime.HTMLContentType)
+	header.Set(mime.ContentType, mime.HTMLContentType)
 	return &responseImpl{
 		status: status,
 		header: header,
@@ -155,7 +155,7 @@ func HTML(status int, html string) Responsible {
 
 func JSON(status int, value interface{}) Responsible {
 	header := make(http.Header)
-	header.Set(ContentType, mime.JSON)
+	header.Set(mime.ContentType, mime.JSON)
 	return &responseImpl{
 		status: status,
 		header: header,

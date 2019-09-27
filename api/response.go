@@ -28,7 +28,7 @@ type Result struct {
 
 func Data(data interface{}) wine.Responsible {
 	header := make(http.Header)
-	header.Set(wine.ContentType, mime.JSON)
+	header.Set(mime.ContentType, mime.JSON)
 	val := &Result{
 		Data: data,
 	}
@@ -37,7 +37,7 @@ func Data(data interface{}) wine.Responsible {
 
 func StatusData(status int, data interface{}) wine.Responsible {
 	header := make(http.Header)
-	header.Set(wine.ContentType, mime.JSON)
+	header.Set(mime.ContentType, mime.JSON)
 	val := &Result{
 		Data: data,
 	}
@@ -46,7 +46,7 @@ func StatusData(status int, data interface{}) wine.Responsible {
 
 func ErrorMessage(code int, message string) wine.Responsible {
 	header := make(http.Header)
-	header.Set(wine.ContentType, mime.JSON)
+	header.Set(mime.ContentType, mime.JSON)
 	val := &Result{
 		Error: gox.NewError(code, message),
 	}
@@ -78,7 +78,7 @@ func ParseResponse(resp *http.Response, dataModel interface{}) error {
 		return errors.Wrap(err, "read response body failed")
 	}
 
-	ct := wine.GetContentType(resp.Header)
+	ct := mime.GetContentType(resp.Header)
 	switch ct {
 	case mime.HTML, mime.Plain, mime.PlainContentType:
 		if resp.StatusCode < http.StatusMultipleChoices {

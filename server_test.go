@@ -67,8 +67,8 @@ func TestJSON(t *testing.T) {
 		t.Fatal(result, *obj)
 	}
 
-	if resp.Header[wine.ContentType][0] != mime.JSON {
-		t.Fatal(resp.Header[wine.ContentType])
+	if resp.Header[mime.ContentType][0] != mime.JSON {
+		t.Fatal(resp.Header[mime.ContentType])
 	}
 }
 
@@ -100,8 +100,8 @@ func TestHTML(t *testing.T) {
 		t.Fatal(string(data))
 	}
 
-	if resp.Header[wine.ContentType][0] != mime.HTMLContentType {
-		t.Fatal(resp.Header[wine.ContentType])
+	if resp.Header[mime.ContentType][0] != mime.HTMLContentType {
+		t.Fatal(resp.Header[mime.ContentType])
 	}
 }
 

@@ -1,5 +1,9 @@
 package mime
 
+import (
+	"net/http"
+)
+
 // gox
 //const (
 //	Text        = "text"
@@ -41,3 +45,18 @@ const (
 	PlainContentType = Plain + charsetSuffix
 	HTMLContentType  = HTML + charsetSuffix
 )
+
+const (
+	ContentType = "Content-Type"
+)
+
+func GetContentType(h http.Header) string {
+	t := h.Get(ContentType)
+	for i, ch := range t {
+		if ch == ' ' || ch == ';' {
+			t = t[:i]
+			break
+		}
+	}
+	return t
+}

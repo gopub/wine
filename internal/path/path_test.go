@@ -1,98 +1,98 @@
-package wine
+package path
 
 import (
 	"testing"
 )
 
-func TestNormalizePath(t *testing.T) {
-	if normalizePath("hello//") != "hello" {
+func TestNormalize(t *testing.T) {
+	if Normalize("hello//") != "hello" {
 		t.FailNow()
 	}
 
-	if normalizePath("hello/{id}/") != "hello/{id}" {
+	if Normalize("hello/{id}/") != "hello/{id}" {
 		t.FailNow()
 	}
 
-	if normalizePath("//hello/{id}/") != "hello/{id}" {
+	if Normalize("//hello/{id}/") != "hello/{id}" {
 		t.FailNow()
 	}
 
-	if normalizePath("//") != "" {
+	if Normalize("//") != "" {
 		t.FailNow()
 	}
 }
 
 func TestIsStaticPath(t *testing.T) {
-	if isStaticPath("{a}") {
+	if IsStatic("{a}") {
 		t.Fail()
 	}
 
-	if !isStaticPath("ab") {
+	if !IsStatic("ab") {
 		t.Fail()
 	}
 
-	if isParamPath("/a") {
+	if IsParam("/a") {
 		t.Fail()
 	}
 }
 
 func TestIsParamPath(t *testing.T) {
-	if isParamPath("{/a}") {
+	if IsParam("{/a}") {
 		t.Error("{/a}")
 		t.FailNow()
 	}
 
-	if !isParamPath("{a_b}") {
+	if !IsParam("{a_b}") {
 		t.Error("{a_b}")
 		t.FailNow()
 	}
 
-	if !isParamPath("{_b}") {
+	if !IsParam("{_b}") {
 		t.Error("{_b}")
 		t.FailNow()
 	}
 
-	if !isParamPath("{_1}") {
+	if !IsParam("{_1}") {
 		t.Error("{_1}")
 		t.FailNow()
 	}
 
-	if !isParamPath("{a1}") {
+	if !IsParam("{a1}") {
 		t.Error("{a1}")
 		t.FailNow()
 	}
 
-	if !isParamPath("{a1_}") {
+	if !IsParam("{a1_}") {
 		t.Error("{a1_}")
 		t.FailNow()
 	}
 
-	if isParamPath("c") {
+	if IsParam("c") {
 		t.Error("c")
 		t.FailNow()
 	}
 
-	if isParamPath("{_}") {
+	if IsParam("{_}") {
 		t.Error("{_}")
 		t.FailNow()
 	}
 
-	if isParamPath("{__}") {
+	if IsParam("{__}") {
 		t.Error("{__}")
 		t.FailNow()
 	}
 
-	if isParamPath("{a") {
+	if IsParam("{a") {
 		t.Error("{a")
 		t.FailNow()
 	}
 
-	if isParamPath("{1}") {
+	if IsParam("{1}") {
 		t.Error("{1}")
 		t.FailNow()
 	}
 
-	if isParamPath("{1_a}") {
+	if IsParam("{1_a}") {
 		t.Error("{1_a}")
 		t.FailNow()
 	}

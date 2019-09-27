@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/gopub/wine"
 	"github.com/gopub/wine/mime"
 	"github.com/pkg/errors"
 )
@@ -114,7 +113,7 @@ func (c *Client) call(ctx context.Context, method string, endpoint string, param
 	}
 	req = req.WithContext(ctx)
 	req.Header = http.Header{}
-	req.Header.Set(wine.ContentType, mime.JSON)
+	req.Header.Set(mime.ContentType, mime.JSON)
 	return c.Do(req, result)
 }
 
