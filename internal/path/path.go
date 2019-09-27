@@ -1,6 +1,7 @@
 package path
 
 import (
+	"net/http"
 	"path"
 	"regexp"
 	"strings"
@@ -51,4 +52,14 @@ func Join(segment ...string) string {
 	res := path.Join(segment...)
 	res = strings.Replace(res, ":/", "://", 1)
 	return res
+}
+
+func NormalizedRequestPath(req *http.Request) string {
+	path := req.RequestURI
+	i := strings.Index(path, "?")
+	if i > 0 {
+		path = req.RequestURI[:i]
+	}
+
+	return Normalize(path)
 }

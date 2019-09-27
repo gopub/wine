@@ -7,12 +7,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gopub/wine/mime"
-
-	"github.com/gopub/gox"
 	"github.com/gopub/log"
 	pathutil "github.com/gopub/wine/internal/path"
-	"github.com/gopub/wine/internal/resource"
 	"github.com/gopub/wine/internal/template"
 )
 
@@ -147,7 +143,7 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	rw = createCompressedWriter(NewResponseWriter(rw), req)
 	defer s.logHTTP(rw, req, startAt)
 
-	path := getRequestPath(req)
+	path := pathutil.NormalizedRequestPath(req)
 	method := strings.ToUpper(req.Method)
 	handlers, pathParams := s.Match(method, path)
 
@@ -209,18 +205,8 @@ func createCompressedWriter(rw http.ResponseWriter, req *http.Request) http.Resp
 	return rw
 }
 
-func getRequestPath(req *http.Request) string {
-	path := req.RequestURI
-	i := strings.Index(path, "?")
-	if i > 0 {
-		path = req.RequestURI[:i]
-	}
-
-	return pathutil.Normalize(path)
-}
-
 func (s *Server) handleOptions(ctx context.Context, req *Request, next Invoker) Responsible {
-	path := getRequestPath(req.request)
+	path := pathutil.NormalizedRequestPath(req.request)
 	var allowedMethods []string
 	for routeMethod := range s.Router.methodTrees {
 		if handlers, _ := s.Match(routeMethod, path); !handlers.Empty() {
@@ -242,22 +228,4 @@ func (s *Server) handleOptions(ctx context.Context, req *Request, next Invoker) 
 			rw.WriteHeader(http.StatusNotFound)
 		}
 	})
-}
-
-func handleFavIcon(ctx context.Context, req *Request, next Invoker) Responsible {
-	return ResponsibleFunc(func(ctx context.Context, rw http.ResponseWriter) {
-		rw.Header()[mime.ContentType] = []string{"image/x-icon"}
-		rw.WriteHeader(http.StatusOK)
-		if err := gox.WriteAll(rw, resource.Favicon); err != nil {
-			log.ContextLogger(ctx).Error("cannot write bytes: %v", err)
-		}
-	})
-}
-
-func handleNotFound(ctx context.Context, req *Request, next Invoker) Responsible {
-	return Text(http.StatusNotFound, http.StatusText(http.StatusNotFound))
-}
-
-func handleNotImplemented(ctx context.Context, req *Request, next Invoker) Responsible {
-	return Text(http.StatusNotImplemented, http.StatusText(http.StatusNotImplemented))
 }

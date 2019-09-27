@@ -2,7 +2,13 @@ package wine
 
 import (
 	"context"
+	"net/http"
 	"sync"
+
+	"github.com/gopub/gox"
+	"github.com/gopub/log"
+	"github.com/gopub/wine/internal/resource"
+	"github.com/gopub/wine/mime"
 )
 
 // Handler defines interface for interceptor
@@ -69,4 +75,24 @@ func newHandlerList(handlers []Handler) *handlerList {
 		l.PushBack(h)
 	}
 	return l
+}
+
+// Some buil-in handlers
+
+func handleFavIcon(ctx context.Context, req *Request, next Invoker) Responsible {
+	return ResponsibleFunc(func(ctx context.Context, rw http.ResponseWriter) {
+		rw.Header()[mime.ContentType] = []string{"image/x-icon"}
+		rw.WriteHeader(http.StatusOK)
+		if err := gox.WriteAll(rw, resource.Favicon); err != nil {
+			log.ContextLogger(ctx).Error("cannot write bytes: %v", err)
+		}
+	})
+}
+
+func handleNotFound(ctx context.Context, req *Request, next Invoker) Responsible {
+	return Text(http.StatusNotFound, http.StatusText(http.StatusNotFound))
+}
+
+func handleNotImplemented(ctx context.Context, req *Request, next Invoker) Responsible {
+	return Text(http.StatusNotImplemented, http.StatusText(http.StatusNotImplemented))
 }
