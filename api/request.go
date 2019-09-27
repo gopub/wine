@@ -8,7 +8,7 @@ import (
 )
 
 // ParseRequest unmarshal request body into params. Only support JSON type for now.
-func ParseRequest(req *wine.Request, params interface{}) error {
+func ParseParams(req *wine.Request, params interface{}) error {
 	if req.ContentType() != mime.JSON {
 		return nil
 	}

@@ -5,11 +5,11 @@ import (
 	"context"
 	"encoding/json"
 	"github.com/gopub/gox"
+	"github.com/gopub/wine/mime"
 	"io"
 	"net/http"
 	"net/url"
 
-	"github.com/gopub/wine/mime"
 	"github.com/pkg/errors"
 )
 
@@ -112,9 +112,10 @@ func (c *Client) call(ctx context.Context, method string, endpoint string, param
 	if err != nil {
 		return errors.Wrap(err, "create request failed")
 	}
+	if params != nil {
+		req.Header.Set(mime.ContentType, mime.JSON)
+	}
 	req = req.WithContext(ctx)
-	req.Header = http.Header{}
-	req.Header.Set(mime.ContentType, mime.JSON)
 	return c.Do(req, result)
 }
 
@@ -124,5 +125,5 @@ func (c *Client) Do(req *http.Request, result interface{}) error {
 	if err != nil {
 		return gox.NewError(StatusTransportFailed, err.Error())
 	}
-	return ParseResponse(resp, result)
+	return ParseResult(resp, result)
 }
