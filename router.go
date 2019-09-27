@@ -310,23 +310,6 @@ func (r *Router) Connect(path string, funcs ...HandlerFunc) {
 	r.Bind(http.MethodConnect, path, convertToHandlers(funcs...)...)
 }
 
-// BindControllers binds controllers
-func (r *Router) BindControllers(controllers ...Controller) {
-	for _, c := range controllers {
-		for s, h := range c.RouteMap() {
-			fields := strings.Fields(s)
-			if len(fields) != 2 {
-				logger.Panic("invalid route key: " + s)
-			}
-			methods := strings.Split(fields[0], "|")
-			p := c.RoutePath() + "/" + fields[1]
-			for _, method := range methods {
-				r.Bind(method, p, h)
-			}
-		}
-	}
-}
-
 // Print prints all path trees
 func (r *Router) Print() {
 	for m, n := range r.methodTrees {
