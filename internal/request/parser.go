@@ -3,7 +3,6 @@ package request
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/gopub/log"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -97,7 +96,6 @@ func (p *ParamsParser) parseURLValues(values url.Values) gox.M {
 
 func (p *ParamsParser) parseBody(req *http.Request) (gox.M, []byte, error) {
 	typ := mime.GetContentType(req.Header)
-	log.Debugf("====%s %s %s", req.URL.String(), typ, req.Header)
 	params := gox.M{}
 	switch typ {
 	case mime.HTML, mime.Plain:
