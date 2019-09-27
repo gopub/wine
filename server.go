@@ -15,6 +15,10 @@ import (
 var acceptEncodings = [2]string{"gzip", "defalte"}
 var ShortHandlerNameFlag = true
 
+const (
+	endpointPath = "_endpoints"
+)
+
 // Server implements web server
 type Server struct {
 	*Router
@@ -176,7 +180,7 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	ctx = withTemplate(ctx, s.templates)
 	ctx = withResponseWriter(ctx, rw)
 	var resp Responsible
-	if s.BeginHandler != nil {
+	if s.BeginHandler != nil && path != endpointPath {
 		resp = s.BeginHandler.HandleRequest(ctx, parsedReq, handlers.Head().Invoke)
 	} else {
 		resp = handlers.Head().Invoke(ctx, parsedReq)

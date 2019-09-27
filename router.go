@@ -23,7 +23,7 @@ type Router struct {
 func NewRouter() *Router {
 	r := &Router{}
 	r.methodTrees = make(map[string]*node, 4)
-	r.Get("_endpoints", r.GetEndpoints)
+	r.Get(endpointPath, r.listEndpoints)
 	return r
 }
 
@@ -47,7 +47,7 @@ func (l endpointInfoList) Less(i, j int) bool {
 	return l[i].Path < l[j].Path
 }
 
-func (r *Router) GetEndpoints(ctx context.Context, req *Request, next Invoker) Responsible {
+func (r *Router) listEndpoints(ctx context.Context, req *Request, next Invoker) Responsible {
 	endpoints := make(endpointInfoList, 0, 10)
 	maxLenOfPath := 0
 	for method, node := range r.methodTrees {
