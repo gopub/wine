@@ -5,8 +5,10 @@ import (
 	"context"
 	"encoding/json"
 	"github.com/gopub/gox"
+	"github.com/gopub/log"
 	"github.com/gopub/wine/mime"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"net/url"
 
@@ -18,9 +20,10 @@ type HeaderBuilder interface {
 }
 
 type Client struct {
-	client        *http.Client
-	header        http.Header
-	HeaderBuilder HeaderBuilder
+	client          *http.Client
+	header          http.Header
+	HeaderBuilder   HeaderBuilder
+	DumpNetworkData bool
 }
 
 func NewClient(client *http.Client) *Client {
@@ -121,9 +124,29 @@ func (c *Client) call(ctx context.Context, method string, endpoint string, param
 
 func (c *Client) Do(req *http.Request, result interface{}) error {
 	c.InjectHeader(req)
+
+	if c.DumpNetworkData {
+		c.dumpRequest(req)
+	}
+
 	resp, err := c.client.Do(req)
 	if err != nil {
 		return gox.NewError(StatusTransportFailed, err.Error())
 	}
 	return ParseResult(resp, result)
+}
+
+func (c *Client) dumpRequest(req *http.Request) {
+	logger := log.ContextLogger(req.Context())
+	var bodyData []byte
+	if body, err := req.GetBody(); err != nil {
+		logger.Errorf("GetBody failed: %v", err)
+	} else {
+		body.Close()
+		bodyData, err = ioutil.ReadAll(body)
+		if err != nil {
+			logger.Errorf("ReadAll failed: %v", err)
+		}
+	}
+	logger.Debugf("Request: %s %s %s", req.Method, req.URL, req.Header, string(bodyData))
 }
