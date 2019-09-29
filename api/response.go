@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 
@@ -77,7 +78,8 @@ func ParseResult(resp *http.Response, dataModel interface{}) error {
 	body, err := ioutil.ReadAll(resp.Body)
 	resp.Body.Close()
 	if err != nil {
-		return errors.Wrap(err, "read response body failed")
+		log.Errorf("Read response body failed: %v", err)
+		return gox.NewError(StatusTransportFailed, fmt.Sprintf("read response body failed: %v", err))
 	}
 
 	ct := mime.GetContentType(resp.Header)
@@ -88,25 +90,24 @@ func ParseResult(resp *http.Response, dataModel interface{}) error {
 		res.Data = dataModel
 		if err = json.Unmarshal(body, res); err != nil {
 			log.Errorf("Unmarshal response body failed: %s %v", string(body), err)
-			return gox.NewError(StatusInvalidResponse, err.Error())
+			if resp.StatusCode >= http.StatusBadRequest {
+				return gox.NewError(resp.StatusCode, string(body))
+			}
+			return gox.NewError(StatusInvalidResponse, fmt.Sprintf("unmarshal json response failed: %v", err))
 		}
 
 		if res.Error != nil {
 			return res.Error
 		}
+		return nil
 	default:
-		break
-	}
-	if resp.StatusCode >= http.StatusBadRequest {
-		ge := gox.NewError(resp.StatusCode, "")
-		if len(body) < 256 {
-			ge.Message = string(body)
+		if resp.StatusCode >= http.StatusBadRequest {
+			return gox.NewError(resp.StatusCode, string(body))
 		}
-		return ge
-	}
 
-	if dataModel != nil {
-		return gox.NewError(StatusInvalidResponse, "no data")
+		if dataModel != nil {
+			return gox.NewError(StatusInvalidResponse, "no data")
+		}
+		return nil
 	}
-	return nil
 }
