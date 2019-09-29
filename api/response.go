@@ -65,6 +65,8 @@ func Error(err error) wine.Responsible {
 		return ErrorMessage(e.Code(), err.Error())
 	} else if e, ok := err.(*gox.Error); ok {
 		return ErrorMessage(e.Code, e.Message)
+	} else if err == gox.ErrNotExist {
+		return ErrorMessage(http.StatusNotFound, err.Error())
 	} else {
 		return ErrorMessage(http.StatusInternalServerError, err.Error())
 	}
@@ -101,6 +103,10 @@ func ParseResult(resp *http.Response, dataModel interface{}) error {
 			ge.Message = string(body)
 		}
 		return ge
+	}
+
+	if dataModel != nil {
+		return gox.NewError(StatusInvalidResponse, "no data")
 	}
 	return nil
 }
