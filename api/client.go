@@ -99,7 +99,7 @@ func (c *Client) Delete(ctx context.Context, endpoint string, query url.Values, 
 		}
 	}
 	u.RawQuery = q.Encode()
-	return c.call(ctx, http.MethodDelete, endpoint, u.String(), result)
+	return c.call(ctx, http.MethodDelete, u.String(), nil, result)
 }
 
 func (c *Client) call(ctx context.Context, method string, endpoint string, params interface{}, result interface{}) error {
@@ -131,6 +131,9 @@ func (c *Client) Do(req *http.Request, result interface{}) error {
 
 	resp, err := c.client.Do(req)
 	if err != nil {
+		if err == context.DeadlineExceeded {
+			return gox.NewError(http.StatusRequestTimeout, err.Error())
+		}
 		return gox.NewError(StatusTransportFailed, err.Error())
 	}
 	return ParseResult(resp, result)

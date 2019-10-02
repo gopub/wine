@@ -116,7 +116,7 @@ func (p *ParamsParser) parseBody(req *http.Request) (gox.M, []byte, error) {
 		decoder := json.NewDecoder(bytes.NewBuffer(body))
 		decoder.UseNumber()
 		err = decoder.Decode(&params)
-		return params, body, errors.Wrapf(err, "decoder json failed")
+		return params, body, errors.Wrapf(err, "decode json failed: %s", string(body))
 	case mime.FormURLEncoded:
 		body, err := req.GetBody()
 		if err != nil {
