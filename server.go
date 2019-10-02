@@ -275,5 +275,6 @@ func (s *Server) setupSession(rw http.ResponseWriter, req *http.Request) string 
 		Path:    "/",
 	}
 	http.SetCookie(rw, cookie)
+	rw.Header().Set(SessionName, sid)
 	return sid
 }
