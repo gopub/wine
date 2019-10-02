@@ -25,7 +25,7 @@ func DefaultConfig() *Config {
 	header.Set("Server", "Wine")
 	c := &Config{
 		Logger:          logger,
-		ParamsParser:    request.NewParamsParser([]string{"sid", "device_id"}, 8*gox.MB),
+		ParamsParser:    request.NewParamsParser([]string{"device_id"}, 8*gox.MB),
 		RequestTimeout:  10 * time.Second,
 		ResponseHeaders: header,
 	}

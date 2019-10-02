@@ -12,7 +12,7 @@ import (
 )
 
 func InitSession(ctx context.Context, req *wine.Request, next wine.Invoker) wine.Responsible {
-	sid := req.Params().String("sid")
+	sid := req.Params().String(wine.SessionName)
 	var session Session
 
 	if len(sid) > 0 {
@@ -45,10 +45,10 @@ func InitSession(ctx context.Context, req *wine.Request, next wine.Invoker) wine
 
 	switch v := resp.(type) {
 	case wine.Response:
-		v.Header().Set("sid", sid)
+		v.Header().Set(wine.SessionName, sid)
 		expire := time.Now().Add(time.Minute * 60)
 		cookie := &http.Cookie{
-			Name:    "sid",
+			Name:    wine.SessionName,
 			Value:   sid,
 			Expires: expire,
 			Path:    "/",

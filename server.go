@@ -3,6 +3,7 @@ package wine
 import (
 	"context"
 	"fmt"
+	"github.com/gopub/gox"
 	"net/http"
 	"strings"
 	"time"
@@ -19,6 +20,11 @@ const (
 	endpointPath = "_endpoints"
 	faviconPath  = "favicon.ico"
 )
+
+var SessionName = "wsessionid"
+var SessionTTL = 30 * time.Minute
+
+const minSessionTTL = 5 * time.Minute
 
 // Server implements web server
 type Server struct {
@@ -141,6 +147,7 @@ func (s *Server) logHTTP(rw http.ResponseWriter, req *http.Request, startAt time
 
 // ServeHTTP implements for http.Handler interface, which will handle each http request
 func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
+	sid := s.setupSession(rw, req)
 	startAt := time.Now()
 	if logger.Level() > log.DebugLevel {
 		defer func() {
@@ -179,6 +186,7 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 	parsedReq.params.AddMapObj(pathParams)
+	parsedReq.params[SessionName] = sid
 
 	for k, v := range s.header {
 		rw.Header()[k] = v
@@ -239,4 +247,33 @@ func (s *Server) handleOptions(ctx context.Context, req *Request, next Invoker) 
 			rw.WriteHeader(http.StatusNotFound)
 		}
 	})
+}
+
+func (s *Server) setupSession(rw http.ResponseWriter, req *http.Request) string {
+	var sid string
+	for _, c := range req.Cookies() {
+		if c.Name == SessionName {
+			sid = c.Value
+			break
+		}
+	}
+
+	if sid == "" {
+		sid = gox.UniqueID()
+	}
+
+	var expires time.Time
+	if SessionTTL < minSessionTTL {
+		expires = time.Now().Add(SessionTTL)
+	} else {
+		expires = time.Now().Add(minSessionTTL)
+	}
+	cookie := &http.Cookie{
+		Name:    SessionName,
+		Value:   sid,
+		Expires: expires,
+		Path:    "/",
+	}
+	http.SetCookie(rw, cookie)
+	return sid
 }
