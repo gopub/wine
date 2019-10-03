@@ -250,6 +250,10 @@ func (s *Server) handleOptions(ctx context.Context, req *Request, next Invoker) 
 }
 
 func (s *Server) setupSession(rw http.ResponseWriter, req *http.Request) string {
+	if SessionName == "" {
+		return ""
+	}
+
 	var sid string
 	for _, c := range req.Cookies() {
 		if c.Name == SessionName {
