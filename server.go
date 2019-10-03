@@ -255,11 +255,30 @@ func (s *Server) setupSession(rw http.ResponseWriter, req *http.Request) string 
 	}
 
 	var sid string
+	// Read cookie
 	for _, c := range req.Cookies() {
 		if c.Name == SessionName {
 			sid = c.Value
 			break
 		}
+	}
+
+	// Read header
+	if sid == "" {
+		lcName := strings.ToLower(SessionName)
+		for k, vs := range req.Header {
+			if strings.ToLower(k) == lcName {
+				if len(vs) > 0 {
+					sid = vs[0]
+					break
+				}
+			}
+		}
+	}
+
+	// Read url query
+	if sid == "" {
+		sid = req.URL.Query().Get(SessionName)
 	}
 
 	if sid == "" {
@@ -279,6 +298,7 @@ func (s *Server) setupSession(rw http.ResponseWriter, req *http.Request) string 
 		Path:    "/",
 	}
 	http.SetCookie(rw, cookie)
+	// Write to header in case cookie is disabled by some browsers
 	rw.Header().Set(SessionName, sid)
 	return sid
 }
