@@ -287,9 +287,9 @@ func (s *Server) setupSession(rw http.ResponseWriter, req *http.Request) string 
 
 	var expires time.Time
 	if SessionTTL < minSessionTTL {
-		expires = time.Now().Add(SessionTTL)
-	} else {
 		expires = time.Now().Add(minSessionTTL)
+	} else {
+		expires = time.Now().Add(SessionTTL)
 	}
 	cookie := &http.Cookie{
 		Name:    SessionName,
