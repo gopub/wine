@@ -24,7 +24,7 @@ type coderMessager interface {
 
 type Result struct {
 	Error *gox.Error  `json:"error,omitempty"`
-	Data  interface{} `json:"data,omitempty"`
+	Data  interface{} `json:"data"`
 }
 
 func Data(data interface{}) wine.Responsible {
