@@ -3,10 +3,12 @@ package wine
 import (
 	"context"
 	"fmt"
-	"github.com/gopub/gox"
+	"github.com/gopub/wine/internal/request"
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/gopub/gox"
 
 	"github.com/gopub/log"
 	pathutil "github.com/gopub/wine/internal/path"
@@ -30,52 +32,48 @@ const minSessionTTL = 5 * time.Minute
 type Server struct {
 	*Router
 	*TemplateManager
+	server *http.Server
 
-	header  http.Header
-	timeout time.Duration //timeout for each request, default value is 20s
-	server  *http.Server
+	Header       http.Header
+	Timeout      time.Duration //Timeout for each request, default value is 20s
+	ParamsParser ParamsParser
+	BeginHandler Handler
 
-	paramsParser ParamsParser
-
-	faviconHandlerList  *handlerList
-	notfoundHandlerList *handlerList
-	optionsHandlerList  *handlerList
+	defaultHandler struct {
+		favicon  *handlerList
+		notfound *handlerList
+		options  *handlerList
+	}
 
 	logger log.Logger
-
-	BeginHandler Handler
 
 	reservedPaths map[string]bool
 }
 
 // NewServer returns a server
-func NewServer(config *Config) *Server {
-	if config == nil {
-		config = DefaultConfig()
-	}
+func NewServer() *Server {
+	logger := log.GetLogger("Wine")
+	logger.SetFlags(logger.Flags() ^ log.Lfunction ^ log.Lshortfile)
+	header := make(http.Header, 1)
+	header.Set("Server", "Wine")
 
 	s := &Server{
 		Router:          NewRouter(),
 		TemplateManager: NewTemplateManager(),
-		header:          config.ResponseHeaders,
-		timeout:         config.RequestTimeout,
-		paramsParser:    config.ParamsParser,
-		logger:          config.Logger,
+		Header:          header,
+		Timeout:         10 * time.Second,
+		ParamsParser:    request.NewParamsParser([]string{"device_id"}, 8*gox.MB),
+		logger:          logger,
 	}
 
-	s.faviconHandlerList = newHandlerList([]Handler{HandlerFunc(handleFavIcon)})
-	s.notfoundHandlerList = newHandlerList([]Handler{HandlerFunc(handleNotFound)})
-	s.optionsHandlerList = newHandlerList([]Handler{HandlerFunc(s.handleOptions)})
+	s.defaultHandler.favicon = newHandlerList([]Handler{HandlerFunc(handleFavIcon)})
+	s.defaultHandler.notfound = newHandlerList([]Handler{HandlerFunc(handleNotFound)})
+	s.defaultHandler.options = newHandlerList([]Handler{HandlerFunc(s.handleOptions)})
 	s.reservedPaths = map[string]bool{
 		endpointPath: true,
 		faviconPath:  true,
 	}
-
 	s.AddTemplateFuncMap(template.FuncMap)
-
-	if config != nil {
-		s.handlers = config.Handlers
-	}
 	return s
 }
 
@@ -136,9 +134,9 @@ func (s *Server) logHTTP(rw http.ResponseWriter, req *http.Request, startAt time
 
 	if statGetter.Status() >= http.StatusBadRequest {
 		if statGetter.Status() != http.StatusUnauthorized {
-			s.logger.Errorf("%s header: %v form: %v", info, req.Header, req.PostForm)
+			s.logger.Errorf("%s Header: %v form: %v", info, req.Header, req.PostForm)
 		} else {
-			s.logger.Errorf("%s header: %v", info, req.Header)
+			s.logger.Errorf("%s Header: %v", info, req.Header)
 		}
 	} else {
 		s.logger.Info(info)
@@ -167,18 +165,18 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 
 	if handlers.Empty() {
 		if method == http.MethodOptions {
-			handlers = s.optionsHandlerList
+			handlers = s.defaultHandler.options
 		} else if path == faviconPath {
-			handlers = s.faviconHandlerList
+			handlers = s.defaultHandler.favicon
 		} else {
-			handlers = s.notfoundHandlerList
+			handlers = s.defaultHandler.notfound
 		}
 	}
 
-	ctx, cancel := context.WithTimeout(req.Context(), s.timeout)
+	ctx, cancel := context.WithTimeout(req.Context(), s.Timeout)
 	defer cancel()
 
-	parsedReq, err := NewRequest(req, s.paramsParser)
+	parsedReq, err := NewRequest(req, s.ParamsParser)
 	if err != nil {
 		logger.Errorf("Parse failed: %v", err)
 		resp := Text(http.StatusBadRequest, fmt.Sprintf("Parse request failed: %v", err))
@@ -188,7 +186,7 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	parsedReq.params.AddMapObj(pathParams)
 	parsedReq.params[SessionName] = sid
 
-	for k, v := range s.header {
+	for k, v := range s.Header {
 		rw.Header()[k] = v
 	}
 
@@ -263,7 +261,7 @@ func (s *Server) setupSession(rw http.ResponseWriter, req *http.Request) string 
 		}
 	}
 
-	// Read header
+	// Read Header
 	if sid == "" {
 		lcName := strings.ToLower(SessionName)
 		for k, vs := range req.Header {
@@ -298,7 +296,7 @@ func (s *Server) setupSession(rw http.ResponseWriter, req *http.Request) string 
 		Path:    "/",
 	}
 	http.SetCookie(rw, cookie)
-	// Write to header in case cookie is disabled by some browsers
+	// Write to Header in case cookie is disabled by some browsers
 	rw.Header().Set(SessionName, sid)
 	return sid
 }

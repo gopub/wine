@@ -3,10 +3,9 @@ package wine
 import (
 	"net/http"
 
+	"github.com/gopub/gox"
 	"github.com/gopub/wine/internal/request"
 	"github.com/gopub/wine/mime"
-
-	"github.com/gopub/gox"
 )
 
 // Request is a wrapper of http.Request, aims to provide more convenient interface

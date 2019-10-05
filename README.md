@@ -14,7 +14,7 @@ Create ./hello.go
         import "github.com/gopub/wine"
         
         func main() {
-        	s := wine.NewServer(wine.DefaultConfig())
+        	s := wine.NewServer()
         	s.Get("/hello", func(ctx context.Context, req *wine.Request, next wine.Invoker) wine.Responsible {
         		return wine.Text("Hello, Wine!")
         	})
@@ -29,7 +29,7 @@ Run and test:
 
 ## JSON Rendering
 
-        s := wine.NewServer(wine.DefaultConfig())
+        s := wine.NewServer()
         s.Get("/time", func(ctx context.Context, req *wine.Request, next wine.Invoker) wine.Responsible {
         	return wine.JSON(map[string]interface{}{"time":time.Now().Unix()})
         })
@@ -38,7 +38,7 @@ Run and test:
 ## Parameters
 Request.Parameters contains all request parameters (query/body/header).
 
-        s := wine.NewServer(wine.DefaultConfig())
+        s := wine.NewServer()
         s.Post("feedback", func(ctx context.Context, req *wine.Request, next wine.Invoker) wine.Responsible {
             text := req.Parameters.String("text")
             email := req.Parameters.String("email")
@@ -60,7 +60,7 @@ Support parameters in json
 Path parameters are also supported in order to provide elegant RESTful apis.  
 Single parameter in one segment:
 <pre>
-    s := wine.NewServer(wine.DefaultConfig()) 
+    s := wine.NewServer() 
     s.Get("/items/<b>{id}</b>", func(ctx context.Context, req *wine.Request, next wine.Invoker) wine.Responsible {
         id := req.Parameters.String("id")
         return wine.Text("item id: " + id)
@@ -117,7 +117,7 @@ Custom middleware
     }
     
     func main() {
-    	s := wine.NewServer(wine.DefaultConfig())
+    	s := wine.NewServer()
     
     	//Create "accounts" group
     	<b>g := s.Group("accounts")</b>
@@ -142,7 +142,7 @@ Run it:
 ## Basic Auth
 It's easy to turn on basic auth.
 
-    s := wine.NewServer(wine.DefaultConfig())
+    s := wine.NewServer()
 	s.Use(wine.BasicAuth(map[string]string{
 		"admin": "123",
 		"tom":   "456",

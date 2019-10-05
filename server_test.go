@@ -25,7 +25,7 @@ type testJSONObj struct {
 }
 
 func TestMain(m *testing.M) {
-	server = wine.NewServer(wine.DefaultConfig())
+	server = wine.NewServer()
 	go func() {
 		if err := server.Run(":8000"); err != nil {
 			log.Panic(err)
@@ -75,8 +75,8 @@ func TestJSON(t *testing.T) {
 func TestHTML(t *testing.T) {
 	var htmlText = `
 	<html>
-		<header>
-		</header>
+		<Header>
+		</Header>
 		<body>
 			Hello, world!
 		</body>

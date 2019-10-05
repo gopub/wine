@@ -9,7 +9,7 @@ import (
 )
 
 func main() {
-	s := wine.NewServer(wine.DefaultConfig())
+	s := wine.NewServer()
 	s.Get("/fibonacci", func(ctx context.Context, req *wine.Request, next wine.Invoker) wine.Responsible {
 		n := req.Params().Int("n")
 		result := fibonacci(n)

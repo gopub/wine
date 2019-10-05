@@ -11,7 +11,7 @@ import (
 )
 
 func main() {
-	s := wine.NewServer(wine.DefaultConfig())
+	s := wine.NewServer()
 	s.Get("echo", func(ctx context.Context, req *wine.Request, next wine.Invoker) wine.Responsible {
 		return api.Data(req.Params())
 	})
