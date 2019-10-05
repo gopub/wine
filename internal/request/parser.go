@@ -125,19 +125,20 @@ func (p *ParamsParser) parseBody(req *http.Request) (gox.M, []byte, error) {
 		}
 		return params, body, nil
 	case mime.FormURLEncoded:
-		body, err := req.GetBody()
-		if err != nil {
-			return params, nil, errors.Wrap(err, "get body failed")
+		// TODO: will crash
+		//body, err := req.GetBody()
+		//if err != nil {
+		//	return params, nil, errors.Wrap(err, "get body failed")
+		//}
+		//bodyData, err := ioutil.ReadAll(body)
+		//body.Close()
+		//if err != nil {
+		//	return params, nil, errors.Wrap(err, "read form body failed")
+		//}
+		if err := req.ParseForm(); err != nil {
+			return params, nil, errors.Wrap(err, "parse form failed")
 		}
-		bodyData, err := ioutil.ReadAll(body)
-		body.Close()
-		if err != nil {
-			return params, nil, errors.Wrap(err, "read form body failed")
-		}
-		if err = req.ParseForm(); err != nil {
-			return params, bodyData, errors.Wrap(err, "parse form failed")
-		}
-		return p.parseURLValues(req.Form), bodyData, nil
+		return p.parseURLValues(req.Form), nil, nil
 	case mime.FormData:
 		err := req.ParseMultipartForm(int64(p.maxMemory))
 		if err != nil {
