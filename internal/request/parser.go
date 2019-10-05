@@ -150,6 +150,11 @@ func (p *ParamsParser) parseBody(req *http.Request) (gox.M, []byte, error) {
 		}
 		return params, nil, nil
 	default:
-		return params, nil, nil
+		body, err := ioutil.ReadAll(req.Body)
+		req.Body.Close()
+		if err != nil {
+			return params, nil, errors.Wrap(err, "read json body failed")
+		}
+		return params, body, nil
 	}
 }
