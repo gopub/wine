@@ -72,6 +72,10 @@ func (c *Client) Get(ctx context.Context, endpoint string, query url.Values, res
 	return c.call(ctx, http.MethodGet, u.String(), nil, result)
 }
 
+func (c *Client) GetWithBody(ctx context.Context, endpoint string, bodyParams interface{}, result interface{}) error {
+	return c.call(ctx, http.MethodGet, endpoint, bodyParams, result)
+}
+
 func (c *Client) Post(ctx context.Context, endpoint string, params interface{}, result interface{}) error {
 	return c.call(ctx, http.MethodPost, endpoint, params, result)
 }
