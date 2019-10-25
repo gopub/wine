@@ -11,7 +11,7 @@ import (
 // ParseRequest unmarshal request body into params. Only support JSON type for now.
 func ParseParams(req *wine.Request, params interface{}) error {
 	if req.ContentType() != mime.JSON {
-		return gox.BadRequest("%s is not %s", mime.ContentType, mime.JSON)
+		return gox.BadRequest("Expected %s instead of", mime.JSON, req.ContentType())
 	}
 	return json.Unmarshal(req.Body(), params)
 }
