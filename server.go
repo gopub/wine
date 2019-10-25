@@ -124,9 +124,8 @@ func (s *Server) logHTTP(rw http.ResponseWriter, req *http.Request, startAt time
 		statGetter = rw.(statusGetter)
 	}
 
-	info := fmt.Sprintf("%s %s %s %s | return %d in %v",
+	info := fmt.Sprintf("%s %s %s | return %d in %v",
 		req.RemoteAddr,
-		req.UserAgent(),
 		req.Method,
 		req.RequestURI,
 		statGetter.Status(),
