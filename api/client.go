@@ -133,9 +133,11 @@ func (c *Client) Do(req *http.Request, result interface{}) error {
 	resp, err := c.client.Do(req)
 	if err != nil {
 		if err == context.DeadlineExceeded {
-			return gox.NewError(http.StatusRequestTimeout, err.Error())
+			err = gox.NewError(http.StatusRequestTimeout, err.Error())
+		} else {
+			err = gox.NewError(StatusTransportFailed, err.Error())
 		}
-		return gox.NewError(StatusTransportFailed, err.Error())
+		return errors.Wrap(err, "do request failed")
 	}
 	return ParseResult(resp, result)
 }
