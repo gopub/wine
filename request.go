@@ -34,7 +34,7 @@ func (r *Request) ContentType() string {
 
 func NewRequest(r *http.Request, parser ParamsParser) (*Request, error) {
 	if parser == nil {
-		parser = request.NewParamsParser(nil, 8*gox.MB)
+		parser = request.NewParamsParser(8 * gox.MB)
 	}
 
 	params, body, err := parser.Parse(r)

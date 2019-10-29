@@ -62,7 +62,7 @@ func NewServer() *Server {
 		TemplateManager: NewTemplateManager(),
 		Header:          header,
 		Timeout:         10 * time.Second,
-		ParamsParser:    request.NewParamsParser([]string{"device_id"}, 8*gox.MB),
+		ParamsParser:    request.NewParamsParser(8 * gox.MB),
 		logger:          logger,
 	}
 
