@@ -14,17 +14,12 @@ import (
 )
 
 type ParamsParser struct {
-	headerParamNames *gox.StringSet
-	maxMemory        gox.ByteUnit
+	maxMemory gox.ByteUnit
 }
 
-func NewParamsParser(headerParamNames []string, maxMemory gox.ByteUnit) *ParamsParser {
+func NewParamsParser(maxMemory gox.ByteUnit) *ParamsParser {
 	p := &ParamsParser{
-		headerParamNames: gox.NewStringSet(1),
-		maxMemory:        maxMemory,
-	}
-	for _, n := range headerParamNames {
-		p.headerParamNames.Add(n)
+		maxMemory: maxMemory,
 	}
 	if p.maxMemory < gox.MB {
 		p.maxMemory = gox.MB
@@ -59,14 +54,7 @@ func (p *ParamsParser) parseHeader(req *http.Request) gox.M {
 		k = strings.ToLower(k)
 		if strings.HasPrefix(k, "x-") {
 			k = k[2:]
-		}
-
-		if p.headerParamNames.Contains(k) {
-			params[k] = v
-		}
-
-		k = strings.Replace(k, "-", "_", -1)
-		if p.headerParamNames.Contains(k) {
+			k = strings.Replace(k, "-", "_", -1)
 			params[k] = v
 		}
 	}
