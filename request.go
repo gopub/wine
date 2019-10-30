@@ -32,6 +32,10 @@ func (r *Request) ContentType() string {
 	return r.contentType
 }
 
+func (r *Request) SessionID() string {
+	return r.params.String(SessionName)
+}
+
 func NewRequest(r *http.Request, parser ParamsParser) (*Request, error) {
 	if parser == nil {
 		parser = request.NewParamsParser(8 * gox.MB)
