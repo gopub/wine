@@ -16,6 +16,10 @@ import (
 	"github.com/pkg/errors"
 )
 
+type timeoutReporter interface {
+	Timeout() bool
+}
+
 type HeaderBuilder interface {
 	Build(ctx context.Context, header http.Header) http.Header
 }
@@ -139,7 +143,11 @@ func (c *Client) Do(req *http.Request, result interface{}) error {
 		if err == context.DeadlineExceeded {
 			err = gox.NewError(http.StatusRequestTimeout, err.Error())
 		} else {
-			err = gox.NewError(StatusTransportFailed, err.Error())
+			if ep, ok := err.(timeoutReporter); ok && ep.Timeout() {
+				err = gox.NewError(http.StatusRequestTimeout, err.Error())
+			} else {
+				err = gox.NewError(StatusTransportFailed, err.Error())
+			}
 		}
 		return errors.Wrap(err, "do request failed")
 	}
