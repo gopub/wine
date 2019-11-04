@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -12,8 +13,6 @@ import (
 	"github.com/gopub/gox"
 	"github.com/gopub/log"
 	"github.com/gopub/wine/mime"
-
-	"github.com/pkg/errors"
 )
 
 type timeoutReporter interface {
@@ -64,7 +63,7 @@ func (c *Client) Get(ctx context.Context, endpoint string, query url.Values, res
 
 	u, err := url.Parse(endpoint)
 	if err != nil {
-		return errors.Wrap(err, "parse url failed")
+		return fmt.Errorf("parse url: %w", err)
 	}
 	q := u.Query()
 	for k, vs := range query {
@@ -99,7 +98,7 @@ func (c *Client) Delete(ctx context.Context, endpoint string, query url.Values, 
 
 	u, err := url.Parse(endpoint)
 	if err != nil {
-		return errors.Wrap(err, "parse url failed")
+		return fmt.Errorf("parse url: %w", err)
 	}
 	q := u.Query()
 	for k, vs := range query {
@@ -116,13 +115,13 @@ func (c *Client) call(ctx context.Context, method string, endpoint string, param
 	if params != nil {
 		data, err := json.Marshal(params)
 		if err != nil {
-			return errors.Wrap(err, "marshal failed")
+			return fmt.Errorf("marshal: %w", err)
 		}
 		body = bytes.NewBuffer(data)
 	}
 	req, err := http.NewRequest(method, endpoint, body)
 	if err != nil {
-		return errors.Wrap(err, "create request failed")
+		return fmt.Errorf("create request: %w", err)
 	}
 	if params != nil {
 		req.Header.Set(mime.ContentType, mime.JSON)
@@ -149,7 +148,7 @@ func (c *Client) Do(req *http.Request, result interface{}) error {
 				err = gox.NewError(StatusTransportFailed, err.Error())
 			}
 		}
-		return errors.Wrap(err, "do request failed")
+		return fmt.Errorf("do request: %w", err)
 	}
 	return ParseResult(resp, result)
 }

@@ -10,7 +10,6 @@ import (
 	"github.com/gopub/log"
 	"github.com/gopub/wine"
 	"github.com/gopub/wine/mime"
-	"github.com/pkg/errors"
 )
 
 type coder interface {
@@ -59,7 +58,7 @@ func ErrorMessage(code int, message string) wine.Responsible {
 }
 
 func Error(err error) wine.Responsible {
-	err = errors.Cause(err)
+	err = gox.Cause(err)
 	if e, ok := err.(coderMessager); ok {
 		return ErrorMessage(e.Code(), e.Message())
 	} else if e, ok := err.(coder); ok {

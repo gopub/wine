@@ -3,6 +3,7 @@ package request
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -10,7 +11,6 @@ import (
 
 	"github.com/gopub/gox"
 	"github.com/gopub/wine/mime"
-	"github.com/pkg/errors"
 )
 
 type ParamsParser struct {
@@ -34,7 +34,7 @@ func (p *ParamsParser) Parse(req *http.Request) (gox.M, []byte, error) {
 	params.AddMap(p.parseURLValues(req.URL.Query()))
 	bp, body, err := p.parseBody(req)
 	if err != nil {
-		return params, body, errors.Wrap(err, "parse body failed")
+		return params, body, fmt.Errorf("parse body: %w", err)
 	}
 	params.AddMap(bp)
 	return params, body, nil
@@ -89,14 +89,14 @@ func (p *ParamsParser) parseBody(req *http.Request) (gox.M, []byte, error) {
 	case mime.HTML, mime.Plain:
 		body, err := ioutil.ReadAll(req.Body)
 		if err != nil {
-			return params, nil, errors.Wrap(err, "read html or plain body failed")
+			return params, nil, fmt.Errorf("read html or plain body: %w", err)
 		}
 		return params, body, nil
 	case mime.JSON:
 		body, err := ioutil.ReadAll(req.Body)
 		req.Body.Close()
 		if err != nil {
-			return params, nil, errors.Wrap(err, "read json body failed")
+			return params, nil, fmt.Errorf("read json body: %w", err)
 		}
 		if len(body) == 0 {
 			return params, nil, nil
@@ -108,7 +108,7 @@ func (p *ParamsParser) parseBody(req *http.Request) (gox.M, []byte, error) {
 			var obj interface{}
 			err = json.Unmarshal(body, &obj)
 			if err != nil {
-				return params, body, errors.Wrapf(err, "decode json failed: %s", string(body))
+				return params, body, fmt.Errorf("decode json failed %s: %w", string(body), err)
 			}
 		}
 		return params, body, nil
@@ -116,21 +116,21 @@ func (p *ParamsParser) parseBody(req *http.Request) (gox.M, []byte, error) {
 		// TODO: will crash
 		//body, err := req.GetBody()
 		//if err != nil {
-		//	return params, nil, errors.Wrap(err, "get body failed")
+		//	return params, nil, fmt.Errorf("get body: %w", err)
 		//}
 		//bodyData, err := ioutil.ReadAll(body)
 		//body.Close()
 		//if err != nil {
-		//	return params, nil, errors.Wrap(err, "read form body failed")
+		//	return params, nil, fmt.Errorf("read form body: %w", err)
 		//}
 		if err := req.ParseForm(); err != nil {
-			return params, nil, errors.Wrap(err, "parse form failed")
+			return params, nil, fmt.Errorf("parse form: %w", err)
 		}
 		return p.parseURLValues(req.Form), nil, nil
 	case mime.FormData:
 		err := req.ParseMultipartForm(int64(p.maxMemory))
 		if err != nil {
-			return nil, nil, errors.Wrap(err, "parse multipart form failed")
+			return nil, nil, fmt.Errorf("parse multipart form: %w", err)
 		}
 
 		if req.MultipartForm != nil && req.MultipartForm.File != nil {
@@ -141,7 +141,7 @@ func (p *ParamsParser) parseBody(req *http.Request) (gox.M, []byte, error) {
 		body, err := ioutil.ReadAll(req.Body)
 		req.Body.Close()
 		if err != nil {
-			return params, nil, errors.Wrap(err, "read json body failed")
+			return params, nil, fmt.Errorf("read json body: %w", err)
 		}
 		return params, body, nil
 	}

@@ -3,10 +3,11 @@ package wine
 import (
 	"context"
 	"fmt"
-	"github.com/gopub/wine/internal/request"
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/gopub/wine/internal/request"
 
 	"github.com/gopub/gox"
 

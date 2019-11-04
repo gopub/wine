@@ -6,10 +6,9 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/pkg/errors"
+	"errors"
 
 	"github.com/go-redis/redis"
-	"github.com/gopub/gox"
 )
 
 var _ Store = (*RedisStore)(nil)
@@ -45,7 +44,7 @@ func (s *RedisStore) Get(sid, key string, ptrValue interface{}) error {
 	if b, ok := ptrValue.(*[]byte); ok {
 		data, err := cmd.Bytes()
 		if err != nil {
-			return errors.Wrap(err, "cannot get cmd bytes")
+			return fmt.Errorf("get cmd bytes: %w", err)
 		}
 		*b = data
 		return nil
@@ -55,37 +54,37 @@ func (s *RedisStore) Get(sid, key string, ptrValue interface{}) error {
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 		i, err := cmd.Int64()
 		if err != nil {
-			return errors.Wrap(err, "cannot get cmd int64")
+			return fmt.Errorf("get cmd int64: %w", err)
 		}
 		v.SetInt(i)
 		return nil
 	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
 		i, err := cmd.Uint64()
 		if err != nil {
-			return errors.Wrap(err, "cannot get cmd uint64")
+			return fmt.Errorf("get cmd uint64: %w", err)
 		}
 		v.SetUint(i)
 		return nil
 	case reflect.Float32, reflect.Float64:
 		i, err := cmd.Float64()
 		if err != nil {
-			return errors.Wrap(err, "cannot get cmd float64")
+			return fmt.Errorf("get cmd float64: %w", err)
 		}
 		v.SetFloat(i)
 		return nil
 	case reflect.String:
 		i, err := cmd.Result()
 		if err != nil {
-			return errors.Wrap(err, "cannot get cmd result")
+			return fmt.Errorf("get cmd result: %w", err)
 		}
 		v.SetString(i)
 		return nil
 	default:
 		data, err := cmd.Bytes()
 		if err != nil {
-			return errors.Wrap(err, "cannot get cmd bytes")
+			return fmt.Errorf("get cmd bytes: %w", err)
 		}
-		return gox.JSONUnmarshal(data, ptrValue)
+		return json.Unmarshal(data, ptrValue)
 	}
 }
 

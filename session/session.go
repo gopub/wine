@@ -2,9 +2,8 @@ package session
 
 import (
 	"context"
+	"fmt"
 	"time"
-
-	"github.com/pkg/errors"
 
 	"github.com/gopub/gox"
 )
@@ -40,7 +39,7 @@ func newSession(store Store, id string, expiration time.Duration) (Session, erro
 	logger := logger.With("id", id, "expiration", expiration)
 	ok, err := store.Exists(id)
 	if err != nil {
-		return nil, errors.Wrapf(normalizeErr(err), "store.Exists: id=%s", id)
+		return nil, fmt.Errorf("exists id=%s: %w", id, normalizeErr(err))
 	}
 
 	if ok {
@@ -49,7 +48,7 @@ func newSession(store Store, id string, expiration time.Duration) (Session, erro
 
 	// Just save a key-val in order to create hmap in redis server
 	if err := store.Set(id, "created_at", time.Now().Unix()); err != nil {
-		return nil, errors.Wrapf(normalizeErr(err), "store.Set: id=%s", id)
+		return nil, fmt.Errorf("set id=%s: %w", id, normalizeErr(err))
 	}
 
 	logger.Info("New session")
@@ -68,12 +67,12 @@ func restoreSession(store Store, id string, expiration time.Duration) (Session, 
 	logger := logger.With("id", id, "expiration", expiration)
 	ok, err := store.Exists(id)
 	if err != nil {
-		return nil, errors.Wrapf(normalizeErr(err), "store.Exists: id=%s", id)
+		return nil, fmt.Errorf("exists id=%s: %w", id, normalizeErr(err))
 	}
 
 	if !ok {
 		logger.Warn("Session doesn't exist")
-		return nil, ErrNoValue
+		return nil, gox.ErrNotExist
 	}
 
 	logger.Info("Restored session")
@@ -116,22 +115,22 @@ func (s *session) ID() string {
 
 func (s *session) Get(key string, ptrValue interface{}) error {
 	if err := s.store.Get(s.id, key, ptrValue); err != nil {
-		return errors.Wrapf(normalizeErr(err), "cannot get: key=%s", key)
+		return fmt.Errorf("get key=%s: %w", key, normalizeErr(err))
 	}
 
 	if err := s.store.Expire(s.id, s.expiration); err != nil {
-		return errors.Wrapf(normalizeErr(err), "cannot set expiration: id=%s", s.id)
+		return fmt.Errorf("set expiration id=%s: %w", s.id, normalizeErr(err))
 	}
 	return nil
 }
 
 func (s *session) Set(key string, value interface{}) error {
 	if err := s.store.Set(s.id, key, value); err != nil {
-		return errors.Wrapf(err, "cannot set: key=%s", key)
+		return fmt.Errorf("set key=%s: %w", key, err)
 	}
 
 	if err := s.store.Expire(s.id, s.expiration); err != nil {
-		return errors.Wrapf(normalizeErr(err), "cannot set expiration: id=%s", s.id)
+		return fmt.Errorf("expire id=%s: %w", s.id, normalizeErr(err))
 	}
 	return nil
 }
@@ -139,7 +138,7 @@ func (s *session) Set(key string, value interface{}) error {
 func (s *session) Destroy() error {
 	err := normalizeErr(s.store.Delete(s.id))
 	if err != nil {
-		return errors.Wrapf(err, "cannot delete session: id=%s", s.id)
+		return fmt.Errorf("delete id=%s: %w", s.id, err)
 	}
 	logger.Infof("Destroyed session: id=%s", s.id)
 	return err
