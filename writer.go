@@ -72,6 +72,7 @@ func (w *ResponseWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
 type CompressedResponseWriter struct {
 	http.ResponseWriter
 	compressedWriter io.Writer
+	err              error
 }
 
 func NewCompressedResponseWriter(w http.ResponseWriter, encoding string) (*CompressedResponseWriter, error) {
@@ -103,7 +104,8 @@ func (w *CompressedResponseWriter) Flush() {
 	// Flush the compressed writer, then flush httpResponseWriter
 	if f, ok := w.compressedWriter.(flusher); ok {
 		if err := f.Flush(); err != nil {
-			logger.Errorf("cannot flush: %v", err)
+			logger.Errorf("Flush: %v", err)
+			w.err = err
 		}
 		if ff, ok := w.ResponseWriter.(http.Flusher); ok {
 			ff.Flush()
@@ -116,6 +118,10 @@ func (w *CompressedResponseWriter) Hijack() (net.Conn, *bufio.ReadWriter, error)
 		return h.Hijack()
 	}
 	return nil, nil, errors.New("hijack not supported")
+}
+
+func (w *CompressedResponseWriter) Error() error {
+	return w.err
 }
 
 func (w *CompressedResponseWriter) Close() error {
