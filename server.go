@@ -79,7 +79,7 @@ func NewServer() *Server {
 }
 
 // Run starts server
-func (s *Server) Run(addr string) error {
+func (s *Server) Run(addr string) {
 	if s.server != nil {
 		logger.Panic("Server is running")
 	}
@@ -88,9 +88,8 @@ func (s *Server) Run(addr string) error {
 	s.server = &http.Server{Addr: addr, Handler: s}
 	err := s.server.ListenAndServe()
 	if err != nil {
-		s.server = nil
+		logger.Panicf("ListenAndServe: %v", err)
 	}
-	return err
 }
 
 // RunTLS starts server with tls
