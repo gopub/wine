@@ -81,14 +81,14 @@ func NewServer() *Server {
 // Run starts server
 func (s *Server) Run(addr string) {
 	if s.server != nil {
-		logger.Panic("Server is running")
+		logger.Fatalf("Server is running")
 	}
 
 	logger.Info("Running at", addr, "...")
 	s.server = &http.Server{Addr: addr, Handler: s}
 	err := s.server.ListenAndServe()
 	if err != nil {
-		logger.Panicf("ListenAndServe: %v", err)
+		logger.Fatalf("ListenAndServe: %v", err)
 	}
 }
 
