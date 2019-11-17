@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"fmt"
 
 	"github.com/gopub/gox"
 	"github.com/gopub/wine"
@@ -15,9 +16,15 @@ func ParseParams(req *wine.Request, params interface{}) error {
 		if err != nil {
 			return gox.BadRequest("unmarshal: %v", err)
 		}
-		return nil
 	}
-	err := gox.CopyWithNamer(params, req.Params(), gox.SnakeToCamelNamer)
+
+	data, err := json.Marshal(req.Params())
+	if err != nil {
+		return fmt.Errorf("marshal: %w", err)
+	}
+	_ = json.Unmarshal(data, params)
+	fmt.Println(req.Params())
+	err = gox.CopyWithNamer(params, req.Params(), gox.SnakeToCamelNamer)
 	if err != nil {
 		return gox.BadRequest("parse params: %v", err)
 	}
