@@ -124,7 +124,7 @@ func (s *Server) logHTTP(rw http.ResponseWriter, req *http.Request, startAt time
 		statGetter = rw.(statusGetter)
 	}
 
-	info := fmt.Sprintf("%s %s %s | return %d in %v",
+	info := fmt.Sprintf("%s %s %s | %d %v",
 		req.RemoteAddr,
 		req.Method,
 		req.RequestURI,
@@ -133,9 +133,9 @@ func (s *Server) logHTTP(rw http.ResponseWriter, req *http.Request, startAt time
 
 	if statGetter.Status() >= http.StatusBadRequest {
 		if statGetter.Status() != http.StatusUnauthorized {
-			s.logger.Errorf("%s Header: %v form: %v", info, req.Header, req.PostForm)
+			s.logger.Errorf("%s | %v | %v", info, req.Header, req.PostForm)
 		} else {
-			s.logger.Errorf("%s Header: %v", info, req.Header)
+			s.logger.Errorf("%s | %v", info, req.Header)
 		}
 	} else {
 		s.logger.Info(info)
