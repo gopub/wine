@@ -23,10 +23,6 @@ func ParseParams(req *wine.Request, params interface{}) error {
 		return fmt.Errorf("marshal: %w", err)
 	}
 	_ = json.Unmarshal(data, params)
-	fmt.Println(req.Params())
-	err = gox.CopyWithNamer(params, req.Params(), gox.SnakeToCamelNamer)
-	if err != nil {
-		return gox.BadRequest("parse params: %v", err)
-	}
+	_ = gox.CopyWithNamer(params, req.Params(), gox.SnakeToCamelNamer)
 	return nil
 }
