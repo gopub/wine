@@ -2,7 +2,6 @@ package api
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/gopub/gox"
 	"github.com/gopub/wine"
 	"github.com/gopub/wine/mime"
@@ -11,10 +10,9 @@ import (
 // ParseRequest unmarshal request body into params. Only support JSON type for now.
 func ParseParams(req *wine.Request, params interface{}) error {
 	data, err := json.Marshal(req.Params())
-	if err != nil {
-		return fmt.Errorf("marshal: %w", err)
+	if err == nil {
+		_ = json.Unmarshal(data, params)
 	}
-	_ = json.Unmarshal(data, params)
 	_ = gox.CopyWithNamer(params, req.Params(), gox.SnakeToCamelNamer)
 
 	if req.ContentType() == mime.JSON {
