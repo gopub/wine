@@ -84,7 +84,7 @@ func handleFavIcon(ctx context.Context, req *Request, next Invoker) Responsible 
 		rw.Header()[mime.ContentType] = []string{"image/x-icon"}
 		rw.WriteHeader(http.StatusOK)
 		if err := gox.WriteAll(rw, resource.Favicon); err != nil {
-			log.ContextLogger(ctx).Error("cannot write bytes: %v", err)
+			log.FromContext(ctx).Errorf("Write all: %v", err)
 		}
 	})
 }

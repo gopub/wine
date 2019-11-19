@@ -154,7 +154,7 @@ func (c *Client) Do(req *http.Request, result interface{}) error {
 }
 
 func (c *Client) dumpRequest(req *http.Request) {
-	logger := log.ContextLogger(req.Context())
+	logger := log.FromContext(req.Context())
 	var bodyData []byte
 	if body, err := req.GetBody(); err != nil {
 		logger.Errorf("GetBody failed: %v", err)
