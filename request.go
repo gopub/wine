@@ -2,6 +2,7 @@ package wine
 
 import (
 	"net/http"
+	"strings"
 
 	"github.com/gopub/gox"
 	"github.com/gopub/wine/internal/request"
@@ -34,6 +35,22 @@ func (r *Request) ContentType() string {
 
 func (r *Request) SessionID() string {
 	return r.params.String(SessionName)
+}
+
+func (r *Request) Authorization() string {
+	return r.request.Header.Get("Authorization")
+}
+
+func (r *Request) Bearer() string {
+	s := r.Authorization()
+	strs := strings.Split(s, " ")
+	if len(strs) != 2 {
+		return ""
+	}
+	if strs[0] == "Bearer" {
+		return strs[1]
+	}
+	return ""
 }
 
 func NewRequest(r *http.Request, parser ParamsParser) (*Request, error) {

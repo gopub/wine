@@ -7,8 +7,9 @@ import (
 	"github.com/gopub/wine/mime"
 )
 
-// ParseRequest unmarshal request body into params. Only support JSON type for now.
+// ParseParams unmarshal request body into params. Only support JSON type for now.
 func ParseParams(req *wine.Request, params interface{}) error {
+	// Unsafe assignment, so ignore error
 	data, err := json.Marshal(req.Params())
 	if err == nil {
 		_ = json.Unmarshal(data, params)
