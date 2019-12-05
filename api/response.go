@@ -16,7 +16,7 @@ type coder interface {
 	Code() int
 }
 
-type coderMessager interface {
+type messageCoder interface {
 	coder
 	Message() string
 }
@@ -59,7 +59,7 @@ func ErrorMessage(code int, message string) wine.Responsible {
 
 func Error(err error) wine.Responsible {
 	err = gox.Cause(err)
-	if e, ok := err.(coderMessager); ok {
+	if e, ok := err.(messageCoder); ok {
 		return ErrorMessage(e.Code(), e.Message())
 	} else if e, ok := err.(coder); ok {
 		return ErrorMessage(e.Code(), err.Error())
@@ -77,8 +77,8 @@ func ParseResult(resp *http.Response, dataModel interface{}) error {
 	body, err := ioutil.ReadAll(resp.Body)
 	resp.Body.Close()
 	if err != nil {
-		log.Errorf("Read response body failed: %v", err)
-		return gox.NewError(StatusTransportFailed, fmt.Sprintf("read response body failed: %v", err))
+		log.Errorf("Read response body: %v", err)
+		return gox.NewError(StatusTransportFailed, fmt.Sprintf("read response body: %v", err))
 	}
 
 	ct := mime.GetContentType(resp.Header)
@@ -88,11 +88,11 @@ func ParseResult(resp *http.Response, dataModel interface{}) error {
 		// Use dataModel (usually is a pointer to a struct) to hold decoded data
 		res.Data = dataModel
 		if err = json.Unmarshal(body, res); err != nil {
-			log.Errorf("Unmarshal response body failed: %s %v", string(body), err)
+			log.Errorf("Unmarshal response body: %s %v", string(body), err)
 			if resp.StatusCode >= http.StatusBadRequest {
 				return gox.NewError(resp.StatusCode, string(body))
 			}
-			return gox.NewError(StatusInvalidResponse, fmt.Sprintf("unmarshal json response failed: %v", err))
+			return gox.NewError(StatusInvalidResponse, fmt.Sprintf("unmarshal json response: %v", err))
 		}
 
 		if res.Error != nil {
