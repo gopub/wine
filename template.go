@@ -5,32 +5,32 @@ import (
 	"html/template"
 )
 
-type TemplateManager struct {
+type templateManager struct {
 	templates     []*template.Template
 	templateFuncs template.FuncMap
 }
 
-func NewTemplateManager() *TemplateManager {
-	return &TemplateManager{
+func newTemplateManager() *templateManager {
+	return &templateManager{
 		templates:     make([]*template.Template, 0),
 		templateFuncs: make(template.FuncMap),
 	}
 }
 
 // AddGlobTemplate adds a template by parsing template files with pattern
-func (m *TemplateManager) AddGlobTemplate(pattern string) {
+func (m *templateManager) AddGlobTemplate(pattern string) {
 	tmpl := template.Must(template.ParseGlob(pattern))
 	m.AddTemplate(tmpl)
 }
 
 // AddFilesTemplate adds a template by parsing template files
-func (m *TemplateManager) AddFilesTemplate(files ...string) {
+func (m *templateManager) AddFilesTemplate(files ...string) {
 	tmpl := template.Must(template.ParseFiles(files...))
 	m.AddTemplate(tmpl)
 }
 
 // AddTextTemplate adds a template by parsing texts
-func (m *TemplateManager) AddTextTemplate(name string, texts ...string) {
+func (m *templateManager) AddTextTemplate(name string, texts ...string) {
 	tmpl := template.New(name)
 	for _, txt := range texts {
 		tmpl = template.Must(tmpl.Parse(txt))
@@ -39,7 +39,7 @@ func (m *TemplateManager) AddTextTemplate(name string, texts ...string) {
 }
 
 // AddTemplate adds a template
-func (m *TemplateManager) AddTemplate(tmpl *template.Template) {
+func (m *templateManager) AddTemplate(tmpl *template.Template) {
 	if m.templateFuncs != nil {
 		tmpl.Funcs(m.templateFuncs)
 	}
@@ -47,7 +47,7 @@ func (m *TemplateManager) AddTemplate(tmpl *template.Template) {
 }
 
 // AddTemplateFuncMap adds template functions
-func (m *TemplateManager) AddTemplateFuncMap(funcMap template.FuncMap) {
+func (m *templateManager) AddTemplateFuncMap(funcMap template.FuncMap) {
 	if funcMap == nil {
 		logger.Panic("funcMap is nil")
 	}
@@ -65,6 +65,7 @@ func (m *TemplateManager) AddTemplateFuncMap(funcMap template.FuncMap) {
 	}
 }
 
+// GetTemplates returns templates in context
 func GetTemplates(ctx context.Context) []*template.Template {
 	v, _ := ctx.Value(CKTemplates).([]*template.Template)
 	return v

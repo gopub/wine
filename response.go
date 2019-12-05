@@ -13,16 +13,20 @@ import (
 	"github.com/gopub/wine/mime"
 )
 
+// Responsible interface is used by Wine server to write response to the client
 type Responsible interface {
 	Respond(ctx context.Context, w http.ResponseWriter)
 }
 
+// ResponsibleFunc is a func that implements interface  Responsible
 type ResponsibleFunc func(ctx context.Context, w http.ResponseWriter)
 
+// Respond will be called to write status/body to http response writer
 func (f ResponsibleFunc) Respond(ctx context.Context, w http.ResponseWriter) {
 	f(ctx, w)
 }
 
+// Response defines the http response interface
 type Response interface {
 	Responsible
 	Status() int
@@ -37,6 +41,7 @@ type responseImpl struct {
 	value  interface{}
 }
 
+// NewResponse creates a new response
 func NewResponse(status int, header http.Header, value interface{}) Response {
 	return &responseImpl{
 		status: status,
@@ -45,6 +50,7 @@ func NewResponse(status int, header http.Header, value interface{}) Response {
 	}
 }
 
+// Respond writes header and body to response writer w
 func (r *responseImpl) Respond(ctx context.Context, w http.ResponseWriter) {
 	body, ok := r.value.([]byte)
 	if !ok {
@@ -109,6 +115,7 @@ func (r *responseImpl) SetValue(v interface{}) {
 	r.value = v
 }
 
+// Status returns a response only with a status code
 func Status(status int) Responsible {
 	return Text(status, http.StatusText(status))
 }
@@ -142,7 +149,7 @@ func Text(status int, text string) Responsible {
 	}
 }
 
-// HTML sends a HTML response
+// HTML creates a HTML response
 func HTML(status int, html string) Responsible {
 	header := make(http.Header)
 	header.Set(mime.ContentType, mime.HTMLContentType)
@@ -153,6 +160,7 @@ func HTML(status int, html string) Responsible {
 	}
 }
 
+// JSON creates a json response
 func JSON(status int, value interface{}) Responsible {
 	header := make(http.Header)
 	header.Set(mime.ContentType, mime.JSON)
@@ -163,7 +171,7 @@ func JSON(status int, value interface{}) Responsible {
 	}
 }
 
-// File sends a file response
+// File creates a file response
 func File(req *http.Request, filePath string) Responsible {
 	return ResponsibleFunc(func(ctx context.Context, w http.ResponseWriter) {
 		http.ServeFile(w, req, filePath)

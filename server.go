@@ -16,7 +16,9 @@ import (
 	"github.com/gopub/wine/internal/template"
 )
 
-var acceptEncodings = [2]string{"gzip", "defalte"}
+var acceptEncodings = [2]string{"gzip", "deflate"}
+
+// ShortHandlerNameFlag means using short name format
 var ShortHandlerNameFlag = true
 
 const (
@@ -24,7 +26,10 @@ const (
 	faviconPath  = "favicon.ico"
 )
 
+// SessionName defines the session id name
 var SessionName = "wsessionid"
+
+// SessionTTL represents the session duration
 var SessionTTL = 30 * time.Minute
 
 const minSessionTTL = 5 * time.Minute
@@ -32,7 +37,7 @@ const minSessionTTL = 5 * time.Minute
 // Server implements web server
 type Server struct {
 	*Router
-	*TemplateManager
+	*templateManager
 	server *http.Server
 
 	Header       http.Header
@@ -60,7 +65,7 @@ func NewServer() *Server {
 
 	s := &Server{
 		Router:          NewRouter(),
-		TemplateManager: NewTemplateManager(),
+		templateManager: newTemplateManager(),
 		Header:          header,
 		Timeout:         10 * time.Second,
 		ParamsParser:    request.NewParamsParser(8 * gox.MB),
@@ -115,7 +120,7 @@ func (s *Server) Shutdown() error {
 
 func (s *Server) logHTTP(rw http.ResponseWriter, req *http.Request, startAt time.Time) {
 	var statGetter statusGetter
-	if cw, ok := rw.(*CompressedResponseWriter); ok {
+	if cw, ok := rw.(*compressedResponseWriter); ok {
 		cw.Close()
 		statGetter = cw.ResponseWriter.(statusGetter)
 	}
@@ -155,7 +160,7 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	}
 
 	// Add compression to responseWriter
-	rw = createCompressedWriter(NewResponseWriter(rw), req)
+	rw = createCompressedWriter(newResponseWriter(rw), req)
 	defer s.logHTTP(rw, req, startAt)
 
 	path := pathutil.NormalizedRequestPath(req)
@@ -175,7 +180,7 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	ctx, cancel := context.WithTimeout(req.Context(), s.Timeout)
 	defer cancel()
 
-	parsedReq, err := NewRequest(req, s.ParamsParser)
+	parsedReq, err := newRequest(req, s.ParamsParser)
 	if err != nil {
 		logger.Errorf("Parse failed: %v", err)
 		resp := Text(http.StatusBadRequest, fmt.Sprintf("Parse request failed: %v", err))
@@ -210,9 +215,9 @@ func createCompressedWriter(rw http.ResponseWriter, req *http.Request) http.Resp
 	for _, enc := range acceptEncodings {
 		if strings.Contains(ae, enc) {
 			rw.Header().Set("Content-Encoding", enc)
-			cw, err := NewCompressedResponseWriter(rw, enc)
+			cw, err := newCompressedResponseWriter(rw, enc)
 			if err != nil {
-				log.Errorf("NewCompressedResponseWriter failed: %v", err)
+				log.Errorf("newCompressedResponseWriter failed: %v", err)
 			}
 			return cw
 		}
