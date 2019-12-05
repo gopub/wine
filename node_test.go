@@ -4,17 +4,17 @@ import "testing"
 
 func TestNewNode(t *testing.T) {
 	n := newNode("*")
-	if n.t != WildcardNode {
+	if n.t != wildcardNode {
 		t.FailNow()
 	}
 
 	n = newNode("*file")
-	if n.t != WildcardNode {
+	if n.t != wildcardNode {
 		t.FailNow()
 	}
 
 	n = newNode("{a}")
-	if n.t != ParamNode {
+	if n.t != paramNode {
 		t.FailNow()
 	}
 

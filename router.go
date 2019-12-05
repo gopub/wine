@@ -128,8 +128,8 @@ func (r *Router) Use(funcs ...HandlerFunc) *Router {
 	return r.UseHandlers(convertToHandlers(funcs...)...)
 }
 
-// Match finds handlers and parses path parameters according to method and path
-func (r *Router) Match(method string, path string) (*handlerList, map[string]string) {
+// match finds handlers and parses path parameters according to method and path
+func (r *Router) match(method string, path string) (*handlerList, map[string]string) {
 	n := r.methodTrees[method]
 	if n == nil {
 		return nil, nil
@@ -160,7 +160,7 @@ func (r *Router) Bind(method string, path string, handlers ...Handler) {
 	root := r.methodTrees[method]
 	if root == nil {
 		root = &node{}
-		root.t = StaticNode
+		root.t = staticNode
 		r.methodTrees[method] = root
 	}
 
@@ -200,7 +200,7 @@ func (r *Router) Unbind(method string, path string) {
 	root := r.methodTrees[method]
 	if root == nil {
 		root = &node{}
-		root.t = StaticNode
+		root.t = staticNode
 		r.methodTrees[method] = root
 	}
 
@@ -217,7 +217,7 @@ func (r *Router) Unbind(method string, path string) {
 
 	if nodes[0].path != "" {
 		emptyNode := &node{}
-		emptyNode.t = StaticNode
+		emptyNode.t = staticNode
 		nodes = append([]*node{emptyNode}, nodes...)
 	}
 

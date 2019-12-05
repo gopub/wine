@@ -46,7 +46,7 @@ func (m *TemplateManager) AddTemplate(tmpl *template.Template) {
 	m.templates = append(m.templates, tmpl)
 }
 
-// AddTemplateFuncs adds template functions
+// AddTemplateFuncMap adds template functions
 func (m *TemplateManager) AddTemplateFuncMap(funcMap template.FuncMap) {
 	if funcMap == nil {
 		logger.Panic("funcMap is nil")
@@ -65,13 +65,11 @@ func (m *TemplateManager) AddTemplateFuncMap(funcMap template.FuncMap) {
 	}
 }
 
-const keyTemplates = "wine_templates"
-
 func GetTemplates(ctx context.Context) []*template.Template {
-	v, _ := ctx.Value(keyTemplates).([]*template.Template)
+	v, _ := ctx.Value(CKTemplates).([]*template.Template)
 	return v
 }
 
 func withTemplate(ctx context.Context, templates []*template.Template) context.Context {
-	return context.WithValue(ctx, keyTemplates, templates)
+	return context.WithValue(ctx, CKTemplates, templates)
 }

@@ -24,6 +24,7 @@ func (h HandlerFunc) HandleRequest(ctx context.Context, req *Request, next Invok
 	return h(ctx, req, next)
 }
 
+// Invoker defines the function to be called in order to pass on the request
 type Invoker func(ctx context.Context, req *Request) Responsible
 
 type handlerElement struct {

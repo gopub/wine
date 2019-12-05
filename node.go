@@ -13,19 +13,19 @@ import (
 type nodeType int
 
 const (
-	StaticNode   nodeType = 0 // /users
-	ParamNode    nodeType = 1 // /users/{id}
-	WildcardNode nodeType = 2 // /users/{id}/photos/*
+	staticNode   nodeType = 0 // /users
+	paramNode    nodeType = 1 // /users/{id}
+	wildcardNode nodeType = 2 // /users/{id}/photos/*
 )
 
 func (n nodeType) String() string {
 	switch n {
-	case StaticNode:
-		return "StaticNode"
-	case ParamNode:
-		return "ParamNode"
-	case WildcardNode:
-		return "WildcardNode"
+	case staticNode:
+		return "staticNode"
+	case paramNode:
+		return "paramNode"
+	case wildcardNode:
+		return "wildcardNode"
 	default:
 		return ""
 	}
@@ -61,9 +61,9 @@ func newNode(pathSegment string) *node {
 		handlers: &handlerList{},
 	}
 	switch n.t {
-	case ParamNode:
+	case paramNode:
 		n.paramName = pathSegment[1 : len(pathSegment)-1]
-	case WildcardNode:
+	case wildcardNode:
 		n.path = pathSegment[1:]
 	default:
 		break
@@ -77,7 +77,7 @@ func (n *node) conflict(nodes []*node) bool {
 	}
 
 	nod := nodes[0]
-	if n.t == WildcardNode || nod.t == WildcardNode {
+	if n.t == wildcardNode || nod.t == wildcardNode {
 		return true
 	}
 
@@ -87,11 +87,11 @@ func (n *node) conflict(nodes []*node) bool {
 
 	//n.t == node.t
 
-	if n.t == StaticNode {
+	if n.t == staticNode {
 		return n.path == nod.path && !n.handlers.Empty() && !nod.handlers.Empty()
 	}
 
-	if n.t == ParamNode {
+	if n.t == paramNode {
 		if !n.handlers.Empty() && !nod.handlers.Empty() {
 			return true
 		}
@@ -136,12 +136,12 @@ func (n *node) add(nodes []*node) bool {
 
 	nod = nodes[0]
 	switch nod.t {
-	case StaticNode:
+	case staticNode:
 		n.children = append([]*node{nod}, n.children...)
-	case ParamNode:
+	case paramNode:
 		i := len(n.children) - 1
 		for i >= 0 {
-			if n.children[i].t != WildcardNode {
+			if n.children[i].t != wildcardNode {
 				break
 			}
 			i--
@@ -156,7 +156,7 @@ func (n *node) add(nodes []*node) bool {
 			copy(n.children[i+2:], n.children[i+1:])
 			n.children[i+1] = nod
 		}
-	case WildcardNode:
+	case wildcardNode:
 		n.children = append(n.children, nod)
 	default:
 		logger.Panic("invalid node type")
@@ -167,7 +167,7 @@ func (n *node) add(nodes []*node) bool {
 
 func (n *node) matchPath(pathSegments []string) (*handlerList, map[string]string) {
 	if len(pathSegments) == 0 {
-		if n.t == WildcardNode {
+		if n.t == wildcardNode {
 			return n.handlers, nil
 		}
 		return nil, nil
@@ -175,7 +175,7 @@ func (n *node) matchPath(pathSegments []string) (*handlerList, map[string]string
 
 	segment := pathSegments[0]
 	switch n.t {
-	case StaticNode:
+	case staticNode:
 		switch {
 		case n.path != segment:
 			return nil, nil
@@ -201,7 +201,7 @@ func (n *node) matchPath(pathSegments []string) (*handlerList, map[string]string
 			}
 			return nil, nil
 		}
-	case ParamNode:
+	case paramNode:
 		var handlers *handlerList
 		var params map[string]string
 		if len(pathSegments) == 1 || (pathSegments[1] == "" && !n.handlers.Empty()) {
@@ -223,7 +223,7 @@ func (n *node) matchPath(pathSegments []string) (*handlerList, map[string]string
 			params[n.paramName] = segment
 		}
 		return handlers, params
-	case WildcardNode:
+	case wildcardNode:
 		return n.handlers, nil
 	default:
 		return nil, nil
@@ -240,7 +240,7 @@ func (n *node) matchNodes(nodes []*node) *node {
 		return nil
 	}
 
-	if n.t == StaticNode && n.path != nod.path {
+	if n.t == staticNode && n.path != nod.path {
 		return nil
 	}
 
@@ -288,9 +288,9 @@ func (n *node) handlerNames() string {
 func (n *node) Print(method string, parentPath string) {
 	var path string
 	switch n.t {
-	case StaticNode:
+	case staticNode:
 		path = parentPath + "/" + n.path
-	case ParamNode:
+	case paramNode:
 		path = parentPath + "/" + n.path
 	default:
 		path = parentPath + "/*" + n.path
@@ -311,7 +311,7 @@ func (n *node) Endpoints(method string) endpointInfoList {
 	var list endpointInfoList
 	var p string
 	switch n.t {
-	case StaticNode, ParamNode:
+	case staticNode, paramNode:
 		p = "/" + n.path
 	default:
 		p = "/*" + n.path
@@ -359,11 +359,11 @@ func getShortFileName(filename string) string {
 func getNodeType(path string) nodeType {
 	switch {
 	case pathutil.IsStatic(path):
-		return StaticNode
+		return staticNode
 	case pathutil.IsParam(path):
-		return ParamNode
+		return paramNode
 	case pathutil.IsWildcard(path):
-		return WildcardNode
+		return wildcardNode
 	default:
 		panic("invalid path: " + path)
 	}

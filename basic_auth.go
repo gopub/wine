@@ -9,9 +9,6 @@ import (
 	"github.com/gopub/log"
 )
 
-// BasicAuthUser is key for basic auth user
-const BasicAuthUser = "basic_auth_user"
-
 // BasicAuth returns a basic auth interceptor
 func BasicAuth(userToPassword map[string]string, realm string) HandlerFunc {
 	if len(userToPassword) == 0 {
@@ -32,7 +29,7 @@ func BasicAuth(userToPassword map[string]string, realm string) HandlerFunc {
 		authValue := req.request.Header.Get("Authorization")
 		for user, info := range userToAuthInfo {
 			if info == authValue {
-				ctx = context.WithValue(ctx, BasicAuthUser, user)
+				ctx = context.WithValue(ctx, CKBasicAuthUser, user)
 				return next(ctx, req)
 			}
 		}

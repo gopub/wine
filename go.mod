@@ -9,7 +9,9 @@ require (
 	github.com/nyaruka/phonenumbers v1.0.53 // indirect
 	github.com/onsi/ginkgo v1.8.0 // indirect
 	github.com/onsi/gomega v1.5.0 // indirect
+	golang.org/x/lint v0.0.0-20191125180803-fdd1cda4f05f // indirect
 	golang.org/x/net v0.0.0-20191204025024-5ee1b9f4859a // indirect
 	golang.org/x/sys v0.0.0-20191204072324-ce4227a45e2e // indirect
+	golang.org/x/tools v0.0.0-20191205012623-e84277c2c008 // indirect
 	google.golang.org/genproto v0.0.0-20191203220235-3fa9dbf08042 // indirect
 )

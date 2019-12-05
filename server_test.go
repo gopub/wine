@@ -2,6 +2,7 @@ package wine_test
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -9,12 +10,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gopub/log"
-
-	"github.com/gopub/gox"
-	"github.com/gopub/wine/mime"
-
 	"github.com/gopub/wine"
+	"github.com/gopub/wine/mime"
 )
 
 var server *wine.Server
@@ -27,9 +24,7 @@ type testJSONObj struct {
 func TestMain(m *testing.M) {
 	server = wine.NewServer()
 	go func() {
-		if err := server.Run(":8000"); err != nil {
-			log.Panic(err)
-		}
+		server.Run(":8000")
 	}()
 
 	time.Sleep(time.Second)
@@ -57,7 +52,7 @@ func TestJSON(t *testing.T) {
 	}
 	resp.Body.Close()
 	var result testJSONObj
-	err = gox.JSONUnmarshal(data, &result)
+	err = json.Unmarshal(data, &result)
 	if err != nil {
 		t.Log(string(data))
 		t.Fatal(err)

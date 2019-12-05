@@ -160,7 +160,7 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 
 	path := pathutil.NormalizedRequestPath(req)
 	method := strings.ToUpper(req.Method)
-	handlers, pathParams := s.Match(method, path)
+	handlers, pathParams := s.match(method, path)
 
 	if handlers.Empty() {
 		if method == http.MethodOptions {
@@ -225,7 +225,7 @@ func (s *Server) handleOptions(ctx context.Context, req *Request, next Invoker) 
 	path := pathutil.NormalizedRequestPath(req.request)
 	var allowedMethods []string
 	for routeMethod := range s.Router.methodTrees {
-		if handlers, _ := s.Match(routeMethod, path); !handlers.Empty() {
+		if handlers, _ := s.match(routeMethod, path); !handlers.Empty() {
 			allowedMethods = append(allowedMethods, routeMethod)
 		}
 	}

@@ -158,13 +158,11 @@ func CompressionHandler(h http.Handler) http.Handler {
 	})
 }
 
-const keyHTTPResponseWriter = "wine_http_response_writer"
-
 func GetResponseWriter(ctx context.Context) http.ResponseWriter {
-	rw, _ := ctx.Value(keyHTTPResponseWriter).(http.ResponseWriter)
+	rw, _ := ctx.Value(CKHTTPResponseWriter).(http.ResponseWriter)
 	return rw
 }
 
 func withResponseWriter(ctx context.Context, rw http.ResponseWriter) context.Context {
-	return context.WithValue(ctx, keyHTTPResponseWriter, rw)
+	return context.WithValue(ctx, CKHTTPResponseWriter, rw)
 }
