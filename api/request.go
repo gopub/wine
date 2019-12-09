@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 
 	"github.com/gopub/gox"
+	"github.com/gopub/gox/runtime"
 	"github.com/gopub/wine"
 	"github.com/gopub/wine/mime"
 )
@@ -15,7 +16,7 @@ func ParseParams(req *wine.Request, params interface{}) error {
 	if err == nil {
 		_ = json.Unmarshal(data, params)
 	}
-	_ = gox.CopyWithNamer(params, req.Params(), gox.SnakeToCamelNamer)
+	_ = runtime.CopyWithNamer(params, req.Params(), runtime.SnakeToCamelNamer)
 
 	if req.ContentType() == mime.JSON {
 		err := json.Unmarshal(req.Body(), params)
