@@ -40,8 +40,8 @@ Request.Parameters contains all request parameters (query/body/header).
 
         s := wine.NewServer()
         s.Post("feedback", func(ctx context.Context, req *wine.Request, next wine.Invoker) wine.Responsible {
-            text := req.Parameters.String("text")
-            email := req.Parameters.String("email")
+            text := req.Params().String("text")
+            email := req.Params().String("email")
             return wine.Text("Feedback:" + text + " from " + email)
         })
         s.Run(":8000")
@@ -62,7 +62,7 @@ Single parameter in one segment:
 <pre>
     s := wine.NewServer() 
     s.Get("/items/<b>{id}</b>", func(ctx context.Context, req *wine.Request, next wine.Invoker) wine.Responsible {
-        id := req.Parameters.String("id")
+        id := req.Params().String("id")
         return wine.Text("item id: " + id)
     }) 
     s.Run(":8000")
@@ -95,7 +95,7 @@ Custom middleware
 ## Grouping Route
 <pre>  
     func CheckSessionID(ctx context.Context, req *wine.Request, next wine.Invoker) wine.Responsible {
-    	sid := req.Parameters.String("sid")
+    	sid := req.Params().String("sid")
     	//check sid
     	if len(sid) == 0 {
     		return wine.JSON(map[string]interface{}{"error":"need sid"})
