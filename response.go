@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"html/template"
+	"io"
 	"net/http"
 	"strings"
 
@@ -160,7 +161,7 @@ func HTML(status int, html string) Responsible {
 	}
 }
 
-// JSON creates a json response
+// JSON creates a application/json response
 func JSON(status int, value interface{}) Responsible {
 	header := make(http.Header)
 	header.Set(mime.ContentType, mime.JSON)
@@ -169,6 +170,39 @@ func JSON(status int, value interface{}) Responsible {
 		header: header,
 		value:  value,
 	}
+}
+
+// Stream creates a application/octet-stream response
+func Stream(r io.Reader) Responsible {
+	return ResponsibleFunc(func(ctx context.Context, w http.ResponseWriter) {
+		w.Header().Set(mime.ContentType, mime.OctetStream)
+		const size = 1024
+		buf := make([]byte, size)
+		for {
+			n, err := r.Read(buf)
+			if err != nil {
+				log.FromContext(ctx).Errorf("Read: %v", err)
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+			if n < size {
+				break
+			}
+			gox.WriteAll(w, buf[:n])
+		}
+	})
+}
+
+// StreamData creates a application/octet-stream response
+func StreamData(b []byte) Responsible {
+	return ResponsibleFunc(func(ctx context.Context, w http.ResponseWriter) {
+		w.Header().Set(mime.ContentType, mime.OctetStream)
+		err := gox.WriteAll(w, b)
+		if err != nil {
+			log.FromContext(ctx).Errorf("WriteAll: %v", err)
+			w.WriteHeader(http.StatusInternalServerError)
+		}
+	})
 }
 
 // File creates a file response
