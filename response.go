@@ -9,9 +9,16 @@ import (
 	"strings"
 
 	"github.com/gopub/gox"
-
 	"github.com/gopub/log"
 	"github.com/gopub/wine/mime"
+)
+
+const (
+	charsetSuffix = "; charset=utf-8"
+	ctPlain       = mime.Plain + charsetSuffix
+	ctHTML        = mime.HTML + charsetSuffix
+	ctJSON        = mime.JSON + charsetSuffix
+	ctXML         = mime.XML + charsetSuffix
 )
 
 // Responsible interface is used by Wine server to write response to the client
@@ -142,7 +149,7 @@ func Redirect(location string, permanent bool) Responsible {
 // Text sends a text response
 func Text(status int, text string) Responsible {
 	header := make(http.Header)
-	header.Set(mime.ContentType, mime.PlainContentType)
+	header.Set(mime.ContentType, ctPlain)
 	return &responseImpl{
 		status: status,
 		header: header,
@@ -153,7 +160,7 @@ func Text(status int, text string) Responsible {
 // HTML creates a HTML response
 func HTML(status int, html string) Responsible {
 	header := make(http.Header)
-	header.Set(mime.ContentType, mime.HTMLContentType)
+	header.Set(mime.ContentType, ctHTML)
 	return &responseImpl{
 		status: status,
 		header: header,
@@ -164,7 +171,7 @@ func HTML(status int, html string) Responsible {
 // JSON creates a application/json response
 func JSON(status int, value interface{}) Responsible {
 	header := make(http.Header)
-	header.Set(mime.ContentType, mime.JSON)
+	header.Set(mime.ContentType, ctJSON)
 	return &responseImpl{
 		status: status,
 		header: header,

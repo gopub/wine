@@ -39,13 +39,6 @@ const (
 	GZIP           = "application/x-gzip"
 )
 
-const charsetSuffix = "; charset=utf-8"
-
-const (
-	PlainContentType = Plain + charsetSuffix
-	HTMLContentType  = HTML + charsetSuffix
-)
-
 const (
 	ContentType = "Content-Type"
 )
