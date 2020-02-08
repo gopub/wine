@@ -27,26 +27,20 @@ type Result struct {
 }
 
 func Data(data interface{}) wine.Responsible {
-	header := make(http.Header)
-	header.Set(mime.ContentType, mime.JSON)
 	val := &Result{
 		Data: data,
 	}
-	return wine.NewResponse(http.StatusOK, header, val)
+	return wine.JSON(http.StatusOK, val)
 }
 
 func StatusData(status int, data interface{}) wine.Responsible {
-	header := make(http.Header)
-	header.Set(mime.ContentType, mime.JSON)
 	val := &Result{
 		Data: data,
 	}
-	return wine.NewResponse(status, header, val)
+	return wine.JSON(status, val)
 }
 
 func ErrorMessage(code int, message string) wine.Responsible {
-	header := make(http.Header)
-	header.Set(mime.ContentType, mime.JSON)
 	val := &Result{
 		Error: gox.NewError(code, message),
 	}
@@ -54,7 +48,7 @@ func ErrorMessage(code int, message string) wine.Responsible {
 	for status >= 1000 {
 		status /= 10
 	}
-	return wine.NewResponse(status, header, val)
+	return wine.JSON(status, val)
 }
 
 func Error(err error) wine.Responsible {
