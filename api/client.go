@@ -24,11 +24,14 @@ type HeaderBuilder interface {
 }
 
 type Client struct {
-	client          *http.Client
-	header          http.Header
-	HeaderBuilder   HeaderBuilder
-	DumpNetworkData bool
+	client              *http.Client
+	header              http.Header
+	HeaderBuilder       HeaderBuilder
+	RequestLogging      bool
+	ResultModelDisabled bool
 }
+
+var DefaultClient = NewClient(http.DefaultClient)
 
 func NewClient(client *http.Client) *Client {
 	return &Client{
@@ -121,7 +124,7 @@ func (c *Client) call(ctx context.Context, method string, endpoint string, param
 	}
 	req, err := http.NewRequest(method, endpoint, body)
 	if err != nil {
-		return fmt.Errorf("create request: %w", err)
+		return fmt.Errorf("create request: %s, %s, %w", method, endpoint, err)
 	}
 	if params != nil {
 		req.Header.Set(mime.ContentType, mime.JSON)
@@ -133,7 +136,7 @@ func (c *Client) call(ctx context.Context, method string, endpoint string, param
 func (c *Client) Do(req *http.Request, result interface{}) error {
 	c.InjectHeader(req)
 
-	if c.DumpNetworkData {
+	if c.RequestLogging {
 		c.dumpRequest(req)
 	}
 
@@ -150,19 +153,19 @@ func (c *Client) Do(req *http.Request, result interface{}) error {
 		}
 		return fmt.Errorf("do request: %w", err)
 	}
-	return ParseResult(resp, result)
+	return ParseResult(resp, result, !c.ResultModelDisabled)
 }
 
 func (c *Client) dumpRequest(req *http.Request) {
 	logger := log.FromContext(req.Context())
 	var bodyData []byte
 	if body, err := req.GetBody(); err != nil {
-		logger.Errorf("GetBody failed: %v", err)
+		logger.Errorf("GetBody: %v", err)
 	} else {
 		body.Close()
 		bodyData, err = ioutil.ReadAll(body)
 		if err != nil {
-			logger.Errorf("ReadAll failed: %v", err)
+			logger.Errorf("ReadAll: %v", err)
 		}
 	}
 	logger.Debugf("Request: %s %s %s", req.Method, req.URL, req.Header, string(bodyData))
