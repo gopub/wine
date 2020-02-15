@@ -3,6 +3,7 @@ package wine
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"html/template"
 	"io"
 	"net/http"
@@ -180,9 +181,12 @@ func JSON(status int, value interface{}) Responsible {
 }
 
 // Stream creates a application/octet-stream response
-func Stream(r io.Reader) Responsible {
+func StreamFile(r io.Reader, name string) Responsible {
 	return ResponsibleFunc(func(ctx context.Context, w http.ResponseWriter) {
 		w.Header().Set(mime.ContentType, mime.OctetStream)
+		if name != "" {
+			w.Header().Set(mime.ContentDisposition, fmt.Sprintf(`attachment; filename="%s"`, name))
+		}
 		const size = 1024
 		buf := make([]byte, size)
 		for {
@@ -200,10 +204,13 @@ func Stream(r io.Reader) Responsible {
 	})
 }
 
-// StreamData creates a application/octet-stream response
-func StreamData(b []byte) Responsible {
+// File creates a application/octet-stream response
+func File(b []byte, name string) Responsible {
 	return ResponsibleFunc(func(ctx context.Context, w http.ResponseWriter) {
 		w.Header().Set(mime.ContentType, mime.OctetStream)
+		if name != "" {
+			w.Header().Set(mime.ContentDisposition, fmt.Sprintf(`attachment; filename="%s"`, name))
+		}
 		err := gox.WriteAll(w, b)
 		if err != nil {
 			log.FromContext(ctx).Errorf("WriteAll: %v", err)
@@ -212,8 +219,8 @@ func StreamData(b []byte) Responsible {
 	})
 }
 
-// File creates a file response
-func File(req *http.Request, filePath string) Responsible {
+// StaticFile serves static files
+func StaticFile(req *http.Request, filePath string) Responsible {
 	return ResponsibleFunc(func(ctx context.Context, w http.ResponseWriter) {
 		http.ServeFile(w, req, filePath)
 	})

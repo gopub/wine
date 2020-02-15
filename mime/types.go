@@ -40,7 +40,8 @@ const (
 )
 
 const (
-	ContentType = "Content-Type"
+	ContentType        = "Content-Type"
+	ContentDisposition = "Content-Disposition"
 )
 
 func GetContentType(h http.Header) string {
