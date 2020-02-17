@@ -96,9 +96,9 @@ func ParseResult(resp *http.Response, dataModel interface{}, useResultModel bool
 				if len(bodyStr) > logLimit {
 					bodyStr = bodyStr[:logLimit] + "..."
 				}
-				log.Errorf("Unmarshal response body: %s %v", string(body), err)
+				log.Errorf("Unmarshal response body: %s %v", bodyStr, err)
 				if resp.StatusCode >= http.StatusBadRequest {
-					return gox.NewError(resp.StatusCode, string(body))
+					return gox.NewError(resp.StatusCode, bodyStr)
 				}
 				return gox.NewError(StatusInvalidResponse, fmt.Sprintf("unmarshal json body: %v", err))
 			}
@@ -133,11 +133,13 @@ func ParseResult(resp *http.Response, dataModel interface{}, useResultModel bool
 
 func assign(dataModel interface{}, body []byte) error {
 	v := reflect.ValueOf(dataModel)
-	if !v.CanSet() {
-		log.Panicf("Argument dataModel %T cannot be set", dataModel)
-	}
 	if v.Kind() != reflect.Ptr {
 		log.Panicf("Argument dataModel %T is not pointer", dataModel)
+	}
+
+	elem := v.Elem()
+	if !elem.CanSet() {
+		log.Panicf("Argument dataModel %T cannot be set", dataModel)
 	}
 
 	if tu, ok := v.Interface().(encoding.TextUnmarshaler); ok {
@@ -148,7 +150,6 @@ func assign(dataModel interface{}, body []byte) error {
 		return nil
 	}
 
-	elem := v.Elem()
 	switch elem.Kind() {
 	case reflect.String:
 		elem.SetString(string(body))
@@ -185,7 +186,7 @@ func assign(dataModel interface{}, body []byte) error {
 		}
 		elem.SetBool(i)
 	default:
-		return fmt.Errorf("cannot assign to dataModel %T", v)
+		return fmt.Errorf("cannot assign to dataModel %T", dataModel)
 	}
 	return nil
 }
