@@ -1,10 +1,13 @@
 package api
 
 import (
+	"encoding"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"reflect"
+	"strconv"
 
 	"github.com/gopub/gox"
 	"github.com/gopub/log"
@@ -105,6 +108,17 @@ func ParseResult(resp *http.Response, dataModel interface{}, useResultModel bool
 			return res.Error
 		}
 		return nil
+	case mime.Plain:
+		if resp.StatusCode >= http.StatusBadRequest {
+			return gox.NewError(resp.StatusCode, string(body))
+		}
+		if dataModel == nil {
+			return nil
+		}
+		if len(body) == 0 {
+			return gox.NewError(StatusInvalidResponse, "no data")
+		}
+		return assign(dataModel, body)
 	default:
 		if resp.StatusCode >= http.StatusBadRequest {
 			return gox.NewError(resp.StatusCode, string(body))
@@ -115,4 +129,63 @@ func ParseResult(resp *http.Response, dataModel interface{}, useResultModel bool
 		}
 		return nil
 	}
+}
+
+func assign(dataModel interface{}, body []byte) error {
+	v := reflect.ValueOf(dataModel)
+	if !v.CanSet() {
+		log.Panicf("Argument dataModel %T cannot be set", dataModel)
+	}
+	if v.Kind() != reflect.Ptr {
+		log.Panicf("Argument dataModel %T is not pointer", dataModel)
+	}
+
+	if tu, ok := v.Interface().(encoding.TextUnmarshaler); ok {
+		err := tu.UnmarshalText(body)
+		if err != nil {
+			return gox.NewError(StatusInvalidResponse, fmt.Sprintf("unmarshal text: %v", err))
+		}
+		return nil
+	}
+
+	elem := v.Elem()
+	switch elem.Kind() {
+	case reflect.String:
+		elem.SetString(string(body))
+	case reflect.Int64,
+		reflect.Int32,
+		reflect.Int,
+		reflect.Int16,
+		reflect.Int8:
+		i, err := strconv.ParseInt(string(body), 10, 64)
+		if err != nil {
+			return gox.NewError(StatusInvalidResponse, fmt.Sprintf("parse int: %v", err))
+		}
+		elem.SetInt(i)
+	case reflect.Uint64,
+		reflect.Uint32,
+		reflect.Uint,
+		reflect.Uint16,
+		reflect.Uint8:
+		i, err := strconv.ParseUint(string(body), 10, 64)
+		if err != nil {
+			return gox.NewError(StatusInvalidResponse, fmt.Sprintf("parse uint: %v", err))
+		}
+		elem.SetUint(i)
+	case reflect.Float32, reflect.Float64:
+		i, err := strconv.ParseFloat(string(body), 64)
+		if err != nil {
+			return gox.NewError(StatusInvalidResponse, fmt.Sprintf("parse float: %v", err))
+		}
+		elem.SetFloat(i)
+	case reflect.Bool:
+		i, err := strconv.ParseBool(string(body))
+		if err != nil {
+			return gox.NewError(StatusInvalidResponse, fmt.Sprintf("parse bool: %v", err))
+		}
+		elem.SetBool(i)
+	default:
+		return fmt.Errorf("cannot assign to dataModel %T", v)
+	}
+	return nil
 }
