@@ -88,11 +88,12 @@ func ParseResult(resp *http.Response, dataModel interface{}, useResultModel bool
 
 		if target != nil {
 			if err = json.Unmarshal(body, target); err != nil {
-				if len(body) < 512 {
-					log.Errorf("Unmarshal response body: %s %v", string(body), err)
-				} else {
-					log.Errorf("Unmarshal response body: %v", err)
+				const logLimit = 512
+				bodyStr := string(body)
+				if len(bodyStr) > logLimit {
+					bodyStr = bodyStr[:logLimit] + "..."
 				}
+				log.Errorf("Unmarshal response body: %s %v", string(body), err)
 				if resp.StatusCode >= http.StatusBadRequest {
 					return gox.NewError(resp.StatusCode, string(body))
 				}
