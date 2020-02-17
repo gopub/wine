@@ -78,31 +78,30 @@ func ParseResult(resp *http.Response, dataModel interface{}, useResultModel bool
 	ct := mime.GetContentType(resp.Header)
 	switch ct {
 	case mime.JSON:
+		target := dataModel
 		if useResultModel {
 			res := new(Result)
 			// Use dataModel (usually is a pointer to a struct) to hold decoded data
 			res.Data = dataModel
-			if err = json.Unmarshal(body, res); err != nil {
-				log.Errorf("Unmarshal response body: %s %v", string(body), err)
+			target = res
+		}
+
+		if target != nil {
+			if err = json.Unmarshal(body, target); err != nil {
+				if len(body) < 512 {
+					log.Errorf("Unmarshal response body: %s %v", string(body), err)
+				} else {
+					log.Errorf("Unmarshal response body: %v", err)
+				}
 				if resp.StatusCode >= http.StatusBadRequest {
 					return gox.NewError(resp.StatusCode, string(body))
 				}
-				return gox.NewError(StatusInvalidResponse, fmt.Sprintf("unmarshal json response: %v", err))
+				return gox.NewError(StatusInvalidResponse, fmt.Sprintf("unmarshal json body: %v", err))
 			}
+		}
 
-			if res.Error != nil {
-				return res.Error
-			}
-		} else {
-			if dataModel != nil {
-				if err = json.Unmarshal(body, dataModel); err != nil {
-					log.Errorf("Unmarshal response body: %s %v", string(body), err)
-					if resp.StatusCode >= http.StatusBadRequest {
-						return gox.NewError(resp.StatusCode, string(body))
-					}
-					return gox.NewError(StatusInvalidResponse, fmt.Sprintf("unmarshal json response: %v", err))
-				}
-			}
+		if res, ok := target.(*Result); ok && res.Error != nil {
+			return res.Error
 		}
 		return nil
 	default:
