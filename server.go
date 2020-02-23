@@ -51,7 +51,7 @@ type Server struct {
 		options  *handlerList
 	}
 
-	logger log.Logger
+	logger *log.Logger
 
 	reservedPaths map[string]bool
 }
