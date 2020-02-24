@@ -6,8 +6,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
+	"net/http/httputil"
 	"net/url"
 
 	"github.com/gopub/gox"
@@ -158,15 +158,10 @@ func (c *Client) Do(req *http.Request, result interface{}) error {
 
 func (c *Client) dumpRequest(req *http.Request) {
 	logger := log.FromContext(req.Context())
-	var bodyData []byte
-	if body, err := req.GetBody(); err != nil {
-		logger.Errorf("GetBody: %v", err)
-	} else {
-		body.Close()
-		bodyData, err = ioutil.ReadAll(body)
-		if err != nil {
-			logger.Errorf("ReadAll: %v", err)
-		}
+	data, err := httputil.DumpRequestOut(req, true)
+	if err != nil {
+		logger.Errorf("DumpRequestOut: %v", err)
+		return
 	}
-	logger.Debugf("Request: %s %s %s", req.Method, req.URL, req.Header, string(bodyData))
+	logger.Debugf(string(data))
 }
