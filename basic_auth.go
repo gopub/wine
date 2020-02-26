@@ -3,9 +3,10 @@ package wine
 import (
 	"context"
 	"encoding/base64"
-	"github.com/gopub/log"
 	"net/http"
 	"strconv"
+
+	"github.com/gopub/log"
 )
 
 // BasicAuth returns a basic auth interceptor

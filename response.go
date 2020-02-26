@@ -7,7 +7,6 @@ import (
 	"html/template"
 	"io"
 	"net/http"
-	"strconv"
 	"strings"
 
 	"github.com/gopub/gox"
