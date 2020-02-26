@@ -215,7 +215,7 @@ func (n *node) matchPath(pathSegments []string) (*handlerList, map[string]string
 			}
 		}
 
-		if !handlers.Empty() {
+		if handlers != nil && !handlers.Empty() {
 			if params == nil {
 				params = map[string]string{}
 			}
