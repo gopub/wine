@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"net/url"
 	"reflect"
 	"sort"
 	"strings"
@@ -139,7 +140,18 @@ func (r *Router) match(method string, path string) (*handlerList, map[string]str
 	if segments[0] != "" {
 		segments = append([]string{""}, segments...)
 	}
-	return n.matchPath(segments)
+	hl, params := n.matchPath(segments)
+	unescapedParams := make(map[string]string, len(params))
+	for k, v := range params {
+		uv, err := url.PathUnescape(v)
+		if err != nil {
+			logger.Errorf("Unescape path param %s: %v", v, err)
+			unescapedParams[k] = v
+		} else {
+			unescapedParams[k] = uv
+		}
+	}
+	return hl, params
 }
 
 // Bind binds method, path with handlers
