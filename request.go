@@ -1,6 +1,7 @@
 package wine
 
 import (
+	"encoding/base64"
 	"net/http"
 	"strings"
 
@@ -58,6 +59,27 @@ func (r *Request) Bearer() string {
 		return strs[1]
 	}
 	return ""
+}
+
+func (r *Request) BasicAccount() (user string, password string) {
+	s := r.Authorization()
+	strs := strings.Split(s, " ")
+	if len(strs) != 2 {
+		return
+	}
+	if strs[0] != "Basic" {
+		return
+	}
+	b, err := base64.StdEncoding.DecodeString(strs[1])
+	if err != nil {
+		logger.Errorf("Decode base64 string %s: %v", strs[1], err)
+		return
+	}
+	userAndPass := strings.Split(string(b), ":")
+	if len(userAndPass) != 2 {
+		return
+	}
+	return userAndPass[0], userAndPass[1]
 }
 
 func newRequest(r *http.Request, parser ParamsParser) (*Request, error) {

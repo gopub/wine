@@ -3,10 +3,9 @@ package wine
 import (
 	"context"
 	"encoding/base64"
+	"github.com/gopub/log"
 	"net/http"
 	"strconv"
-
-	"github.com/gopub/log"
 )
 
 // BasicAuth returns a basic auth interceptor
@@ -24,18 +23,22 @@ func BasicAuth(userToPassword map[string]string, realm string) HandlerFunc {
 		userToAuthInfo[user] = "Basic " + base64.StdEncoding.EncodeToString([]byte(info))
 	}
 
-	authHeaderValue := "Basic realm=" + strconv.Quote(realm)
 	return func(ctx context.Context, req *Request, next Invoker) Responsible {
-		authValue := req.request.Header.Get("Authorization")
+		a := req.Authorization()
 		for user, info := range userToAuthInfo {
-			if info == authValue {
+			if info == a {
 				ctx = context.WithValue(ctx, CKBasicAuthUser, user)
 				return next(ctx, req)
 			}
 		}
-
-		header := make(http.Header)
-		header.Set("WWW-Authenticate", authHeaderValue)
-		return NewResponse(http.StatusUnauthorized, header, nil)
+		return RequireBasicAuth(realm)
 	}
+}
+
+func RequireBasicAuth(realm string) Responsible {
+	return ResponsibleFunc(func(ctx context.Context, w http.ResponseWriter) {
+		a := "Basic realm=" + strconv.Quote(realm)
+		w.Header().Set("WWW-Authenticate", a)
+		w.WriteHeader(http.StatusUnauthorized)
+	})
 }
