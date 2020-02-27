@@ -2,6 +2,7 @@ package wine
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"strings"
@@ -93,7 +94,11 @@ func (s *Server) Run(addr string) {
 	s.server = &http.Server{Addr: addr, Handler: s}
 	err := s.server.ListenAndServe()
 	if err != nil {
-		logger.Fatalf("ListenAndServe: %v", err)
+		if errors.Is(err, http.ErrServerClosed) {
+			logger.Infof("Server closed")
+		} else {
+			logger.Errorf("ListenAndServe: %v", err)
+		}
 	}
 }
 

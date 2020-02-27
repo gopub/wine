@@ -151,7 +151,7 @@ func (r *Router) match(method string, path string) (*handlerList, map[string]str
 			unescapedParams[k] = uv
 		}
 	}
-	return hl, params
+	return hl, unescapedParams
 }
 
 // Bind binds method, path with handlers
