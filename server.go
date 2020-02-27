@@ -8,12 +8,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gopub/wine/internal/request"
-
 	"github.com/gopub/gox"
-
 	"github.com/gopub/log"
 	pathutil "github.com/gopub/wine/internal/path"
+	"github.com/gopub/wine/internal/request"
 	"github.com/gopub/wine/internal/template"
 )
 
@@ -109,7 +107,7 @@ func (s *Server) RunTLS(addr, certFile, keyFile string) error {
 	}
 
 	s.Router.Print()
-	logger.Info("Running at", addr, "...")
+	logger.Infof("Running at %s ...", addr)
 	s.server = &http.Server{Addr: addr, Handler: s}
 	err := s.server.ListenAndServeTLS(certFile, keyFile)
 	if err != nil {
@@ -126,7 +124,10 @@ func (s *Server) Shutdown() error {
 func (s *Server) logHTTP(rw http.ResponseWriter, req *http.Request, startAt time.Time) {
 	var statGetter statusGetter
 	if cw, ok := rw.(*compressedResponseWriter); ok {
-		cw.Close()
+		err := cw.Close()
+		if err != nil {
+			logger.Errorf("Close compressed response writer: %v", err)
+		}
 		statGetter = cw.ResponseWriter.(statusGetter)
 	}
 
@@ -187,8 +188,8 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 
 	parsedReq, err := newRequest(req, s.ParamsParser)
 	if err != nil {
-		logger.Errorf("Parse failed: %v", err)
-		resp := Text(http.StatusBadRequest, fmt.Sprintf("Parse request failed: %v", err))
+		logger.Errorf("Parse request: %v", err)
+		resp := Text(http.StatusBadRequest, fmt.Sprintf("Parse request: %v", err))
 		resp.Respond(ctx, rw)
 		return
 	}
@@ -222,7 +223,7 @@ func createCompressedWriter(rw http.ResponseWriter, req *http.Request) http.Resp
 			rw.Header().Set("Content-Encoding", enc)
 			cw, err := newCompressedResponseWriter(rw, enc)
 			if err != nil {
-				log.Errorf("newCompressedResponseWriter failed: %v", err)
+				log.Errorf("Create compressed response writer: %v", err)
 			}
 			return cw
 		}
@@ -289,7 +290,7 @@ func (s *Server) setupSession(rw http.ResponseWriter, req *http.Request) string 
 	}
 
 	if sid == "" {
-		sid = gox.UniqueID()
+		sid = gox.UniqueID40()
 	}
 
 	var expires time.Time

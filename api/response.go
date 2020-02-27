@@ -69,7 +69,7 @@ func Error(err error) wine.Responsible {
 	}
 }
 
-// ParseResponse parse response at client side
+// ParseResult parse response at client side
 func ParseResult(resp *http.Response, dataModel interface{}, useResultModel bool) error {
 	body, err := ioutil.ReadAll(resp.Body)
 	resp.Body.Close()

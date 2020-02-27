@@ -40,15 +40,17 @@ func NewClient(client *http.Client) *Client {
 	}
 }
 
+// HTTPClient returns raw http client
 func (c *Client) HTTPClient() *http.Client {
 	return c.client
 }
 
+// Header returns shared http header
 func (c *Client) Header() http.Header {
 	return c.header
 }
 
-func (c *Client) InjectHeader(req *http.Request) {
+func (c *Client) injectHeader(req *http.Request) {
 	for k, vs := range c.header {
 		for _, v := range vs {
 			req.Header.Add(k, v)
@@ -59,6 +61,7 @@ func (c *Client) InjectHeader(req *http.Request) {
 	}
 }
 
+// Get executes http get request created with endpoint and query
 func (c *Client) Get(ctx context.Context, endpoint string, query url.Values, result interface{}) error {
 	if query == nil {
 		return c.call(ctx, http.MethodGet, endpoint, nil, result)
@@ -78,6 +81,7 @@ func (c *Client) Get(ctx context.Context, endpoint string, query url.Values, res
 	return c.call(ctx, http.MethodGet, u.String(), nil, result)
 }
 
+// GetWithBody executes http get request created with endpoint and bodyParams which will be marshaled into json data
 func (c *Client) GetWithBody(ctx context.Context, endpoint string, bodyParams interface{}, result interface{}) error {
 	return c.call(ctx, http.MethodGet, endpoint, bodyParams, result)
 }
@@ -133,8 +137,9 @@ func (c *Client) call(ctx context.Context, method string, endpoint string, param
 	return c.Do(req, result)
 }
 
+// Do send http request 'req' and store response data into 'result'
 func (c *Client) Do(req *http.Request, result interface{}) error {
-	c.InjectHeader(req)
+	c.injectHeader(req)
 
 	if c.RequestLogging {
 		c.dumpRequest(req)

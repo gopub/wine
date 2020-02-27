@@ -39,7 +39,7 @@ func InitSession(ctx context.Context, req *wine.Request, next wine.Invoker) wine
 		return wine.Status(http.StatusInternalServerError)
 	}
 
-	ctx = context.WithValue(ctx, keySession, session)
+	ctx = context.WithValue(ctx, ckSession, session)
 
 	resp := next(ctx, req)
 

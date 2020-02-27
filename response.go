@@ -180,7 +180,7 @@ func JSON(status int, value interface{}) Responsible {
 	}
 }
 
-// Stream creates a application/octet-stream response
+// StreamFile creates a application/octet-stream response
 func StreamFile(r io.Reader, name string) Responsible {
 	return ResponsibleFunc(func(ctx context.Context, w http.ResponseWriter) {
 		w.Header().Set(mime.ContentType, mime.OctetStream)

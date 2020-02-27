@@ -12,8 +12,8 @@ var defaultExpiration = time.Minute * 30
 var minimumExpiration = time.Minute
 
 const (
-	keySession = "session"
-	sidLength  = 40
+	ckSession = gox.ContextKey("wine_session")
+	sidLength = 40
 )
 
 type Session interface {
@@ -32,7 +32,7 @@ func NewSession(id string) (Session, error) {
 }
 
 func ContextWithSession(ctx context.Context, s Session) context.Context {
-	return context.WithValue(ctx, keySession, s)
+	return context.WithValue(ctx, ckSession, s)
 }
 
 func newSession(store Store, id string, expiration time.Duration) (Session, error) {
@@ -84,7 +84,7 @@ func restoreSession(store Store, id string, expiration time.Duration) (Session, 
 }
 
 func GetSession(ctx context.Context) Session {
-	s, _ := ctx.Value(keySession).(Session)
+	s, _ := ctx.Value(ckSession).(Session)
 	return s
 }
 
