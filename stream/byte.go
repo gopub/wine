@@ -137,7 +137,8 @@ func NewByteHandler(serveFunc func(context.Context, ByteWriteCloser)) wine.Handl
 		logger := log.FromContext(ctx)
 		logger.Debugf("Start byte stream")
 		w := wine.GetResponseWriter(ctx)
-		w.Header().Set(mime.ContentType, mime.OctetStream)
+		// Use JSON instead of OctetStream in order to flush data to client
+		w.Header().Set(mime.ContentType, mime.JSON)
 		done := make(chan interface{})
 		go serveFunc(ctx, newByteWriteCloser(w, done))
 		<-done
