@@ -22,7 +22,7 @@ type TextReadCloser interface {
 }
 
 type TextWriteCloser interface {
-	Write(packet []byte) error
+	Write(s string) error
 	io.Closer
 }
 
@@ -43,8 +43,8 @@ func newTextReadCloser(body io.ReadCloser) *textReadCloser {
 
 func (r *textReadCloser) Read() (string, error) {
 	for {
-		p := r.readPacket()
-		if p != "" {
+		p, ok := r.readPacket()
+		if ok {
 			return p, nil
 		}
 		if r.err != nil {
@@ -63,19 +63,19 @@ func (r *textReadCloser) Close() error {
 	return r.body.Close()
 }
 
-func (r *textReadCloser) readPacket() string {
+func (r *textReadCloser) readPacket() (string, bool) {
 	for _, b := range r.buf.Bytes() {
 		if b == textPacketDelimiter {
 			p, err := r.buf.ReadBytes(textPacketDelimiter)
 			if err != nil {
 				log.Errorf("Read bytes: %v", err)
-				return ""
+				return "", false
 			}
 			// Exclude the last byte which is packet delimiter
-			return string(p[:len(p)-1])
+			return string(p[:len(p)-1]), true
 		}
 	}
-	return ""
+	return "", false
 }
 
 type textWriteCloser struct {
@@ -90,7 +90,9 @@ func newTextWriteCloser(w http.ResponseWriter, done chan<- interface{}) *textWri
 	}
 }
 
-func (w *textWriteCloser) Write(p []byte) error {
+func (w *textWriteCloser) Write(s string) error {
+	p := []byte(s)
+	p = append(p, textPacketDelimiter)
 	err := gox.WriteAll(w.w, p)
 	if err != nil {
 		return fmt.Errorf("write all: %w", err)
