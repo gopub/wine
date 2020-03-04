@@ -134,7 +134,7 @@ func NewTextHandler(serveFunc func(context.Context, TextWriteCloser)) wine.Handl
 		logger := log.FromContext(ctx)
 		logger.Debugf("Start text stream")
 		w := wine.GetResponseWriter(ctx)
-		w.Header().Set(mime.ContentType, mime.Plain)
+		w.Header().Set(mime.ContentType, mime.JSON)
 		done := make(chan interface{})
 		go serveFunc(ctx, newTextWriteCloser(w, done))
 		<-done
