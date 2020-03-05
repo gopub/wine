@@ -15,7 +15,7 @@ import (
 	"github.com/gopub/wine/internal/template"
 )
 
-var acceptEncodings = [2]string{"gzip", "deflate"}
+var acceptEncodings = []string{"gzip", "deflate"}
 
 // ShortHandlerNameFlag means using short name format
 var ShortHandlerNameFlag = true
@@ -174,7 +174,7 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 
 	if s.CompressionEnabled {
 		// Add compression to responseWriter
-		rw = createCompressedWriter(newResponseWriter(rw), req)
+		rw = compressWriter(newResponseWriter(rw), req)
 	}
 	defer s.logHTTP(rw, req, startAt)
 
@@ -224,20 +224,16 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	resp.Respond(ctx, rw)
 }
 
-func createCompressedWriter(rw http.ResponseWriter, req *http.Request) http.ResponseWriter {
+func compressWriter(rw http.ResponseWriter, req *http.Request) http.ResponseWriter {
 	// Add compression to responseWriter
-	ae := req.Header.Get("Accept-Encoding")
-	for _, enc := range acceptEncodings {
-		if strings.Contains(ae, enc) {
-			rw.Header().Set("Content-Encoding", enc)
-			cw, err := newCompressedResponseWriter(rw, enc)
-			if err != nil {
-				log.Errorf("Create compressed response writer: %v", err)
-			}
-			return cw
+	if enc := req.Header.Get("Accept-Encoding"); gox.IndexOfString(acceptEncodings, enc) >= 0 {
+		cw, err := newCompressedResponseWriter(rw, enc)
+		if err != nil {
+			log.Errorf("Create compressed response writer: %v", err)
+			return rw
 		}
+		return cw
 	}
-
 	return rw
 }
 

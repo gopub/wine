@@ -62,7 +62,7 @@ func TestJSON(t *testing.T) {
 		t.Fatal(result, *obj)
 	}
 
-	if resp.Header[mime.ContentType][0] != mime.JSON {
+	if resp.Header[mime.ContentType][0] != mime.JSON+"; charset=utf-8" {
 		t.Fatal(resp.Header[mime.ContentType])
 	}
 }
@@ -95,7 +95,7 @@ func TestHTML(t *testing.T) {
 		t.Fatal(string(data))
 	}
 
-	if resp.Header[mime.ContentType][0] != mime.HTMLContentType {
+	if resp.Header[mime.ContentType][0] != mime.HTML+"; charset=utf-8" {
 		t.Fatal(resp.Header[mime.ContentType])
 	}
 }

@@ -6,11 +6,11 @@ import (
 	"compress/gzip"
 	"context"
 	"errors"
+	"fmt"
 	"github.com/gopub/log"
 	"io"
 	"net"
 	"net/http"
-	"strings"
 )
 
 type statusGetter interface {
@@ -86,15 +86,17 @@ func newCompressedResponseWriter(w http.ResponseWriter, encoding string) (*compr
 		cw := &compressedResponseWriter{}
 		cw.ResponseWriter = w
 		cw.compressWriter = gzip.NewWriter(w)
+		w.Header().Set("Content-Encoding", encoding)
 		return cw, nil
 	case "deflate":
 		fw, err := flate.NewWriter(w, flate.DefaultCompression)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("new flate writer: %w", err)
 		}
 		cw := &compressedResponseWriter{}
 		cw.compressWriter = fw
 		cw.ResponseWriter = w
+		w.Header().Set("Content-Encoding", encoding)
 		return cw, nil
 	default:
 		return nil, errors.New("unsupported encoding")
@@ -134,33 +136,6 @@ func (w *compressedResponseWriter) Close() error {
 		return closer.Close()
 	}
 	return nil
-}
-
-func compressionHandler(h http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		enc := r.Header.Get("Accept-Encoding")
-		if strings.Contains(enc, "gzip") {
-			cw, err := newCompressedResponseWriter(w, "gzip")
-			if err != nil {
-				log.Panicf("Create gzip response writer: %v", err)
-			}
-			w.Header().Set("Content-Encoding", "gzip")
-			h.ServeHTTP(cw, r)
-			return
-		}
-
-		if strings.Contains(enc, "deflate") {
-			cw, err := newCompressedResponseWriter(w, "deflate")
-			if err != nil {
-				log.Panicf("Create deflate response writer: %v", err)
-			}
-			w.Header().Set("Content-Encoding", "deflate")
-			h.ServeHTTP(cw, r)
-			return
-		}
-
-		h.ServeHTTP(w, r)
-	})
 }
 
 // GetResponseWriter returns response writer from the context
