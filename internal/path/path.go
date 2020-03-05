@@ -54,7 +54,7 @@ func Join(segment ...string) string {
 	return res
 }
 
-func NormalizedRequestPath(req *http.Request) string {
+func NormalizeRequestPath(req *http.Request) string {
 	path := req.RequestURI
 	i := strings.Index(path, "?")
 	if i > 0 {

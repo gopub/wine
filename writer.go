@@ -7,6 +7,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/gopub/gox"
 	"github.com/gopub/log"
 	"io"
 	"net"
@@ -22,52 +23,51 @@ type flusher interface {
 	Flush() error
 }
 
-var _ statusGetter = (*responseWriter)(nil)
-var _ http.Hijacker = (*responseWriter)(nil)
-var _ http.Flusher = (*responseWriter)(nil)
+var _ statusGetter = (*responseWriterWrapper)(nil)
+var _ http.Hijacker = (*responseWriterWrapper)(nil)
+var _ http.Flusher = (*responseWriterWrapper)(nil)
 var _ http.Hijacker = (*compressedResponseWriter)(nil)
 var _ http.Flusher = (*compressedResponseWriter)(nil)
 
-// responseWriter is a wrapper of http.responseWriter to make sure write status code only one time
-type responseWriter struct {
+// responseWriterWrapper is a wrapper of http.responseWriterWrapper to make sure write status code only one time
+type responseWriterWrapper struct {
 	http.ResponseWriter
 	status int
 }
 
-func newResponseWriter(rw http.ResponseWriter) *responseWriter {
-	return &responseWriter{
+func wrapResponseWriter(rw http.ResponseWriter) *responseWriterWrapper {
+	return &responseWriterWrapper{
 		ResponseWriter: rw,
 	}
 }
 
-func (w *responseWriter) WriteHeader(statusCode int) {
+func (w *responseWriterWrapper) WriteHeader(statusCode int) {
 	if w.status > 0 {
-		logger.Warnf("Failed to overwrite status code")
+		logger.Warnf("Status code already written")
 		return
 	}
 	w.status = statusCode
 	w.ResponseWriter.WriteHeader(statusCode)
 }
 
-func (w *responseWriter) Write(data []byte) (int, error) {
+func (w *responseWriterWrapper) Write(data []byte) (int, error) {
 	if w.status == 0 {
 		w.status = http.StatusOK
 	}
 	return w.ResponseWriter.Write(data)
 }
 
-func (w *responseWriter) Status() int {
+func (w *responseWriterWrapper) Status() int {
 	return w.status
 }
 
-func (w *responseWriter) Flush() {
+func (w *responseWriterWrapper) Flush() {
 	if f, ok := w.ResponseWriter.(http.Flusher); ok {
 		f.Flush()
-		log.Debug("flushed")
 	}
 }
 
-func (w *responseWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
+func (w *responseWriterWrapper) Hijack() (net.Conn, *bufio.ReadWriter, error) {
 	if h, ok := w.ResponseWriter.(http.Hijacker); ok {
 		return h.Hijack()
 	}
@@ -146,4 +146,17 @@ func GetResponseWriter(ctx context.Context) http.ResponseWriter {
 
 func withResponseWriter(ctx context.Context, rw http.ResponseWriter) context.Context {
 	return context.WithValue(ctx, CKHTTPResponseWriter, rw)
+}
+
+func compressWriter(rw http.ResponseWriter, req *http.Request) http.ResponseWriter {
+	// Add compression to responseWriterWrapper
+	if enc := req.Header.Get("Accept-Encoding"); gox.IndexOfString(acceptEncodings, enc) >= 0 {
+		cw, err := newCompressedResponseWriter(rw, enc)
+		if err != nil {
+			log.Errorf("Create compressed response writer: %v", err)
+			return rw
+		}
+		return cw
+	}
+	return rw
 }

@@ -82,7 +82,7 @@ func (r *Request) BasicAccount() (user string, password string) {
 	return userAndPass[0], userAndPass[1]
 }
 
-func newRequest(r *http.Request, parser ParamsParser) (*Request, error) {
+func parseRequest(r *http.Request, parser ParamsParser) (*Request, error) {
 	if parser == nil {
 		parser = request.NewParamsParser(8 * gox.MB)
 	}

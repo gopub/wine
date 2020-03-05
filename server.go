@@ -125,6 +125,71 @@ func (s *Server) Shutdown() error {
 	return s.server.Shutdown(context.Background())
 }
 
+// ServeHTTP implements for http.Handler interface, which will handle each http request
+func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
+	sid := s.setupSession(rw, req)
+	startAt := time.Now()
+	if logger.Level() > log.DebugLevel {
+		// Try to recover from panic if not debugging
+		defer func() {
+			if e := recover(); e != nil {
+				logger.Error(e, req)
+			}
+		}()
+	}
+
+	rw = wrapResponseWriter(rw)
+	if s.CompressionEnabled {
+		rw = compressWriter(rw, req)
+	}
+	defer s.logHTTP(rw, req, startAt)
+
+	path := pathutil.NormalizeRequestPath(req)
+	method := strings.ToUpper(req.Method)
+	handlers, pathParams := s.match(method, path)
+
+	if handlers.Empty() {
+		if method == http.MethodOptions {
+			handlers = s.defaultHandler.options
+		} else if path == faviconPath {
+			handlers = s.defaultHandler.favicon
+		} else {
+			handlers = s.defaultHandler.notfound
+		}
+	}
+
+	ctx, cancel := context.WithTimeout(req.Context(), s.Timeout)
+	defer cancel()
+
+	parsedReq, err := parseRequest(req, s.ParamsParser)
+	if err != nil {
+		logger.Errorf("Parse request: %v", err)
+		resp := Text(http.StatusBadRequest, fmt.Sprintf("Parse request: %v", err))
+		resp.Respond(ctx, rw)
+		return
+	}
+	parsedReq.params.AddMapObj(pathParams)
+	parsedReq.params[SessionName] = sid
+
+	for k, v := range s.Header {
+		rw.Header()[k] = v
+	}
+
+	ctx = withTemplate(ctx, s.templates)
+	ctx = withResponseWriter(ctx, rw)
+	var resp Responsible
+	if s.BeginHandler != nil && !s.reservedPaths[path] {
+		resp = s.BeginHandler.HandleRequest(ctx, parsedReq, handlers.Head().Invoke)
+	} else {
+		resp = handlers.Head().Invoke(ctx, parsedReq)
+	}
+
+	if resp == nil {
+		resp = handleNotImplemented(ctx, parsedReq, nil)
+	}
+	resp.Respond(ctx, rw)
+}
+
 func (s *Server) logHTTP(rw http.ResponseWriter, req *http.Request, startAt time.Time) {
 	status := 0
 	if s, ok := rw.(statusGetter); ok {
@@ -160,85 +225,8 @@ func (s *Server) logHTTP(rw http.ResponseWriter, req *http.Request, startAt time
 	}
 }
 
-// ServeHTTP implements for http.Handler interface, which will handle each http request
-func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
-	sid := s.setupSession(rw, req)
-	startAt := time.Now()
-	if logger.Level() > log.DebugLevel {
-		defer func() {
-			if e := recover(); e != nil {
-				logger.Error(e, req)
-			}
-		}()
-	}
-
-	if s.CompressionEnabled {
-		// Add compression to responseWriter
-		rw = compressWriter(newResponseWriter(rw), req)
-	}
-	defer s.logHTTP(rw, req, startAt)
-
-	path := pathutil.NormalizedRequestPath(req)
-	method := strings.ToUpper(req.Method)
-	handlers, pathParams := s.match(method, path)
-
-	if handlers.Empty() {
-		if method == http.MethodOptions {
-			handlers = s.defaultHandler.options
-		} else if path == faviconPath {
-			handlers = s.defaultHandler.favicon
-		} else {
-			handlers = s.defaultHandler.notfound
-		}
-	}
-
-	ctx, cancel := context.WithTimeout(req.Context(), s.Timeout)
-	defer cancel()
-
-	parsedReq, err := newRequest(req, s.ParamsParser)
-	if err != nil {
-		logger.Errorf("Parse request: %v", err)
-		resp := Text(http.StatusBadRequest, fmt.Sprintf("Parse request: %v", err))
-		resp.Respond(ctx, rw)
-		return
-	}
-	parsedReq.params.AddMapObj(pathParams)
-	parsedReq.params[SessionName] = sid
-
-	for k, v := range s.Header {
-		rw.Header()[k] = v
-	}
-
-	ctx = withTemplate(ctx, s.templates)
-	ctx = withResponseWriter(ctx, rw)
-	var resp Responsible
-	if s.BeginHandler != nil && !s.reservedPaths[path] {
-		resp = s.BeginHandler.HandleRequest(ctx, parsedReq, handlers.Head().Invoke)
-	} else {
-		resp = handlers.Head().Invoke(ctx, parsedReq)
-	}
-
-	if resp == nil {
-		resp = handleNotImplemented(ctx, parsedReq, nil)
-	}
-	resp.Respond(ctx, rw)
-}
-
-func compressWriter(rw http.ResponseWriter, req *http.Request) http.ResponseWriter {
-	// Add compression to responseWriter
-	if enc := req.Header.Get("Accept-Encoding"); gox.IndexOfString(acceptEncodings, enc) >= 0 {
-		cw, err := newCompressedResponseWriter(rw, enc)
-		if err != nil {
-			log.Errorf("Create compressed response writer: %v", err)
-			return rw
-		}
-		return cw
-	}
-	return rw
-}
-
 func (s *Server) handleOptions(ctx context.Context, req *Request, next Invoker) Responsible {
-	path := pathutil.NormalizedRequestPath(req.request)
+	path := pathutil.NormalizeRequestPath(req.request)
 	var allowedMethods []string
 	for routeMethod := range s.Router.methodTrees {
 		if handlers, _ := s.match(routeMethod, path); !handlers.Empty() {
