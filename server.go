@@ -5,8 +5,11 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"runtime/debug"
 	"strings"
 	"time"
+
+	"github.com/gopub/gox/env"
 
 	"github.com/gopub/gox"
 	"github.com/gopub/log"
@@ -64,15 +67,16 @@ func NewServer() *Server {
 	header := make(http.Header, 1)
 	header.Set("Server", "Wine")
 
+	maxMemory := env.SizeInBytes("wine.max_memory", int(8*gox.MB))
 	s := &Server{
 		Router:             NewRouter(),
 		templateManager:    newTemplateManager(),
 		Header:             header,
-		Timeout:            10 * time.Second,
-		ParamsParser:       request.NewParamsParser(8 * gox.MB),
+		Timeout:            env.Duration("wine.timeout", 10*time.Second),
+		ParamsParser:       request.NewParamsParser(gox.ByteUnit(maxMemory)),
 		logger:             logger,
-		CompressionEnabled: true,
-		Recovery:           true,
+		CompressionEnabled: env.Bool("wine.compression", true),
+		Recovery:           env.Bool("wine.recovery", true),
 	}
 
 	s.defaultHandler.favicon = newHandlerList([]Handler{HandlerFunc(handleFavIcon)})
@@ -135,6 +139,7 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		defer func() {
 			if e := recover(); e != nil {
 				logger.Errorf("%v %+v\n", req, e)
+				logger.Errorf("Panic: %s\n", string(debug.Stack()))
 			}
 		}()
 	}

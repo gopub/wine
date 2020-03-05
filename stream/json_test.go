@@ -3,12 +3,12 @@ package stream_test
 import (
 	"context"
 	"fmt"
-	"github.com/gopub/gox"
 	"math/rand"
 	"net/http"
 	"testing"
 	"time"
 
+	"github.com/gopub/gox"
 	"github.com/gopub/wine"
 	"github.com/gopub/wine/stream"
 	"github.com/stretchr/testify/require"
