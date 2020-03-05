@@ -118,7 +118,6 @@ func NewTextReader(client *http.Client, req *http.Request) (TextReadCloser, erro
 	if err != nil {
 		return nil, fmt.Errorf("do request: %w", err)
 	}
-	log.Debug(resp.Header)
 	if resp.StatusCode != http.StatusOK {
 		err = api.ParseResult(resp, nil, true)
 		if err != nil {
