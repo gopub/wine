@@ -44,6 +44,7 @@ type Server struct {
 	ParamsParser       ParamsParser
 	BeginHandler       Handler
 	CompressionEnabled bool
+	Recovery           bool
 
 	defaultHandler struct {
 		favicon  *handlerList
@@ -71,6 +72,7 @@ func NewServer() *Server {
 		ParamsParser:       request.NewParamsParser(8 * gox.MB),
 		logger:             logger,
 		CompressionEnabled: true,
+		Recovery:           true,
 	}
 
 	s.defaultHandler.favicon = newHandlerList([]Handler{HandlerFunc(handleFavIcon)})
@@ -129,11 +131,10 @@ func (s *Server) Shutdown() error {
 func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	sid := s.setupSession(rw, req)
 	startAt := time.Now()
-	if logger.Level() > log.DebugLevel {
-		// Try to recover from panic if not debugging
+	if s.Recovery {
 		defer func() {
 			if e := recover(); e != nil {
-				logger.Error(e, req)
+				logger.Errorf("%v %+v\n", req, e)
 			}
 		}()
 	}
