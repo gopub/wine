@@ -6,6 +6,7 @@ import (
 	"compress/gzip"
 	"context"
 	"errors"
+	"github.com/gopub/log"
 	"io"
 	"net"
 	"net/http"
@@ -23,6 +24,9 @@ type flusher interface {
 
 var _ statusGetter = (*responseWriter)(nil)
 var _ http.Hijacker = (*responseWriter)(nil)
+var _ http.Flusher = (*responseWriter)(nil)
+var _ http.Hijacker = (*compressedResponseWriter)(nil)
+var _ http.Flusher = (*compressedResponseWriter)(nil)
 
 // responseWriter is a wrapper of http.responseWriter to make sure write status code only one time
 type responseWriter struct {
@@ -59,6 +63,7 @@ func (w *responseWriter) Status() int {
 func (w *responseWriter) Flush() {
 	if f, ok := w.ResponseWriter.(http.Flusher); ok {
 		f.Flush()
+		log.Debug("flushed")
 	}
 }
 
@@ -71,8 +76,8 @@ func (w *responseWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
 
 type compressedResponseWriter struct {
 	http.ResponseWriter
-	compressedWriter io.Writer
-	err              error
+	compressWriter io.Writer
+	err            error
 }
 
 func newCompressedResponseWriter(w http.ResponseWriter, encoding string) (*compressedResponseWriter, error) {
@@ -80,7 +85,7 @@ func newCompressedResponseWriter(w http.ResponseWriter, encoding string) (*compr
 	case "gzip":
 		cw := &compressedResponseWriter{}
 		cw.ResponseWriter = w
-		cw.compressedWriter = gzip.NewWriter(w)
+		cw.compressWriter = gzip.NewWriter(w)
 		return cw, nil
 	case "deflate":
 		fw, err := flate.NewWriter(w, flate.DefaultCompression)
@@ -88,7 +93,7 @@ func newCompressedResponseWriter(w http.ResponseWriter, encoding string) (*compr
 			return nil, err
 		}
 		cw := &compressedResponseWriter{}
-		cw.compressedWriter = fw
+		cw.compressWriter = fw
 		cw.ResponseWriter = w
 		return cw, nil
 	default:
@@ -97,12 +102,12 @@ func newCompressedResponseWriter(w http.ResponseWriter, encoding string) (*compr
 }
 
 func (w *compressedResponseWriter) Write(data []byte) (int, error) {
-	return w.compressedWriter.Write(data)
+	return w.compressWriter.Write(data)
 }
 
 func (w *compressedResponseWriter) Flush() {
 	// Flush the compressed writer, then flush httpResponseWriter
-	if f, ok := w.compressedWriter.(flusher); ok {
+	if f, ok := w.compressWriter.(flusher); ok {
 		if err := f.Flush(); err != nil {
 			logger.Errorf("Flush: %v", err)
 			w.err = err
@@ -125,7 +130,7 @@ func (w *compressedResponseWriter) Error() error {
 }
 
 func (w *compressedResponseWriter) Close() error {
-	if closer, ok := w.compressedWriter.(io.Closer); ok {
+	if closer, ok := w.compressWriter.(io.Closer); ok {
 		return closer.Close()
 	}
 	return nil
@@ -137,7 +142,7 @@ func compressionHandler(h http.Handler) http.Handler {
 		if strings.Contains(enc, "gzip") {
 			cw, err := newCompressedResponseWriter(w, "gzip")
 			if err != nil {
-				panic(err)
+				log.Panicf("Create gzip response writer: %v", err)
 			}
 			w.Header().Set("Content-Encoding", "gzip")
 			h.ServeHTTP(cw, r)
@@ -147,7 +152,7 @@ func compressionHandler(h http.Handler) http.Handler {
 		if strings.Contains(enc, "deflate") {
 			cw, err := newCompressedResponseWriter(w, "deflate")
 			if err != nil {
-				panic(err)
+				log.Panicf("Create deflate response writer: %v", err)
 			}
 			w.Header().Set("Content-Encoding", "deflate")
 			h.ServeHTTP(cw, r)

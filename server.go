@@ -39,10 +39,11 @@ type Server struct {
 	*templateManager
 	server *http.Server
 
-	Header       http.Header
-	Timeout      time.Duration //Timeout for each request, default value is 20s
-	ParamsParser ParamsParser
-	BeginHandler Handler
+	Header             http.Header
+	Timeout            time.Duration //Timeout for each request, default value is 20s
+	ParamsParser       ParamsParser
+	BeginHandler       Handler
+	CompressionEnabled bool
 
 	defaultHandler struct {
 		favicon  *handlerList
@@ -63,12 +64,13 @@ func NewServer() *Server {
 	header.Set("Server", "Wine")
 
 	s := &Server{
-		Router:          NewRouter(),
-		templateManager: newTemplateManager(),
-		Header:          header,
-		Timeout:         10 * time.Second,
-		ParamsParser:    request.NewParamsParser(8 * gox.MB),
-		logger:          logger,
+		Router:             NewRouter(),
+		templateManager:    newTemplateManager(),
+		Header:             header,
+		Timeout:            10 * time.Second,
+		ParamsParser:       request.NewParamsParser(8 * gox.MB),
+		logger:             logger,
+		CompressionEnabled: true,
 	}
 
 	s.defaultHandler.favicon = newHandlerList([]Handler{HandlerFunc(handleFavIcon)})
@@ -101,19 +103,21 @@ func (s *Server) Run(addr string) {
 }
 
 // RunTLS starts server with tls
-func (s *Server) RunTLS(addr, certFile, keyFile string) error {
+func (s *Server) RunTLS(addr, certFile, keyFile string) {
 	if s.server != nil {
 		logger.Panic("Server is running")
 	}
 
-	s.Router.Print()
 	logger.Infof("Running at %s ...", addr)
 	s.server = &http.Server{Addr: addr, Handler: s}
 	err := s.server.ListenAndServeTLS(certFile, keyFile)
 	if err != nil {
-		s.server = nil
+		if errors.Is(err, http.ErrServerClosed) {
+			logger.Infof("Server closed")
+		} else {
+			logger.Errorf("ListenAndServe: %v", err)
+		}
 	}
-	return err
 }
 
 // Shutdown stops server
@@ -122,28 +126,31 @@ func (s *Server) Shutdown() error {
 }
 
 func (s *Server) logHTTP(rw http.ResponseWriter, req *http.Request, startAt time.Time) {
-	var statGetter statusGetter
+	status := 0
+	if s, ok := rw.(statusGetter); ok {
+		status = s.Status()
+	}
+
 	if cw, ok := rw.(*compressedResponseWriter); ok {
 		err := cw.Close()
 		if err != nil {
 			logger.Errorf("Close compressed response writer: %v", err)
 		}
-		statGetter = cw.ResponseWriter.(statusGetter)
-	}
 
-	if statGetter == nil {
-		statGetter = rw.(statusGetter)
+		if s, ok := cw.ResponseWriter.(statusGetter); ok {
+			status = s.Status()
+		}
 	}
 
 	info := fmt.Sprintf("%s %s %s | %d %v",
 		req.RemoteAddr,
 		req.Method,
 		req.RequestURI,
-		statGetter.Status(),
+		status,
 		time.Since(startAt))
 
-	if statGetter.Status() >= http.StatusBadRequest {
-		if statGetter.Status() != http.StatusUnauthorized {
+	if status >= http.StatusBadRequest {
+		if status != http.StatusUnauthorized {
 			s.logger.Errorf("%s | %v | %v", info, req.Header, req.PostForm)
 		} else {
 			s.logger.Errorf("%s | %v", info, req.Header)
@@ -165,8 +172,10 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		}()
 	}
 
-	// Add compression to responseWriter
-	rw = createCompressedWriter(newResponseWriter(rw), req)
+	if s.CompressionEnabled {
+		// Add compression to responseWriter
+		rw = createCompressedWriter(newResponseWriter(rw), req)
+	}
 	defer s.logHTTP(rw, req, startAt)
 
 	path := pathutil.NormalizedRequestPath(req)
