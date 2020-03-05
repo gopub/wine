@@ -118,7 +118,7 @@ func NewTextReader(client *http.Client, req *http.Request) (TextReadCloser, erro
 	if err != nil {
 		return nil, fmt.Errorf("do request: %w", err)
 	}
-
+	log.Debug(resp.Header)
 	if resp.StatusCode != http.StatusOK {
 		err = api.ParseResult(resp, nil, true)
 		if err != nil {
@@ -134,7 +134,7 @@ func NewTextHandler(serve func(context.Context, TextWriteCloser)) wine.Handler {
 		logger := log.FromContext(ctx)
 		logger.Debugf("Receive stream")
 		w := wine.GetResponseWriter(ctx)
-		w.Header().Set(mime.ContentType, mime.JSON)
+		w.Header().Set(mime.ContentType, mime.Plain)
 		done := make(chan interface{})
 		go serve(ctx, newTextWriteCloser(w, done))
 		<-done

@@ -7,11 +7,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/gopub/gox"
-	"github.com/gopub/log"
 	"io"
 	"net"
 	"net/http"
+
+	"github.com/gopub/gox"
+	"github.com/gopub/log"
 )
 
 type statusGetter interface {
