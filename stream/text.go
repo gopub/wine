@@ -129,14 +129,14 @@ func NewTextReader(client *http.Client, req *http.Request) (TextReadCloser, erro
 	return newTextReadCloser(resp.Body), nil
 }
 
-func NewTextHandler(serveFunc func(context.Context, TextWriteCloser)) wine.Handler {
+func NewTextHandler(serve func(context.Context, TextWriteCloser)) wine.Handler {
 	return wine.HandlerFunc(func(ctx context.Context, req *wine.Request, next wine.Invoker) wine.Responsible {
 		logger := log.FromContext(ctx)
 		logger.Debugf("Receive stream")
 		w := wine.GetResponseWriter(ctx)
 		w.Header().Set(mime.ContentType, mime.JSON)
 		done := make(chan interface{})
-		go serveFunc(ctx, newTextWriteCloser(w, done))
+		go serve(ctx, newTextWriteCloser(w, done))
 		<-done
 		logger.Debugf("Close stream")
 		return wine.Status(http.StatusOK)
