@@ -1,99 +1,50 @@
-package path
+package path_test
 
 import (
 	"testing"
+
+	"github.com/gopub/wine/internal/path"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestNormalize(t *testing.T) {
-	if Normalize("hello//") != "hello" {
-		t.FailNow()
-	}
-
-	if Normalize("hello/{id}/") != "hello/{id}" {
-		t.FailNow()
-	}
-
-	if Normalize("//hello/{id}/") != "hello/{id}" {
-		t.FailNow()
-	}
-
-	if Normalize("//") != "" {
-		t.FailNow()
-	}
+	assert.Equal(t, "hello", path.Normalize("hello//"))
+	assert.Equal(t, "hello/{id}", path.Normalize("hello/{id}/"))
+	assert.Equal(t, "hello/{id}", path.Normalize("//hello/{id}/"))
+	assert.Empty(t, path.Normalize("//"))
 }
 
 func TestIsStaticPath(t *testing.T) {
-	if IsStatic("{a}") {
-		t.Fail()
-	}
-
-	if !IsStatic("ab") {
-		t.Fail()
-	}
-
-	if IsParam("/a") {
-		t.Fail()
-	}
+	assert.Empty(t, path.IsStatic("{a}"))
+	assert.NotEmpty(t, path.IsStatic("ab"))
+	assert.Empty(t, path.IsParam("/a"))
 }
 
 func TestIsParamPath(t *testing.T) {
-	if IsParam("{/a}") {
-		t.Error("{/a}")
-		t.FailNow()
-	}
-
-	if !IsParam("{a_b}") {
-		t.Error("{a_b}")
-		t.FailNow()
-	}
-
-	if !IsParam("{_b}") {
-		t.Error("{_b}")
-		t.FailNow()
-	}
-
-	if !IsParam("{_1}") {
-		t.Error("{_1}")
-		t.FailNow()
-	}
-
-	if !IsParam("{a1}") {
-		t.Error("{a1}")
-		t.FailNow()
-	}
-
-	if !IsParam("{a1_}") {
-		t.Error("{a1_}")
-		t.FailNow()
-	}
-
-	if IsParam("c") {
-		t.Error("c")
-		t.FailNow()
-	}
-
-	if IsParam("{_}") {
-		t.Error("{_}")
-		t.FailNow()
-	}
-
-	if IsParam("{__}") {
-		t.Error("{__}")
-		t.FailNow()
-	}
-
-	if IsParam("{a") {
-		t.Error("{a")
-		t.FailNow()
-	}
-
-	if IsParam("{1}") {
-		t.Error("{1}")
-		t.FailNow()
-	}
-
-	if IsParam("{1_a}") {
-		t.Error("{1_a}")
-		t.FailNow()
-	}
+	t.Run("true", func(t *testing.T) {
+		trueCases := []string{
+			"{a_b}",
+			"{_b}",
+			"{_1}",
+			"{a1}",
+			"{a1_}",
+		}
+		for _, v := range trueCases {
+			assert.NotEmpty(t, path.IsParam(v))
+		}
+	})
+	t.Run("false", func(t *testing.T) {
+		falseCases := []string{
+			"{/a}",
+			"c",
+			"{_}",
+			"{__}",
+			"{a",
+			"{1}",
+			"{1_a}",
+		}
+		for _, v := range falseCases {
+			assert.Empty(t, path.IsParam(v))
+		}
+	})
 }

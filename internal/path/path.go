@@ -14,52 +14,52 @@ var (
 	_paramPathRegexp    = regexp.MustCompile(`^{([a-zA-Z][a-zA-Z_0-9]*|_[a-zA-Z_0-9]*[a-zA-Z0-9]+[a-zA-Z_0-9]*)}$`)
 )
 
-func Normalize(path string) string {
-	path = _compactSlashRegexp.ReplaceAllString(path, "/")
-	if len(path) == 0 {
-		return path
+func Normalize(p string) string {
+	p = _compactSlashRegexp.ReplaceAllString(p, "/")
+	if len(p) == 0 {
+		return p
 	}
 
-	if path[0] == '/' {
-		path = path[1:]
+	if p[0] == '/' {
+		p = p[1:]
 	}
 
-	if len(path) > 1 && path[len(path)-1] == '/' {
-		path = path[:len(path)-1]
+	if len(p) > 1 && p[len(p)-1] == '/' {
+		p = p[:len(p)-1]
 	}
-	return path
+	return p
 }
 
-func IsStatic(path string) bool {
-	return _staticPathRegexp.MatchString(path)
+func IsStatic(p string) bool {
+	return _staticPathRegexp.MatchString(p)
 }
 
-func IsWildcard(path string) bool {
-	if len(path) == 0 {
+func IsWildcard(p string) bool {
+	if len(p) == 0 {
 		return false
 	}
-	return _wildcardPathRegexp.MatchString(path)
+	return _wildcardPathRegexp.MatchString(p)
 }
 
-func IsParam(path string) bool {
-	if len(path) == 0 {
+func IsParam(p string) bool {
+	if len(p) == 0 {
 		return false
 	}
-	return _paramPathRegexp.MatchString(path)
+	return _paramPathRegexp.MatchString(p)
 }
 
 func Join(segment ...string) string {
-	res := path.Join(segment...)
-	res = strings.Replace(res, ":/", "://", 1)
-	return res
+	p := path.Join(segment...)
+	p = strings.Replace(p, ":/", "://", 1)
+	return p
 }
 
 func NormalizeRequestPath(req *http.Request) string {
-	path := req.RequestURI
-	i := strings.Index(path, "?")
+	p := req.RequestURI
+	i := strings.Index(p, "?")
 	if i > 0 {
-		path = req.RequestURI[:i]
+		p = req.RequestURI[:i]
 	}
 
-	return Normalize(path)
+	return Normalize(p)
 }
