@@ -51,11 +51,12 @@ func (r *textReadCloser) Read() (string, error) {
 			return "", r.err
 		}
 		n, err := r.body.Read(r.block)
+		if n > 0 {
+			r.buf.Write(r.block[:n])
+		}
 		if err != nil {
 			r.err = err
-			continue
 		}
-		r.buf.Write(r.block[:n])
 	}
 }
 

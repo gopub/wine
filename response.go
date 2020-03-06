@@ -168,6 +168,7 @@ func JSON(status int, value interface{}) Responder {
 // StreamFile creates a application/octet-stream response
 func StreamFile(r io.Reader, name string) Responder {
 	return ResponderFunc(func(ctx context.Context, w http.ResponseWriter) {
+		logger := log.FromContext(ctx)
 		w.Header().Set(mime.ContentType, mime.OctetStream)
 		if name != "" {
 			w.Header().Set(mime.ContentDisposition, fmt.Sprintf(`attachment; filename="%s"`, name))
@@ -176,15 +177,17 @@ func StreamFile(r io.Reader, name string) Responder {
 		buf := make([]byte, size)
 		for {
 			n, err := r.Read(buf)
+			if n > 0 {
+				if wErr := gox.WriteAll(w, buf[:n]); wErr != nil {
+					logger.Errorf("Write: %v", wErr)
+					return
+				}
+			}
 			if err != nil {
-				log.FromContext(ctx).Errorf("Read: %v", err)
+				logger.Errorf("Read: %v", err)
 				w.WriteHeader(http.StatusInternalServerError)
 				return
 			}
-			if n < size {
-				break
-			}
-			gox.WriteAll(w, buf[:n])
 		}
 	})
 }
