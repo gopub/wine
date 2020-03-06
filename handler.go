@@ -13,26 +13,26 @@ import (
 
 // Handler defines interface for interceptor
 type Handler interface {
-	HandleRequest(ctx context.Context, req *Request, next Invoker) Responsible
+	HandleRequest(ctx context.Context, req *Request, next Invoker) Responder
 }
 
 // HandlerFunc converts function into Handler
-type HandlerFunc func(ctx context.Context, req *Request, next Invoker) Responsible
+type HandlerFunc func(ctx context.Context, req *Request, next Invoker) Responder
 
 // HandleRequest is an interface method required by Handler
-func (h HandlerFunc) HandleRequest(ctx context.Context, req *Request, next Invoker) Responsible {
+func (h HandlerFunc) HandleRequest(ctx context.Context, req *Request, next Invoker) Responder {
 	return h(ctx, req, next)
 }
 
 // Invoker defines the function to be called in order to pass on the request
-type Invoker func(ctx context.Context, req *Request) Responsible
+type Invoker func(ctx context.Context, req *Request) Responder
 
 type handlerElement struct {
 	handler Handler
 	next    *handlerElement
 }
 
-func (h *handlerElement) Invoke(ctx context.Context, req *Request) Responsible {
+func (h *handlerElement) Invoke(ctx context.Context, req *Request) Responder {
 	return h.handler.HandleRequest(ctx, req, h.next.Invoke)
 }
 
@@ -80,8 +80,8 @@ func newHandlerList(handlers []Handler) *handlerList {
 
 // Some buil-in handlers
 
-func handleFavIcon(ctx context.Context, req *Request, next Invoker) Responsible {
-	return ResponsibleFunc(func(ctx context.Context, rw http.ResponseWriter) {
+func handleFavIcon(ctx context.Context, req *Request, next Invoker) Responder {
+	return ResponderFunc(func(ctx context.Context, rw http.ResponseWriter) {
 		rw.Header()[mime.ContentType] = []string{"image/x-icon"}
 		rw.WriteHeader(http.StatusOK)
 		if err := gox.WriteAll(rw, resource.Favicon); err != nil {
@@ -90,10 +90,10 @@ func handleFavIcon(ctx context.Context, req *Request, next Invoker) Responsible 
 	})
 }
 
-func handleNotFound(ctx context.Context, req *Request, next Invoker) Responsible {
+func handleNotFound(ctx context.Context, req *Request, next Invoker) Responder {
 	return Text(http.StatusNotFound, http.StatusText(http.StatusNotFound))
 }
 
-func handleNotImplemented(ctx context.Context, req *Request, next Invoker) Responsible {
+func handleNotImplemented(ctx context.Context, req *Request, next Invoker) Responder {
 	return Text(http.StatusNotImplemented, http.StatusText(http.StatusNotImplemented))
 }

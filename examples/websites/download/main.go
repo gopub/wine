@@ -8,7 +8,7 @@ import (
 
 func main() {
 	s := wine.NewServer()
-	s.Get("download", func(ctx context.Context, req *wine.Request, next wine.Invoker) wine.Responsible {
+	s.Get("download", func(ctx context.Context, req *wine.Request, next wine.Invoker) wine.Responder {
 		data := []byte("Hello, world!")
 		return wine.File(data, "test.txt")
 	})

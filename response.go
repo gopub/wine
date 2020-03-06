@@ -22,22 +22,23 @@ const (
 	ctXML         = mime.XML + charsetSuffix
 )
 
-// Responsible interface is used by Wine server to write response to the client
-type Responsible interface {
+// Responder interface is used by Wine server to write response to the client
+type Responder interface {
+	// Respond will be called to write status/body to http response writer
 	Respond(ctx context.Context, w http.ResponseWriter)
 }
 
-// ResponsibleFunc is a func that implements interface  Responsible
-type ResponsibleFunc func(ctx context.Context, w http.ResponseWriter)
+// ResponderFunc is a func that implements interface Responder
+type ResponderFunc func(ctx context.Context, w http.ResponseWriter)
 
-// Respond will be called to write status/body to http response writer
-func (f ResponsibleFunc) Respond(ctx context.Context, w http.ResponseWriter) {
+func (f ResponderFunc) Respond(ctx context.Context, w http.ResponseWriter) {
 	f(ctx, w)
 }
 
 // Response defines the http response interface
+// Value and headers except the status code can be modified before sent to the client
 type Response interface {
-	Responsible
+	Responder
 	Status() int
 	Header() http.Header
 	Value() interface{}
@@ -125,12 +126,12 @@ func (r *responseImpl) SetValue(v interface{}) {
 }
 
 // Status returns a response only with a status code
-func Status(status int) Responsible {
+func Status(status int) Responder {
 	return Text(status, http.StatusText(status))
 }
 
 // Redirect sends a redirect response
-func Redirect(location string, permanent bool) Responsible {
+func Redirect(location string, permanent bool) Responder {
 	header := make(http.Header)
 	header.Set("Location", location)
 	header.Set(mime.ContentType, mime.Plain)
@@ -148,7 +149,7 @@ func Redirect(location string, permanent bool) Responsible {
 }
 
 // Text sends a text response
-func Text(status int, text string) Responsible {
+func Text(status int, text string) Responder {
 	header := make(http.Header)
 	header.Set(mime.ContentType, ctPlain)
 	return &responseImpl{
@@ -159,7 +160,7 @@ func Text(status int, text string) Responsible {
 }
 
 // HTML creates a HTML response
-func HTML(status int, html string) Responsible {
+func HTML(status int, html string) Responder {
 	header := make(http.Header)
 	header.Set(mime.ContentType, ctHTML)
 	return &responseImpl{
@@ -170,7 +171,7 @@ func HTML(status int, html string) Responsible {
 }
 
 // JSON creates a application/json response
-func JSON(status int, value interface{}) Responsible {
+func JSON(status int, value interface{}) Responder {
 	header := make(http.Header)
 	header.Set(mime.ContentType, ctJSON)
 	return &responseImpl{
@@ -181,8 +182,8 @@ func JSON(status int, value interface{}) Responsible {
 }
 
 // StreamFile creates a application/octet-stream response
-func StreamFile(r io.Reader, name string) Responsible {
-	return ResponsibleFunc(func(ctx context.Context, w http.ResponseWriter) {
+func StreamFile(r io.Reader, name string) Responder {
+	return ResponderFunc(func(ctx context.Context, w http.ResponseWriter) {
 		w.Header().Set(mime.ContentType, mime.OctetStream)
 		if name != "" {
 			w.Header().Set(mime.ContentDisposition, fmt.Sprintf(`attachment; filename="%s"`, name))
@@ -205,8 +206,8 @@ func StreamFile(r io.Reader, name string) Responsible {
 }
 
 // File creates a application/octet-stream response
-func File(b []byte, name string) Responsible {
-	return ResponsibleFunc(func(ctx context.Context, w http.ResponseWriter) {
+func File(b []byte, name string) Responder {
+	return ResponderFunc(func(ctx context.Context, w http.ResponseWriter) {
 		w.Header().Set(mime.ContentType, mime.OctetStream)
 		if name != "" {
 			w.Header().Set(mime.ContentDisposition, fmt.Sprintf(`attachment; filename="%s"`, name))
@@ -220,15 +221,15 @@ func File(b []byte, name string) Responsible {
 }
 
 // StaticFile serves static files
-func StaticFile(req *http.Request, filePath string) Responsible {
-	return ResponsibleFunc(func(ctx context.Context, w http.ResponseWriter) {
+func StaticFile(req *http.Request, filePath string) Responder {
+	return ResponderFunc(func(ctx context.Context, w http.ResponseWriter) {
 		http.ServeFile(w, req, filePath)
 	})
 }
 
 // TemplateHTML sends a HTML response. HTML page is rendered according to templateName and params
-func TemplateHTML(templates []*template.Template, templateName string, params interface{}) Responsible {
-	return ResponsibleFunc(func(ctx context.Context, w http.ResponseWriter) {
+func TemplateHTML(templates []*template.Template, templateName string, params interface{}) Responder {
+	return ResponderFunc(func(ctx context.Context, w http.ResponseWriter) {
 		for _, tmpl := range templates {
 			var err error
 			if len(templateName) == 0 {
@@ -245,8 +246,8 @@ func TemplateHTML(templates []*template.Template, templateName string, params in
 }
 
 // Handle handles request with h
-func Handle(req *http.Request, h http.Handler) Responsible {
-	return ResponsibleFunc(func(ctx context.Context, w http.ResponseWriter) {
+func Handle(req *http.Request, h http.Handler) Responder {
+	return ResponderFunc(func(ctx context.Context, w http.ResponseWriter) {
 		h.ServeHTTP(w, req)
 	})
 }

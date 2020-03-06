@@ -11,7 +11,7 @@ import (
 	"github.com/gopub/wine"
 )
 
-func InitSession(ctx context.Context, req *wine.Request, next wine.Invoker) wine.Responsible {
+func InitSession(ctx context.Context, req *wine.Request, next wine.Invoker) wine.Responder {
 	sid := req.Params().String(wine.SessionName)
 	var session Session
 
@@ -54,7 +54,7 @@ func InitSession(ctx context.Context, req *wine.Request, next wine.Invoker) wine
 			Path:    "/",
 		}
 
-		return wine.ResponsibleFunc(func(ctx context.Context, w http.ResponseWriter) {
+		return wine.ResponderFunc(func(ctx context.Context, w http.ResponseWriter) {
 			http.SetCookie(w, cookie)
 			v.Respond(ctx, w)
 		})

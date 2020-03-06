@@ -24,7 +24,7 @@ func BasicAuth(userToPassword map[string]string, realm string) HandlerFunc {
 		userToAuthInfo[user] = "Basic " + base64.StdEncoding.EncodeToString([]byte(info))
 	}
 
-	return func(ctx context.Context, req *Request, next Invoker) Responsible {
+	return func(ctx context.Context, req *Request, next Invoker) Responder {
 		a := req.Authorization()
 		for user, info := range userToAuthInfo {
 			if info == a {
@@ -36,8 +36,8 @@ func BasicAuth(userToPassword map[string]string, realm string) HandlerFunc {
 	}
 }
 
-func RequireBasicAuth(realm string) Responsible {
-	return ResponsibleFunc(func(ctx context.Context, w http.ResponseWriter) {
+func RequireBasicAuth(realm string) Responder {
+	return ResponderFunc(func(ctx context.Context, w http.ResponseWriter) {
 		a := "Basic realm=" + strconv.Quote(realm)
 		w.Header().Set("WWW-Authenticate", a)
 		w.WriteHeader(http.StatusUnauthorized)

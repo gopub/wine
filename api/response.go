@@ -29,21 +29,21 @@ type Result struct {
 	Data  interface{} `json:"data"`
 }
 
-func Data(data interface{}) wine.Responsible {
+func Data(data interface{}) wine.Responder {
 	val := &Result{
 		Data: data,
 	}
 	return wine.JSON(http.StatusOK, val)
 }
 
-func StatusData(status int, data interface{}) wine.Responsible {
+func StatusData(status int, data interface{}) wine.Responder {
 	val := &Result{
 		Data: data,
 	}
 	return wine.JSON(status, val)
 }
 
-func ErrorMessage(code int, message string) wine.Responsible {
+func ErrorMessage(code int, message string) wine.Responder {
 	val := &Result{
 		Error: gox.NewError(code, message),
 	}
@@ -54,7 +54,7 @@ func ErrorMessage(code int, message string) wine.Responsible {
 	return wine.JSON(status, val)
 }
 
-func Error(err error) wine.Responsible {
+func Error(err error) wine.Responder {
 	err = gox.Cause(err)
 	if e, ok := err.(messageCoder); ok {
 		return ErrorMessage(e.Code(), e.Message())

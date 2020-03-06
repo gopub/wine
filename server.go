@@ -183,7 +183,7 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 
 	ctx = withTemplate(ctx, s.templates)
 	ctx = withResponseWriter(ctx, rw)
-	var resp Responsible
+	var resp Responder
 	if s.BeginHandler != nil && !s.reservedPaths[path] {
 		resp = s.BeginHandler.HandleRequest(ctx, parsedReq, handlers.Head().Invoke)
 	} else {
@@ -231,7 +231,7 @@ func (s *Server) logHTTP(rw http.ResponseWriter, req *http.Request, startAt time
 	}
 }
 
-func (s *Server) handleOptions(ctx context.Context, req *Request, next Invoker) Responsible {
+func (s *Server) handleOptions(ctx context.Context, req *Request, next Invoker) Responder {
 	path := pathutil.NormalizeRequestPath(req.request)
 	var allowedMethods []string
 	for routeMethod := range s.Router.methodTrees {
@@ -244,7 +244,7 @@ func (s *Server) handleOptions(ctx context.Context, req *Request, next Invoker) 
 		allowedMethods = append(allowedMethods, http.MethodOptions)
 	}
 
-	return ResponsibleFunc(func(ctx context.Context, rw http.ResponseWriter) {
+	return ResponderFunc(func(ctx context.Context, rw http.ResponseWriter) {
 		if len(allowedMethods) > 0 {
 			val := []string{strings.Join(allowedMethods, ",")}
 			rw.Header()["Allow"] = val

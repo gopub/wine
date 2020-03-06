@@ -26,11 +26,11 @@ type Topic struct {
 
 func main() {
 	s := wine.NewServer()
-	s.Get("hello", func(ctx context.Context, req *wine.Request, next wine.Invoker) wine.Responsible {
+	s.Get("hello", func(ctx context.Context, req *wine.Request, next wine.Invoker) wine.Responder {
 		return wine.JSON(http.StatusOK, map[string]interface{}{"code": 0, "msg": "hello"})
 	})
 
-	s.Get("login", func(ctx context.Context, req *wine.Request, next wine.Invoker) wine.Responsible {
+	s.Get("login", func(ctx context.Context, req *wine.Request, next wine.Invoker) wine.Responder {
 		username := req.Params().String("username")
 		password := req.Params().String("password")
 		if len(username) == 0 || len(password) == 0 {
@@ -43,7 +43,7 @@ func main() {
 		return wine.JSON(http.StatusOK, map[string]interface{}{"code": 0, "msg": "success", "data": u})
 	})
 
-	s.Post("topic", func(ctx context.Context, req *wine.Request, next wine.Invoker) wine.Responsible {
+	s.Post("topic", func(ctx context.Context, req *wine.Request, next wine.Invoker) wine.Responder {
 		title := req.Params().String("title")
 		if len(title) == 0 {
 			return wine.JSON(http.StatusOK, map[string]interface{}{"code": 1, "msg": "no title"})
