@@ -1,28 +1,17 @@
 package wine
 
-import "testing"
+import (
+	"github.com/magiconair/properties/assert"
+	"testing"
+)
 
 func TestNewNode(t *testing.T) {
 	n := newNode("*")
-	if n.t != wildcardNode {
-		t.FailNow()
-	}
-
+	assert.Equal(t, wildcardNode, n.t)
 	n = newNode("*file")
-	if n.t != wildcardNode {
-		t.FailNow()
-	}
+	assert.Equal(t, wildcardNode, n.t)
 
 	n = newNode("{a}")
-	if n.t != paramNode {
-		t.FailNow()
-	}
-
-	if n.paramName != "a" {
-		t.FailNow()
-	}
-}
-
-func TestNewNodeList(t *testing.T) {
-
+	assert.Equal(t, paramNode, n.t)
+	assert.Equal(t, "a", n.paramName)
 }

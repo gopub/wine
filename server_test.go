@@ -2,135 +2,101 @@ package wine_test
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
-	"net/http"
-	"os"
-	"testing"
-	"time"
-
 	"github.com/gopub/wine"
 	"github.com/gopub/wine/mime"
+	"github.com/stretchr/testify/require"
+	"io/ioutil"
+	"math/rand"
+	"net/http"
+	"testing"
 )
 
-var server *wine.Server
+func TestServerStatus(t *testing.T) {
+	server := wine.NewServer()
+	r := server.Router
+	r.Get("/ok", func(ctx context.Context, req *wine.Request, next wine.Invoker) wine.Responsible {
+		return wine.Status(http.StatusOK)
+	})
+	r.Get("/forbidden", func(ctx context.Context, req *wine.Request, next wine.Invoker) wine.Responsible {
+		return wine.Status(http.StatusForbidden)
+	})
+	addr := fmt.Sprintf("localhost:%d", rand.Int()%1000+8000)
+	host := "http://" + addr
+	go server.Run(addr)
 
-type testJSONObj struct {
-	Name string
-	Age  int
-}
-
-func TestMain(m *testing.M) {
-	server = wine.NewServer()
-	go func() {
-		server.Run(":8000")
-	}()
-
-	time.Sleep(time.Second)
-	result := m.Run()
-	os.Exit(result)
-}
-
-func TestJSON(t *testing.T) {
-	obj := &testJSONObj{
-		Name: "tom",
-		Age:  19,
-	}
-	server.Get("/json", func(ctx context.Context, _ *wine.Request, _ wine.Invoker) wine.Responsible {
-		return wine.JSON(http.StatusOK, obj)
+	t.Run("OK", func(t *testing.T) {
+		resp, err := http.DefaultClient.Get(host + "/ok")
+		require.NoError(t, err)
+		require.Equal(t, http.StatusOK, resp.StatusCode)
 	})
 
-	resp, err := http.DefaultClient.Get("http://localhost:8000/json")
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	data, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		t.Fatal(err)
-	}
-	resp.Body.Close()
-	var result testJSONObj
-	err = json.Unmarshal(data, &result)
-	if err != nil {
-		t.Log(string(data))
-		t.Fatal(err)
-	}
-
-	if result != *obj {
-		t.Fatal(result, *obj)
-	}
-
-	if resp.Header[mime.ContentType][0] != mime.JSON+"; charset=utf-8" {
-		t.Fatal(resp.Header[mime.ContentType])
-	}
-}
-
-func TestHTML(t *testing.T) {
-	var htmlText = `
-	<html>
-		<Header>
-		</Header>
-		<body>
-			Hello, world!
-		</body>
-	</html>
-	`
-	server.Get("/html/hello.html", func(ctx context.Context, _ *wine.Request, _ wine.Invoker) wine.Responsible {
-		return wine.HTML(http.StatusOK, htmlText)
+	t.Run("Forbidden", func(t *testing.T) {
+		resp, err := http.DefaultClient.Get(host + "/forbidden")
+		require.NoError(t, err)
+		require.Equal(t, http.StatusForbidden, resp.StatusCode)
 	})
 
-	resp, err := http.DefaultClient.Get("http://localhost:8000/html/hello.html")
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	data, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		t.Fatal(err)
-	}
-	resp.Body.Close()
-	if string(data) != htmlText {
-		t.Fatal(string(data))
-	}
-
-	if resp.Header[mime.ContentType][0] != mime.HTML+"; charset=utf-8" {
-		t.Fatal(resp.Header[mime.ContentType])
-	}
+	t.Run("NotFound", func(t *testing.T) {
+		resp, err := http.DefaultClient.Get(host + "/notfound")
+		require.NoError(t, err)
+		require.Equal(t, http.StatusNotFound, resp.StatusCode)
+	})
 }
 
-func TestPathParams(t *testing.T) {
-	server.Get("/sum/{a}/{b}", func(ctx context.Context, req *wine.Request, next wine.Invoker) wine.Responsible {
-		a := req.Params().Int("a")
-		b := req.Params().Int("b")
-		return wine.Text(http.StatusOK, fmt.Sprint(a+b))
+func TestServerMethod(t *testing.T) {
+	server := wine.NewServer()
+	r := server.Router
+	r.Get("/", func(ctx context.Context, req *wine.Request, next wine.Invoker) wine.Responsible {
+		return wine.Text(http.StatusOK, "GET")
 	})
+	r.Post("/", func(ctx context.Context, req *wine.Request, next wine.Invoker) wine.Responsible {
+		return wine.Text(http.StatusOK, "POST")
+	})
+	r.Put("/", func(ctx context.Context, req *wine.Request, next wine.Invoker) wine.Responsible {
+		return wine.Text(http.StatusOK, "PUT")
+	})
+	addr := fmt.Sprintf("localhost:%d", rand.Int()%1000+8000)
+	host := "http://" + addr
+	go server.Run(addr)
 
-	{
-		resp, err := http.DefaultClient.Get("http://localhost:8000/sum/1/2")
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		data, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			t.Fatal(err)
-		}
+	t.Run("GET", func(t *testing.T) {
+		resp, err := http.DefaultClient.Get(host)
+		require.NoError(t, err)
+		require.Equal(t, http.StatusOK, resp.StatusCode)
+		body, err := ioutil.ReadAll(resp.Body)
 		resp.Body.Close()
-		if string(data) != "3" {
-			t.Fatal(string(data))
-		}
-	}
+		require.NoError(t, err)
+		require.Equal(t, "GET", string(body))
+	})
 
-	{
-		resp, err := http.DefaultClient.Get("http://localhost:8000/sum/1")
-		if err != nil {
-			t.Fatal(err)
-		}
+	t.Run("POST", func(t *testing.T) {
+		resp, err := http.DefaultClient.Post(host, mime.Plain, nil)
+		require.NoError(t, err)
+		require.Equal(t, http.StatusOK, resp.StatusCode)
+		body, err := ioutil.ReadAll(resp.Body)
+		resp.Body.Close()
+		require.NoError(t, err)
+		require.Equal(t, "POST", string(body))
+	})
 
-		if resp.StatusCode != http.StatusNotFound {
-			t.Fatal(resp.Status)
-		}
-	}
+	t.Run("PUT", func(t *testing.T) {
+		req, err := http.NewRequest(http.MethodPut, host, nil)
+		require.NoError(t, err)
+		resp, err := http.DefaultClient.Do(req)
+		require.NoError(t, err)
+		require.Equal(t, http.StatusOK, resp.StatusCode)
+		body, err := ioutil.ReadAll(resp.Body)
+		resp.Body.Close()
+		require.NoError(t, err)
+		require.Equal(t, "PUT", string(body))
+	})
+
+	t.Run("NotFound", func(t *testing.T) {
+		req, err := http.NewRequest(http.MethodDelete, host, nil)
+		require.NoError(t, err)
+		resp, err := http.DefaultClient.Do(req)
+		require.NoError(t, err)
+		require.Equal(t, http.StatusNotFound, resp.StatusCode)
+	})
 }

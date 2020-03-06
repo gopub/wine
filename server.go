@@ -138,8 +138,8 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	if s.Recovery {
 		defer func() {
 			if e := recover(); e != nil {
-				logger.Errorf("%v %+v\n", req, e)
-				logger.Errorf("Panic: %s\n", string(debug.Stack()))
+				logger.Errorf("%v: %+v\n", req, e)
+				logger.Errorf("\n%s\n", string(debug.Stack()))
 			}
 		}()
 	}

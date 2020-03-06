@@ -3,6 +3,7 @@ package stream_test
 import (
 	"context"
 	"fmt"
+	"github.com/stretchr/testify/assert"
 	"math/rand"
 	"net/http"
 	"testing"
@@ -66,6 +67,7 @@ func TestJSONStream(t *testing.T) {
 		}
 		res = append(res, p)
 	}
-	s.Shutdown()
+	err = s.Shutdown()
+	assert.NoError(t, err)
 	require.Empty(t, gox.Diff(packets, res))
 }

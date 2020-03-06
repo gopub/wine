@@ -8,6 +8,7 @@ require (
 	github.com/google/go-cmp v0.4.0 // indirect
 	github.com/gopub/gox v1.9.11
 	github.com/gopub/log v1.1.8
+	github.com/magiconair/properties v1.8.1
 	github.com/nyaruka/phonenumbers v1.0.54 // indirect
 	github.com/onsi/ginkgo v1.8.0 // indirect
 	github.com/onsi/gomega v1.5.0 // indirect
