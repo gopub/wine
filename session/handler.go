@@ -44,7 +44,7 @@ func InitSession(ctx context.Context, req *wine.Request, next wine.Invoker) wine
 	resp := next(ctx, req)
 
 	switch v := resp.(type) {
-	case wine.Response:
+	case *wine.Response:
 		v.Header().Set(wine.SessionName, sid)
 		expire := time.Now().Add(time.Minute * 60)
 		cookie := &http.Cookie{

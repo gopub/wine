@@ -35,33 +35,17 @@ func (f ResponderFunc) Respond(ctx context.Context, w http.ResponseWriter) {
 	f(ctx, w)
 }
 
-// Response defines the http response interface
+// Response holds all the http response information
 // Value and headers except the status code can be modified before sent to the client
-type Response interface {
+type Response struct {
 	Responder
-	Status() int
-	Header() http.Header
-	Value() interface{}
-	SetValue(v interface{})
-}
-
-type responseImpl struct {
 	status int
 	header http.Header
 	value  interface{}
 }
 
-// NewResponse creates a new response
-func NewResponse(status int, header http.Header, value interface{}) Response {
-	return &responseImpl{
-		status: status,
-		header: header,
-		value:  value,
-	}
-}
-
 // Respond writes header and body to response writer w
-func (r *responseImpl) Respond(ctx context.Context, w http.ResponseWriter) {
+func (r *Response) Respond(ctx context.Context, w http.ResponseWriter) {
 	body, ok := r.value.([]byte)
 	if !ok {
 		body = r.getBytes()
@@ -76,7 +60,7 @@ func (r *responseImpl) Respond(ctx context.Context, w http.ResponseWriter) {
 	}
 }
 
-func (r *responseImpl) getBytes() []byte {
+func (r *Response) getBytes() []byte {
 	if body, ok := r.value.([]byte); ok {
 		return body
 	}
@@ -109,19 +93,19 @@ func (r *responseImpl) getBytes() []byte {
 	return nil
 }
 
-func (r *responseImpl) Status() int {
+func (r *Response) Status() int {
 	return r.status
 }
 
-func (r *responseImpl) Header() http.Header {
+func (r *Response) Header() http.Header {
 	return r.header
 }
 
-func (r *responseImpl) Value() interface{} {
+func (r *Response) Value() interface{} {
 	return r.value
 }
 
-func (r *responseImpl) SetValue(v interface{}) {
+func (r *Response) SetValue(v interface{}) {
 	r.value = v
 }
 
@@ -142,7 +126,7 @@ func Redirect(location string, permanent bool) Responder {
 		status = http.StatusFound
 	}
 
-	return &responseImpl{
+	return &Response{
 		status: status,
 		header: header,
 	}
@@ -152,7 +136,7 @@ func Redirect(location string, permanent bool) Responder {
 func Text(status int, text string) Responder {
 	header := make(http.Header)
 	header.Set(mime.ContentType, ctPlain)
-	return &responseImpl{
+	return &Response{
 		status: status,
 		header: header,
 		value:  text,
@@ -163,7 +147,7 @@ func Text(status int, text string) Responder {
 func HTML(status int, html string) Responder {
 	header := make(http.Header)
 	header.Set(mime.ContentType, ctHTML)
-	return &responseImpl{
+	return &Response{
 		status: status,
 		header: header,
 		value:  html,
@@ -174,7 +158,7 @@ func HTML(status int, html string) Responder {
 func JSON(status int, value interface{}) Responder {
 	header := make(http.Header)
 	header.Set(mime.ContentType, ctJSON)
-	return &responseImpl{
+	return &Response{
 		status: status,
 		header: header,
 		value:  value,
