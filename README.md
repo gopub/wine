@@ -15,7 +15,7 @@ Create ./hello.go
         
         func main() {
         	s := wine.NewServer()
-        	s.Get("/hello", func(ctx context.Context, req *wine.Request, next wine.Invoker) wine.Responsible {
+        	s.Get("/hello", func(ctx context.Context, req *wine.Request, next wine.Invoker) wine.Responder {
         		return wine.Text("Hello, Wine!")
         	})
         	s.Run(":8000")
@@ -30,7 +30,7 @@ Run and test:
 ## JSON Rendering
 
         s := wine.NewServer()
-        s.Get("/time", func(ctx context.Context, req *wine.Request, next wine.Invoker) wine.Responsible {
+        s.Get("/time", func(ctx context.Context, req *wine.Request, next wine.Invoker) wine.Responder {
         	return wine.JSON(map[string]interface{}{"time":time.Now().Unix()})
         })
         s.Run(":8000")
@@ -39,7 +39,7 @@ Run and test:
 Request.Parameters contains all request parameters (query/body/header).
 
         s := wine.NewServer()
-        s.Post("feedback", func(ctx context.Context, req *wine.Request, next wine.Invoker) wine.Responsible {
+        s.Post("feedback", func(ctx context.Context, req *wine.Request, next wine.Invoker) wine.Responder {
             text := req.Params().String("text")
             email := req.Params().String("email")
             return wine.Text("Feedback:" + text + " from " + email)
@@ -61,7 +61,7 @@ Path parameters are also supported in order to provide elegant RESTful apis.
 Single parameter in one segment:
 <pre>
     s := wine.NewServer() 
-    s.Get("/items/<b>{id}</b>", func(ctx context.Context, req *wine.Request, next wine.Invoker) wine.Responsible {
+    s.Get("/items/<b>{id}</b>", func(ctx context.Context, req *wine.Request, next wine.Invoker) wine.Responder {
         id := req.Params().String("id")
         return wine.Text("item id: " + id)
     }) 
@@ -73,7 +73,7 @@ Use middlewares to intercept and preprocess requests
 
 Custom middleware
 <pre>
-    func Logger(ctx context.Context, req *wine.Request, next wine.Invoker) wine.Responsible {
+    func Logger(ctx context.Context, req *wine.Request, next wine.Invoker) wine.Responder {
     	st := time.Now()  
     	//pass request to the next handler
     	<b>result := next(ctx, request)</b>
@@ -86,7 +86,7 @@ Custom middleware
     	s := wine.NewServer(nil) 
     	//Use middleware Logger
     	<b>s.Use(Logger)</b> 
-    	s.Get("/hello", func(ctx context.Context, req *wine.Request, next wine.Invoker) wine.Responsible {
+    	s.Get("/hello", func(ctx context.Context, req *wine.Request, next wine.Invoker) wine.Responder {
     		return wine.Text("Hello, Wine!")
         })
         s.Run(":8000")
@@ -94,7 +94,7 @@ Custom middleware
 </pre>
 ## Grouping Route
 <pre>  
-    func CheckSessionID(ctx context.Context, req *wine.Request, next wine.Invoker) wine.Responsible {
+    func CheckSessionID(ctx context.Context, req *wine.Request, next wine.Invoker) wine.Responder {
     	sid := req.Params().String("sid")
     	//check sid
     	if len(sid) == 0 {
@@ -104,15 +104,15 @@ Custom middleware
     	}
     }
     
-    func GetUserProfile(ctx context.Context, req *wine.Request, next wine.Invoker) wine.Responsible  {
+    func GetUserProfile(ctx context.Context, req *wine.Request, next wine.Invoker) wine.Responder  {
     	//...
     }
     
-    func GetUserFriends(ctx context.Context, req *wine.Request, next wine.Invoker) wine.Responsible  {
+    func GetUserFriends(ctx context.Context, req *wine.Request, next wine.Invoker) wine.Responder  {
     	//...
     }
     
-    func GetServerTime(ctx context.Context, req *wine.Request, next wine.Invoker) wine.Responsible  {
+    func GetServerTime(ctx context.Context, req *wine.Request, next wine.Invoker) wine.Responder  {
     	//...
     }
     
