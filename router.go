@@ -151,7 +151,6 @@ func (r *Router) match(method string, path string) (*handlerList, map[string]str
 			unescapedParams[k] = uv
 		}
 	}
-	delete(unescapedParams, SessionName)
 	return hl, unescapedParams
 }
 

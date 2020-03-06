@@ -2,9 +2,10 @@ package wine
 
 import (
 	"encoding/base64"
-	"github.com/gopub/wine/internal/path"
 	"net/http"
 	"strings"
+
+	"github.com/gopub/wine/internal/path"
 
 	"github.com/gopub/gox"
 	"github.com/gopub/wine/internal/request"
@@ -37,11 +38,6 @@ func (r *Request) Body() []byte {
 // ContentType returns request's content type
 func (r *Request) ContentType() string {
 	return r.contentType
-}
-
-// SessionID returns request's session id
-func (r *Request) SessionID() string {
-	return r.params.String(SessionName)
 }
 
 // Authorization returns request's Authorization in header

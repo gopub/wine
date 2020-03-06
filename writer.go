@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"compress/flate"
 	"compress/gzip"
-	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -137,16 +136,6 @@ func (w *compressedResponseWriter) Close() error {
 		return closer.Close()
 	}
 	return nil
-}
-
-// GetResponseWriter returns response writer from the context
-func GetResponseWriter(ctx context.Context) http.ResponseWriter {
-	rw, _ := ctx.Value(CKHTTPResponseWriter).(http.ResponseWriter)
-	return rw
-}
-
-func withResponseWriter(ctx context.Context, rw http.ResponseWriter) context.Context {
-	return context.WithValue(ctx, CKHTTPResponseWriter, rw)
 }
 
 func compressWriter(rw http.ResponseWriter, req *http.Request) http.ResponseWriter {

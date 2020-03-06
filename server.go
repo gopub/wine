@@ -26,19 +26,20 @@ const (
 	faviconPath  = "favicon.ico"
 )
 
-// SessionName defines the session id name
-var SessionName = "wsessionid"
+var reservedPaths = map[string]bool{endpointPath: true, faviconPath: true}
 
-// SessionTTL represents the session duration
-var SessionTTL = 30 * time.Minute
-
-const minSessionTTL = 5 * time.Minute
+const (
+	defaultSessionTTL = 30 * time.Minute
+	minSessionTTL     = 5 * time.Minute
+)
 
 // Server implements web server
 type Server struct {
 	*Router
 	*templateManager
-	server *http.Server
+	server      *http.Server
+	sessionTTL  time.Duration
+	sessionName string
 
 	Header             http.Header
 	Timeout            time.Duration //Timeout for each request, default value is 20s
@@ -54,8 +55,6 @@ type Server struct {
 	}
 
 	logger *log.Logger
-
-	reservedPaths map[string]bool
 }
 
 // NewServer returns a server
@@ -67,6 +66,8 @@ func NewServer() *Server {
 
 	maxMemory := env.SizeInBytes("wine.max_memory", int(8*gox.MB))
 	s := &Server{
+		sessionName:        env.String("wine.session.name", "wsessionid"),
+		sessionTTL:         env.Duration("wine.session.ttl", defaultSessionTTL),
 		Router:             NewRouter(),
 		templateManager:    newTemplateManager(),
 		Header:             header,
@@ -80,10 +81,6 @@ func NewServer() *Server {
 	s.defaultHandler.favicon = newHandlerList([]Handler{HandlerFunc(handleFavIcon)})
 	s.defaultHandler.notfound = newHandlerList([]Handler{HandlerFunc(handleNotFound)})
 	s.defaultHandler.options = newHandlerList([]Handler{HandlerFunc(s.handleOptions)})
-	s.reservedPaths = map[string]bool{
-		endpointPath: true,
-		faviconPath:  true,
-	}
 	s.AddTemplateFuncMap(template.FuncMap)
 	return s
 }
@@ -139,13 +136,11 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 			}
 		}()
 	}
-
 	rw = s.wrapResponseWriter(rw, req)
-	s.injectHeader(rw)
-	sid := s.setupSession(rw, req)
 	defer s.logHTTP(rw, req, time.Now())
 
-	ctx, cancel := s.createContext(rw, req)
+	sid := s.initSession(rw, req)
+	ctx, cancel := s.setupContext(req.Context(), rw, sid)
 	defer cancel()
 
 	parsedReq, err := parseRequest(req, s.ParamsParser)
@@ -155,17 +150,14 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		resp.Respond(ctx, rw)
 		return
 	}
-	parsedReq.params[SessionName] = sid
+	parsedReq.params[s.sessionName] = sid
 	s.serve(ctx, parsedReq, rw)
 }
 
-func (s *Server) injectHeader(rw http.ResponseWriter) {
+func (s *Server) wrapResponseWriter(rw http.ResponseWriter, req *http.Request) http.ResponseWriter {
 	for k, v := range s.Header {
 		rw.Header()[k] = v
 	}
-}
-
-func (s *Server) wrapResponseWriter(rw http.ResponseWriter, req *http.Request) http.ResponseWriter {
 	rw = wrapResponseWriter(rw)
 	if s.CompressionEnabled {
 		rw = compressWriter(rw, req)
@@ -173,10 +165,11 @@ func (s *Server) wrapResponseWriter(rw http.ResponseWriter, req *http.Request) h
 	return rw
 }
 
-func (s *Server) createContext(rw http.ResponseWriter, req *http.Request) (context.Context, context.CancelFunc) {
-	ctx, cancel := context.WithTimeout(req.Context(), s.Timeout)
+func (s *Server) setupContext(ctx context.Context, rw http.ResponseWriter, sid string) (context.Context, context.CancelFunc) {
+	ctx, cancel := context.WithTimeout(ctx, s.Timeout)
 	ctx = withTemplate(ctx, s.templates)
 	ctx = withResponseWriter(ctx, rw)
+	ctx = withSessionID(ctx, sid)
 	return ctx, cancel
 }
 
@@ -195,7 +188,7 @@ func (s *Server) serve(ctx context.Context, req *Request, rw http.ResponseWriter
 	}
 	req.params.AddMapObj(pathParams)
 	var resp Responder
-	if s.BeginHandler != nil && !s.reservedPaths[path] {
+	if s.BeginHandler != nil && !reservedPaths[path] {
 		resp = s.BeginHandler.HandleRequest(ctx, req, handlers.Head().Invoke)
 	} else {
 		resp = handlers.Head().Invoke(ctx, req)
@@ -266,15 +259,11 @@ func (s *Server) handleOptions(ctx context.Context, req *Request, next Invoker) 
 	})
 }
 
-func (s *Server) setupSession(rw http.ResponseWriter, req *http.Request) string {
-	if SessionName == "" {
-		return ""
-	}
-
+func (s *Server) initSession(rw http.ResponseWriter, req *http.Request) string {
 	var sid string
 	// Read cookie
 	for _, c := range req.Cookies() {
-		if c.Name == SessionName {
+		if c.Name == s.sessionName {
 			sid = c.Value
 			break
 		}
@@ -282,7 +271,7 @@ func (s *Server) setupSession(rw http.ResponseWriter, req *http.Request) string 
 
 	// Read Header
 	if sid == "" {
-		lcName := strings.ToLower(SessionName)
+		lcName := strings.ToLower(s.sessionName)
 		for k, vs := range req.Header {
 			if strings.ToLower(k) == lcName {
 				if len(vs) > 0 {
@@ -295,27 +284,21 @@ func (s *Server) setupSession(rw http.ResponseWriter, req *http.Request) string 
 
 	// Read url query
 	if sid == "" {
-		sid = req.URL.Query().Get(SessionName)
+		sid = req.URL.Query().Get(s.sessionName)
 	}
 
 	if sid == "" {
 		sid = gox.UniqueID40()
 	}
 
-	var expires time.Time
-	if SessionTTL < minSessionTTL {
-		expires = time.Now().Add(minSessionTTL)
-	} else {
-		expires = time.Now().Add(SessionTTL)
-	}
 	cookie := &http.Cookie{
-		Name:    SessionName,
+		Name:    s.sessionName,
 		Value:   sid,
-		Expires: expires,
+		Expires: time.Now().Add(s.sessionTTL),
 		Path:    "/",
 	}
 	http.SetCookie(rw, cookie)
 	// Write to Header in case cookie is disabled by some browsers
-	rw.Header().Set(SessionName, sid)
+	rw.Header().Set(s.sessionName, sid)
 	return sid
 }

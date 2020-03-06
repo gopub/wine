@@ -1,7 +1,6 @@
 package wine
 
 import (
-	"context"
 	"html/template"
 )
 
@@ -63,14 +62,4 @@ func (m *templateManager) AddTemplateFuncMap(funcMap template.FuncMap) {
 	for _, tmpl := range m.templates {
 		tmpl.Funcs(funcMap)
 	}
-}
-
-// GetTemplates returns templates in context
-func GetTemplates(ctx context.Context) []*template.Template {
-	v, _ := ctx.Value(CKTemplates).([]*template.Template)
-	return v
-}
-
-func withTemplate(ctx context.Context, templates []*template.Template) context.Context {
-	return context.WithValue(ctx, CKTemplates, templates)
 }
