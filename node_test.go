@@ -1,8 +1,9 @@
 package wine
 
 import (
-	"github.com/magiconair/properties/assert"
 	"testing"
+
+	"github.com/magiconair/properties/assert"
 )
 
 func TestNewNode(t *testing.T) {

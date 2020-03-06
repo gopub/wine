@@ -3,13 +3,14 @@ package wine_test
 import (
 	"context"
 	"fmt"
-	"github.com/gopub/wine"
-	"github.com/gopub/wine/mime"
-	"github.com/stretchr/testify/require"
 	"io/ioutil"
 	"math/rand"
 	"net/http"
 	"testing"
+
+	"github.com/gopub/wine"
+	"github.com/gopub/wine/mime"
+	"github.com/stretchr/testify/require"
 )
 
 func TestServerStatus(t *testing.T) {

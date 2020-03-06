@@ -2,6 +2,7 @@ package wine
 
 import (
 	"encoding/base64"
+	"github.com/gopub/wine/internal/path"
 	"net/http"
 	"strings"
 
@@ -80,6 +81,10 @@ func (r *Request) BasicAccount() (user string, password string) {
 		return
 	}
 	return userAndPass[0], userAndPass[1]
+}
+
+func (r *Request) NormalizedPath() string {
+	return path.NormalizeRequestPath(r.request)
 }
 
 func parseRequest(r *http.Request, parser ParamsParser) (*Request, error) {

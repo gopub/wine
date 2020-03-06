@@ -9,11 +9,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gopub/gox/env"
-
 	"github.com/gopub/gox"
+	"github.com/gopub/gox/env"
 	"github.com/gopub/log"
-	pathutil "github.com/gopub/wine/internal/path"
 	"github.com/gopub/wine/internal/request"
 	"github.com/gopub/wine/internal/template"
 )
@@ -133,8 +131,6 @@ func (s *Server) Shutdown() error {
 
 // ServeHTTP implements for http.Handler interface, which will handle each http request
 func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
-	sid := s.setupSession(rw, req)
-	startAt := time.Now()
 	if s.Recovery {
 		defer func() {
 			if e := recover(); e != nil {
@@ -144,27 +140,12 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		}()
 	}
 
-	rw = wrapResponseWriter(rw)
-	if s.CompressionEnabled {
-		rw = compressWriter(rw, req)
-	}
-	defer s.logHTTP(rw, req, startAt)
+	rw = s.wrapResponseWriter(rw, req)
+	s.injectHeader(rw)
+	sid := s.setupSession(rw, req)
+	defer s.logHTTP(rw, req, time.Now())
 
-	path := pathutil.NormalizeRequestPath(req)
-	method := strings.ToUpper(req.Method)
-	handlers, pathParams := s.match(method, path)
-
-	if handlers.Empty() {
-		if method == http.MethodOptions {
-			handlers = s.defaultHandler.options
-		} else if path == faviconPath {
-			handlers = s.defaultHandler.favicon
-		} else {
-			handlers = s.defaultHandler.notfound
-		}
-	}
-
-	ctx, cancel := context.WithTimeout(req.Context(), s.Timeout)
+	ctx, cancel := s.createContext(rw, req)
 	defer cancel()
 
 	parsedReq, err := parseRequest(req, s.ParamsParser)
@@ -174,24 +155,53 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		resp.Respond(ctx, rw)
 		return
 	}
-	parsedReq.params.AddMapObj(pathParams)
 	parsedReq.params[SessionName] = sid
+	s.serve(ctx, parsedReq, rw)
+}
 
+func (s *Server) injectHeader(rw http.ResponseWriter) {
 	for k, v := range s.Header {
 		rw.Header()[k] = v
 	}
+}
 
+func (s *Server) wrapResponseWriter(rw http.ResponseWriter, req *http.Request) http.ResponseWriter {
+	rw = wrapResponseWriter(rw)
+	if s.CompressionEnabled {
+		rw = compressWriter(rw, req)
+	}
+	return rw
+}
+
+func (s *Server) createContext(rw http.ResponseWriter, req *http.Request) (context.Context, context.CancelFunc) {
+	ctx, cancel := context.WithTimeout(req.Context(), s.Timeout)
 	ctx = withTemplate(ctx, s.templates)
 	ctx = withResponseWriter(ctx, rw)
+	return ctx, cancel
+}
+
+func (s *Server) serve(ctx context.Context, req *Request, rw http.ResponseWriter) {
+	path := req.NormalizedPath()
+	method := strings.ToUpper(req.Request().Method)
+	handlers, pathParams := s.match(method, path)
+	if handlers.Empty() {
+		if method == http.MethodOptions {
+			handlers = s.defaultHandler.options
+		} else if path == faviconPath {
+			handlers = s.defaultHandler.favicon
+		} else {
+			handlers = s.defaultHandler.notfound
+		}
+	}
+	req.params.AddMapObj(pathParams)
 	var resp Responder
 	if s.BeginHandler != nil && !s.reservedPaths[path] {
-		resp = s.BeginHandler.HandleRequest(ctx, parsedReq, handlers.Head().Invoke)
+		resp = s.BeginHandler.HandleRequest(ctx, req, handlers.Head().Invoke)
 	} else {
-		resp = handlers.Head().Invoke(ctx, parsedReq)
+		resp = handlers.Head().Invoke(ctx, req)
 	}
-
 	if resp == nil {
-		resp = handleNotImplemented(ctx, parsedReq, nil)
+		resp = handleNotImplemented(ctx, req, nil)
 	}
 	resp.Respond(ctx, rw)
 }
@@ -232,7 +242,7 @@ func (s *Server) logHTTP(rw http.ResponseWriter, req *http.Request, startAt time
 }
 
 func (s *Server) handleOptions(ctx context.Context, req *Request, next Invoker) Responder {
-	path := pathutil.NormalizeRequestPath(req.request)
+	path := req.NormalizedPath()
 	var allowedMethods []string
 	for routeMethod := range s.Router.methodTrees {
 		if handlers, _ := s.match(routeMethod, path); !handlers.Empty() {

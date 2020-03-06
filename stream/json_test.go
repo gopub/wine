@@ -3,7 +3,6 @@ package stream_test
 import (
 	"context"
 	"fmt"
-	"github.com/stretchr/testify/assert"
 	"math/rand"
 	"net/http"
 	"testing"
@@ -12,6 +11,7 @@ import (
 	"github.com/gopub/gox"
 	"github.com/gopub/wine"
 	"github.com/gopub/wine/stream"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 

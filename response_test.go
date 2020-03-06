@@ -4,17 +4,18 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/gopub/gox"
-	"github.com/gopub/wine"
-	"github.com/gopub/wine/mime"
-	"github.com/magiconair/properties/assert"
-	"github.com/stretchr/testify/require"
 	"io/ioutil"
 	"math/rand"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
+
+	"github.com/gopub/gox"
+	"github.com/gopub/wine"
+	"github.com/gopub/wine/mime"
+	"github.com/magiconair/properties/assert"
+	"github.com/stretchr/testify/require"
 )
 
 const charsetSuffix = "; charset=utf-8"
