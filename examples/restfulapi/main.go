@@ -10,11 +10,14 @@ import (
 func main() {
 	s := wine.NewServer()
 	// Place BasicAuth handler to do authenticating
-	r := s.Use(wine.BasicAuth(map[string]string{"user": "password"}, "wine"))
+	r := s.Router
 	service := NewItemService()
 	r.Get("/items/{id}", service.Get)
 	r.Get("/items/list", service.List)
+
+	r = r.Use(wine.BasicAuth(map[string]string{"user": "password"}, "wine"))
 	r.Post("/items", service.Create)
+
 	s.Run(":8000")
 }
 
@@ -31,6 +34,14 @@ type ItemService struct {
 
 func NewItemService() *ItemService {
 	s := new(ItemService)
+	s.counter = 1
+	s.items = []*Item{
+		{
+			ID:    1,
+			Title: "Apple",
+			Price: 5.8,
+		},
+	}
 	return s
 }
 
