@@ -74,7 +74,7 @@ func (r *Router) listEndpoints(ctx context.Context, req *Request, next Invoker) 
 // Group returns a new router whose basePath is r.basePath+path
 func (r *Router) Group(path string) *Router {
 	if path == "/" {
-		logger.Panic("don't create default group \"/\"")
+		logger.Panic(`Not allowed to create group "/"`)
 	}
 
 	nr := &Router{}
@@ -122,11 +122,11 @@ func (r *Router) UseHandlers(handlers ...Handler) *Router {
 }
 
 // Use is similar with UseHandlers
-func (r *Router) Use(funcs ...HandlerFunc) *Router {
-	if len(funcs) == 0 {
+func (r *Router) Use(funcList ...HandlerFunc) *Router {
+	if len(funcList) == 0 {
 		return r
 	}
-	return r.UseHandlers(convertToHandlers(funcs...)...)
+	return r.UseHandlers(convertToHandlers(funcList...)...)
 }
 
 // match finds handlers and parses path parameters according to method and path
@@ -278,49 +278,49 @@ func (r *Router) StaticFS(path string, fs http.FileSystem) {
 	})
 }
 
-// Get binds funcs to path with GET method
-func (r *Router) Get(path string, funcs ...HandlerFunc) {
-	r.Bind(http.MethodGet, path, convertToHandlers(funcs...)...)
+// Get binds funcList to path with GET method
+func (r *Router) Get(path string, funcList ...HandlerFunc) {
+	r.Bind(http.MethodGet, path, convertToHandlers(funcList...)...)
 }
 
-// Post binds funcs to path with POST method
-func (r *Router) Post(path string, funcs ...HandlerFunc) {
-	r.Bind(http.MethodPost, path, convertToHandlers(funcs...)...)
+// Post binds funcList to path with POST method
+func (r *Router) Post(path string, funcList ...HandlerFunc) {
+	r.Bind(http.MethodPost, path, convertToHandlers(funcList...)...)
 }
 
-// Put binds funcs to path with PUT method
-func (r *Router) Put(path string, funcs ...HandlerFunc) {
-	r.Bind(http.MethodPut, path, convertToHandlers(funcs...)...)
+// Put binds funcList to path with PUT method
+func (r *Router) Put(path string, funcList ...HandlerFunc) {
+	r.Bind(http.MethodPut, path, convertToHandlers(funcList...)...)
 }
 
-// Patch binds funcs to path with PATCH method
-func (r *Router) Patch(path string, funcs ...HandlerFunc) {
-	r.Bind(http.MethodPatch, path, convertToHandlers(funcs...)...)
+// Patch binds funcList to path with PATCH method
+func (r *Router) Patch(path string, funcList ...HandlerFunc) {
+	r.Bind(http.MethodPatch, path, convertToHandlers(funcList...)...)
 }
 
-// Delete binds funcs to path with DELETE method
-func (r *Router) Delete(path string, funcs ...HandlerFunc) {
-	r.Bind(http.MethodDelete, path, convertToHandlers(funcs...)...)
+// Delete binds funcList to path with DELETE method
+func (r *Router) Delete(path string, funcList ...HandlerFunc) {
+	r.Bind(http.MethodDelete, path, convertToHandlers(funcList...)...)
 }
 
-// Options binds funcs to path with OPTIONS method
-func (r *Router) Options(path string, funcs ...HandlerFunc) {
-	r.Bind(http.MethodOptions, path, convertToHandlers(funcs...)...)
+// Options binds funcList to path with OPTIONS method
+func (r *Router) Options(path string, funcList ...HandlerFunc) {
+	r.Bind(http.MethodOptions, path, convertToHandlers(funcList...)...)
 }
 
-// Head binds funcs to path with HEAD method
-func (r *Router) Head(path string, funcs ...HandlerFunc) {
-	r.Bind(http.MethodHead, path, convertToHandlers(funcs...)...)
+// Head binds funcList to path with HEAD method
+func (r *Router) Head(path string, funcList ...HandlerFunc) {
+	r.Bind(http.MethodHead, path, convertToHandlers(funcList...)...)
 }
 
-// Trace binds funcs to path with TRACE method
-func (r *Router) Trace(path string, funcs ...HandlerFunc) {
-	r.Bind(http.MethodTrace, path, convertToHandlers(funcs...)...)
+// Trace binds funcList to path with TRACE method
+func (r *Router) Trace(path string, funcList ...HandlerFunc) {
+	r.Bind(http.MethodTrace, path, convertToHandlers(funcList...)...)
 }
 
-// Connect binds funcs to path with CONNECT method
-func (r *Router) Connect(path string, funcs ...HandlerFunc) {
-	r.Bind(http.MethodConnect, path, convertToHandlers(funcs...)...)
+// Connect binds funcList to path with CONNECT method
+func (r *Router) Connect(path string, funcList ...HandlerFunc) {
+	r.Bind(http.MethodConnect, path, convertToHandlers(funcList...)...)
 }
 
 // Print prints all path trees
@@ -330,9 +330,9 @@ func (r *Router) Print() {
 	}
 }
 
-func convertToHandlers(funcs ...HandlerFunc) []Handler {
-	handlers := make([]Handler, len(funcs))
-	for i, h := range funcs {
+func convertToHandlers(funcList ...HandlerFunc) []Handler {
+	handlers := make([]Handler, len(funcList))
+	for i, h := range funcList {
 		handlers[i] = h
 	}
 	return handlers

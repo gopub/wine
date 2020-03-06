@@ -78,7 +78,7 @@ func newHandlerList(handlers []Handler) *handlerList {
 	return l
 }
 
-// Some buil-in handlers
+// Some built-in handlers
 
 func handleFavIcon(ctx context.Context, req *Request, next Invoker) Responder {
 	return ResponderFunc(func(ctx context.Context, rw http.ResponseWriter) {
