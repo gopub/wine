@@ -78,7 +78,7 @@ Custom middleware
     	//pass request to the next handler
     	<b>result := next(ctx, request)</b>
     	cost := float32((time.Since(st) / time.Microsecond)) / 1000.0
-    	req := return wine.Request()
+    	req := request.Request()
     	log.Printf("%.3fms %s %s", cost, req.Method, req.RequestURI)
     	return result
     } <br/>
