@@ -77,9 +77,11 @@ func (n *node) conflict(nodes []*node) bool {
 	}
 
 	nod := nodes[0]
-	if n.t == wildcardNode || nod.t == wildcardNode {
-		return true
-	}
+	// Allow wildcardNode and other kinds of nodes coexist
+	//if n.t == wildcardNode || nod.t == wildcardNode {
+	//	log.Errorf("Conflict: [%s %s], [%s %s]", n.t, n.path, nod.t, nod.path)
+	//	return true
+	//}
 
 	if n.t != nod.t {
 		return false
@@ -88,11 +90,16 @@ func (n *node) conflict(nodes []*node) bool {
 	//n.t == node.t
 
 	if n.t == staticNode {
-		return n.path == nod.path && !n.handlers.Empty() && !nod.handlers.Empty()
+		ok := n.path == nod.path && !n.handlers.Empty() && !nod.handlers.Empty()
+		if ok {
+			log.Errorf("Conflict: %v, %v", n.path, nod.path)
+		}
+		return ok
 	}
 
 	if n.t == paramNode {
 		if !n.handlers.Empty() && !nod.handlers.Empty() {
+			log.Errorf("Conflict: %s, %s", n.path, nod.path)
 			return true
 		}
 
