@@ -107,7 +107,7 @@ func handlerListToString(l *list.List) string {
 		}
 
 		if strings.HasSuffix(name, "-fm") {
-			name = name[0 : len(name)-3]
+			name = name[:len(name)-3]
 		}
 		s.WriteString(shortenFilename(name))
 	}
