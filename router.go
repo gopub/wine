@@ -11,7 +11,6 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/gopub/log"
 	"github.com/gopub/wine/internal/debug"
 
 	pathpkg "github.com/gopub/wine/internal/path"
@@ -39,7 +38,6 @@ func (r *Router) bindSysHandlers() {
 	r.Put(echoPath, r.echo)
 	r.Patch(echoPath, r.echo)
 	r.Delete(echoPath, r.echo)
-	log.Debug(debug.ByteStreamHandler, debug.TextStreamHandler)
 	if h, ok := debug.ByteStreamHandler.(Handler); ok {
 		r.Bind(http.MethodGet, byteStreamPath, h)
 	}
