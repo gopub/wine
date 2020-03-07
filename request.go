@@ -101,6 +101,7 @@ func parseRequest(r *http.Request, parser ParamsParser) (*Request, error) {
 }
 
 // ParamsParser interface is used by Wine server to parse parameters from http request
+// params must contains all parameters in url query, json body, url form, etc.
 type ParamsParser interface {
-	Parse(req *http.Request) (gox.M, []byte, error)
+	Parse(req *http.Request) (params gox.M, body []byte, err error)
 }
