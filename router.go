@@ -251,7 +251,7 @@ func (r *Router) Print() {
 	for method, root := range r.methodTrees {
 		nodes := root.ListEndpoints()
 		for _, n := range nodes {
-			logger.Infof("%-5s %s\typ%s", method, n.Path(), handlerListToString(n.Handlers()))
+			logger.Infof("%-5s %s\t%s", method, n.Path(), handlerListToString(n.Handlers()))
 		}
 	}
 }
