@@ -111,7 +111,7 @@ func (s *Server) Run(addr string) {
 		if errors.Is(err, http.ErrServerClosed) {
 			logger.Infof("Server closed")
 		} else {
-			logger.Errorf("ListenAndServe: %v", err)
+			logger.Fatalf("ListenAndServe: %v", err)
 		}
 	}
 }
@@ -129,7 +129,7 @@ func (s *Server) RunTLS(addr, certFile, keyFile string) {
 		if errors.Is(err, http.ErrServerClosed) {
 			logger.Infof("Server closed")
 		} else {
-			logger.Errorf("ListenAndServe: %v", err)
+			logger.Fatalf("ListenAndServe: %v", err)
 		}
 	}
 }
