@@ -14,7 +14,7 @@ import (
 	"github.com/gopub/gox"
 	"github.com/gopub/wine"
 	"github.com/gopub/wine/mime"
-	"github.com/magiconair/properties/assert"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 

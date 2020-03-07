@@ -48,10 +48,10 @@ type Server struct {
 	CompressionEnabled bool
 	Recovery           bool
 
-	defaultHandler struct {
-		favicon  *handlerList
-		notfound *handlerList
-		options  *handlerList
+	invokers struct {
+		favicon  *InvokerList
+		notfound *InvokerList
+		options  *InvokerList
 	}
 
 	logger *log.Logger
@@ -78,9 +78,9 @@ func NewServer() *Server {
 		Recovery:           env.Bool("wine.recovery", true),
 	}
 
-	s.defaultHandler.favicon = newHandlerList([]Handler{HandlerFunc(handleFavIcon)})
-	s.defaultHandler.notfound = newHandlerList([]Handler{HandlerFunc(handleNotFound)})
-	s.defaultHandler.options = newHandlerList([]Handler{HandlerFunc(s.handleOptions)})
+	s.invokers.favicon = newInvokerList(toHandlerList(HandlerFunc(handleFavIcon)))
+	s.invokers.notfound = newInvokerList(toHandlerList(HandlerFunc(handleNotFound)))
+	s.invokers.options = newInvokerList(toHandlerList(HandlerFunc(s.handleOptions)))
 	s.AddTemplateFuncMap(template.FuncMap)
 	return s
 }
@@ -176,22 +176,25 @@ func (s *Server) setupContext(ctx context.Context, rw http.ResponseWriter, sid s
 func (s *Server) serve(ctx context.Context, req *Request, rw http.ResponseWriter) {
 	path := req.NormalizedPath()
 	method := strings.ToUpper(req.Request().Method)
-	handlers, pathParams := s.match(method, path)
-	if handlers.Empty() {
+	var invokers *InvokerList
+	handlers, params := s.match(method, path)
+	req.params.AddMapObj(params)
+	if handlers != nil && handlers.Len() > 0 {
+		invokers = newInvokerList(handlers)
+	} else {
 		if method == http.MethodOptions {
-			handlers = s.defaultHandler.options
+			invokers = s.invokers.options
 		} else if path == faviconPath {
-			handlers = s.defaultHandler.favicon
+			invokers = s.invokers.favicon
 		} else {
-			handlers = s.defaultHandler.notfound
+			invokers = s.invokers.notfound
 		}
 	}
-	req.params.AddMapObj(pathParams)
 	var resp Responder
 	if s.BeginHandler != nil && !reservedPaths[path] {
-		resp = s.BeginHandler.HandleRequest(ctx, req, handlers.Head().Invoke)
+		resp = s.BeginHandler.HandleRequest(ctx, req, invokers.Invoke)
 	} else {
-		resp = handlers.Head().Invoke(ctx, req)
+		resp = invokers.Invoke(ctx, req)
 	}
 	if resp == nil {
 		resp = handleNotImplemented(ctx, req, nil)
@@ -238,7 +241,7 @@ func (s *Server) handleOptions(ctx context.Context, req *Request, next Invoker) 
 	path := req.NormalizedPath()
 	var allowedMethods []string
 	for routeMethod := range s.Router.methodTrees {
-		if handlers, _ := s.match(routeMethod, path); !handlers.Empty() {
+		if handlers, _ := s.match(routeMethod, path); handlers != nil && handlers.Len() > 0 {
 			allowedMethods = append(allowedMethods, routeMethod)
 		}
 	}

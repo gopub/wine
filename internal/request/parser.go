@@ -108,7 +108,7 @@ func (p *ParamsParser) parseBody(req *http.Request) (gox.M, []byte, error) {
 			var obj interface{}
 			err = json.Unmarshal(body, &obj)
 			if err != nil {
-				return params, body, fmt.Errorf("decode json failed %s: %w", string(body), err)
+				return params, body, fmt.Errorf("unmarshal json %s: %w", string(body), err)
 			}
 		}
 		return params, body, nil

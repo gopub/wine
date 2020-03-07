@@ -5,7 +5,15 @@ import (
 	"path"
 	"regexp"
 	"strings"
+
+	"github.com/gopub/log"
 )
+
+var logger = log.Default()
+
+func SetLogger(l *log.Logger) {
+	logger = l
+}
 
 var (
 	_compactSlashRegexp = regexp.MustCompile(`/{2,}`)
