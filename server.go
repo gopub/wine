@@ -77,7 +77,9 @@ func NewServer() *Server {
 		CompressionEnabled: env.Bool("wine.compression", true),
 		Recovery:           env.Bool("wine.recovery", true),
 	}
-
+	if s.sessionTTL < minSessionTTL {
+		s.sessionTTL = minSessionTTL
+	}
 	s.invokers.favicon = newInvokerList(toHandlerList(HandlerFunc(handleFavIcon)))
 	s.invokers.notfound = newInvokerList(toHandlerList(HandlerFunc(handleNotFound)))
 	s.invokers.options = newInvokerList(toHandlerList(HandlerFunc(s.handleOptions)))
