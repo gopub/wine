@@ -2,8 +2,9 @@ package path
 
 import (
 	"container/list"
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestNewNode(t *testing.T) {

@@ -3,9 +3,10 @@ package stream
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/gopub/log"
 	"github.com/gopub/wine/internal/debug"
-	"time"
 )
 
 func init() {

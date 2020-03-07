@@ -126,19 +126,31 @@ func NewTextReader(client *http.Client, req *http.Request) (TextReadCloser, erro
 		}
 		return nil, gox.NewError(resp.StatusCode, "unknown error")
 	}
-	return newTextReadCloser(resp.Body), nil
+	r := newTextReadCloser(resp.Body)
+	_, err = r.Read()
+	if err != nil {
+		r.Close()
+		return nil, fmt.Errorf("handshake: %w", err)
+	}
+	return r, nil
 }
 
 func NewTextHandler(serve func(context.Context, TextWriteCloser)) wine.Handler {
 	return wine.HandlerFunc(func(ctx context.Context, req *wine.Request, next wine.Invoker) wine.Responder {
 		logger := log.FromContext(ctx)
-		logger.Debugf("Receive stream")
+		logger.Debugf("Start")
+		defer logger.Debugf("Closed")
 		w := wine.GetResponseWriter(ctx)
 		w.Header().Set(mime.ContentType, mime.Plain)
 		done := make(chan interface{})
-		go serve(ctx, newTextWriteCloser(w, done))
+		tw := newTextWriteCloser(w, done)
+		err := tw.Write("")
+		if err != nil {
+			logger.Errorf("Handshake: %v", err)
+			return wine.Status(http.StatusOK)
+		}
+		go serve(ctx, tw)
 		<-done
-		logger.Debugf("Close stream")
 		return wine.Status(http.StatusOK)
 	})
 }

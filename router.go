@@ -4,14 +4,15 @@ import (
 	"container/list"
 	"context"
 	"fmt"
-	"github.com/gopub/log"
-	"github.com/gopub/wine/internal/debug"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
 	"reflect"
 	"sort"
 	"strings"
+
+	"github.com/gopub/log"
+	"github.com/gopub/wine/internal/debug"
 
 	pathpkg "github.com/gopub/wine/internal/path"
 )

@@ -130,19 +130,31 @@ func NewByteReader(client *http.Client, req *http.Request) (ByteReadCloser, erro
 		}
 		return nil, gox.NewError(resp.StatusCode, "unknown error")
 	}
-	return newByteReadCloser(resp.Body), nil
+	r := newByteReadCloser(resp.Body)
+	_, err = r.Read()
+	if err != nil {
+		r.Close()
+		return nil, fmt.Errorf("handshake: %w", err)
+	}
+	return r, nil
 }
 
 func NewByteHandler(serve func(context.Context, ByteWriteCloser)) wine.Handler {
 	return wine.HandlerFunc(func(ctx context.Context, req *wine.Request, next wine.Invoker) wine.Responder {
 		logger := log.FromContext(ctx)
-		logger.Debugf("Receive stream")
+		logger.Debugf("Start")
+		defer logger.Debugf("Closed")
 		w := wine.GetResponseWriter(ctx)
 		w.Header().Set(mime.ContentType, mime.OctetStream)
 		done := make(chan interface{})
-		go serve(ctx, newByteWriteCloser(w, done))
+		bw := newByteWriteCloser(w, done)
+		err := bw.Write([]byte{})
+		if err != nil {
+			logger.Errorf("Handshake: %v", err)
+			return wine.Status(http.StatusOK)
+		}
+		go serve(ctx, bw)
 		<-done
-		logger.Debugf("Close stream")
 		return wine.Status(http.StatusOK)
 	})
 }
