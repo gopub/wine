@@ -4,7 +4,10 @@ import (
 	"container/list"
 	"context"
 	"fmt"
+	"github.com/gopub/log"
+	"github.com/gopub/wine/internal/debug"
 	"net/http"
+	"net/http/httputil"
 	"net/url"
 	"reflect"
 	"sort"
@@ -24,8 +27,27 @@ type Router struct {
 func NewRouter() *Router {
 	r := &Router{}
 	r.methodTrees = make(map[string]*pathpkg.Node, 4)
-	r.Get(endpointPath, r.listEndpoints)
+	r.bindSysHandlers()
 	return r
+}
+
+func (r *Router) bindSysHandlers() {
+	r.Get(endpointPath, r.listEndpoints)
+	r.Get(echoPath, r.echo)
+	r.Post(echoPath, r.echo)
+	r.Put(echoPath, r.echo)
+	r.Patch(echoPath, r.echo)
+	r.Delete(echoPath, r.echo)
+	log.Debug(debug.ByteStreamHandler, debug.TextStreamHandler)
+	if h, ok := debug.ByteStreamHandler.(Handler); ok {
+		r.Bind(http.MethodGet, byteStreamPath, h)
+	}
+	if h, ok := debug.TextStreamHandler.(Handler); ok {
+		r.Bind(http.MethodGet, textStreamPath, h)
+	}
+	if h, ok := debug.JSONStreamHandler.(Handler); ok {
+		r.Bind(http.MethodGet, jsonStreamPath, h)
+	}
 }
 
 // Group returns a new router whose basePath is r.basePath+path
@@ -277,6 +299,14 @@ func (r *Router) listEndpoints(ctx context.Context, req *Request, next Invoker) 
 		b.WriteString(line)
 	}
 	return Text(http.StatusOK, b.String())
+}
+
+func (r *Router) echo(ctx context.Context, req *Request, next Invoker) Responder {
+	v, err := httputil.DumpRequest(req.request, true)
+	if err != nil {
+		return Text(http.StatusInternalServerError, err.Error())
+	}
+	return Text(http.StatusOK, string(v))
 }
 
 type sortableNodeList []*pathpkg.Node

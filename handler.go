@@ -35,20 +35,20 @@ func (h HandlerFunc) String() string {
 // Invoker defines the function to be called in order to pass on the request
 type Invoker func(ctx context.Context, req *Request) Responder
 
-type InvokerList struct {
+type invokerList struct {
 	handlers *list.List
 	current  *list.Element
 }
 
-func newInvokerList(handlers *list.List) *InvokerList {
-	l := &InvokerList{
+func newInvokerList(handlers *list.List) *invokerList {
+	l := &invokerList{
 		handlers: handlers,
 		current:  handlers.Front(),
 	}
 	return l
 }
 
-func (l *InvokerList) Invoke(ctx context.Context, req *Request) Responder {
+func (l *invokerList) Invoke(ctx context.Context, req *Request) Responder {
 	if l.current == nil {
 		return nil
 	}

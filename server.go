@@ -22,11 +22,22 @@ var acceptEncodings = []string{"gzip", "deflate"}
 var ShortHandlerNameFlag = true
 
 const (
-	endpointPath = "_endpoints"
-	faviconPath  = "favicon.ico"
+	endpointPath   = "_endpoints"
+	echoPath       = "_debug/echo"
+	byteStreamPath = "_debug/bytestream"
+	textStreamPath = "_debug/textstream"
+	jsonStreamPath = "_debug/jsonstream"
+	faviconPath    = "favicon.ico"
 )
 
-var reservedPaths = map[string]bool{endpointPath: true, faviconPath: true}
+var reservedPaths = map[string]bool{
+	endpointPath:   true,
+	faviconPath:    true,
+	echoPath:       true,
+	byteStreamPath: true,
+	jsonStreamPath: true,
+	textStreamPath: true,
+}
 
 const (
 	defaultSessionTTL = 30 * time.Minute
@@ -49,9 +60,9 @@ type Server struct {
 	Recovery           bool
 
 	invokers struct {
-		favicon  *InvokerList
-		notfound *InvokerList
-		options  *InvokerList
+		favicon  *invokerList
+		notfound *invokerList
+		options  *invokerList
 	}
 
 	logger *log.Logger
@@ -159,7 +170,7 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 func (s *Server) serve(ctx context.Context, req *Request, rw http.ResponseWriter) {
 	path := req.NormalizedPath()
 	method := strings.ToUpper(req.Request().Method)
-	var invokers *InvokerList
+	var invokers *invokerList
 	handlers, params := s.match(method, path)
 	req.params.AddMapObj(params)
 	if handlers != nil && handlers.Len() > 0 {
