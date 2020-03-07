@@ -156,25 +156,6 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	s.serve(ctx, parsedReq, rw)
 }
 
-func (s *Server) wrapResponseWriter(rw http.ResponseWriter, req *http.Request) http.ResponseWriter {
-	for k, v := range s.Header {
-		rw.Header()[k] = v
-	}
-	rw = wrapResponseWriter(rw)
-	if s.CompressionEnabled {
-		rw = compressWriter(rw, req)
-	}
-	return rw
-}
-
-func (s *Server) setupContext(ctx context.Context, rw http.ResponseWriter, sid string) (context.Context, context.CancelFunc) {
-	ctx, cancel := context.WithTimeout(ctx, s.Timeout)
-	ctx = withTemplate(ctx, s.templates)
-	ctx = withResponseWriter(ctx, rw)
-	ctx = withSessionID(ctx, sid)
-	return ctx, cancel
-}
-
 func (s *Server) serve(ctx context.Context, req *Request, rw http.ResponseWriter) {
 	path := req.NormalizedPath()
 	method := strings.ToUpper(req.Request().Method)
@@ -202,6 +183,69 @@ func (s *Server) serve(ctx context.Context, req *Request, rw http.ResponseWriter
 		resp = handleNotImplemented(ctx, req, nil)
 	}
 	resp.Respond(ctx, rw)
+}
+
+func (s *Server) wrapResponseWriter(rw http.ResponseWriter, req *http.Request) http.ResponseWriter {
+	for k, v := range s.Header {
+		rw.Header()[k] = v
+	}
+	rw = wrapResponseWriter(rw)
+	if s.CompressionEnabled {
+		rw = compressWriter(rw, req)
+	}
+	return rw
+}
+
+func (s *Server) initSession(rw http.ResponseWriter, req *http.Request) string {
+	var sid string
+	// Read cookie
+	for _, c := range req.Cookies() {
+		if c.Name == s.sessionName {
+			sid = c.Value
+			break
+		}
+	}
+
+	// Read Header
+	if sid == "" {
+		lcName := strings.ToLower(s.sessionName)
+		for k, vs := range req.Header {
+			if strings.ToLower(k) == lcName {
+				if len(vs) > 0 {
+					sid = vs[0]
+					break
+				}
+			}
+		}
+	}
+
+	// Read url query
+	if sid == "" {
+		sid = req.URL.Query().Get(s.sessionName)
+	}
+
+	if sid == "" {
+		sid = gox.UniqueID40()
+	}
+
+	cookie := &http.Cookie{
+		Name:    s.sessionName,
+		Value:   sid,
+		Expires: time.Now().Add(s.sessionTTL),
+		Path:    "/",
+	}
+	http.SetCookie(rw, cookie)
+	// Write to Header in case cookie is disabled by some browsers
+	rw.Header().Set(s.sessionName, sid)
+	return sid
+}
+
+func (s *Server) setupContext(ctx context.Context, rw http.ResponseWriter, sid string) (context.Context, context.CancelFunc) {
+	ctx, cancel := context.WithTimeout(ctx, s.Timeout)
+	ctx = withTemplate(ctx, s.templates)
+	ctx = withResponseWriter(ctx, rw)
+	ctx = withSessionID(ctx, sid)
+	return ctx, cancel
 }
 
 func (s *Server) logHTTP(rw http.ResponseWriter, req *http.Request, startAt time.Time) {
@@ -262,48 +306,4 @@ func (s *Server) handleOptions(ctx context.Context, req *Request, next Invoker) 
 			rw.WriteHeader(http.StatusNotFound)
 		}
 	})
-}
-
-func (s *Server) initSession(rw http.ResponseWriter, req *http.Request) string {
-	var sid string
-	// Read cookie
-	for _, c := range req.Cookies() {
-		if c.Name == s.sessionName {
-			sid = c.Value
-			break
-		}
-	}
-
-	// Read Header
-	if sid == "" {
-		lcName := strings.ToLower(s.sessionName)
-		for k, vs := range req.Header {
-			if strings.ToLower(k) == lcName {
-				if len(vs) > 0 {
-					sid = vs[0]
-					break
-				}
-			}
-		}
-	}
-
-	// Read url query
-	if sid == "" {
-		sid = req.URL.Query().Get(s.sessionName)
-	}
-
-	if sid == "" {
-		sid = gox.UniqueID40()
-	}
-
-	cookie := &http.Cookie{
-		Name:    s.sessionName,
-		Value:   sid,
-		Expires: time.Now().Add(s.sessionTTL),
-		Path:    "/",
-	}
-	http.SetCookie(rw, cookie)
-	// Write to Header in case cookie is disabled by some browsers
-	rw.Header().Set(s.sessionName, sid)
-	return sid
 }
