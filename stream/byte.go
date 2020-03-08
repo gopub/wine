@@ -131,10 +131,15 @@ func NewByteReader(client *http.Client, req *http.Request) (ByteReadCloser, erro
 		return nil, gox.NewError(resp.StatusCode, "unknown error")
 	}
 	r := newByteReadCloser(resp.Body)
-	_, err = r.Read()
+	greeting, err := r.Read()
 	if err != nil {
 		r.Close()
 		return nil, fmt.Errorf("handshake: %w", err)
+	}
+
+	if s := string(greeting); s != Greeting {
+		r.Close()
+		return nil, fmt.Errorf("expect %s, got %s", Greeting, s)
 	}
 	return r, nil
 }

@@ -127,10 +127,14 @@ func NewTextReader(client *http.Client, req *http.Request) (TextReadCloser, erro
 		return nil, gox.NewError(resp.StatusCode, "unknown error")
 	}
 	r := newTextReadCloser(resp.Body)
-	_, err = r.Read()
+	greeting, err := r.Read()
 	if err != nil {
 		r.Close()
 		return nil, fmt.Errorf("handshake: %w", err)
+	}
+	if greeting != Greeting {
+		r.Close()
+		return nil, fmt.Errorf("expect %s, got %s", Greeting, greeting)
 	}
 	return r, nil
 }

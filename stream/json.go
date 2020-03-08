@@ -79,11 +79,15 @@ func NewJSONReader(client *http.Client, req *http.Request) (JSONReadCloser, erro
 		return nil, gox.NewError(resp.StatusCode, "unknown error")
 	}
 	r := newJSONReadCloser(resp.Body)
-	var empty gox.M
-	err = r.Read(&empty)
+	var greeting interface{}
+	err = r.Read(&greeting)
 	if err != nil {
 		r.Close()
 		return nil, fmt.Errorf("handshake: %w", err)
+	}
+	if greeting != Greeting {
+		r.Close()
+		return nil, fmt.Errorf("expect %s, got %s", Greeting, greeting)
 	}
 	return r, nil
 }
