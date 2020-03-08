@@ -148,7 +148,7 @@ func NewByteHandler(serve func(context.Context, ByteWriteCloser)) wine.Handler {
 		w.Header().Set(mime.ContentType, mime.OctetStream)
 		done := make(chan interface{})
 		bw := newByteWriteCloser(w, done)
-		err := bw.Write([]byte{})
+		err := bw.Write([]byte(Greeting))
 		if err != nil {
 			logger.Errorf("Handshake: %v", err)
 			return wine.Status(http.StatusOK)

@@ -9,6 +9,8 @@ import (
 	"github.com/gopub/wine/internal/debug"
 )
 
+const Greeting = "WINE"
+
 func init() {
 	debug.ByteStreamHandler = NewByteHandler(debugByteStream)
 	debug.TextStreamHandler = NewTextHandler(debugTextStream)

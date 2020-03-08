@@ -97,7 +97,7 @@ func NewJSONHandler(serve func(context.Context, JSONWriteCloser)) wine.Handler {
 		w.Header().Set(mime.ContentType, mime.JSON)
 		done := make(chan interface{})
 		jw := newJSONWriteCloser(w, done)
-		err := jw.Write(struct{}{})
+		err := jw.Write(Greeting)
 		if err != nil {
 			logger.Errorf("Handshake: %v", err)
 			return wine.Status(http.StatusOK)

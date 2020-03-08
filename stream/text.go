@@ -144,7 +144,7 @@ func NewTextHandler(serve func(context.Context, TextWriteCloser)) wine.Handler {
 		w.Header().Set(mime.ContentType, mime.Plain)
 		done := make(chan interface{})
 		tw := newTextWriteCloser(w, done)
-		err := tw.Write("")
+		err := tw.Write(Greeting)
 		if err != nil {
 			logger.Errorf("Handshake: %v", err)
 			return wine.Status(http.StatusOK)
