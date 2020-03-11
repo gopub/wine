@@ -9,7 +9,6 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/gopub/gox"
 	"github.com/gopub/log"
 	"github.com/gopub/wine/internal/resource"
 	"github.com/gopub/wine/mime"
@@ -62,7 +61,7 @@ func handleFavIcon(ctx context.Context, req *Request, next Invoker) Responder {
 	return ResponderFunc(func(ctx context.Context, rw http.ResponseWriter) {
 		rw.Header()[mime.ContentType] = []string{"image/x-icon"}
 		rw.WriteHeader(http.StatusOK)
-		if err := gox.WriteAll(rw, resource.Favicon); err != nil {
+		if _, err := rw.Write(resource.Favicon); err != nil {
 			log.FromContext(ctx).Errorf("Write all: %v", err)
 		}
 	})

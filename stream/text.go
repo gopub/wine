@@ -94,7 +94,7 @@ func newTextWriteCloser(w http.ResponseWriter, done chan<- interface{}) *textWri
 func (w *textWriteCloser) Write(s string) error {
 	p := []byte(s)
 	p = append(p, textPacketDelimiter)
-	err := gox.WriteAll(w.w, p)
+	_, err := w.w.Write(p)
 	if err != nil {
 		return fmt.Errorf("write all: %w", err)
 	}

@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/gopub/gox"
 	"github.com/gopub/log"
 	"github.com/gopub/wine/mime"
 )
@@ -55,7 +54,7 @@ func (r *Response) Respond(ctx context.Context, w http.ResponseWriter) {
 		w.Header()[k] = v
 	}
 	w.WriteHeader(r.status)
-	if err := gox.WriteAll(w, body); err != nil {
+	if _, err := w.Write(body); err != nil {
 		log.Error(err)
 	}
 }
@@ -178,7 +177,7 @@ func StreamFile(r io.Reader, name string) Responder {
 		for {
 			n, err := r.Read(buf)
 			if n > 0 {
-				if wErr := gox.WriteAll(w, buf[:n]); wErr != nil {
+				if _, wErr := w.Write(buf[:n]); wErr != nil {
 					logger.Errorf("Write: %v", wErr)
 					return
 				}
@@ -199,9 +198,8 @@ func File(b []byte, name string) Responder {
 		if name != "" {
 			w.Header().Set(mime.ContentDisposition, fmt.Sprintf(`attachment; filename="%s"`, name))
 		}
-		err := gox.WriteAll(w, b)
-		if err != nil {
-			log.FromContext(ctx).Errorf("WriteAll: %v", err)
+		if _, err := w.Write(b); err != nil {
+			log.FromContext(ctx).Errorf("write: %v", err)
 			w.WriteHeader(http.StatusInternalServerError)
 		}
 	})

@@ -93,12 +93,11 @@ func newByteWriteCloser(w http.ResponseWriter, done chan<- interface{}) *byteWri
 func (w *byteWriteCloser) Write(p []byte) error {
 	head := make([]byte, packetHeadLen)
 	binary.BigEndian.PutUint32(head, uint32(len(p)))
-	err := gox.WriteAll(w.w, head)
+	_, err := w.w.Write(head)
 	if err != nil {
 		return fmt.Errorf("write header: %w", err)
 	}
-	err = gox.WriteAll(w.w, p)
-	if err != nil {
+	if _, err := w.w.Write(p); err != nil {
 		return fmt.Errorf("write packet: %w", err)
 	}
 	if flusher, ok := w.w.(http.Flusher); ok {
