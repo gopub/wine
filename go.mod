@@ -6,7 +6,7 @@ require (
 	github.com/fsnotify/fsnotify v1.4.8 // indirect
 	github.com/golang/protobuf v1.3.4 // indirect
 	github.com/gopub/gox v1.10.2
-	github.com/gopub/log v1.1.9
+	github.com/gopub/log v1.2.0
 	github.com/nyaruka/phonenumbers v1.0.54 // indirect
 	github.com/pelletier/go-toml v1.6.0 // indirect
 	github.com/shopspring/decimal v0.0.0-20200227202807-02e2044944cc // indirect

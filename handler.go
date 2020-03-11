@@ -5,10 +5,13 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"net/http/httputil"
 	"reflect"
 	"runtime"
 	"strings"
+	"time"
 
+	"github.com/gopub/gox"
 	"github.com/gopub/log"
 	"github.com/gopub/wine/internal/resource"
 	"github.com/gopub/wine/mime"
@@ -73,6 +76,28 @@ func handleNotFound(ctx context.Context, req *Request, next Invoker) Responder {
 
 func handleNotImplemented(ctx context.Context, req *Request, next Invoker) Responder {
 	return Text(http.StatusNotImplemented, http.StatusText(http.StatusNotImplemented))
+}
+
+func handleEcho(ctx context.Context, req *Request, next Invoker) Responder {
+	v, err := httputil.DumpRequest(req.request, true)
+	if err != nil {
+		return Text(http.StatusInternalServerError, err.Error())
+	}
+	return Text(http.StatusOK, string(v))
+}
+
+func handleDate(ctx context.Context, req *Request, next Invoker) Responder {
+	ts := req.Params().DefaultInt64("timestamp", time.Now().Unix())
+	t := time.Unix(ts, 0)
+	res := gox.M{
+		"timestamp": t.Unix(),
+		"time":      t.Format("15:04:05"),
+		"date":      t.Format("2006-01-02"),
+		"zone":      t.Format("-0700"),
+		"weekday":   t.Format("Mon"),
+		"month":     t.Format("Jan"),
+	}
+	return JSON(http.StatusOK, res)
 }
 
 func toHandlers(fs ...HandlerFunc) []Handler {

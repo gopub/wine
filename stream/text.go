@@ -145,7 +145,7 @@ func NewTextHandler(serve func(context.Context, TextWriteCloser)) wine.Handler {
 		logger.Debugf("Start")
 		defer logger.Debugf("Closed")
 		w := wine.GetResponseWriter(ctx)
-		w.Header().Set(mime.ContentType, mime.Plain)
+		w.Header().Set(mime.ContentType, mime.HTML+charsetSuffix)
 		done := make(chan interface{})
 		tw := newTextWriteCloser(w, done)
 		err := tw.Write(Greeting)

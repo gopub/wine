@@ -7,9 +7,13 @@ import (
 
 	"github.com/gopub/log"
 	"github.com/gopub/wine/internal/debug"
+	"github.com/gopub/wine/mime"
 )
 
-const Greeting = "WINE"
+const (
+	Greeting      = "WINE"
+	charsetSuffix = "; " + mime.CharsetUTF8
+)
 
 func init() {
 	debug.ByteStreamHandler = NewByteHandler(debugByteStream)

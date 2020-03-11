@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	charsetSuffix = "; charset=utf-8"
+	charsetSuffix = "; " + mime.CharsetUTF8
 	ctPlain       = mime.Plain + charsetSuffix
 	ctHTML        = mime.HTML + charsetSuffix
 	ctJSON        = mime.JSON + charsetSuffix

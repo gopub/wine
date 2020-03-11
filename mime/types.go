@@ -42,6 +42,7 @@ const (
 const (
 	ContentType        = "Content-Type"
 	ContentDisposition = "Content-Disposition"
+	CharsetUTF8        = "charset=utf-8"
 )
 
 func GetContentType(h http.Header) string {

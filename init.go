@@ -12,3 +12,7 @@ func init() {
 	logger.SetFlags(log.LstdFlags - log.Lfunction - log.Lshortfile)
 	path.SetLogger(logger)
 }
+
+func Logger() *log.Logger {
+	return logger
+}
