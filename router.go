@@ -358,9 +358,11 @@ func (r *Router) date(ctx context.Context, req *Request, next Invoker) Responder
 	t := time.Unix(ts, 0)
 	res := gox.M{
 		"timestamp": t.Unix(),
-		"datetime":  t,
+		"time":      t.Format("15:04:05"),
 		"date":      t.Format("2006-01-02"),
-		"weekday":   t.Weekday(),
+		"zone":      t.Format("-0700"),
+		"weekday":   t.Format("Mon"),
+		"month":     t.Format("Jan"),
 	}
 	return JSON(http.StatusOK, res)
 }
