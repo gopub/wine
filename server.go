@@ -22,7 +22,8 @@ var acceptEncodings = []string{"gzip", "deflate"}
 var ShortHandlerNameFlag = true
 
 const (
-	endpointPath   = "_endpoints"
+	sysDatePath    = "_sys/date"
+	endpointPath   = "_debug/endpoints"
 	echoPath       = "_debug/echo"
 	byteStreamPath = "_debug/bytestream"
 	textStreamPath = "_debug/textstream"
@@ -31,6 +32,7 @@ const (
 )
 
 var reservedPaths = map[string]bool{
+	sysDatePath:    true,
 	endpointPath:   true,
 	faviconPath:    true,
 	echoPath:       true,

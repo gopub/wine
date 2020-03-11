@@ -4,12 +4,14 @@ import (
 	"container/list"
 	"context"
 	"fmt"
+	"github.com/gopub/gox"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
 	"reflect"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/gopub/wine/internal/debug"
 
@@ -36,6 +38,7 @@ func NewRouter() *Router {
 
 func (r *Router) bindSysHandlers() {
 	r.Get(endpointPath, r.listEndpoints)
+	r.Get(sysDatePath, r.date)
 	r.Any(echoPath, r.echo)
 	if h, ok := debug.ByteStreamHandler.(Handler); ok {
 		r.Bind(http.MethodGet, byteStreamPath, h)
@@ -348,6 +351,18 @@ func (r *Router) echo(ctx context.Context, req *Request, next Invoker) Responder
 		return Text(http.StatusInternalServerError, err.Error())
 	}
 	return Text(http.StatusOK, string(v))
+}
+
+func (r *Router) date(ctx context.Context, req *Request, next Invoker) Responder {
+	ts := req.Params().DefaultInt64("timestamp", time.Now().Unix())
+	t := time.Unix(ts, 0)
+	res := gox.M{
+		"timestamp": t.Unix(),
+		"datetime":  t,
+		"date":      t.Format("2006-01-02"),
+		"weekday":   t.Weekday(),
+	}
+	return JSON(http.StatusOK, res)
 }
 
 type sortableNodeList []*pathpkg.Node
