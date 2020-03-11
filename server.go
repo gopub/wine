@@ -12,7 +12,7 @@ import (
 	"github.com/gopub/gox"
 	"github.com/gopub/gox/env"
 	"github.com/gopub/log"
-	"github.com/gopub/wine/internal/request"
+	"github.com/gopub/wine/internal/io"
 	"github.com/gopub/wine/internal/template"
 )
 
@@ -54,9 +54,9 @@ type Server struct {
 	sessionTTL  time.Duration
 	sessionName string
 
+	maxRequestMemory   gox.ByteUnit
 	Header             http.Header
 	Timeout            time.Duration //Timeout for each request, default value is 20s
-	ParamsParser       ParamsParser
 	BeginHandler       Handler
 	CompressionEnabled bool
 	Recovery           bool
@@ -77,15 +77,14 @@ func NewServer() *Server {
 	header := make(http.Header, 1)
 	header.Set("Server", "Wine")
 
-	maxMemory := env.SizeInBytes("wine.max_memory", int(8*gox.MB))
 	s := &Server{
 		sessionName:        env.String("wine.session.name", "wsessionid"),
 		sessionTTL:         env.Duration("wine.session.ttl", defaultSessionTTL),
+		maxRequestMemory:   gox.ByteUnit(env.SizeInBytes("wine.max_memory", int(8*gox.MB))),
 		Router:             NewRouter(),
 		templateManager:    newTemplateManager(),
 		Header:             header,
 		Timeout:            env.Duration("wine.timeout", 10*time.Second),
-		ParamsParser:       request.NewParamsParser(gox.ByteUnit(maxMemory)),
 		logger:             logger,
 		CompressionEnabled: env.Bool("wine.compression", true),
 		Recovery:           env.Bool("wine.recovery", true),
@@ -152,13 +151,14 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		}()
 	}
 	rw = s.wrapResponseWriter(rw, req)
+	defer s.closeWriter(rw)
 	defer s.logHTTP(rw, req, time.Now())
 
 	sid := s.initSession(rw, req)
 	ctx, cancel := s.setupContext(req.Context(), rw, sid)
 	defer cancel()
 
-	parsedReq, err := parseRequest(req, s.ParamsParser)
+	parsedReq, err := parseRequest(req, s.maxRequestMemory)
 	if err != nil {
 		logger.Errorf("Parse request: %v", err)
 		resp := Text(http.StatusBadRequest, fmt.Sprintf("Parse request: %v", err))
@@ -202,11 +202,21 @@ func (s *Server) wrapResponseWriter(rw http.ResponseWriter, req *http.Request) h
 	for k, v := range s.Header {
 		rw.Header()[k] = v
 	}
-	rw = wrapResponseWriter(rw)
-	if s.CompressionEnabled {
-		rw = compressWriter(rw, req)
+	w := io.NewResponseWriter(rw)
+	if !s.CompressionEnabled {
+		return w
 	}
-	return rw
+
+	enc := req.Header.Get("Accept-Encoding")
+	if gox.IndexOfString(acceptEncodings, enc) < 0 {
+		return w
+	}
+	cw, err := io.NewCompressResponseWriter(w, enc)
+	if err != nil {
+		log.Errorf("NewCompressResponseWriter: %v", err)
+		return w
+	}
+	return cw
 }
 
 func (s *Server) initSession(rw http.ResponseWriter, req *http.Request) string {
@@ -261,23 +271,20 @@ func (s *Server) setupContext(ctx context.Context, rw http.ResponseWriter, sid s
 	return ctx, cancel
 }
 
-func (s *Server) logHTTP(rw http.ResponseWriter, req *http.Request, startAt time.Time) {
-	status := 0
-	if s, ok := rw.(statusGetter); ok {
-		status = s.Status()
-	}
-
-	if cw, ok := rw.(*compressedResponseWriter); ok {
+func (s *Server) closeWriter(w http.ResponseWriter) {
+	if cw, ok := w.(*io.CompressResponseWriter); ok {
 		err := cw.Close()
 		if err != nil {
 			logger.Errorf("Close compressed response writer: %v", err)
 		}
-
-		if s, ok := cw.ResponseWriter.(statusGetter); ok {
-			status = s.Status()
-		}
 	}
+}
 
+func (s *Server) logHTTP(rw http.ResponseWriter, req *http.Request, startAt time.Time) {
+	status := 0
+	if w, ok := rw.(*io.ResponseWriter); ok {
+		status = w.Status()
+	}
 	info := fmt.Sprintf("%s %s %s | %d %v",
 		req.RemoteAddr,
 		req.Method,

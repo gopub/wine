@@ -2,13 +2,13 @@ package wine
 
 import (
 	"encoding/base64"
+	"fmt"
 	"net/http"
 	"strings"
 
-	"github.com/gopub/wine/internal/path"
-
 	"github.com/gopub/gox"
-	"github.com/gopub/wine/internal/request"
+	"github.com/gopub/wine/internal/io"
+	"github.com/gopub/wine/internal/path"
 	"github.com/gopub/wine/mime"
 )
 
@@ -83,14 +83,10 @@ func (r *Request) NormalizedPath() string {
 	return path.NormalizeRequestPath(r.request)
 }
 
-func parseRequest(r *http.Request, parser ParamsParser) (*Request, error) {
-	if parser == nil {
-		parser = request.NewParamsParser(8 * gox.MB)
-	}
-
-	params, body, err := parser.Parse(r)
+func parseRequest(r *http.Request, maxMem gox.ByteUnit) (*Request, error) {
+	params, body, err := io.ReadRequest(r, maxMem)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("read request: %w", err)
 	}
 	return &Request{
 		request:     r,
@@ -98,10 +94,4 @@ func parseRequest(r *http.Request, parser ParamsParser) (*Request, error) {
 		body:        body,
 		contentType: mime.GetContentType(r.Header),
 	}, nil
-}
-
-// ParamsParser interface is used by Wine server to parse parameters from http request
-// params must contains all parameters in url query, json body, url form, etc.
-type ParamsParser interface {
-	Parse(req *http.Request) (params gox.M, body []byte, err error)
 }
