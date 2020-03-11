@@ -297,7 +297,7 @@ func (s *Server) logHTTP(rw http.ResponseWriter, req *http.Request, startAt time
 func (s *Server) handleOptions(ctx context.Context, req *Request, next Invoker) Responder {
 	path := req.NormalizedPath()
 	var allowedMethods []string
-	for routeMethod := range s.Router.methodTrees {
+	for routeMethod := range s.Router.methodToRoot {
 		if handlers, _ := s.match(routeMethod, path); handlers != nil && handlers.Len() > 0 {
 			allowedMethods = append(allowedMethods, routeMethod)
 		}

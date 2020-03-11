@@ -18,26 +18,25 @@ import (
 
 // Router implements routing function
 type Router struct {
-	methodTrees map[string]*pathpkg.Node
-	basePath    string
-	handlers    []Handler
+	anyRoot      *pathpkg.Node // Root for any methods
+	methodToRoot map[string]*pathpkg.Node
+	basePath     string
+	handlers     []Handler
 }
 
 // NewRouter new a Router
 func NewRouter() *Router {
-	r := &Router{}
-	r.methodTrees = make(map[string]*pathpkg.Node, 4)
+	r := &Router{
+		anyRoot:      pathpkg.NewEmptyNode(),
+		methodToRoot: make(map[string]*pathpkg.Node, 4),
+	}
 	r.bindSysHandlers()
 	return r
 }
 
 func (r *Router) bindSysHandlers() {
 	r.Get(endpointPath, r.listEndpoints)
-	r.Get(echoPath, r.echo)
-	r.Post(echoPath, r.echo)
-	r.Put(echoPath, r.echo)
-	r.Patch(echoPath, r.echo)
-	r.Delete(echoPath, r.echo)
+	r.Any(echoPath, r.echo)
 	if h, ok := debug.ByteStreamHandler.(Handler); ok {
 		r.Bind(http.MethodGet, byteStreamPath, h)
 	}
@@ -49,22 +48,28 @@ func (r *Router) bindSysHandlers() {
 	}
 }
 
+func (r *Router) clone() *Router {
+	nr := &Router{
+		anyRoot:      r.anyRoot,
+		methodToRoot: r.methodToRoot,
+		basePath:     r.basePath,
+	}
+	nr.handlers = make([]Handler, len(r.handlers))
+	copy(nr.handlers, r.handlers)
+	return nr
+}
+
 // Group returns a new router whose basePath is r.basePath+path
 func (r *Router) Group(path string) *Router {
 	if path == "/" {
 		logger.Panic(`Not allowed to create group "/"`)
 	}
 
-	nr := &Router{}
-	nr.methodTrees = r.methodTrees
-
+	nr := r.clone()
 	// support empty path
 	if len(path) > 0 {
 		nr.basePath = pathpkg.Normalize(r.basePath + "/" + path)
 	}
-
-	nr.handlers = make([]Handler, len(r.handlers))
-	copy(nr.handlers, r.handlers)
 	return nr
 }
 
@@ -74,14 +79,7 @@ func (r *Router) UseHandlers(handlers ...Handler) *Router {
 	if len(handlers) == 0 {
 		return r
 	}
-
-	nr := &Router{
-		methodTrees: r.methodTrees,
-		basePath:    r.basePath,
-	}
-	nr.handlers = make([]Handler, len(r.handlers))
-	copy(nr.handlers, r.handlers)
-
+	nr := r.clone()
 	for _, h := range handlers {
 		found := false
 		for _, rh := range nr.handlers {
@@ -95,7 +93,6 @@ func (r *Router) UseHandlers(handlers ...Handler) *Router {
 			nr.handlers = append(nr.handlers, h)
 		}
 	}
-
 	return nr
 }
 
@@ -109,19 +106,25 @@ func (r *Router) Use(funcList ...HandlerFunc) *Router {
 
 // match finds handlers and parses path parameters according to method and path
 func (r *Router) match(method string, path string) (*list.List, map[string]string) {
-	n := r.methodTrees[method]
-	if n == nil {
-		return nil, nil
-	}
-
 	segments := strings.Split(path, "/")
 	if segments[0] != "" {
 		segments = append([]string{""}, segments...)
 	}
-	m, params := n.Match(segments...)
+
+	root := r.methodToRoot[method]
+	if root == nil {
+		root = r.anyRoot
+	}
+
+	m, params := root.Match(segments...)
+	if m == nil && root != r.anyRoot {
+		m, params = r.anyRoot.Match(segments...)
+	}
+
 	if m == nil {
 		return nil, map[string]string{}
 	}
+
 	unescapedParams := make(map[string]string, len(params))
 	for k, v := range params {
 		uv, err := url.PathUnescape(v)
@@ -154,13 +157,21 @@ func (r *Router) Bind(method, path string, handlers ...Handler) {
 	hl := r.createHandlerList(handlers)
 	path = pathpkg.Normalize(r.basePath + "/" + path)
 	if path == "" {
-		if root.IsEndpoint() {
+		if r.anyRoot.IsEndpoint() {
+			logger.Panicf("Conflict: ANY, %s", r.basePath)
+		} else if root.IsEndpoint() {
 			logger.Panicf("Conflict: %s, %s", method, r.basePath)
 		} else {
 			root.SetHandlers(hl)
 		}
 	} else {
-		root.Add(pathpkg.NewNodeList(path, hl))
+		nodeList := pathpkg.NewNodeList(path, hl)
+		if pair := r.anyRoot.Conflict(nodeList); pair != nil {
+			first := pair.First.(*pathpkg.Node).Path()
+			second := pair.Second.(*pathpkg.Node).Path()
+			logger.Panicf("Conflict: ANY %s, %s %s", first, method, second)
+		}
+		root.Add(nodeList)
 	}
 }
 
@@ -200,6 +211,30 @@ func (r *Router) StaticFS(path string, fs http.FileSystem) {
 	r.Get(path, func(ctx context.Context, req *Request, next Invoker) Responder {
 		return Handle(req.request, fileServer)
 	})
+}
+
+// Get binds funcList to path with GET method
+func (r *Router) Any(path string, funcList ...HandlerFunc) {
+	if path == "" {
+		logger.Panic("Empty path")
+	}
+	handlers := toHandlers(funcList...)
+	if len(handlers) == 0 {
+		logger.Panic("No handlers")
+	}
+
+	hl := r.createHandlerList(handlers)
+	path = pathpkg.Normalize(r.basePath + "/" + path)
+	if path == "" {
+		if r.anyRoot.IsEndpoint() {
+			logger.Panicf("Conflict: ANY, %s", r.basePath)
+		} else {
+			r.anyRoot.SetHandlers(hl)
+		}
+	} else {
+		nodeList := pathpkg.NewNodeList(path, hl)
+		r.anyRoot.Add(nodeList)
+	}
 }
 
 // Get binds funcList to path with GET method
@@ -248,10 +283,10 @@ func (r *Router) Connect(path string, funcList ...HandlerFunc) {
 }
 
 func (r *Router) getRoot(method string) *pathpkg.Node {
-	root := r.methodTrees[method]
+	root := r.methodToRoot[method]
 	if root == nil {
 		root = pathpkg.NewEmptyNode()
-		r.methodTrees[method] = root
+		r.methodToRoot[method] = root
 	}
 	return root
 }
@@ -269,7 +304,7 @@ func (r *Router) createHandlerList(handlers []Handler) *list.List {
 
 // Print prints all path trees
 func (r *Router) Print() {
-	for method, root := range r.methodTrees {
+	for method, root := range r.methodToRoot {
 		nodes := root.ListEndpoints()
 		for _, n := range nodes {
 			logger.Infof("%-5s %s\t%s", method, n.Path(), handlerListToString(n.Handlers()))
@@ -281,13 +316,20 @@ func (r *Router) listEndpoints(ctx context.Context, req *Request, next Invoker) 
 	l := make(sortableNodeList, 0, 10)
 	maxLenOfPath := 0
 	nodeToMethod := make(map[*pathpkg.Node]string, 10)
-	for method, root := range r.methodTrees {
+	for method, root := range r.methodToRoot {
 		for _, node := range root.ListEndpoints() {
 			l = append(l, node)
 			nodeToMethod[node] = method
 			if n := len(node.Path()); n > maxLenOfPath {
 				maxLenOfPath = n
 			}
+		}
+	}
+	for _, node := range r.anyRoot.ListEndpoints() {
+		l = append(l, node)
+		nodeToMethod[node] = "*"
+		if n := len(node.Path()); n > maxLenOfPath {
+			maxLenOfPath = n
 		}
 	}
 	sort.Sort(l)
