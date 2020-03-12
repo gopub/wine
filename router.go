@@ -76,9 +76,6 @@ func (r *Router) Group(path string) *Router {
 // UseHandlers returns a new router with global handlers which will be bound with all new path patterns
 // This can be used to add interceptors
 func (r *Router) UseHandlers(handlers ...Handler) *Router {
-	if len(handlers) == 0 {
-		return r
-	}
 	nr := r.clone()
 	for _, h := range handlers {
 		found := false
@@ -98,9 +95,6 @@ func (r *Router) UseHandlers(handlers ...Handler) *Router {
 
 // Use is similar with UseHandlers
 func (r *Router) Use(funcList ...HandlerFunc) *Router {
-	if len(funcList) == 0 {
-		return r
-	}
 	return r.UseHandlers(toHandlers(funcList...)...)
 }
 
