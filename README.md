@@ -36,7 +36,7 @@ Run and test:
         s.Run(":8000")
 
 ## Parameters
-Request.Parameters contains all request parameters (query/body/header).
+Request.Params() returns all parameters from URL query, post form, cookies, and custom header fields.
 
         s := wine.NewServer()
         s.Post("feedback", func(ctx context.Context, req *wine.Request, next wine.Invoker) wine.Responder {
@@ -68,12 +68,11 @@ Single parameter in one segment:
     s.Run(":8000")
 </pre>
        
-## Use Middlewares
-Use middlewares to intercept and preprocess requests  
+## Use Interceptor
+Intercept and preprocess requests  
 
-Custom middleware
 <pre>
-    func Logger(ctx context.Context, req *wine.Request, next wine.Invoker) wine.Responder {
+    func Log(ctx context.Context, req *wine.Request, next wine.Invoker) wine.Responder {
     	st := time.Now()  
     	//pass request to the next handler
     	<b>result := next(ctx, request)</b>
@@ -84,9 +83,9 @@ Custom middleware
     } <br/>
     func main() {
     	s := wine.NewServer(nil) 
-    	//Use middleware Logger
-    	<b>s.Use(Logger)</b> 
-    	s.Get("/hello", func(ctx context.Context, req *wine.Request, next wine.Invoker) wine.Responder {
+    	//Log every request
+    	<b>r := s.Use(Log)</b> 
+    	r.Get("/hello", func(ctx context.Context, req *wine.Request, next wine.Invoker) wine.Responder {
     		return wine.Text("Hello, Wine!")
         })
         s.Run(":8000")
@@ -139,11 +138,11 @@ Run it:
     GET   /accounts/{user_id}/profile/    main.CheckSessionID, main.GetUserProfile
 
 
-## Basic Auth
+## Auth
 It's easy to turn on basic auth.
 
     s := wine.NewServer()
-	s.Use(wine.BasicAuth(map[string]string{
+	s.Use(wine.NewBasicAuthHandler(map[string]string{
 		"admin": "123",
 		"tom":   "456",
 	}, ""))
