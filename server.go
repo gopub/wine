@@ -18,9 +18,6 @@ import (
 
 var acceptEncodings = []string{"gzip", "deflate"}
 
-// ShortHandlerNameFlag means using short name format
-var ShortHandlerNameFlag = true
-
 const (
 	sysDatePath    = "_sys/date"
 	endpointPath   = "_debug/endpoints"
@@ -56,7 +53,7 @@ type Server struct {
 
 	maxRequestMemory   gox.ByteUnit
 	Header             http.Header
-	Timeout            time.Duration //Timeout for each request, default value is 20s
+	Timeout            time.Duration
 	BeginHandler       Handler
 	CompressionEnabled bool
 	Recovery           bool
@@ -66,8 +63,6 @@ type Server struct {
 		notfound *invokerList
 		options  *invokerList
 	}
-
-	logger *log.Logger
 }
 
 // NewServer returns a server
@@ -85,7 +80,6 @@ func NewServer() *Server {
 		templateManager:    newTemplateManager(),
 		Header:             header,
 		Timeout:            env.Duration("wine.timeout", 10*time.Second),
-		logger:             logger,
 		CompressionEnabled: env.Bool("wine.compression", true),
 		Recovery:           env.Bool("wine.recovery", true),
 	}
@@ -294,12 +288,12 @@ func (s *Server) logHTTP(rw http.ResponseWriter, req *http.Request, startAt time
 
 	if status >= http.StatusBadRequest {
 		if status != http.StatusUnauthorized {
-			s.logger.Errorf("%s | %v | %v", info, req.Header, req.PostForm)
+			logger.Errorf("%s | %v | %v", info, req.Header, req.PostForm)
 		} else {
-			s.logger.Errorf("%s | %v", info, req.Header)
+			logger.Errorf("%s | %v", info, req.Header)
 		}
 	} else {
-		s.logger.Info(info)
+		logger.Info(info)
 	}
 }
 

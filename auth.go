@@ -9,8 +9,8 @@ import (
 	"github.com/gopub/log"
 )
 
-// BasicAuth returns a basic auth interceptor
-func BasicAuth(userToPassword map[string]string, realm string) HandlerFunc {
+// NewBasicAuthHandler returns a basic auth interceptor
+func NewBasicAuthHandler(userToPassword map[string]string, realm string) HandlerFunc {
 	if len(userToPassword) == 0 {
 		log.Panic("userToPassword is empty")
 	}

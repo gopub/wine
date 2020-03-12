@@ -4,9 +4,9 @@ import (
 	"container/list"
 	"context"
 	"fmt"
+	"github.com/gopub/gox"
 	"net/http"
 	"net/url"
-	"reflect"
 	"sort"
 	"strings"
 
@@ -83,7 +83,7 @@ func (r *Router) UseHandlers(handlers ...Handler) *Router {
 	for _, h := range handlers {
 		found := false
 		for _, rh := range nr.handlers {
-			if reflect.TypeOf(rh).Comparable() && reflect.TypeOf(h).Comparable() && rh == h {
+			if gox.Equal(h, rh) {
 				found = true
 				break
 			}
