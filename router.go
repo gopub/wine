@@ -10,8 +10,6 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/gopub/wine/internal/debug"
-
 	pathpkg "github.com/gopub/wine/internal/path"
 )
 
@@ -37,15 +35,6 @@ func (r *Router) bindSysHandlers() {
 	r.Get(endpointPath, r.listEndpoints)
 	r.Get(sysDatePath, handleDate)
 	r.Any(echoPath, handleEcho)
-	if h, ok := debug.ByteStreamHandler.(Handler); ok {
-		r.Bind(http.MethodGet, byteStreamPath, h)
-	}
-	if h, ok := debug.TextStreamHandler.(Handler); ok {
-		r.Bind(http.MethodGet, textStreamPath, h)
-	}
-	if h, ok := debug.JSONStreamHandler.(Handler); ok {
-		r.Bind(http.MethodGet, jsonStreamPath, h)
-	}
 }
 
 func (r *Router) clone() *Router {

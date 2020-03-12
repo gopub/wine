@@ -3,10 +3,10 @@ package stream
 import (
 	"context"
 	"fmt"
+	"github.com/gopub/wine"
 	"time"
 
 	"github.com/gopub/log"
-	"github.com/gopub/wine/internal/debug"
 	"github.com/gopub/wine/mime"
 )
 
@@ -15,10 +15,10 @@ const (
 	charsetSuffix = "; " + mime.CharsetUTF8
 )
 
-func init() {
-	debug.ByteStreamHandler = NewByteHandler(debugByteStream)
-	debug.TextStreamHandler = NewTextHandler(debugTextStream)
-	debug.JSONStreamHandler = NewJSONHandler(debugJSONStream)
+func InstallDebugRotes(r *wine.Router) {
+	r.Get("bytestream", NewByteHandler(debugByteStream).(wine.HandlerFunc))
+	r.Get("textstream", NewTextHandler(debugTextStream).(wine.HandlerFunc))
+	r.Get("jsonstream", NewJSONHandler(debugJSONStream).(wine.HandlerFunc))
 }
 
 func debugByteStream(ctx context.Context, w ByteWriteCloser) {

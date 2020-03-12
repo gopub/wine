@@ -19,23 +19,17 @@ import (
 var acceptEncodings = []string{"gzip", "deflate"}
 
 const (
-	sysDatePath    = "_sys/date"
-	endpointPath   = "_debug/endpoints"
-	echoPath       = "_debug/echo"
-	byteStreamPath = "_debug/bytestream"
-	textStreamPath = "_debug/textstream"
-	jsonStreamPath = "_debug/jsonstream"
-	faviconPath    = "favicon.ico"
+	sysDatePath  = "_sys/date"
+	endpointPath = "_debug/endpoints"
+	echoPath     = "_debug/echo"
+	faviconPath  = "favicon.ico"
 )
 
 var reservedPaths = map[string]bool{
-	sysDatePath:    true,
-	endpointPath:   true,
-	faviconPath:    true,
-	echoPath:       true,
-	byteStreamPath: true,
-	jsonStreamPath: true,
-	textStreamPath: true,
+	sysDatePath:  true,
+	endpointPath: true,
+	faviconPath:  true,
+	echoPath:     true,
 }
 
 const (
