@@ -118,10 +118,8 @@ Intercept and preprocess requests
     func main() {
     	s := wine.NewServer()
     
-    	//Create "accounts" group
-    	<b>g := s.Group("accounts")</b>
-    	//Use CheckSessionID to process all requests in this route group
-    	<b>g.Use(CheckSessionID)</b>
+    	//Create "accounts" group and add interceptor CheckSessionID
+    	<b>g := s.Group("accounts").Use(CheckSessionID)</b>
     	g.Get("{user_id}/profile", GetUserProfile)
     	g.Get("{user_id}/friends/{page}/{size}", GetUserFriends)
     
