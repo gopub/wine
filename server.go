@@ -292,23 +292,16 @@ func (s *Server) logHTTP(rw http.ResponseWriter, req *http.Request, startAt time
 }
 
 func (s *Server) handleOptions(ctx context.Context, req *Request, next Invoker) Responder {
-	path := req.NormalizedPath()
-	var allowedMethods []string
-	for routeMethod := range s.Router.methodToRoot {
-		if handlers, _ := s.match(routeMethod, path); handlers != nil && handlers.Len() > 0 {
-			allowedMethods = append(allowedMethods, routeMethod)
-		}
-	}
-
-	if len(allowedMethods) > 0 {
-		allowedMethods = append(allowedMethods, http.MethodOptions)
+	methods := s.matchMethods(req.NormalizedPath())
+	if len(methods) > 0 {
+		methods = append(methods, http.MethodOptions)
 	}
 
 	return ResponderFunc(func(ctx context.Context, rw http.ResponseWriter) {
-		if len(allowedMethods) > 0 {
-			val := []string{strings.Join(allowedMethods, ",")}
-			rw.Header()["Allow"] = val
-			rw.Header()["Access-Control-Allow-Methods"] = val
+		if len(methods) > 0 {
+			joined := []string{strings.Join(methods, ",")}
+			rw.Header()["Allow"] = joined
+			rw.Header()["Access-Control-Allow-Methods"] = joined
 			rw.WriteHeader(http.StatusNoContent)
 		} else {
 			rw.WriteHeader(http.StatusNotFound)

@@ -121,6 +121,16 @@ func (r *Router) match(method string, path string) (*list.List, map[string]strin
 	return m.Handlers(), unescapedParams
 }
 
+func (r *Router) matchMethods(path string) []string {
+	var methods []string
+	for m := range r.methodToRoot {
+		if handlers, _ := r.match(m, path); handlers != nil && handlers.Len() > 0 {
+			methods = append(methods, m)
+		}
+	}
+	return methods
+}
+
 // Bind binds method, path with handlers
 func (r *Router) Bind(method, path string, handlers ...Handler) {
 	if path == "" {
