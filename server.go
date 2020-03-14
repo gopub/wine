@@ -16,8 +16,6 @@ import (
 	"github.com/gopub/wine/internal/template"
 )
 
-var acceptEncodings = []string{"gzip", "deflate"}
-
 const (
 	sysDatePath  = "_sys/date"
 	endpointPath = "_debug/endpoints"
@@ -196,12 +194,9 @@ func (s *Server) wrapResponseWriter(rw http.ResponseWriter, req *http.Request) h
 	}
 
 	enc := req.Header.Get("Accept-Encoding")
-	if gox.IndexOfString(acceptEncodings, enc) < 0 {
-		return w
-	}
 	cw, err := io.NewCompressResponseWriter(w, enc)
 	if err != nil {
-		log.Errorf("NewCompressResponseWriter: %v", err)
+		log.Warnf("NewCompressResponseWriter: %v", err)
 		return w
 	}
 	return cw
