@@ -5,14 +5,14 @@ import (
 )
 
 type templateManager struct {
-	templates     []*template.Template
-	templateFuncs template.FuncMap
+	templates []*template.Template
+	funcMap   template.FuncMap
 }
 
 func newTemplateManager() *templateManager {
 	return &templateManager{
-		templates:     make([]*template.Template, 0),
-		templateFuncs: make(template.FuncMap),
+		templates: make([]*template.Template, 0),
+		funcMap:   make(template.FuncMap),
 	}
 }
 
@@ -39,23 +39,23 @@ func (m *templateManager) AddTextTemplate(name string, texts ...string) {
 
 // AddTemplate adds a template
 func (m *templateManager) AddTemplate(tmpl *template.Template) {
-	if m.templateFuncs != nil {
-		tmpl.Funcs(m.templateFuncs)
+	if m.funcMap != nil {
+		tmpl.Funcs(m.funcMap)
 	}
 	m.templates = append(m.templates, tmpl)
 }
 
 // AddTemplateFuncMap adds template functions
 func (m *templateManager) AddTemplateFuncMap(funcMap template.FuncMap) {
-	if funcMap == nil {
-		logger.Panic("funcMap is nil")
+	if len(funcMap) == 0 {
+		return
 	}
 
-	if m.templateFuncs == nil {
-		m.templateFuncs = funcMap
+	if m.funcMap == nil {
+		m.funcMap = funcMap
 	} else {
 		for name, f := range funcMap {
-			m.templateFuncs[name] = f
+			m.funcMap[name] = f
 		}
 	}
 

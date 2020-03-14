@@ -24,19 +24,20 @@ type HeaderBuilder interface {
 }
 
 type Client struct {
-	client              *http.Client
-	header              http.Header
-	HeaderBuilder       HeaderBuilder
-	RequestLogging      bool
-	ResultModelDisabled bool
+	client         *http.Client
+	header         http.Header
+	HeaderBuilder  HeaderBuilder
+	RequestLogging bool
+	UseResultModel bool
 }
 
 var DefaultClient = NewClient(http.DefaultClient)
 
 func NewClient(client *http.Client) *Client {
 	return &Client{
-		client: client,
-		header: make(http.Header),
+		client:         client,
+		header:         make(http.Header),
+		UseResultModel: true,
 	}
 }
 
@@ -150,7 +151,7 @@ func (c *Client) Do(req *http.Request, result interface{}) error {
 		if err == context.DeadlineExceeded {
 			err = gox.NewError(http.StatusRequestTimeout, err.Error())
 		} else {
-			if ep, ok := err.(timeoutReporter); ok && ep.Timeout() {
+			if tr, ok := err.(timeoutReporter); ok && tr.Timeout() {
 				err = gox.NewError(http.StatusRequestTimeout, err.Error())
 			} else {
 				err = gox.NewError(StatusTransportFailed, err.Error())
@@ -158,7 +159,7 @@ func (c *Client) Do(req *http.Request, result interface{}) error {
 		}
 		return fmt.Errorf("do request: %w", err)
 	}
-	return ParseResult(resp, result, !c.ResultModelDisabled)
+	return ParseResult(resp, result, !c.UseResultModel)
 }
 
 func (c *Client) dumpRequest(req *http.Request) {
