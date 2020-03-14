@@ -48,28 +48,28 @@ func (r *Request) Authorization() string {
 // Bearer returns bearer token in header
 func (r *Request) Bearer() string {
 	s := r.Authorization()
-	strs := strings.Split(s, " ")
-	if len(strs) != 2 {
+	l := strings.Split(s, " ")
+	if len(l) != 2 {
 		return ""
 	}
-	if strs[0] == "Bearer" {
-		return strs[1]
+	if l[0] == "Bearer" {
+		return l[1]
 	}
 	return ""
 }
 
 func (r *Request) BasicAccount() (user string, password string) {
 	s := r.Authorization()
-	strs := strings.Split(s, " ")
-	if len(strs) != 2 {
+	l := strings.Split(s, " ")
+	if len(l) != 2 {
 		return
 	}
-	if strs[0] != "Basic" {
+	if l[0] != "Basic" {
 		return
 	}
-	b, err := base64.StdEncoding.DecodeString(strs[1])
+	b, err := base64.StdEncoding.DecodeString(l[1])
 	if err != nil {
-		logger.Errorf("Decode base64 string %s: %v", strs[1], err)
+		logger.Errorf("Decode base64 string %s: %v", l[1], err)
 		return
 	}
 	userAndPass := strings.Split(string(b), ":")

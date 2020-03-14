@@ -206,7 +206,7 @@ func (r *Router) StaticFS(path string, fs http.FileSystem) {
 	})
 }
 
-// Get binds funcList to path with GET method
+// Any binds funcList to path with any(wildcard) method
 func (r *Router) Any(path string, funcList ...HandlerFunc) {
 	if path == "" {
 		logger.Panic("Empty path")

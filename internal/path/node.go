@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	"github.com/gopub/gox"
-
 	"github.com/gopub/log"
 )
 

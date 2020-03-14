@@ -139,20 +139,20 @@ func handlerListToString(l *list.List) string {
 }
 
 func shortenFilename(filename string) string {
+	var trimmed string
 	if len(log.PackagePath) > 0 {
-		filename = strings.TrimPrefix(filename, log.PackagePath)
+		trimmed = strings.TrimPrefix(filename, log.PackagePath)
 	} else {
 		start := strings.Index(filename, log.GoSrc)
 		if start > 0 {
 			start += len(log.GoSrc)
-			filename = filename[start:]
+			trimmed = filename[start:]
 		}
 	}
 
-	names := strings.Split(filename, "/")
-	for i := 0; i < len(names)-1; i++ {
-		names[i] = names[i][0:1]
+	l := strings.Split(trimmed, "/")
+	for i := 0; i < len(l)-1; i++ {
+		l[i] = l[i][0:1]
 	}
-	filename = strings.Join(names, "/")
-	return filename
+	return strings.Join(l, "/")
 }

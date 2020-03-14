@@ -98,7 +98,7 @@ func NewJSONHandler(serve func(context.Context, JSONWriteCloser)) wine.Handler {
 		logger.Debugf("Start")
 		defer logger.Debugf("Closed")
 		w := wine.GetResponseWriter(ctx)
-		w.Header().Set(mime.ContentType, mime.JSON+charsetSuffix)
+		w.Header().Set(mime.ContentType, mime.JSON_UTF8)
 		done := make(chan interface{})
 		jw := newJSONWriteCloser(w, done)
 		err := jw.Write(Greeting)

@@ -7,12 +7,10 @@ import (
 	"time"
 
 	"github.com/gopub/log"
-	"github.com/gopub/wine/mime"
 )
 
 const (
-	Greeting      = "WINE"
-	charsetSuffix = "; " + mime.CharsetUTF8
+	Greeting = "WINE"
 )
 
 func InstallDebugRotes(r *wine.Router) {

@@ -13,14 +13,6 @@ import (
 	"github.com/gopub/wine/mime"
 )
 
-const (
-	charsetSuffix = "; " + mime.CharsetUTF8
-	ctPlain       = mime.Plain + charsetSuffix
-	ctHTML        = mime.HTML + charsetSuffix
-	ctJSON        = mime.JSON + charsetSuffix
-	ctXML         = mime.XML + charsetSuffix
-)
-
 // Responder interface is used by Wine server to write response to the client
 type Responder interface {
 	// Respond will be called to write status/body to http response writer
@@ -134,7 +126,7 @@ func Redirect(location string, permanent bool) Responder {
 // Text sends a text response
 func Text(status int, text string) Responder {
 	header := make(http.Header)
-	header.Set(mime.ContentType, ctPlain)
+	header.Set(mime.ContentType, mime.Plain_UTF8)
 	return &Response{
 		status: status,
 		header: header,
@@ -145,7 +137,7 @@ func Text(status int, text string) Responder {
 // HTML creates a HTML response
 func HTML(status int, html string) Responder {
 	header := make(http.Header)
-	header.Set(mime.ContentType, ctHTML)
+	header.Set(mime.ContentType, mime.HTML_UTF8)
 	return &Response{
 		status: status,
 		header: header,
@@ -156,7 +148,7 @@ func HTML(status int, html string) Responder {
 // JSON creates a application/json response
 func JSON(status int, value interface{}) Responder {
 	header := make(http.Header)
-	header.Set(mime.ContentType, ctJSON)
+	header.Set(mime.ContentType, mime.JSON_UTF8)
 	return &Response{
 		status: status,
 		header: header,
