@@ -6,7 +6,8 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/gopub/gox"
+	"github.com/gopub/types"
+
 	"github.com/gopub/wine/internal/io"
 	"github.com/gopub/wine/internal/path"
 	"github.com/gopub/wine/mime"
@@ -15,7 +16,7 @@ import (
 // Request is a wrapper of http.Request, aims to provide more convenient interface
 type Request struct {
 	request     *http.Request
-	params      gox.M
+	params      types.M
 	body        []byte
 	contentType string
 }
@@ -26,7 +27,7 @@ func (r *Request) Request() *http.Request {
 }
 
 // Params returns request parameters
-func (r *Request) Params() gox.M {
+func (r *Request) Params() types.M {
 	return r.params
 }
 
@@ -83,7 +84,7 @@ func (r *Request) NormalizedPath() string {
 	return path.NormalizeRequestPath(r.request)
 }
 
-func parseRequest(r *http.Request, maxMem gox.ByteUnit) (*Request, error) {
+func parseRequest(r *http.Request, maxMem types.ByteUnit) (*Request, error) {
 	params, body, err := io.ReadRequest(r, maxMem)
 	if err != nil {
 		return nil, fmt.Errorf("read request: %w", err)

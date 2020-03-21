@@ -10,7 +10,8 @@ import (
 	"net/http/httputil"
 	"net/url"
 
-	"github.com/gopub/gox"
+	"github.com/gopub/types"
+
 	"github.com/gopub/log"
 	"github.com/gopub/wine/mime"
 )
@@ -149,12 +150,12 @@ func (c *Client) Do(req *http.Request, result interface{}) error {
 	resp, err := c.client.Do(req)
 	if err != nil {
 		if err == context.DeadlineExceeded {
-			err = gox.NewError(http.StatusRequestTimeout, err.Error())
+			err = types.NewError(http.StatusRequestTimeout, err.Error())
 		} else {
 			if tr, ok := err.(timeoutReporter); ok && tr.Timeout() {
-				err = gox.NewError(http.StatusRequestTimeout, err.Error())
+				err = types.NewError(http.StatusRequestTimeout, err.Error())
 			} else {
-				err = gox.NewError(StatusTransportFailed, err.Error())
+				err = types.NewError(StatusTransportFailed, err.Error())
 			}
 		}
 		return fmt.Errorf("do request: %w", err)

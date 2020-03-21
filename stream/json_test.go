@@ -8,7 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gopub/gox"
+	"github.com/google/go-cmp/cmp"
+
 	"github.com/gopub/wine"
 	"github.com/gopub/wine/stream"
 	"github.com/stretchr/testify/assert"
@@ -69,5 +70,5 @@ func TestJSONStream(t *testing.T) {
 	}
 	err = s.Shutdown()
 	assert.NoError(t, err)
-	require.Empty(t, gox.Diff(packets, res))
+	require.Empty(t, cmp.Diff(packets, res))
 }

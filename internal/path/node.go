@@ -4,7 +4,8 @@ import (
 	"container/list"
 	"strings"
 
-	"github.com/gopub/gox"
+	"github.com/gopub/types"
+
 	"github.com/gopub/log"
 )
 
@@ -135,7 +136,7 @@ func (n *Node) SetHandlers(l *list.List) {
 	n.handlers = l
 }
 
-func (n *Node) Conflict(node *Node) *gox.Pair {
+func (n *Node) Conflict(node *Node) *types.Pair {
 	if n.typ != node.typ {
 		return nil
 	}
@@ -147,20 +148,20 @@ func (n *Node) Conflict(node *Node) *gox.Pair {
 		}
 
 		if n.IsEndpoint() && node.IsEndpoint() {
-			return &gox.Pair{
+			return &types.Pair{
 				First:  n,
 				Second: node,
 			}
 		}
 	case ParamNode:
 		if n.IsEndpoint() && node.IsEndpoint() {
-			return &gox.Pair{
+			return &types.Pair{
 				First:  n,
 				Second: node,
 			}
 		}
 	case WildcardNode:
-		return &gox.Pair{
+		return &types.Pair{
 			First:  n,
 			Second: node,
 		}

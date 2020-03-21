@@ -7,7 +7,8 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/gopub/gox"
+	"github.com/gopub/types"
+
 	"github.com/gopub/log"
 	"github.com/gopub/wine"
 	"github.com/gopub/wine/api"
@@ -76,7 +77,7 @@ func NewJSONReader(client *http.Client, req *http.Request) (JSONReadCloser, erro
 		if err != nil {
 			return nil, fmt.Errorf("parse result: %w", err)
 		}
-		return nil, gox.NewError(resp.StatusCode, "unknown error")
+		return nil, types.NewError(resp.StatusCode, "unknown error")
 	}
 	r := newJSONReadCloser(resp.Body)
 	var greeting interface{}

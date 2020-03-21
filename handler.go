@@ -11,7 +11,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gopub/gox"
+	"github.com/gopub/types"
+
 	"github.com/gopub/log"
 	"github.com/gopub/wine/internal/resource"
 	"github.com/gopub/wine/mime"
@@ -89,7 +90,7 @@ func handleEcho(ctx context.Context, req *Request, next Invoker) Responder {
 func handleDate(ctx context.Context, req *Request, next Invoker) Responder {
 	ts := req.Params().DefaultInt64("timestamp", time.Now().Unix())
 	t := time.Unix(ts, 0)
-	res := gox.M{
+	res := types.M{
 		"timestamp": t.Unix(),
 		"time":      t.Format("15:04:05"),
 		"date":      t.Format("2006-01-02"),

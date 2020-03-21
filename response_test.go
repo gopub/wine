@@ -11,7 +11,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gopub/gox"
+	"github.com/google/go-cmp/cmp"
+	"github.com/google/uuid"
 	"github.com/gopub/wine"
 	"github.com/gopub/wine/mime"
 	"github.com/stretchr/testify/assert"
@@ -75,7 +76,7 @@ func TestJSON(t *testing.T) {
 
 	t.Run("Struct", func(t *testing.T) {
 		v := &Item{
-			String:  gox.UniqueID64(),
+			String:  uuid.New().String(),
 			Integer: rand.Int(),
 			Float:   rand.Float32(),
 			Array:   []int{rand.Int(), rand.Int()},
@@ -91,6 +92,6 @@ func TestJSON(t *testing.T) {
 		err := json.NewDecoder(resp.Body).Decode(&result)
 		resp.Body.Close()
 		require.NoError(t, err)
-		require.Empty(t, gox.Diff(v, result))
+		require.Empty(t, cmp.Diff(v, result))
 	})
 }

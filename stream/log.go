@@ -7,7 +7,8 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/gopub/gox"
+	"github.com/gopub/types"
+
 	"github.com/gopub/log"
 	"github.com/gopub/wine"
 	"github.com/gopub/wine/mime"
@@ -15,7 +16,7 @@ import (
 
 type logResponseWriter struct {
 	w    http.ResponseWriter
-	done chan gox.Void
+	done chan types.Void
 	err  error
 }
 
@@ -26,7 +27,7 @@ func (w *logResponseWriter) Write(data []byte) (int, error) {
 	n, err := w.w.Write(data)
 	if err != nil {
 		w.err = err
-		w.done <- gox.Void{}
+		w.done <- types.Void{}
 		return n, err
 	}
 	if flusher, ok := w.w.(http.Flusher); ok {
@@ -35,7 +36,7 @@ func (w *logResponseWriter) Write(data []byte) (int, error) {
 	if e, ok := w.w.(interface{ Error() error }); ok {
 		if e.Error() != nil {
 			w.err = e.Error()
-			w.done <- gox.Void{}
+			w.done <- types.Void{}
 			return 0, w.err
 		}
 	}
@@ -47,7 +48,7 @@ func Log(ctx context.Context, req *wine.Request, next wine.Invoker) wine.Respond
 		w.Header().Set(mime.ContentType, mime.JSON_UTF8)
 		o := &logResponseWriter{
 			w:    w,
-			done: make(chan gox.Void),
+			done: make(chan types.Void),
 		}
 		_, err := o.Write([]byte(strings.Repeat("-", 80) + "\n"))
 		if err != nil {

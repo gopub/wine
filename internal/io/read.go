@@ -9,12 +9,12 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/gopub/gox"
+	"github.com/gopub/types"
 	"github.com/gopub/wine/mime"
 )
 
-func ReadRequest(req *http.Request, maxMemory gox.ByteUnit) (gox.M, []byte, error) {
-	params := gox.M{}
+func ReadRequest(req *http.Request, maxMemory types.ByteUnit) (types.M, []byte, error) {
+	params := types.M{}
 	params.AddMap(ReadCookies(req.Cookies()))
 	params.AddMap(ReadHeader(req.Header))
 	params.AddMap(ReadValues(req.URL.Query()))
@@ -26,16 +26,16 @@ func ReadRequest(req *http.Request, maxMemory gox.ByteUnit) (gox.M, []byte, erro
 	return params, body, nil
 }
 
-func ReadCookies(cookies []*http.Cookie) gox.M {
-	params := gox.M{}
+func ReadCookies(cookies []*http.Cookie) types.M {
+	params := types.M{}
 	for _, c := range cookies {
 		params[c.Name] = c.Value
 	}
 	return params
 }
 
-func ReadHeader(h http.Header) gox.M {
-	params := gox.M{}
+func ReadHeader(h http.Header) types.M {
+	params := types.M{}
 	for k, v := range h {
 		k = strings.ToLower(k)
 		if strings.HasPrefix(k, "x-") {
@@ -47,8 +47,8 @@ func ReadHeader(h http.Header) gox.M {
 	return params
 }
 
-func ReadValues(values url.Values) gox.M {
-	m := gox.M{}
+func ReadValues(values url.Values) types.M {
+	m := types.M{}
 	for k, v := range values {
 		i := strings.Index(k, "[]")
 		if i >= 0 && i == len(k)-2 {
@@ -68,9 +68,9 @@ func ReadValues(values url.Values) gox.M {
 	return m
 }
 
-func ReadBody(req *http.Request, maxMemory gox.ByteUnit) (gox.M, []byte, error) {
+func ReadBody(req *http.Request, maxMemory types.ByteUnit) (types.M, []byte, error) {
 	typ := mime.GetContentType(req.Header)
-	params := gox.M{}
+	params := types.M{}
 	switch typ {
 	case mime.HTML, mime.Plain:
 		body, err := ioutil.ReadAll(req.Body)

@@ -4,16 +4,16 @@ import (
 	"context"
 	"html/template"
 	"net/http"
-
-	"github.com/gopub/gox"
 )
+
+type ContextKey string
 
 // Context keys
 const (
-	CKBasicAuthUser      gox.ContextKey = "wine_basic_auth_user"
-	CKHTTPResponseWriter gox.ContextKey = "wine_http_resp_writer"
-	CKTemplates          gox.ContextKey = "wine_templates"
-	CKSessionID          gox.ContextKey = "wine_sid"
+	CKBasicAuthUser      ContextKey = "basic_auth_user"
+	CKHTTPResponseWriter ContextKey = "http_resp_writer"
+	CKTemplates          ContextKey = "templates"
+	CKSessionID          ContextKey = "sid"
 )
 
 func GetSessionID(ctx context.Context) string {

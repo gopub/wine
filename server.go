@@ -9,7 +9,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gopub/gox"
+	"github.com/google/uuid"
+
+	"github.com/gopub/types"
+
 	"github.com/gopub/gox/env"
 	"github.com/gopub/log"
 	"github.com/gopub/wine/internal/io"
@@ -43,7 +46,7 @@ type Server struct {
 	sessionTTL  time.Duration
 	sessionName string
 
-	maxRequestMemory   gox.ByteUnit
+	maxRequestMemory   types.ByteUnit
 	Header             http.Header
 	Timeout            time.Duration
 	BeginHandler       Handler
@@ -67,7 +70,7 @@ func NewServer() *Server {
 	s := &Server{
 		sessionName:        env.String("wine.session.name", "wsessionid"),
 		sessionTTL:         env.Duration("wine.session.ttl", defaultSessionTTL),
-		maxRequestMemory:   gox.ByteUnit(env.SizeInBytes("wine.max_memory", int(8*gox.MB))),
+		maxRequestMemory:   types.ByteUnit(env.SizeInBytes("wine.max_memory", int(8*types.MB))),
 		Router:             NewRouter(),
 		templateManager:    newTemplateManager(),
 		Header:             header,
@@ -231,7 +234,7 @@ func (s *Server) initSession(rw http.ResponseWriter, req *http.Request) string {
 	}
 
 	if sid == "" {
-		sid = gox.UniqueID40()
+		sid = strings.ReplaceAll(uuid.New().String(), "-", "")
 	}
 
 	cookie := &http.Cookie{

@@ -3,8 +3,9 @@ package stream
 import (
 	"context"
 	"fmt"
-	"github.com/gopub/wine"
 	"time"
+
+	"github.com/gopub/wine"
 
 	"github.com/gopub/log"
 )
