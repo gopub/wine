@@ -161,7 +161,9 @@ func (s *Server) serve(ctx context.Context, req *Request, rw http.ResponseWriter
 	method := strings.ToUpper(req.Request().Method)
 	var invokers *invokerList
 	handlers, params := s.match(method, path)
-	req.params.AddMapObj(params)
+	for k, v := range params {
+		req.params[k] = v
+	}
 	if handlers != nil && handlers.Len() > 0 {
 		invokers = newInvokerList(handlers)
 	} else {
