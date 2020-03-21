@@ -10,11 +10,9 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-
-	"github.com/gopub/types"
-
-	"github.com/gopub/gox/env"
+	"github.com/gopub/environ"
 	"github.com/gopub/log"
+	"github.com/gopub/types"
 	"github.com/gopub/wine/internal/io"
 	"github.com/gopub/wine/internal/template"
 )
@@ -68,15 +66,15 @@ func NewServer() *Server {
 	header.Set("Server", "Wine")
 
 	s := &Server{
-		sessionName:        env.String("wine.session.name", "wsessionid"),
-		sessionTTL:         env.Duration("wine.session.ttl", defaultSessionTTL),
-		maxRequestMemory:   types.ByteUnit(env.SizeInBytes("wine.max_memory", int(8*types.MB))),
+		sessionName:        environ.String("wine.session.name", "wsessionid"),
+		sessionTTL:         environ.Duration("wine.session.ttl", defaultSessionTTL),
+		maxRequestMemory:   types.ByteUnit(environ.SizeInBytes("wine.max_memory", int(8*types.MB))),
 		Router:             NewRouter(),
 		templateManager:    newTemplateManager(),
 		Header:             header,
-		Timeout:            env.Duration("wine.timeout", 10*time.Second),
-		CompressionEnabled: env.Bool("wine.compression", true),
-		Recovery:           env.Bool("wine.recovery", true),
+		Timeout:            environ.Duration("wine.timeout", 10*time.Second),
+		CompressionEnabled: environ.Bool("wine.compression", true),
+		Recovery:           environ.Bool("wine.recovery", true),
 	}
 	if s.sessionTTL < minSessionTTL {
 		s.sessionTTL = minSessionTTL
