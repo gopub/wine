@@ -6,42 +6,42 @@ import (
 	"net/http"
 )
 
-type ContextKey string
+type contextKey int
 
 // Context keys
 const (
-	CKBasicAuthUser      ContextKey = "basic_auth_user"
-	CKHTTPResponseWriter ContextKey = "http_resp_writer"
-	CKTemplates          ContextKey = "templates"
-	CKSessionID          ContextKey = "sid"
+	ckBasicAuthUser contextKey = iota + 1
+	ckHTTPResponseWriter
+	ckTemplates
+	ckSessionID
 )
 
 func GetSessionID(ctx context.Context) string {
-	v := ctx.Value(CKSessionID)
+	v := ctx.Value(ckSessionID)
 	sid, _ := v.(string)
 	return sid
 }
 
 func withSessionID(ctx context.Context, sid string) context.Context {
-	return context.WithValue(ctx, CKSessionID, sid)
+	return context.WithValue(ctx, ckSessionID, sid)
 }
 
 // GetResponseWriter returns response writer from the context
 func GetResponseWriter(ctx context.Context) http.ResponseWriter {
-	rw, _ := ctx.Value(CKHTTPResponseWriter).(http.ResponseWriter)
+	rw, _ := ctx.Value(ckHTTPResponseWriter).(http.ResponseWriter)
 	return rw
 }
 
 func withResponseWriter(ctx context.Context, rw http.ResponseWriter) context.Context {
-	return context.WithValue(ctx, CKHTTPResponseWriter, rw)
+	return context.WithValue(ctx, ckHTTPResponseWriter, rw)
 }
 
 // GetTemplates returns templates in context
 func GetTemplates(ctx context.Context) []*template.Template {
-	v, _ := ctx.Value(CKTemplates).([]*template.Template)
+	v, _ := ctx.Value(ckTemplates).([]*template.Template)
 	return v
 }
 
 func withTemplate(ctx context.Context, templates []*template.Template) context.Context {
-	return context.WithValue(ctx, CKTemplates, templates)
+	return context.WithValue(ctx, ckTemplates, templates)
 }
