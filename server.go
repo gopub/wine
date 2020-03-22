@@ -47,7 +47,7 @@ type Server struct {
 	maxRequestMemory   types.ByteUnit
 	Header             http.Header
 	Timeout            time.Duration
-	BeginHandler       Handler
+	PreHandler         Handler
 	CompressionEnabled bool
 	Recovery           bool
 
@@ -153,6 +153,7 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 	parsedReq.params[s.sessionName] = sid
+	ctx = s.withRequestParams(ctx, parsedReq.params)
 	s.serve(ctx, parsedReq, rw)
 }
 
@@ -176,8 +177,8 @@ func (s *Server) serve(ctx context.Context, req *Request, rw http.ResponseWriter
 		}
 	}
 	var resp Responder
-	if s.BeginHandler != nil && !reservedPaths[path] {
-		resp = s.BeginHandler.HandleRequest(ctx, req, invokers.Invoke)
+	if s.PreHandler != nil && !reservedPaths[path] {
+		resp = s.PreHandler.HandleRequest(ctx, req, invokers.Invoke)
 	} else {
 		resp = invokers.Invoke(ctx, req)
 	}
@@ -255,6 +256,16 @@ func (s *Server) setupContext(ctx context.Context, rw http.ResponseWriter, sid s
 	ctx = withResponseWriter(ctx, rw)
 	ctx = withSessionID(ctx, sid)
 	return ctx, cancel
+}
+
+func (s *Server) withRequestParams(ctx context.Context, params types.M) context.Context {
+	if loc, _ := types.NewPointFromString(params.String("loc")); loc != nil {
+		ctx = WithLocation(ctx, loc)
+	}
+	if deviceID := params.String("device_id"); deviceID != "" {
+		ctx = WithDeviceID(ctx, deviceID)
+	}
+	return ctx
 }
 
 func (s *Server) closeWriter(w http.ResponseWriter) {
