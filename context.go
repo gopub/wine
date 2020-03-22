@@ -142,7 +142,7 @@ func WithLocation(ctx context.Context, location *types.Point) context.Context {
 	return context.WithValue(ctx, ckLocation, location)
 }
 
-func DetachedContext(ctx context.Context) context.Context {
+func DetachContext(ctx context.Context) context.Context {
 	newCtx := context.Background()
 	if t := GetTemplates(ctx); len(t) != 0 {
 		newCtx = withTemplate(ctx, t)
