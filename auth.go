@@ -28,7 +28,7 @@ func NewBasicAuthHandler(userToPassword map[string]string, realm string) Handler
 		a := req.Authorization()
 		for user, info := range userToAuthInfo {
 			if info == a {
-				ctx = context.WithValue(ctx, ckBasicAuthUser, user)
+				ctx = withBasicAuthUser(ctx, user)
 				return next(ctx, req)
 			}
 		}
