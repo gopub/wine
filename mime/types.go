@@ -4,18 +4,6 @@ import (
 	"net/http"
 )
 
-// gox
-//const (
-//	Text        = "text"
-//	Multipart   = "multipart"
-//	Application = "application"
-//	Message     = "message"
-//	Image       = "image"
-//	Audio       = "audio"
-//	Video       = "video"
-//)
-
-// subgox
 const (
 	Plain = "text/plain"
 	HTML  = "text/html"
@@ -45,10 +33,13 @@ const (
 	CharsetUTF8        = "charset=utf-8"
 
 	charsetSuffix = "; " + CharsetUTF8
-	Plain_UTF8    = Plain + charsetSuffix
-	HTML_UTF8     = HTML + charsetSuffix
-	JSON_UTF8     = JSON + charsetSuffix
-	XML_UTF8      = XML + charsetSuffix
+
+	PlainUTF8 = Plain + charsetSuffix
+
+	// Hope this style is better than HTMLUTF8, etc.
+	HtmlUTF8 = HTML + charsetSuffix
+	JsonUTF8 = JSON + charsetSuffix
+	XmlUTF8  = XML + charsetSuffix
 )
 
 func GetContentType(h http.Header) string {

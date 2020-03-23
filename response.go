@@ -126,7 +126,7 @@ func Redirect(location string, permanent bool) Responder {
 // Text sends a text response
 func Text(status int, text string) Responder {
 	header := make(http.Header)
-	header.Set(mime.ContentType, mime.Plain_UTF8)
+	header.Set(mime.ContentType, mime.PlainUTF8)
 	return &Response{
 		status: status,
 		header: header,
@@ -137,7 +137,7 @@ func Text(status int, text string) Responder {
 // HTML creates a HTML response
 func HTML(status int, html string) Responder {
 	header := make(http.Header)
-	header.Set(mime.ContentType, mime.HTML_UTF8)
+	header.Set(mime.ContentType, mime.HtmlUTF8)
 	return &Response{
 		status: status,
 		header: header,
@@ -148,7 +148,7 @@ func HTML(status int, html string) Responder {
 // JSON creates a application/json response
 func JSON(status int, value interface{}) Responder {
 	header := make(http.Header)
-	header.Set(mime.ContentType, mime.JSON_UTF8)
+	header.Set(mime.ContentType, mime.JsonUTF8)
 	return &Response{
 		status: status,
 		header: header,
