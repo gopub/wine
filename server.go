@@ -92,7 +92,7 @@ func (s *Server) Run(addr string) {
 		logger.Fatalf("Server is running")
 	}
 
-	logger.Info("Running at", addr, "...")
+	logger.Infof("Running at %s ...", addr)
 	s.server = &http.Server{Addr: addr, Handler: s}
 	err := s.server.ListenAndServe()
 	if err != nil {
@@ -139,7 +139,7 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	}
 	rw = s.wrapResponseWriter(rw, req)
 	defer s.closeWriter(rw)
-	defer s.logHTTP(rw, req, time.Now())
+	defer s.logRequest(req, rw, time.Now())
 
 	sid := s.initSession(rw, req)
 	ctx, cancel := s.setupContext(req.Context(), rw, sid)
@@ -277,7 +277,7 @@ func (s *Server) closeWriter(w http.ResponseWriter) {
 	}
 }
 
-func (s *Server) logHTTP(rw http.ResponseWriter, req *http.Request, startAt time.Time) {
+func (s *Server) logRequest(req *http.Request, rw http.ResponseWriter, startAt time.Time) {
 	status := 0
 	if w, ok := rw.(*io.ResponseWriter); ok {
 		status = w.Status()
@@ -288,7 +288,6 @@ func (s *Server) logHTTP(rw http.ResponseWriter, req *http.Request, startAt time
 		req.RequestURI,
 		status,
 		time.Since(startAt))
-
 	if status >= http.StatusBadRequest {
 		if status != http.StatusUnauthorized {
 			logger.Errorf("%s | %v | %v", info, req.Header, req.PostForm)
