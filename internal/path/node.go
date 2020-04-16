@@ -9,44 +9,44 @@ import (
 	"github.com/gopub/log"
 )
 
-type NodeType int
+type nodeType int
 
 const (
-	StaticNode   NodeType = 0 // /users
-	ParamNode    NodeType = 1 // /users/{id}
-	WildcardNode NodeType = 2 // /users/{id}/photos/*
+	staticNode   nodeType = iota // /users
+	paramNode                    // /users/{id}
+	wildcardNode                 // /users/{id}/photos/*
 )
 
-func (n NodeType) String() string {
+func (n nodeType) String() string {
 	switch n {
-	case StaticNode:
-		return "StaticNode"
-	case ParamNode:
-		return "ParamNode"
-	case WildcardNode:
-		return "WildcardNode"
+	case staticNode:
+		return "staticNode"
+	case paramNode:
+		return "paramNode"
+	case wildcardNode:
+		return "wildcardNode"
 	default:
 		return ""
 	}
 }
 
-func getNodeType(segment string) NodeType {
+func getNodeType(segment string) nodeType {
 	switch {
 	case IsStatic(segment):
-		return StaticNode
+		return staticNode
 	case IsParam(segment):
-		return ParamNode
+		return paramNode
 	case IsWildcard(segment):
-		return WildcardNode
+		return wildcardNode
 	default:
 		logger.Panicf("Invalid segment: %s" + segment)
 		// Suppress compiling error because compiler doesn't know logger.Panicf equals to built-in panic function
-		return WildcardNode
+		return wildcardNode
 	}
 }
 
 type Node struct {
-	typ       NodeType
+	typ       nodeType
 	path      string // E.g. /items/{id}
 	segment   string // E.g. items or {id}
 	paramName string // E.g. id
@@ -85,9 +85,9 @@ func NewNode(path, segment string) *Node {
 		handlers: list.New(),
 	}
 	switch n.typ {
-	case ParamNode:
+	case paramNode:
 		n.paramName = segment[1 : len(segment)-1]
-	case WildcardNode:
+	case wildcardNode:
 		n.segment = segment[1:]
 	default:
 		break
@@ -97,11 +97,11 @@ func NewNode(path, segment string) *Node {
 
 func NewEmptyNode() *Node {
 	return &Node{
-		typ: StaticNode,
+		typ: staticNode,
 	}
 }
 
-func (n *Node) Type() NodeType {
+func (n *Node) Type() nodeType {
 	return n.typ
 }
 
@@ -142,7 +142,7 @@ func (n *Node) Conflict(node *Node) *types.Pair {
 	}
 
 	switch n.typ {
-	case StaticNode:
+	case staticNode:
 		if n.segment != node.segment {
 			return nil
 		}
@@ -153,14 +153,14 @@ func (n *Node) Conflict(node *Node) *types.Pair {
 				Second: node,
 			}
 		}
-	case ParamNode:
+	case paramNode:
 		if n.IsEndpoint() && node.IsEndpoint() {
 			return &types.Pair{
 				First:  n,
 				Second: node,
 			}
 		}
-	case WildcardNode:
+	case wildcardNode:
 		return &types.Pair{
 			First:  n,
 			Second: node,
@@ -204,12 +204,12 @@ func (n *Node) Add(node *Node) {
 
 	// Mismatch: append new nodes
 	switch node.typ {
-	case StaticNode:
+	case staticNode:
 		n.children = append([]*Node{node}, n.children...)
-	case ParamNode:
+	case paramNode:
 		i := len(n.children) - 1
 		for i >= 0 {
-			if n.children[i].typ != WildcardNode {
+			if n.children[i].typ != wildcardNode {
 				break
 			}
 			i--
@@ -224,7 +224,7 @@ func (n *Node) Add(node *Node) {
 			copy(n.children[i+2:], n.children[i+1:])
 			n.children[i+1] = node
 		}
-	case WildcardNode:
+	case wildcardNode:
 		n.children = append(n.children, node)
 	default:
 		logger.Panicf("Invalid node type: %v", node.typ)
@@ -233,7 +233,7 @@ func (n *Node) Add(node *Node) {
 
 func (n *Node) Match(segments ...string) (*Node, map[string]string) {
 	if len(segments) == 0 {
-		if n.typ == WildcardNode {
+		if n.typ == wildcardNode {
 			return n, nil
 		}
 		return nil, nil
@@ -241,7 +241,7 @@ func (n *Node) Match(segments ...string) (*Node, map[string]string) {
 
 	first := segments[0]
 	switch n.typ {
-	case StaticNode:
+	case staticNode:
 		if n.segment != first {
 			return nil, nil
 		}
@@ -251,7 +251,7 @@ func (n *Node) Match(segments ...string) (*Node, map[string]string) {
 			}
 			// Perhaps some child nodes are wildcard Node which can match empty node
 			for _, child := range n.children {
-				if child.typ == WildcardNode {
+				if child.typ == wildcardNode {
 					return child, nil
 				}
 			}
@@ -266,7 +266,7 @@ func (n *Node) Match(segments ...string) (*Node, map[string]string) {
 				return match, params
 			}
 		}
-	case ParamNode:
+	case paramNode:
 		var match *Node
 		var params map[string]string
 		if len(segments) == 1 || (segments[1] == "" && n.IsEndpoint()) {
@@ -287,7 +287,7 @@ func (n *Node) Match(segments ...string) (*Node, map[string]string) {
 			params[n.paramName] = first
 			return match, params
 		}
-	case WildcardNode:
+	case wildcardNode:
 		if n.IsEndpoint() {
 			return n, nil
 		}

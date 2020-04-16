@@ -17,7 +17,7 @@ func NewBasicAuthHandler(userToPassword map[string]string, realm string) Handler
 
 	userToAuthInfo := make(map[string]string)
 	for user, password := range userToPassword {
-		if len(user) == 0 || len(password) == 0 {
+		if user == "" || password == "" {
 			log.Panic("Empty user or password")
 		}
 		info := user + ":" + password

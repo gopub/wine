@@ -16,9 +16,11 @@ type flusher interface {
 	Flush() error
 }
 
-var _ statusGetter = (*ResponseWriter)(nil)
-var _ http.Hijacker = (*ResponseWriter)(nil)
-var _ http.Flusher = (*ResponseWriter)(nil)
+var (
+	_ statusGetter  = (*ResponseWriter)(nil)
+	_ http.Hijacker = (*ResponseWriter)(nil)
+	_ http.Flusher  = (*ResponseWriter)(nil)
+)
 
 // ResponseWriter is a wrapper of http.ResponseWriter to make sure write status code only one time
 type ResponseWriter struct {

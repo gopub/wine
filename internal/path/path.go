@@ -15,15 +15,15 @@ func SetLogger(l *log.Logger) {
 }
 
 var (
-	_compactSlashRegexp = regexp.MustCompile(`/{2,}`)
-	_staticPathRegexp   = regexp.MustCompile(`^[^\\{\\}\\*]+$`)
-	_wildcardPathRegexp = regexp.MustCompile(`^*[0-9a-zA-Z_\\-]*$`)
-	_paramPathRegexp    = regexp.MustCompile(`^{([a-zA-Z][a-zA-Z_0-9]*|_[a-zA-Z_0-9]*[a-zA-Z0-9]+[a-zA-Z_0-9]*)}$`)
+	compactSlashRegexp = regexp.MustCompile(`/{2,}`)
+	staticPathRegexp   = regexp.MustCompile(`^[^\\{\\}\\*]+$`)
+	wildcardPathRegexp = regexp.MustCompile(`^*[0-9a-zA-Z_\\-]*$`)
+	paramPathRegexp    = regexp.MustCompile(`^{([a-zA-Z][a-zA-Z_0-9]*|_[a-zA-Z_0-9]*[a-zA-Z0-9]+[a-zA-Z_0-9]*)}$`)
 )
 
 func Normalize(p string) string {
-	p = _compactSlashRegexp.ReplaceAllString(p, "/")
-	if len(p) == 0 {
+	p = compactSlashRegexp.ReplaceAllString(p, "/")
+	if p == "" {
 		return p
 	}
 
@@ -38,21 +38,21 @@ func Normalize(p string) string {
 }
 
 func IsStatic(p string) bool {
-	return _staticPathRegexp.MatchString(p)
+	return staticPathRegexp.MatchString(p)
 }
 
 func IsWildcard(p string) bool {
-	if len(p) == 0 {
+	if p == "" {
 		return false
 	}
-	return _wildcardPathRegexp.MatchString(p)
+	return wildcardPathRegexp.MatchString(p)
 }
 
 func IsParam(p string) bool {
-	if len(p) == 0 {
+	if p == "" {
 		return false
 	}
-	return _paramPathRegexp.MatchString(p)
+	return paramPathRegexp.MatchString(p)
 }
 
 func NormalizeRequestPath(req *http.Request) string {

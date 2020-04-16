@@ -88,7 +88,7 @@ func GetAccessToken(ctx context.Context) string {
 }
 
 func WithAccessToken(ctx context.Context, token string) context.Context {
-	if len(token) == 0 {
+	if token == "" {
 		return ctx
 	}
 	return context.WithValue(ctx, ckAccessToken, token)
@@ -100,7 +100,7 @@ func GetRemoteAddr(ctx context.Context) string {
 }
 
 func WithRemoteAddr(ctx context.Context, addr string) context.Context {
-	if len(addr) == 0 {
+	if addr == "" {
 		return ctx
 	}
 	return context.WithValue(ctx, ckRemoteAddr, addr)
@@ -112,7 +112,7 @@ func GetDeviceID(ctx context.Context) string {
 }
 
 func WithDeviceID(ctx context.Context, deviceID string) context.Context {
-	if len(deviceID) == 0 {
+	if deviceID == "" {
 		return ctx
 	}
 	return context.WithValue(ctx, ckDeviceID, deviceID)
@@ -124,7 +124,7 @@ func GetTraceID(ctx context.Context) string {
 }
 
 func WithTraceID(ctx context.Context, traceID string) context.Context {
-	if len(traceID) == 0 {
+	if traceID == "" {
 		return ctx
 	}
 	return context.WithValue(ctx, ckTraceID, traceID)

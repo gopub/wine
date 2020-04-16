@@ -9,12 +9,12 @@ import (
 
 func TestNewNode(t *testing.T) {
 	n := NewNode("*", "*")
-	assert.Equal(t, WildcardNode, n.typ)
+	assert.Equal(t, wildcardNode, n.typ)
 	n = NewNode("*file", "*file")
-	assert.Equal(t, WildcardNode, n.typ)
+	assert.Equal(t, wildcardNode, n.typ)
 
 	n = NewNode("{a}", "{a}")
-	assert.Equal(t, ParamNode, n.typ)
+	assert.Equal(t, paramNode, n.typ)
 	assert.Equal(t, "a", n.paramName)
 }
 

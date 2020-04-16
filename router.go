@@ -137,7 +137,7 @@ func (r *Router) Bind(method, path string, handlers ...Handler) {
 		logger.Panic("Empty path")
 	}
 
-	if len(method) == 0 {
+	if method == "" {
 		logger.Panic("Empty method")
 	}
 
@@ -183,7 +183,7 @@ func (r *Router) StaticDir(path, dirPath string) {
 // StaticFS binds path to an abstract file system
 func (r *Router) StaticFS(path string, fs http.FileSystem) {
 	prefix := pathpkg.Normalize(r.basePath + "/" + path)
-	if len(prefix) == 0 {
+	if prefix == "" {
 		prefix = "/"
 	} else if prefix[0] != '/' {
 		prefix = "/" + prefix

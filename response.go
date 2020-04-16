@@ -209,7 +209,7 @@ func TemplateHTML(templates []*template.Template, templateName string, params in
 	return ResponderFunc(func(ctx context.Context, w http.ResponseWriter) {
 		for _, tmpl := range templates {
 			var err error
-			if len(templateName) == 0 {
+			if templateName == "" {
 				err = tmpl.Execute(w, params)
 			} else {
 				err = tmpl.ExecuteTemplate(w, templateName, params)
