@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/gopub/types"
-
 	"github.com/gopub/wine/internal/io"
 	"github.com/gopub/wine/internal/path"
 	"github.com/gopub/wine/mime"
