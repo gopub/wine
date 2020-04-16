@@ -4,10 +4,11 @@ go 1.13
 
 require (
 	github.com/fsnotify/fsnotify v1.4.9 // indirect
+	github.com/golang/geo v0.0.0-20200319012246-673a6f80352d // indirect
+	github.com/golang/protobuf v1.3.5 // indirect
 	github.com/google/go-cmp v0.4.0
 	github.com/google/uuid v1.1.1
 	github.com/gopub/environ v0.1.0
-	github.com/gopub/gox/v2 v2.0.1
 	github.com/gopub/log v1.2.0
 	github.com/gopub/types v0.1.1
 	github.com/mitchellh/mapstructure v1.2.2 // indirect
