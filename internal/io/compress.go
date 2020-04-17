@@ -9,9 +9,11 @@ import (
 	"net/http"
 )
 
-var _ statusGetter = (*CompressResponseWriter)(nil)
-var _ http.Hijacker = (*CompressResponseWriter)(nil)
-var _ http.Flusher = (*CompressResponseWriter)(nil)
+var (
+	_ statusGetter  = (*CompressResponseWriter)(nil)
+	_ http.Hijacker = (*CompressResponseWriter)(nil)
+	_ http.Flusher  = (*CompressResponseWriter)(nil)
+)
 
 type CompressResponseWriter struct {
 	*ResponseWriter
