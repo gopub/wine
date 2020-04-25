@@ -34,7 +34,7 @@ func NewRouter() *Router {
 func (r *Router) bindSysHandlers() {
 	r.Get(endpointPath, r.listEndpoints)
 	r.Get(sysDatePath, handleDate)
-	r.Any(echoPath, handleEcho)
+	r.Handle(echoPath, handleEcho)
 }
 
 func (r *Router) clone() *Router {
@@ -206,8 +206,8 @@ func (r *Router) StaticFS(path string, fs http.FileSystem) {
 	})
 }
 
-// Any binds funcList to path with any(wildcard) method
-func (r *Router) Any(path string, funcList ...HandlerFunc) {
+// Handle binds funcList to path with any(wildcard) method
+func (r *Router) Handle(path string, funcList ...HandlerFunc) {
 	if path == "" {
 		logger.Panic("Empty path")
 	}
