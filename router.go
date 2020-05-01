@@ -15,7 +15,7 @@ import (
 
 // Router implements routing function
 type Router struct {
-	anyRoot      *pathpkg.Node // Root for any methods
+	root         *pathpkg.Node
 	methodToRoot map[string]*pathpkg.Node
 	basePath     string
 	handlers     []Handler
@@ -24,7 +24,7 @@ type Router struct {
 // NewRouter new a Router
 func NewRouter() *Router {
 	r := &Router{
-		anyRoot:      pathpkg.NewEmptyNode(),
+		root:         pathpkg.NewEmptyNode(),
 		methodToRoot: make(map[string]*pathpkg.Node, 4),
 	}
 	r.bindSysHandlers()
@@ -39,7 +39,7 @@ func (r *Router) bindSysHandlers() {
 
 func (r *Router) clone() *Router {
 	nr := &Router{
-		anyRoot:      r.anyRoot,
+		root:         r.root,
 		methodToRoot: r.methodToRoot,
 		basePath:     r.basePath,
 	}
@@ -96,12 +96,12 @@ func (r *Router) match(method string, path string) (*list.List, map[string]strin
 
 	root := r.methodToRoot[method]
 	if root == nil {
-		root = r.anyRoot
+		root = r.root
 	}
 
 	m, params := root.Match(segments...)
-	if m == nil && root != r.anyRoot {
-		m, params = r.anyRoot.Match(segments...)
+	if m == nil && root != r.root {
+		m, params = r.root.Match(segments...)
 	}
 
 	if m == nil {
@@ -150,7 +150,7 @@ func (r *Router) Bind(method, path string, handlers ...Handler) {
 	hl := r.createHandlerList(handlers)
 	path = pathpkg.Normalize(r.basePath + "/" + path)
 	if path == "" {
-		if r.anyRoot.IsEndpoint() {
+		if r.root.IsEndpoint() {
 			logger.Panicf("Conflict: ANY, %s", r.basePath)
 		} else if root.IsEndpoint() {
 			logger.Panicf("Conflict: %s, %s", method, r.basePath)
@@ -159,7 +159,7 @@ func (r *Router) Bind(method, path string, handlers ...Handler) {
 		}
 	} else {
 		nodeList := pathpkg.NewNodeList(path, hl)
-		if pair := r.anyRoot.Conflict(nodeList); pair != nil {
+		if pair := r.root.Conflict(nodeList); pair != nil {
 			first := pair.First.(*pathpkg.Node).Path()
 			second := pair.Second.(*pathpkg.Node).Path()
 			logger.Panicf("Conflict: ANY %s, %s %s", first, method, second)
@@ -219,14 +219,14 @@ func (r *Router) Handle(path string, funcList ...HandlerFunc) {
 	hl := r.createHandlerList(handlers)
 	path = pathpkg.Normalize(r.basePath + "/" + path)
 	if path == "" {
-		if r.anyRoot.IsEndpoint() {
+		if r.root.IsEndpoint() {
 			logger.Panicf("Conflict: ANY, %s", r.basePath)
 		} else {
-			r.anyRoot.SetHandlers(hl)
+			r.root.SetHandlers(hl)
 		}
 	} else {
 		nodeList := pathpkg.NewNodeList(path, hl)
-		r.anyRoot.Add(nodeList)
+		r.root.Add(nodeList)
 	}
 }
 
@@ -318,7 +318,7 @@ func (r *Router) listEndpoints(ctx context.Context, req *Request, next Invoker) 
 			}
 		}
 	}
-	for _, node := range r.anyRoot.ListEndpoints() {
+	for _, node := range r.root.ListEndpoints() {
 		l = append(l, node)
 		nodeToMethod[node] = "*"
 		if n := len(node.Path()); n > maxLenOfPath {
