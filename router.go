@@ -4,6 +4,7 @@ import (
 	"container/list"
 	"context"
 	"fmt"
+	"log"
 	"net/http"
 	"net/url"
 	"reflect"
@@ -19,6 +20,7 @@ type Router struct {
 	methodToRoot map[string]*pathpkg.Node
 	basePath     string
 	handlers     []Handler
+	authHandler  Handler
 }
 
 // NewRouter new a Router
@@ -42,10 +44,24 @@ func (r *Router) clone() *Router {
 		root:         r.root,
 		methodToRoot: r.methodToRoot,
 		basePath:     r.basePath,
+		authHandler:  r.authHandler,
 	}
 	nr.handlers = make([]Handler, len(r.handlers))
 	copy(nr.handlers, r.handlers)
 	return nr
+}
+
+func (r *Router) SetAuthHandler(h Handler) {
+	r.authHandler = h
+}
+
+func (r *Router) Auth() *Router {
+	for _, h := range r.handlers {
+		if h == r.authHandler {
+			return r
+		}
+	}
+	return r.UseHandlers(r.authHandler)
 }
 
 // Group returns a new router whose basePath is r.basePath+path
@@ -67,6 +83,9 @@ func (r *Router) Group(path string) *Router {
 func (r *Router) UseHandlers(handlers ...Handler) *Router {
 	nr := r.clone()
 	for _, h := range handlers {
+		if h == nil {
+			log.Fatalf("Handler is nil")
+		}
 		found := false
 		for _, rh := range nr.handlers {
 			if equal(h, rh) {
