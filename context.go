@@ -2,6 +2,7 @@ package wine
 
 import (
 	"context"
+	"github.com/gopub/log"
 	"github.com/gopub/types"
 	"html/template"
 	"net/http"
@@ -144,6 +145,9 @@ func WithLocation(ctx context.Context, location *types.Point) context.Context {
 
 func DetachContext(ctx context.Context) context.Context {
 	newCtx := context.Background()
+	if l := log.FromContext(ctx); l != nil {
+		newCtx = log.BuildContext(newCtx, l)
+	}
 	if t := GetTemplates(ctx); len(t) != 0 {
 		newCtx = withTemplate(ctx, t)
 	}
