@@ -44,9 +44,9 @@ func StatusData(status int, data interface{}) wine.Responder {
 	return wine.JSON(status, val)
 }
 
-func ErrorMessage(code int, message string) wine.Responder {
+func Errorf(code int, msgFormat string, msgArgs ...interface{}) wine.Responder {
 	val := &Result{
-		Error: types.NewError(code, message),
+		Error: types.NewError(code, msgFormat, msgArgs...),
 	}
 	status := code
 	for status >= 1000 {
@@ -64,15 +64,15 @@ func Error(err error) wine.Responder {
 		err = u.Unwrap()
 	}
 	if e, ok := err.(messageCoder); ok {
-		return ErrorMessage(e.Code(), e.Message())
+		return Errorf(e.Code(), e.Message())
 	} else if e, ok := err.(coder); ok {
-		return ErrorMessage(e.Code(), err.Error())
+		return Errorf(e.Code(), err.Error())
 	} else if e, ok := err.(*types.Error); ok {
-		return ErrorMessage(e.Code, e.Message)
+		return Errorf(e.Code, e.Message)
 	} else if err == types.ErrNotExist {
-		return ErrorMessage(http.StatusNotFound, err.Error())
+		return Errorf(http.StatusNotFound, err.Error())
 	} else {
-		return ErrorMessage(http.StatusInternalServerError, err.Error())
+		return Errorf(http.StatusInternalServerError, err.Error())
 	}
 }
 
