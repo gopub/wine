@@ -64,7 +64,13 @@ func ReadValues(values url.Values) types.M {
 			m[k] = v[0]
 		}
 	}
-
+	if jsonBody := m.String("jsonbody"); jsonBody != "" {
+		var j types.M
+		err := json.Unmarshal([]byte(jsonBody), &j)
+		if err == nil {
+			return j
+		}
+	}
 	return m
 }
 
