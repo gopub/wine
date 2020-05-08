@@ -3,9 +3,10 @@ package api
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/gopub/log"
 	"net/http"
 	"net/url"
+
+	"github.com/gopub/log"
 
 	"github.com/gopub/types"
 	"github.com/gopub/wine"

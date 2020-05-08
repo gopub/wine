@@ -2,10 +2,11 @@ package wine
 
 import (
 	"context"
-	"github.com/gopub/log"
-	"github.com/gopub/types"
 	"html/template"
 	"net/http"
+
+	"github.com/gopub/log"
+	"github.com/gopub/types"
 )
 
 type contextKey int
