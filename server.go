@@ -9,7 +9,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/gopub/environ"
 	"github.com/gopub/log"
 	"github.com/gopub/types"
@@ -235,7 +234,7 @@ func (s *Server) initSession(rw http.ResponseWriter, req *http.Request) string {
 	}
 
 	if sid == "" {
-		sid = strings.ReplaceAll(uuid.New().String(), "-", "")
+		sid = NewUUID()
 	}
 
 	cookie := &http.Cookie{

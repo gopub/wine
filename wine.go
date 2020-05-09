@@ -1,8 +1,12 @@
 package wine
 
 import (
+	"github.com/google/uuid"
+	"path"
+	"strings"
+
 	"github.com/gopub/log"
-	"github.com/gopub/wine/internal/path"
+	pathpkg "github.com/gopub/wine/internal/path"
 )
 
 var logger *log.Logger
@@ -10,9 +14,19 @@ var logger *log.Logger
 func init() {
 	logger = log.Default().Derive("Wine")
 	logger.SetFlags(log.LstdFlags - log.Lfunction - log.Lshortfile)
-	path.SetLogger(logger)
+	pathpkg.SetLogger(logger)
 }
 
 func Logger() *log.Logger {
 	return logger
+}
+
+func JoinURL(segment ...string) string {
+	p := path.Join(segment...)
+	p = strings.Replace(p, ":/", "://", 1)
+	return p
+}
+
+func NewUUID() string {
+	return strings.ReplaceAll(uuid.New().String(), "-", "")
 }
