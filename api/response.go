@@ -30,6 +30,8 @@ type Result struct {
 	Data  interface{}  `json:"data"`
 }
 
+var OK = Data(nil)
+
 func Data(data interface{}) wine.Responder {
 	val := &Result{
 		Data: data,
