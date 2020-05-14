@@ -177,7 +177,7 @@ func (s *Server) serve(ctx context.Context, req *Request, rw http.ResponseWriter
 	}
 	var resp Responder
 	if s.PreHandler != nil && !reservedPaths[path] {
-		resp = s.PreHandler.HandleRequest(withInvoker(ctx, invokers.Invoke), req)
+		resp = s.PreHandler.HandleRequest(withNext(ctx, invokers.Invoke), req)
 	} else {
 		resp = invokers.Invoke(ctx, req)
 	}

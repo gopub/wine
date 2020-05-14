@@ -29,7 +29,7 @@ func NewBasicAuthHandler(userToPassword map[string]string, realm string) Handler
 		for user, info := range userToAuthInfo {
 			if info == a {
 				ctx = withBasicAuthUser(ctx, user)
-				return Next(ctx)(ctx, req)
+				return Next(ctx, req)
 			}
 		}
 		return RequireBasicAuth(realm)

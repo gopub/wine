@@ -75,7 +75,7 @@ Intercept and preprocess requests
     func Log(ctx context.Context, req *wine.Request) wine.Responder {
     	st := time.Now()  
     	//pass request to the next handler
-    	<b>result := wine.Next(ctx)(ctx, request)</b>
+    	<b>result := wine.Next(ctx, request)</b>
     	cost := float32((time.Since(st) / time.Microsecond)) / 1000.0
     	req := request.Request()
     	log.Printf("%.3fms %s %s", cost, req.Method, req.RequestURI)
@@ -99,7 +99,7 @@ Intercept and preprocess requests
     	if len(sid) == 0 {
     		return wine.JSON(map[string]interface{}{"error":"need sid"})
     	} else {
-    		return wine.Next(ctx)(ctx, request)
+    		return wine.Next(ctx, request)
     	}
     }
     

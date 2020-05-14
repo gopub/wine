@@ -27,13 +27,16 @@ const (
 	ckDeviceID
 )
 
-func Next(ctx context.Context) Invoker {
+func Next(ctx context.Context, req *Request) Responder {
 	i, _ := ctx.Value(ckNext).(Invoker)
-	return i
+	if i == nil {
+		return nil
+	}
+	return i(ctx, req)
 }
 
-func withInvoker(ctx context.Context, i Invoker) context.Context {
-	return context.WithValue(ctx, ckNext, i)
+func withNext(ctx context.Context, next Invoker) context.Context {
+	return context.WithValue(ctx, ckNext, next)
 }
 
 func GetBasicAuthUser(ctx context.Context) string {

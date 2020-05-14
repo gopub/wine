@@ -56,7 +56,7 @@ func (l *invokerList) Invoke(ctx context.Context, req *Request) Responder {
 	}
 	h := l.current.Value.(Handler)
 	l.current = l.current.Next()
-	ctx = withInvoker(ctx, l.Invoke)
+	ctx = withNext(ctx, l.Invoke)
 	return h.HandleRequest(ctx, req)
 }
 
