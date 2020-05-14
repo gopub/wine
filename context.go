@@ -25,6 +25,7 @@ const (
 	ckTraceID
 	ckUser
 	ckDeviceID
+	ckSudo
 )
 
 func Next(ctx context.Context, req *Request) Responder {
@@ -157,6 +158,15 @@ func WithLocation(ctx context.Context, location *types.Point) context.Context {
 	return context.WithValue(ctx, ckLocation, location)
 }
 
+func WithSudo(ctx context.Context) context.Context {
+	return context.WithValue(ctx, ckSudo, true)
+}
+
+func IsSudo(ctx context.Context) bool {
+	b, _ := ctx.Value(ckSudo).(bool)
+	return b
+}
+
 func DetachContext(ctx context.Context) context.Context {
 	newCtx := context.Background()
 	if l := log.FromContext(ctx); l != nil {
@@ -191,6 +201,9 @@ func DetachContext(ctx context.Context) context.Context {
 	}
 	if u := GetUser(ctx); u != nil {
 		newCtx = WithUser(newCtx, u)
+	}
+	if IsSudo(ctx) {
+		newCtx = WithSudo(newCtx)
 	}
 	return newCtx
 }
