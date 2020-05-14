@@ -94,7 +94,7 @@ func NewJSONReader(client *http.Client, req *http.Request) (JSONReadCloser, erro
 }
 
 func NewJSONHandler(serve func(context.Context, JSONWriteCloser)) wine.Handler {
-	return wine.HandlerFunc(func(ctx context.Context, req *wine.Request, next wine.Invoker) wine.Responder {
+	return wine.HandlerFunc(func(ctx context.Context, req *wine.Request) wine.Responder {
 		logger := log.FromContext(ctx)
 		logger.Debugf("Start")
 		defer logger.Debugf("Closed")

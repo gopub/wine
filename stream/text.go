@@ -141,7 +141,7 @@ func NewTextReader(client *http.Client, req *http.Request) (TextReadCloser, erro
 }
 
 func NewTextHandler(serve func(context.Context, TextWriteCloser)) wine.Handler {
-	return wine.HandlerFunc(func(ctx context.Context, req *wine.Request, next wine.Invoker) wine.Responder {
+	return wine.HandlerFunc(func(ctx context.Context, req *wine.Request) wine.Responder {
 		logger := log.FromContext(ctx)
 		logger.Debugf("Start")
 		defer logger.Debugf("Closed")

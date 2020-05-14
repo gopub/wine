@@ -16,10 +16,10 @@ import (
 func TestServerStatus(t *testing.T) {
 	server := wine.NewServer()
 	r := server.Router
-	r.Get("/ok", func(ctx context.Context, req *wine.Request, next wine.Invoker) wine.Responder {
+	r.Get("/ok", func(ctx context.Context, req *wine.Request) wine.Responder {
 		return wine.Status(http.StatusOK)
 	})
-	r.Get("/forbidden", func(ctx context.Context, req *wine.Request, next wine.Invoker) wine.Responder {
+	r.Get("/forbidden", func(ctx context.Context, req *wine.Request) wine.Responder {
 		return wine.Status(http.StatusForbidden)
 	})
 	addr := fmt.Sprintf("localhost:%d", rand.Int()%1000+8000)
@@ -48,13 +48,13 @@ func TestServerStatus(t *testing.T) {
 func TestServerMethod(t *testing.T) {
 	server := wine.NewServer()
 	r := server.Router
-	r.Get("/", func(ctx context.Context, req *wine.Request, next wine.Invoker) wine.Responder {
+	r.Get("/", func(ctx context.Context, req *wine.Request) wine.Responder {
 		return wine.Text(http.StatusOK, "GET")
 	})
-	r.Post("/", func(ctx context.Context, req *wine.Request, next wine.Invoker) wine.Responder {
+	r.Post("/", func(ctx context.Context, req *wine.Request) wine.Responder {
 		return wine.Text(http.StatusOK, "POST")
 	})
-	r.Put("/", func(ctx context.Context, req *wine.Request, next wine.Invoker) wine.Responder {
+	r.Put("/", func(ctx context.Context, req *wine.Request) wine.Responder {
 		return wine.Text(http.StatusOK, "PUT")
 	})
 	addr := fmt.Sprintf("localhost:%d", rand.Int()%1000+8000)

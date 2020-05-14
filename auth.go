@@ -24,12 +24,12 @@ func NewBasicAuthHandler(userToPassword map[string]string, realm string) Handler
 		userToAuthInfo[user] = "Basic " + base64.StdEncoding.EncodeToString([]byte(info))
 	}
 
-	return func(ctx context.Context, req *Request, next Invoker) Responder {
+	return func(ctx context.Context, req *Request) Responder {
 		a := req.Authorization()
 		for user, info := range userToAuthInfo {
 			if info == a {
 				ctx = withBasicAuthUser(ctx, user)
-				return next(ctx, req)
+				return Next(ctx)(ctx, req)
 			}
 		}
 		return RequireBasicAuth(realm)

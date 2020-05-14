@@ -145,7 +145,7 @@ func NewByteReader(client *http.Client, req *http.Request) (ByteReadCloser, erro
 }
 
 func NewByteHandler(serve func(context.Context, ByteWriteCloser)) wine.Handler {
-	return wine.HandlerFunc(func(ctx context.Context, req *wine.Request, next wine.Invoker) wine.Responder {
+	return wine.HandlerFunc(func(ctx context.Context, req *wine.Request) wine.Responder {
 		logger := log.FromContext(ctx)
 		logger.Debugf("Start")
 		defer logger.Debugf("Closed")

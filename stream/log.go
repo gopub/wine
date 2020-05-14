@@ -42,7 +42,7 @@ func (w *logResponseWriter) Write(data []byte) (int, error) {
 	return n, err
 }
 
-func Log(ctx context.Context, req *wine.Request, next wine.Invoker) wine.Responder {
+func Log(ctx context.Context, req *wine.Request) wine.Responder {
 	return wine.ResponderFunc(func(ctx context.Context, w http.ResponseWriter) {
 		w.Header().Set(mime.ContentType, mime.JsonUTF8)
 		o := &logResponseWriter{

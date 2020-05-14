@@ -189,7 +189,7 @@ func (r *Router) Bind(method, path string, handlers ...Handler) {
 
 // StaticFile binds path to a file
 func (r *Router) StaticFile(path, filePath string) {
-	r.Get(path, func(ctx context.Context, req *Request, next Invoker) Responder {
+	r.Get(path, func(ctx context.Context, req *Request) Responder {
 		return StaticFile(req.request, filePath)
 	})
 }
@@ -220,7 +220,7 @@ func (r *Router) StaticFS(path string, fs http.FileSystem) {
 	}
 
 	fileServer := http.StripPrefix(prefix, http.FileServer(fs))
-	r.Get(path, func(ctx context.Context, req *Request, next Invoker) Responder {
+	r.Get(path, func(ctx context.Context, req *Request) Responder {
 		return Handle(req.request, fileServer)
 	})
 }
@@ -324,7 +324,7 @@ func (r *Router) Print() {
 	}
 }
 
-func (r *Router) listEndpoints(ctx context.Context, req *Request, next Invoker) Responder {
+func (r *Router) listEndpoints(ctx context.Context, req *Request) Responder {
 	l := make(sortableNodeList, 0, 10)
 	maxLenOfPath := 0
 	nodeToMethod := make(map[*pathpkg.Node]string, 10)

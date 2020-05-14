@@ -19,15 +19,15 @@ import (
 
 // Handler defines interface for interceptor
 type Handler interface {
-	HandleRequest(ctx context.Context, req *Request, next Invoker) Responder
+	HandleRequest(ctx context.Context, req *Request) Responder
 }
 
 // HandlerFunc converts function into Handler
-type HandlerFunc func(ctx context.Context, req *Request, next Invoker) Responder
+type HandlerFunc func(ctx context.Context, req *Request) Responder
 
 // HandleRequest is an interface method required by Handler
-func (h HandlerFunc) HandleRequest(ctx context.Context, req *Request, next Invoker) Responder {
-	return h(ctx, req, next)
+func (h HandlerFunc) HandleRequest(ctx context.Context, req *Request) Responder {
+	return h(ctx, req)
 }
 
 func (h HandlerFunc) String() string {
@@ -56,11 +56,12 @@ func (l *invokerList) Invoke(ctx context.Context, req *Request) Responder {
 	}
 	h := l.current.Value.(Handler)
 	l.current = l.current.Next()
-	return h.HandleRequest(ctx, req, l.Invoke)
+	ctx = withInvoker(ctx, l.Invoke)
+	return h.HandleRequest(ctx, req)
 }
 
 // Some built-in handlers
-func handleFavIcon(ctx context.Context, req *Request, next Invoker) Responder {
+func handleFavIcon(ctx context.Context, req *Request) Responder {
 	return ResponderFunc(func(ctx context.Context, rw http.ResponseWriter) {
 		rw.Header()[mime.ContentType] = []string{"image/x-icon"}
 		rw.WriteHeader(http.StatusOK)
@@ -70,15 +71,15 @@ func handleFavIcon(ctx context.Context, req *Request, next Invoker) Responder {
 	})
 }
 
-func handleNotFound(ctx context.Context, req *Request, next Invoker) Responder {
+func handleNotFound(ctx context.Context, req *Request) Responder {
 	return Text(http.StatusNotFound, http.StatusText(http.StatusNotFound))
 }
 
-func handleNotImplemented(ctx context.Context, req *Request, next Invoker) Responder {
+func handleNotImplemented(ctx context.Context, req *Request) Responder {
 	return Text(http.StatusNotImplemented, http.StatusText(http.StatusNotImplemented))
 }
 
-func handleEcho(ctx context.Context, req *Request, next Invoker) Responder {
+func handleEcho(ctx context.Context, req *Request) Responder {
 	v, err := httputil.DumpRequest(req.request, true)
 	if err != nil {
 		return Text(http.StatusInternalServerError, err.Error())
@@ -86,7 +87,7 @@ func handleEcho(ctx context.Context, req *Request, next Invoker) Responder {
 	return Text(http.StatusOK, string(v))
 }
 
-func handleDate(ctx context.Context, req *Request, next Invoker) Responder {
+func handleDate(ctx context.Context, req *Request) Responder {
 	ts := req.Params().DefaultInt64("timestamp", time.Now().Unix())
 	t := time.Unix(ts, 0)
 	res := types.M{

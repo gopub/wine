@@ -45,7 +45,7 @@ func NewItemService() *ItemService {
 	return s
 }
 
-func (s *ItemService) Get(ctx context.Context, req *wine.Request, next wine.Invoker) wine.Responder {
+func (s *ItemService) Get(ctx context.Context, req *wine.Request) wine.Responder {
 	id := req.Params().Int64("id")
 	for _, v := range s.items {
 		if v.ID == id {
@@ -55,11 +55,11 @@ func (s *ItemService) Get(ctx context.Context, req *wine.Request, next wine.Invo
 	return wine.Status(http.StatusNotFound)
 }
 
-func (s *ItemService) List(ctx context.Context, req *wine.Request, next wine.Invoker) wine.Responder {
+func (s *ItemService) List(ctx context.Context, req *wine.Request) wine.Responder {
 	return wine.JSON(http.StatusOK, s.items)
 }
 
-func (s *ItemService) Create(ctx context.Context, req *wine.Request, next wine.Invoker) wine.Responder {
+func (s *ItemService) Create(ctx context.Context, req *wine.Request) wine.Responder {
 	s.counter++
 	v := new(Item)
 	v.ID = s.counter

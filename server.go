@@ -177,12 +177,12 @@ func (s *Server) serve(ctx context.Context, req *Request, rw http.ResponseWriter
 	}
 	var resp Responder
 	if s.PreHandler != nil && !reservedPaths[path] {
-		resp = s.PreHandler.HandleRequest(ctx, req, invokers.Invoke)
+		resp = s.PreHandler.HandleRequest(withInvoker(ctx, invokers.Invoke), req)
 	} else {
 		resp = invokers.Invoke(ctx, req)
 	}
 	if resp == nil {
-		resp = handleNotImplemented(ctx, req, nil)
+		resp = handleNotImplemented(ctx, req)
 	}
 	resp.Respond(ctx, rw)
 }
@@ -298,7 +298,7 @@ func (s *Server) logRequest(req *http.Request, rw http.ResponseWriter, startAt t
 	}
 }
 
-func (s *Server) handleOptions(ctx context.Context, req *Request, next Invoker) Responder {
+func (s *Server) handleOptions(ctx context.Context, req *Request) Responder {
 	methods := s.matchMethods(req.NormalizedPath())
 	if len(methods) > 0 {
 		methods = append(methods, http.MethodOptions)

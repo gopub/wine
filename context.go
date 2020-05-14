@@ -13,8 +13,9 @@ type contextKey int
 
 // Context keys
 const (
-	ckBasicAuthUser contextKey = iota + 1
+	ckNext contextKey = iota + 1
 	ckHTTPResponseWriter
+	ckBasicAuthUser
 	ckTemplates
 	ckSessionID
 	ckRemoteAddr
@@ -25,6 +26,15 @@ const (
 	ckUser
 	ckDeviceID
 )
+
+func Next(ctx context.Context) Invoker {
+	i, _ := ctx.Value(ckNext).(Invoker)
+	return i
+}
+
+func withInvoker(ctx context.Context, i Invoker) context.Context {
+	return context.WithValue(ctx, ckNext, i)
+}
 
 func GetBasicAuthUser(ctx context.Context) string {
 	user, _ := ctx.Value(ckBasicAuthUser).(string)
