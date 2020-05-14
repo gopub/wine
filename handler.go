@@ -61,7 +61,7 @@ func (l *invokerList) Invoke(ctx context.Context, req *Request) Responder {
 }
 
 // Some built-in handlers
-func handleFavIcon(ctx context.Context, req *Request) Responder {
+func handleFavIcon(_ context.Context, _ *Request) Responder {
 	return ResponderFunc(func(ctx context.Context, rw http.ResponseWriter) {
 		rw.Header()[mime.ContentType] = []string{"image/x-icon"}
 		rw.WriteHeader(http.StatusOK)
@@ -71,15 +71,15 @@ func handleFavIcon(ctx context.Context, req *Request) Responder {
 	})
 }
 
-func handleNotFound(ctx context.Context, req *Request) Responder {
+func handleNotFound(_ context.Context, _ *Request) Responder {
 	return Text(http.StatusNotFound, http.StatusText(http.StatusNotFound))
 }
 
-func handleNotImplemented(ctx context.Context, req *Request) Responder {
+func handleNotImplemented(_ context.Context, _ *Request) Responder {
 	return Text(http.StatusNotImplemented, http.StatusText(http.StatusNotImplemented))
 }
 
-func handleEcho(ctx context.Context, req *Request) Responder {
+func handleEcho(_ context.Context, req *Request) Responder {
 	v, err := httputil.DumpRequest(req.request, true)
 	if err != nil {
 		return Text(http.StatusInternalServerError, err.Error())
@@ -87,7 +87,7 @@ func handleEcho(ctx context.Context, req *Request) Responder {
 	return Text(http.StatusOK, string(v))
 }
 
-func handleDate(ctx context.Context, req *Request) Responder {
+func handleDate(_ context.Context, req *Request) Responder {
 	ts := req.Params().DefaultInt64("timestamp", time.Now().Unix())
 	t := time.Unix(ts, 0)
 	res := types.M{
