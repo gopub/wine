@@ -15,19 +15,19 @@ func NewBasicAuthHandler(userToPassword map[string]string, realm string) Handler
 		log.Panic("userToPassword is empty")
 	}
 
-	userToAuthInfo := make(map[string]string)
+	userToAuthorization := make(map[string]string)
 	for user, password := range userToPassword {
 		if user == "" || password == "" {
 			log.Panic("Empty user or password")
 		}
 		info := user + ":" + password
-		userToAuthInfo[user] = "Basic " + base64.StdEncoding.EncodeToString([]byte(info))
+		userToAuthorization[user] = "Basic " + base64.StdEncoding.EncodeToString([]byte(info))
 	}
 
 	return func(ctx context.Context, req *Request) Responder {
 		a := req.Authorization()
-		for user, info := range userToAuthInfo {
-			if info == a {
+		for user, auth := range userToAuthorization {
+			if auth == a {
 				ctx = withBasicAuthUser(ctx, user)
 				return Next(ctx, req)
 			}
