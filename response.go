@@ -43,14 +43,13 @@ var (
 // Response holds all the http response information
 // Value and headers except the status code can be modified before sent to the client
 type Response struct {
-	Responder
 	status int
 	header http.Header
 	value  interface{}
 }
 
 // Respond writes header and body to response writer w
-func (r *Response) Respond(ctx context.Context, w http.ResponseWriter) {
+func (r *Response) Respond(_ context.Context, w http.ResponseWriter) {
 	body, ok := r.value.([]byte)
 	if !ok {
 		body = r.getBytes()
