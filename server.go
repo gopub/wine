@@ -9,6 +9,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gopub/wine/internal/respond"
+
 	"github.com/gopub/environ"
 	"github.com/gopub/log"
 	"github.com/gopub/types"
@@ -38,7 +40,7 @@ const (
 // Server implements web server
 type Server struct {
 	*Router
-	*templateManager
+	*template.Manager
 	server      *http.Server
 	sessionTTL  time.Duration
 	sessionName string
@@ -69,7 +71,7 @@ func NewServer() *Server {
 		sessionTTL:         environ.Duration("wine.session.ttl", defaultSessionTTL),
 		maxRequestMemory:   types.ByteUnit(environ.SizeInBytes("wine.max_memory", int(8*types.MB))),
 		Router:             NewRouter(),
-		templateManager:    newTemplateManager(),
+		Manager:            template.NewManager(),
 		Header:             header,
 		Timeout:            environ.Duration("wine.timeout", 10*time.Second),
 		CompressionEnabled: environ.Bool("wine.compression", true),
@@ -78,9 +80,9 @@ func NewServer() *Server {
 	if s.sessionTTL < minSessionTTL {
 		s.sessionTTL = minSessionTTL
 	}
-	s.invokers.favicon = newInvokerList(toHandlerList(HandlerFunc(handleFavIcon)))
-	s.invokers.notfound = newInvokerList(toHandlerList(Status(http.StatusNotFound)))
-	s.invokers.options = newInvokerList(toHandlerList(HandlerFunc(s.handleOptions)))
+	s.invokers.favicon = toInvokerList(HandlerFunc(handleFavIcon))
+	s.invokers.notfound = toInvokerList(HandleResponder(Status(http.StatusNotFound)))
+	s.invokers.options = toInvokerList(HandlerFunc(s.handleOptions))
 	s.AddTemplateFuncMap(template.FuncMap)
 	return s
 }
@@ -251,7 +253,7 @@ func (s *Server) initSession(rw http.ResponseWriter, req *http.Request) string {
 
 func (s *Server) setupContext(ctx context.Context, rw http.ResponseWriter, sid string) (context.Context, context.CancelFunc) {
 	ctx, cancel := context.WithTimeout(ctx, s.Timeout)
-	ctx = withTemplate(ctx, s.templates)
+	ctx = withTemplateManager(ctx, s.Manager)
 	ctx = withSessionID(ctx, sid)
 	return ctx, cancel
 }
@@ -303,7 +305,7 @@ func (s *Server) handleOptions(_ context.Context, req *Request) Responder {
 		methods = append(methods, http.MethodOptions)
 	}
 
-	return ResponderFunc(func(ctx context.Context, rw http.ResponseWriter) {
+	return respond.Func(func(ctx context.Context, rw http.ResponseWriter) {
 		if len(methods) > 0 {
 			joined := []string{strings.Join(methods, ",")}
 			rw.Header()["Allow"] = joined

@@ -16,6 +16,7 @@ const (
 	JPEG     = "image/jpeg"
 	PNG      = "image/png"
 	WEBP     = "image/webp"
+	ICON     = "image/x-icon"
 
 	MPEG = "video/mpeg"
 

@@ -2,7 +2,8 @@ package wine
 
 import (
 	"context"
-	"html/template"
+
+	"github.com/gopub/wine/internal/template"
 
 	"github.com/gopub/log"
 	"github.com/gopub/types"
@@ -14,7 +15,7 @@ type contextKey int
 const (
 	ckNext contextKey = iota + 1
 	ckBasicAuthUser
-	ckTemplates
+	ckTemplateManager
 	ckSessionID
 	ckRemoteAddr
 	ckCoordinate
@@ -56,14 +57,13 @@ func withSessionID(ctx context.Context, sid string) context.Context {
 	return context.WithValue(ctx, ckSessionID, sid)
 }
 
-// GetTemplates returns templates in context
-func GetTemplates(ctx context.Context) []*template.Template {
-	v, _ := ctx.Value(ckTemplates).([]*template.Template)
+func getTemplateManager(ctx context.Context) *template.Manager {
+	v, _ := ctx.Value(ckTemplateManager).(*template.Manager)
 	return v
 }
 
-func withTemplate(ctx context.Context, templates []*template.Template) context.Context {
-	return context.WithValue(ctx, ckTemplates, templates)
+func withTemplateManager(ctx context.Context, m *template.Manager) context.Context {
+	return context.WithValue(ctx, ckTemplateManager, m)
 }
 
 func GetUserID(ctx context.Context) int64 {
@@ -160,8 +160,8 @@ func DetachContext(ctx context.Context) context.Context {
 	if l := log.FromContext(ctx); l != nil {
 		newCtx = log.BuildContext(newCtx, l)
 	}
-	if t := GetTemplates(ctx); len(t) != 0 {
-		newCtx = withTemplate(ctx, t)
+	if m := getTemplateManager(ctx); m != nil {
+		newCtx = withTemplateManager(ctx, m)
 	}
 	if u := GetBasicAuthUser(ctx); u != "" {
 		newCtx = withBasicAuthUser(ctx, u)

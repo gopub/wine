@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/gopub/wine/internal/respond"
+
 	"github.com/gopub/log"
 )
 
@@ -37,7 +39,7 @@ func NewBasicAuthHandler(userToPassword map[string]string, realm string) Handler
 }
 
 func RequireBasicAuth(realm string) Responder {
-	return ResponderFunc(func(ctx context.Context, w http.ResponseWriter) {
+	return respond.Func(func(ctx context.Context, w http.ResponseWriter) {
 		a := "Basic realm=" + strconv.Quote(realm)
 		w.Header().Set("WWW-Authenticate", a)
 		w.WriteHeader(http.StatusUnauthorized)

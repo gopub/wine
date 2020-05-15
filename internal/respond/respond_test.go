@@ -1,4 +1,4 @@
-package wine_test
+package respond_test
 
 import (
 	"context"
@@ -13,7 +13,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/uuid"
-	"github.com/gopub/wine"
+	"github.com/gopub/wine/internal/respond"
 	"github.com/gopub/wine/mime"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -23,7 +23,7 @@ const charsetSuffix = "; charset=utf-8"
 
 func TestHTML(t *testing.T) {
 	v := "<html><body>hello</body></html>"
-	h := wine.HTML(http.StatusOK, v)
+	h := respond.HTML(http.StatusOK, v)
 	recorder := httptest.NewRecorder()
 	h.Respond(context.Background(), recorder)
 	resp := recorder.Result()
@@ -46,7 +46,7 @@ func TestJSON(t *testing.T) {
 	ctx := context.Background()
 	t.Run("Int", func(t *testing.T) {
 		v := rand.Int()
-		j := wine.JSON(http.StatusOK, v)
+		j := respond.JSON(http.StatusOK, v)
 		recorder := httptest.NewRecorder()
 		j.Respond(ctx, recorder)
 		resp := recorder.Result()
@@ -61,7 +61,7 @@ func TestJSON(t *testing.T) {
 
 	t.Run("String", func(t *testing.T) {
 		v := fmt.Sprintf("The number is %d", rand.Int())
-		j := wine.JSON(http.StatusOK, v)
+		j := respond.JSON(http.StatusOK, v)
 		recorder := httptest.NewRecorder()
 		j.Respond(ctx, recorder)
 		resp := recorder.Result()
@@ -82,7 +82,7 @@ func TestJSON(t *testing.T) {
 			Array:   []int{rand.Int(), rand.Int()},
 			Time:    time.Now().Add(time.Hour),
 		}
-		j := wine.JSON(http.StatusCreated, v)
+		j := respond.JSON(http.StatusCreated, v)
 		recorder := httptest.NewRecorder()
 		j.Respond(ctx, recorder)
 		resp := recorder.Result()

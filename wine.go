@@ -7,6 +7,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/gopub/log"
 	pathpkg "github.com/gopub/wine/internal/path"
+	"github.com/gopub/wine/internal/respond"
 )
 
 var logger *log.Logger
@@ -15,6 +16,7 @@ func init() {
 	logger = log.Default().Derive("Wine")
 	logger.SetFlags(log.LstdFlags - log.Lfunction - log.Lshortfile)
 	pathpkg.SetLogger(logger)
+	respond.SetLogger(logger)
 }
 
 func Logger() *log.Logger {

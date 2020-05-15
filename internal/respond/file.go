@@ -1,4 +1,4 @@
-package wine
+package respond
 
 import (
 	"context"
@@ -11,8 +11,8 @@ import (
 )
 
 // StreamFile creates a application/octet-stream response
-func StreamFile(r io.Reader, name string) Responder {
-	return ResponderFunc(func(ctx context.Context, w http.ResponseWriter) {
+func StreamFile(r io.Reader, name string) Func {
+	return Func(func(ctx context.Context, w http.ResponseWriter) {
 		logger := log.FromContext(ctx)
 		w.Header().Set(mime.ContentType, mime.OctetStream)
 		if name != "" {
@@ -38,8 +38,8 @@ func StreamFile(r io.Reader, name string) Responder {
 }
 
 // File creates a application/octet-stream response
-func File(b []byte, name string) Responder {
-	return ResponderFunc(func(ctx context.Context, w http.ResponseWriter) {
+func File(b []byte, name string) Func {
+	return Func(func(ctx context.Context, w http.ResponseWriter) {
 		w.Header().Set(mime.ContentType, mime.OctetStream)
 		if name != "" {
 			w.Header().Set(mime.ContentDisposition, fmt.Sprintf(`attachment; filename="%s"`, name))
@@ -52,8 +52,8 @@ func File(b []byte, name string) Responder {
 }
 
 // StaticFile serves static files
-func StaticFile(req *http.Request, filePath string) Responder {
-	return ResponderFunc(func(ctx context.Context, w http.ResponseWriter) {
+func StaticFile(req *http.Request, filePath string) Func {
+	return Func(func(ctx context.Context, w http.ResponseWriter) {
 		http.ServeFile(w, req, filePath)
 	})
 }

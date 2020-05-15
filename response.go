@@ -2,12 +2,10 @@ package wine
 
 import (
 	"context"
-	"encoding/json"
+	"io"
 	"net/http"
-	"strings"
 
-	"github.com/gopub/log"
-	"github.com/gopub/wine/mime"
+	"github.com/gopub/wine/internal/respond"
 )
 
 // Responder interface is used by Wine server to write response to the client
@@ -16,154 +14,66 @@ type Responder interface {
 	Respond(ctx context.Context, w http.ResponseWriter)
 }
 
-var (
-	_ Handler   = ResponderFunc(nil)
-	_ Responder = ResponderFunc(nil)
-)
+func HandleResponder(r Responder) Handler {
+	return HandlerFunc(func(ctx context.Context, req *Request) Responder {
+		return r
+	})
+}
 
-// ResponderFunc is a func that implements interface Responder
 type ResponderFunc func(ctx context.Context, w http.ResponseWriter)
 
 func (f ResponderFunc) Respond(ctx context.Context, w http.ResponseWriter) {
 	f(ctx, w)
 }
 
-func (f ResponderFunc) HandleRequest(_ context.Context, _ *Request) Responder {
+func (f ResponderFunc) HandleRequest(ctx context.Context, req *Request) Responder {
 	return f
-}
-
-var (
-	_ Handler   = (*Response)(nil)
-	_ Responder = (*Response)(nil)
-)
-
-// Response holds all the http response information
-// Value and headers except the status code can be modified before sent to the client
-type Response struct {
-	status int
-	header http.Header
-	value  interface{}
-}
-
-// Respond writes header and body to response writer w
-func (r *Response) Respond(_ context.Context, w http.ResponseWriter) {
-	body, ok := r.value.([]byte)
-	if !ok {
-		body = r.getBytes()
-	}
-
-	for k, v := range r.header {
-		w.Header()[k] = v
-	}
-	w.WriteHeader(r.status)
-	if _, err := w.Write(body); err != nil {
-		log.Error(err)
-	}
-}
-
-func (r *Response) HandleRequest(ctx context.Context, req *Request) Responder {
-	return r
-}
-
-func (r *Response) getBytes() []byte {
-	if body, ok := r.value.([]byte); ok {
-		return body
-	}
-
-	contentType := r.header.Get(mime.ContentType)
-
-	switch {
-	case strings.Contains(contentType, mime.JSON):
-		if r.value != nil {
-			body, err := json.Marshal(r.value)
-			if err != nil {
-				logger.Error(err)
-			}
-			return body
-		}
-	case strings.Contains(contentType, mime.Plain):
-		fallthrough
-	case strings.Contains(contentType, mime.HTML):
-		fallthrough
-	case strings.Contains(contentType, mime.XML):
-		fallthrough
-	case strings.Contains(contentType, mime.XML2):
-		if s, ok := r.value.(string); ok {
-			return []byte(s)
-		}
-	default:
-		log.Warn("Unsupported Content-Type:", contentType)
-	}
-
-	return nil
-}
-
-func (r *Response) Status() int {
-	return r.status
-}
-
-func (r *Response) Header() http.Header {
-	return r.header
-}
-
-func (r *Response) Value() interface{} {
-	return r.value
-}
-
-func (r *Response) SetValue(v interface{}) {
-	r.value = v
 }
 
 var OK = Status(http.StatusOK)
 
-// Status returns a response only with a status code
-func Status(status int) *Response {
-	return Text(status, http.StatusText(status))
+func Status(s int) Responder {
+	return respond.Status(s)
 }
 
-// Redirect sends a redirect response
-func Redirect(location string, permanent bool) *Response {
-	header := make(http.Header)
-	header.Set("Location", location)
-	header.Set(mime.ContentType, mime.Plain)
-	var status int
-	if permanent {
-		status = http.StatusMovedPermanently
-	} else {
-		status = http.StatusFound
-	}
-
-	return &Response{
-		status: status,
-		header: header,
-	}
+func Redirect(location string, permanent bool) Responder {
+	return respond.Redirect(location, permanent)
 }
 
-// Text sends a text response
-func Text(status int, text string) *Response {
-	header := make(http.Header)
-	header.Set(mime.ContentType, mime.PlainUTF8)
-	return &Response{
-		status: status,
-		header: header,
-		value:  text,
-	}
+func Text(status int, text string) Responder {
+	return respond.Text(status, text)
 }
 
-// JSON creates a application/json response
-func JSON(status int, value interface{}) *Response {
-	header := make(http.Header)
-	header.Set(mime.ContentType, mime.JsonUTF8)
-	return &Response{
-		status: status,
-		header: header,
-		value:  value,
-	}
+func JSON(status int, value interface{}) Responder {
+	return respond.JSON(status, value)
 }
 
-// Handle handles request with h
-func Handle(req *http.Request, h http.Handler) Responder {
-	return ResponderFunc(func(ctx context.Context, w http.ResponseWriter) {
-		h.ServeHTTP(w, req)
+// StreamFile creates a application/octet-stream response
+func StreamFile(r io.Reader, name string) Responder {
+	return respond.StreamFile(r, name)
+}
+
+// File creates a application/octet-stream response
+func File(b []byte, name string) Responder {
+	return respond.File(b, name)
+}
+
+// StaticFile serves static files
+func StaticFile(req *http.Request, path string) Responder {
+	return respond.StaticFile(req, path)
+}
+
+func HTML(status int, html string) Responder {
+	return respond.HTML(status, html)
+}
+
+func TemplateHTML(name string, params interface{}) Responder {
+	return respond.Func(func(ctx context.Context, w http.ResponseWriter) {
+		getTemplateManager(ctx).Execute(w, name, params)
 	})
+}
+
+// Handle creates a responder with raw http handler
+func Handle(req *http.Request, h http.Handler) Responder {
+	return respond.Handle(req, h)
 }

@@ -1,35 +1,36 @@
-package wine
+package template
 
 import (
 	"html/template"
+	"io"
 )
 
-type templateManager struct {
+type Manager struct {
 	templates []*template.Template
 	funcMap   template.FuncMap
 }
 
-func newTemplateManager() *templateManager {
-	return &templateManager{
+func NewManager() *Manager {
+	return &Manager{
 		templates: make([]*template.Template, 0),
 		funcMap:   make(template.FuncMap),
 	}
 }
 
 // AddGlobTemplate adds a template by parsing template files with pattern
-func (m *templateManager) AddGlobTemplate(pattern string) {
+func (m *Manager) AddGlobTemplate(pattern string) {
 	tmpl := template.Must(template.ParseGlob(pattern))
 	m.AddTemplate(tmpl)
 }
 
 // AddFilesTemplate adds a template by parsing template files
-func (m *templateManager) AddFilesTemplate(files ...string) {
+func (m *Manager) AddFilesTemplate(files ...string) {
 	tmpl := template.Must(template.ParseFiles(files...))
 	m.AddTemplate(tmpl)
 }
 
 // AddTextTemplate adds a template by parsing texts
-func (m *templateManager) AddTextTemplate(name string, texts ...string) {
+func (m *Manager) AddTextTemplate(name string, texts ...string) {
 	tmpl := template.New(name)
 	for _, txt := range texts {
 		tmpl = template.Must(tmpl.Parse(txt))
@@ -38,7 +39,7 @@ func (m *templateManager) AddTextTemplate(name string, texts ...string) {
 }
 
 // AddTemplate adds a template
-func (m *templateManager) AddTemplate(tmpl *template.Template) {
+func (m *Manager) AddTemplate(tmpl *template.Template) {
 	if m.funcMap != nil {
 		tmpl.Funcs(m.funcMap)
 	}
@@ -46,7 +47,7 @@ func (m *templateManager) AddTemplate(tmpl *template.Template) {
 }
 
 // AddTemplateFuncMap adds template functions
-func (m *templateManager) AddTemplateFuncMap(funcMap template.FuncMap) {
+func (m *Manager) AddTemplateFuncMap(funcMap template.FuncMap) {
 	if len(funcMap) == 0 {
 		return
 	}
@@ -62,4 +63,23 @@ func (m *templateManager) AddTemplateFuncMap(funcMap template.FuncMap) {
 	for _, tmpl := range m.templates {
 		tmpl.Funcs(funcMap)
 	}
+}
+
+func (m *Manager) Execute(w io.Writer, name string, params interface{}) {
+	for _, tmpl := range m.templates {
+		var err error
+		if name == "" {
+			err = tmpl.Execute(w, params)
+		} else {
+			err = tmpl.ExecuteTemplate(w, name, params)
+		}
+
+		if err == nil {
+			break
+		}
+	}
+}
+
+func (m *Manager) Templates() []*template.Template {
+	return m.templates
 }

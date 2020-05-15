@@ -11,6 +11,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gopub/wine/internal/respond"
+
 	"github.com/gopub/log"
 	"github.com/gopub/types"
 	"github.com/gopub/wine/internal/resource"
@@ -34,39 +36,13 @@ func (h HandlerFunc) String() string {
 	return runtime.FuncForPC(reflect.ValueOf(h).Pointer()).Name()
 }
 
-// Invoker defines the function to be called in order to pass on the request
-type Invoker func(ctx context.Context, req *Request) Responder
-
-type invokerList struct {
-	handlers *list.List
-	current  *list.Element
-}
-
-func newInvokerList(handlers *list.List) *invokerList {
-	l := &invokerList{
-		handlers: handlers,
-		current:  handlers.Front(),
-	}
-	return l
-}
-
-func (l *invokerList) Invoke(ctx context.Context, req *Request) Responder {
-	if l.current == nil {
-		return nil
-	}
-	h := l.current.Value.(Handler)
-	l.current = l.current.Next()
-	ctx = withNext(ctx, l.Invoke)
-	return h.HandleRequest(ctx, req)
-}
-
 // Some built-in handlers
 func handleFavIcon(_ context.Context, _ *Request) Responder {
-	return ResponderFunc(func(ctx context.Context, rw http.ResponseWriter) {
-		rw.Header()[mime.ContentType] = []string{"image/x-icon"}
+	return respond.Func(func(ctx context.Context, rw http.ResponseWriter) {
+		rw.Header().Set(mime.ContentType, mime.ICON)
 		rw.WriteHeader(http.StatusOK)
 		if _, err := rw.Write(resource.Favicon); err != nil {
-			log.FromContext(ctx).Errorf("Write all: %v", err)
+			log.FromContext(ctx).Errorf("Write: %v", err)
 		}
 	})
 }
@@ -97,14 +73,6 @@ func toHandlers(fs ...HandlerFunc) []Handler {
 	l := make([]Handler, len(fs))
 	for i, f := range fs {
 		l[i] = f
-	}
-	return l
-}
-
-func toHandlerList(hs ...Handler) *list.List {
-	l := list.New()
-	for _, h := range hs {
-		l.PushBack(h)
 	}
 	return l
 }
