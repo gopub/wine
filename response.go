@@ -51,6 +51,10 @@ func (r *Response) Respond(ctx context.Context, w http.ResponseWriter) {
 	}
 }
 
+func (r *Response) HandleRequest(ctx context.Context, req *Request) Responder {
+	return r
+}
+
 func (r *Response) getBytes() []byte {
 	if body, ok := r.value.([]byte); ok {
 		return body
@@ -103,12 +107,12 @@ func (r *Response) SetValue(v interface{}) {
 var OK = Status(http.StatusOK)
 
 // Status returns a response only with a status code
-func Status(status int) Responder {
+func Status(status int) *Response {
 	return Text(status, http.StatusText(status))
 }
 
 // Redirect sends a redirect response
-func Redirect(location string, permanent bool) Responder {
+func Redirect(location string, permanent bool) *Response {
 	header := make(http.Header)
 	header.Set("Location", location)
 	header.Set(mime.ContentType, mime.Plain)
@@ -126,7 +130,7 @@ func Redirect(location string, permanent bool) Responder {
 }
 
 // Text sends a text response
-func Text(status int, text string) Responder {
+func Text(status int, text string) *Response {
 	header := make(http.Header)
 	header.Set(mime.ContentType, mime.PlainUTF8)
 	return &Response{
@@ -137,7 +141,7 @@ func Text(status int, text string) Responder {
 }
 
 // HTML creates a HTML response
-func HTML(status int, html string) Responder {
+func HTML(status int, html string) *Response {
 	header := make(http.Header)
 	header.Set(mime.ContentType, mime.HtmlUTF8)
 	return &Response{
@@ -148,7 +152,7 @@ func HTML(status int, html string) Responder {
 }
 
 // JSON creates a application/json response
-func JSON(status int, value interface{}) Responder {
+func JSON(status int, value interface{}) *Response {
 	header := make(http.Header)
 	header.Set(mime.ContentType, mime.JsonUTF8)
 	return &Response{

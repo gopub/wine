@@ -79,7 +79,7 @@ func NewServer() *Server {
 		s.sessionTTL = minSessionTTL
 	}
 	s.invokers.favicon = newInvokerList(toHandlerList(HandlerFunc(handleFavIcon)))
-	s.invokers.notfound = newInvokerList(toHandlerList(HandlerFunc(handleNotFound)))
+	s.invokers.notfound = newInvokerList(toHandlerList(Status(http.StatusNotFound)))
 	s.invokers.options = newInvokerList(toHandlerList(HandlerFunc(s.handleOptions)))
 	s.AddTemplateFuncMap(template.FuncMap)
 	return s
@@ -182,7 +182,7 @@ func (s *Server) serve(ctx context.Context, req *Request, rw http.ResponseWriter
 		resp = invokers.Invoke(ctx, req)
 	}
 	if resp == nil {
-		resp = handleNotImplemented(ctx, req)
+		resp = Status(http.StatusNotImplemented)
 	}
 	resp.Respond(ctx, rw)
 }

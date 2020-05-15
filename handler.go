@@ -71,14 +71,6 @@ func handleFavIcon(_ context.Context, _ *Request) Responder {
 	})
 }
 
-func handleNotFound(_ context.Context, _ *Request) Responder {
-	return Text(http.StatusNotFound, http.StatusText(http.StatusNotFound))
-}
-
-func handleNotImplemented(_ context.Context, _ *Request) Responder {
-	return Text(http.StatusNotImplemented, http.StatusText(http.StatusNotImplemented))
-}
-
 func handleEcho(_ context.Context, req *Request) Responder {
 	v, err := httputil.DumpRequest(req.request, true)
 	if err != nil {
