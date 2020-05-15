@@ -3,9 +3,6 @@ package wine
 import (
 	"context"
 	"encoding/json"
-	"fmt"
-	"html/template"
-	"io"
 	"net/http"
 	"strings"
 
@@ -153,17 +150,6 @@ func Text(status int, text string) *Response {
 	}
 }
 
-// HTML creates a HTML response
-func HTML(status int, html string) *Response {
-	header := make(http.Header)
-	header.Set(mime.ContentType, mime.HtmlUTF8)
-	return &Response{
-		status: status,
-		header: header,
-		value:  html,
-	}
-}
-
 // JSON creates a application/json response
 func JSON(status int, value interface{}) *Response {
 	header := make(http.Header)
@@ -173,72 +159,6 @@ func JSON(status int, value interface{}) *Response {
 		header: header,
 		value:  value,
 	}
-}
-
-// StreamFile creates a application/octet-stream response
-func StreamFile(r io.Reader, name string) Responder {
-	return ResponderFunc(func(ctx context.Context, w http.ResponseWriter) {
-		logger := log.FromContext(ctx)
-		w.Header().Set(mime.ContentType, mime.OctetStream)
-		if name != "" {
-			w.Header().Set(mime.ContentDisposition, fmt.Sprintf(`attachment; filename="%s"`, name))
-		}
-		const size = 1024
-		buf := make([]byte, size)
-		for {
-			n, err := r.Read(buf)
-			if n > 0 {
-				if _, wErr := w.Write(buf[:n]); wErr != nil {
-					logger.Errorf("Write: %v", wErr)
-					return
-				}
-			}
-			if err != nil {
-				logger.Errorf("Read: %v", err)
-				w.WriteHeader(http.StatusInternalServerError)
-				return
-			}
-		}
-	})
-}
-
-// File creates a application/octet-stream response
-func File(b []byte, name string) Responder {
-	return ResponderFunc(func(ctx context.Context, w http.ResponseWriter) {
-		w.Header().Set(mime.ContentType, mime.OctetStream)
-		if name != "" {
-			w.Header().Set(mime.ContentDisposition, fmt.Sprintf(`attachment; filename="%s"`, name))
-		}
-		if _, err := w.Write(b); err != nil {
-			log.FromContext(ctx).Errorf("write: %v", err)
-			w.WriteHeader(http.StatusInternalServerError)
-		}
-	})
-}
-
-// StaticFile serves static files
-func StaticFile(req *http.Request, filePath string) Responder {
-	return ResponderFunc(func(ctx context.Context, w http.ResponseWriter) {
-		http.ServeFile(w, req, filePath)
-	})
-}
-
-// TemplateHTML sends a HTML response. HTML page is rendered according to templateName and params
-func TemplateHTML(templates []*template.Template, templateName string, params interface{}) Responder {
-	return ResponderFunc(func(ctx context.Context, w http.ResponseWriter) {
-		for _, tmpl := range templates {
-			var err error
-			if templateName == "" {
-				err = tmpl.Execute(w, params)
-			} else {
-				err = tmpl.ExecuteTemplate(w, templateName, params)
-			}
-
-			if err == nil {
-				break
-			}
-		}
-	})
 }
 
 // Handle handles request with h
