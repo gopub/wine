@@ -151,10 +151,10 @@ func NewTextHandler(serve func(context.Context, TextWriteCloser)) wine.Handler {
 		err := tw.Write(Greeting)
 		if err != nil {
 			logger.Errorf("Handshake: %v", err)
-			return wine.Status(http.StatusOK)
+			return wine.OK
 		}
 		go serve(ctx, tw)
 		<-done
-		return wine.Status(http.StatusOK)
+		return wine.OK
 	})
 }

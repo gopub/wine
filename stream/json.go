@@ -104,10 +104,10 @@ func NewJSONHandler(serve func(context.Context, JSONWriteCloser)) wine.Handler {
 		err := jw.Write(Greeting)
 		if err != nil {
 			logger.Errorf("Handshake: %v", err)
-			return wine.Status(http.StatusOK)
+			return wine.OK
 		}
 		go serve(ctx, jw)
 		<-done
-		return wine.Status(http.StatusOK)
+		return wine.OK
 	})
 }

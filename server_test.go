@@ -17,7 +17,7 @@ func TestServerStatus(t *testing.T) {
 	server := wine.NewServer()
 	r := server.Router
 	r.Get("/ok", func(ctx context.Context, req *wine.Request) wine.Responder {
-		return wine.Status(http.StatusOK)
+		return wine.OK
 	})
 	r.Get("/forbidden", func(ctx context.Context, req *wine.Request) wine.Responder {
 		return wine.Status(http.StatusForbidden)

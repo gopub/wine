@@ -155,10 +155,10 @@ func NewByteHandler(serve func(context.Context, ByteWriteCloser)) wine.Handler {
 		err := bw.Write([]byte(Greeting))
 		if err != nil {
 			logger.Errorf("Handshake: %v", err)
-			return wine.Status(http.StatusOK)
+			return wine.OK
 		}
 		go serve(ctx, bw)
 		<-done
-		return wine.Status(http.StatusOK)
+		return wine.OK
 	})
 }
