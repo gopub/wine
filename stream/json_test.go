@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-
 	"github.com/gopub/wine"
 	"github.com/gopub/wine/stream"
 	"github.com/stretchr/testify/assert"

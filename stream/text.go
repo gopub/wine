@@ -7,9 +7,8 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/gopub/types"
-
 	"github.com/gopub/log"
+	"github.com/gopub/types"
 	"github.com/gopub/wine"
 	"github.com/gopub/wine/api"
 	"github.com/gopub/wine/mime"

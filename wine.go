@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
-
 	"github.com/gopub/log"
 	pathpkg "github.com/gopub/wine/internal/path"
 )

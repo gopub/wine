@@ -5,9 +5,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/gopub/wine"
-
 	"github.com/gopub/log"
+	"github.com/gopub/wine"
 )
 
 const (

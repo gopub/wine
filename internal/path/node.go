@@ -4,9 +4,8 @@ import (
 	"container/list"
 	"strings"
 
-	"github.com/gopub/types"
-
 	"github.com/gopub/log"
+	"github.com/gopub/types"
 )
 
 type nodeType int

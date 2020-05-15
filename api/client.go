@@ -10,9 +10,8 @@ import (
 	"net/http/httputil"
 	"net/url"
 
-	"github.com/gopub/types"
-
 	"github.com/gopub/log"
+	"github.com/gopub/types"
 	"github.com/gopub/wine/mime"
 )
 
