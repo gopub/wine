@@ -298,7 +298,7 @@ func (s *Server) logRequest(req *http.Request, rw http.ResponseWriter, startAt t
 	}
 }
 
-func (s *Server) handleOptions(ctx context.Context, req *Request) Responder {
+func (s *Server) handleOptions(_ context.Context, req *Request) Responder {
 	methods := s.matchMethods(req.NormalizedPath())
 	if len(methods) > 0 {
 		methods = append(methods, http.MethodOptions)

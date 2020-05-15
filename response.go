@@ -100,6 +100,8 @@ func (r *Response) SetValue(v interface{}) {
 	r.value = v
 }
 
+var OK = Status(http.StatusOK)
+
 // Status returns a response only with a status code
 func Status(status int) Responder {
 	return Text(status, http.StatusText(status))
