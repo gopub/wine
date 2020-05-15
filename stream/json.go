@@ -93,21 +93,20 @@ func NewJSONReader(client *http.Client, req *http.Request) (JSONReadCloser, erro
 }
 
 func NewJSONHandler(serve func(context.Context, JSONWriteCloser)) wine.Handler {
-	return wine.HandlerFunc(func(ctx context.Context, req *wine.Request) wine.Responder {
+	return wine.ResponderFunc(func(ctx context.Context, w http.ResponseWriter) {
 		logger := log.FromContext(ctx)
 		logger.Debugf("Start")
 		defer logger.Debugf("Closed")
-		w := wine.GetResponseWriter(ctx)
 		w.Header().Set(mime.ContentType, mime.JsonUTF8)
 		done := make(chan interface{})
 		jw := newJSONWriteCloser(w, done)
 		err := jw.Write(Greeting)
 		if err != nil {
 			logger.Errorf("Handshake: %v", err)
-			return wine.OK
+			return
 		}
 		go serve(ctx, jw)
 		<-done
-		return wine.OK
+		return
 	})
 }

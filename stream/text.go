@@ -140,21 +140,19 @@ func NewTextReader(client *http.Client, req *http.Request) (TextReadCloser, erro
 }
 
 func NewTextHandler(serve func(context.Context, TextWriteCloser)) wine.Handler {
-	return wine.HandlerFunc(func(ctx context.Context, req *wine.Request) wine.Responder {
+	return wine.ResponderFunc(func(ctx context.Context, w http.ResponseWriter) {
 		logger := log.FromContext(ctx)
 		logger.Debugf("Start")
 		defer logger.Debugf("Closed")
-		w := wine.GetResponseWriter(ctx)
 		w.Header().Set(mime.ContentType, mime.HtmlUTF8)
 		done := make(chan interface{})
 		tw := newTextWriteCloser(w, done)
 		err := tw.Write(Greeting)
 		if err != nil {
 			logger.Errorf("Handshake: %v", err)
-			return wine.OK
+			return
 		}
 		go serve(ctx, tw)
 		<-done
-		return wine.OK
 	})
 }

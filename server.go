@@ -252,7 +252,6 @@ func (s *Server) initSession(rw http.ResponseWriter, req *http.Request) string {
 func (s *Server) setupContext(ctx context.Context, rw http.ResponseWriter, sid string) (context.Context, context.CancelFunc) {
 	ctx, cancel := context.WithTimeout(ctx, s.Timeout)
 	ctx = withTemplate(ctx, s.templates)
-	ctx = withResponseWriter(ctx, rw)
 	ctx = withSessionID(ctx, sid)
 	return ctx, cancel
 }

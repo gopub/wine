@@ -144,21 +144,19 @@ func NewByteReader(client *http.Client, req *http.Request) (ByteReadCloser, erro
 }
 
 func NewByteHandler(serve func(context.Context, ByteWriteCloser)) wine.Handler {
-	return wine.HandlerFunc(func(ctx context.Context, req *wine.Request) wine.Responder {
+	return wine.ResponderFunc(func(ctx context.Context, w http.ResponseWriter) {
 		logger := log.FromContext(ctx)
 		logger.Debugf("Start")
 		defer logger.Debugf("Closed")
-		w := wine.GetResponseWriter(ctx)
 		w.Header().Set(mime.ContentType, mime.OctetStream)
 		done := make(chan interface{})
 		bw := newByteWriteCloser(w, done)
 		err := bw.Write([]byte(Greeting))
 		if err != nil {
 			logger.Errorf("Handshake: %v", err)
-			return wine.OK
+			return
 		}
 		go serve(ctx, bw)
 		<-done
-		return wine.OK
 	})
 }

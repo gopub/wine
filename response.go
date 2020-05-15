@@ -19,12 +19,26 @@ type Responder interface {
 	Respond(ctx context.Context, w http.ResponseWriter)
 }
 
+var (
+	_ Handler   = ResponderFunc(nil)
+	_ Responder = ResponderFunc(nil)
+)
+
 // ResponderFunc is a func that implements interface Responder
 type ResponderFunc func(ctx context.Context, w http.ResponseWriter)
 
 func (f ResponderFunc) Respond(ctx context.Context, w http.ResponseWriter) {
 	f(ctx, w)
 }
+
+func (f ResponderFunc) HandleRequest(_ context.Context, _ *Request) Responder {
+	return f
+}
+
+var (
+	_ Handler   = (*Response)(nil)
+	_ Responder = (*Response)(nil)
+)
 
 // Response holds all the http response information
 // Value and headers except the status code can be modified before sent to the client

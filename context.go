@@ -3,7 +3,6 @@ package wine
 import (
 	"context"
 	"html/template"
-	"net/http"
 
 	"github.com/gopub/log"
 	"github.com/gopub/types"
@@ -14,7 +13,6 @@ type contextKey int
 // Context keys
 const (
 	ckNext contextKey = iota + 1
-	ckHTTPResponseWriter
 	ckBasicAuthUser
 	ckTemplates
 	ckSessionID
@@ -56,16 +54,6 @@ func GetSessionID(ctx context.Context) string {
 
 func withSessionID(ctx context.Context, sid string) context.Context {
 	return context.WithValue(ctx, ckSessionID, sid)
-}
-
-// GetResponseWriter returns response writer from the context
-func GetResponseWriter(ctx context.Context) http.ResponseWriter {
-	rw, _ := ctx.Value(ckHTTPResponseWriter).(http.ResponseWriter)
-	return rw
-}
-
-func withResponseWriter(ctx context.Context, rw http.ResponseWriter) context.Context {
-	return context.WithValue(ctx, ckHTTPResponseWriter, rw)
 }
 
 // GetTemplates returns templates in context
