@@ -10,8 +10,8 @@ import (
 	"github.com/gopub/log"
 	"github.com/gopub/types"
 	"github.com/gopub/wine"
-	"github.com/gopub/wine/api"
 	"github.com/gopub/wine/mime"
+	"github.com/gopub/wine/rpc"
 )
 
 type JSONReadCloser interface {
@@ -72,7 +72,7 @@ func NewJSONReader(client *http.Client, req *http.Request) (JSONReadCloser, erro
 		return nil, fmt.Errorf("do request: %w", err)
 	}
 	if resp.StatusCode != http.StatusOK {
-		err = api.ParseResult(resp, nil, true)
+		err = rpc.ParseResult(resp, nil, true)
 		if err != nil {
 			return nil, fmt.Errorf("parse result: %w", err)
 		}

@@ -2,6 +2,7 @@ package wine
 
 import (
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"strings"
@@ -81,6 +82,22 @@ func (r *Request) BasicAccount() (user string, password string) {
 
 func (r *Request) NormalizedPath() string {
 	return path.NormalizeRequestPath(r.request)
+}
+
+func (r *Request) UnmarshalParams(i interface{}) error {
+	// Unsafe assignment, so ignore error
+	data, err := json.Marshal(r.Params())
+	if err == nil {
+		_ = json.Unmarshal(data, i)
+	}
+
+	if r.ContentType() == mime.JSON {
+		err := json.Unmarshal(r.Body(), i)
+		if err != nil {
+			return types.NewError(http.StatusBadRequest, "unmarshal: %v", err)
+		}
+	}
+	return nil
 }
 
 func parseRequest(r *http.Request, maxMem types.ByteUnit) (*Request, error) {
