@@ -257,8 +257,8 @@ func (s *Server) setupContext(ctx context.Context, rw http.ResponseWriter, sid s
 }
 
 func (s *Server) withRequestParams(ctx context.Context, params types.M) context.Context {
-	if loc, _ := types.NewPointFromString(params.String("loc")); loc != nil {
-		ctx = WithLocation(ctx, loc)
+	if loc, _ := types.NewPointFromString(params.String("coordinate")); loc != nil {
+		ctx = WithCoordinate(ctx, loc)
 	}
 	if deviceID := params.String("device_id"); deviceID != "" {
 		ctx = WithDeviceID(ctx, deviceID)

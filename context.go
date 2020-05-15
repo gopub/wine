@@ -17,7 +17,7 @@ const (
 	ckTemplates
 	ckSessionID
 	ckRemoteAddr
-	ckLocation
+	ckCoordinate
 	ckAccessToken
 	ckUserID
 	ckTraceID
@@ -134,16 +134,16 @@ func WithTraceID(ctx context.Context, traceID string) context.Context {
 	return context.WithValue(ctx, ckTraceID, traceID)
 }
 
-func GetLocation(ctx context.Context) *types.Point {
-	id, _ := ctx.Value(ckLocation).(*types.Point)
-	return id
+func GetCoordinate(ctx context.Context) *types.Point {
+	p, _ := ctx.Value(ckCoordinate).(*types.Point)
+	return p
 }
 
-func WithLocation(ctx context.Context, location *types.Point) context.Context {
-	if location == nil {
+func WithCoordinate(ctx context.Context, p *types.Point) context.Context {
+	if p == nil {
 		return ctx
 	}
-	return context.WithValue(ctx, ckLocation, location)
+	return context.WithValue(ctx, ckCoordinate, p)
 }
 
 func WithSudo(ctx context.Context) context.Context {
@@ -175,8 +175,8 @@ func DetachContext(ctx context.Context) context.Context {
 	if deviceID := GetDeviceID(ctx); deviceID != "" {
 		newCtx = WithDeviceID(newCtx, deviceID)
 	}
-	if c := GetLocation(ctx); c != nil {
-		newCtx = WithLocation(newCtx, c)
+	if c := GetCoordinate(ctx); c != nil {
+		newCtx = WithCoordinate(newCtx, c)
 	}
 	if addr := GetRemoteAddr(ctx); addr != "" {
 		newCtx = WithRemoteAddr(newCtx, addr)
