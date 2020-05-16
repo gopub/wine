@@ -5,11 +5,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/golang/protobuf/proto"
-	"github.com/gopub/types"
 	"io"
 	"net/http"
 	"reflect"
+
+	"github.com/golang/protobuf/proto"
+	"github.com/gopub/types"
 
 	"github.com/gopub/wine/internal/respond"
 )

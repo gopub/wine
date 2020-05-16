@@ -12,7 +12,6 @@ import (
 	"github.com/gopub/types"
 	"github.com/gopub/wine"
 	"github.com/gopub/wine/mime"
-	"github.com/gopub/wine/rpc"
 )
 
 const packetHeadLen = 4
@@ -122,9 +121,8 @@ func NewByteReader(client *http.Client, req *http.Request) (ByteReadCloser, erro
 		return nil, fmt.Errorf("do request: %w", err)
 	}
 
-	de := &rpc.StdDecoder{}
 	if resp.StatusCode != http.StatusOK {
-		err = de.Decode(resp, nil)
+		err = wine.DecodeResponse(resp, nil)
 		if err != nil {
 			return nil, fmt.Errorf("parse result: %w", err)
 		}
