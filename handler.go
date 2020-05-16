@@ -36,6 +36,36 @@ func (h HandlerFunc) String() string {
 	return runtime.FuncForPC(reflect.ValueOf(h).Pointer()).Name()
 }
 
+type handlerChain struct {
+	handlers *list.List
+	current  *list.Element
+}
+
+func toHandlerChain(handlers ...Handler) *handlerChain {
+	hl := list.New()
+	for _, h := range handlers {
+		hl.PushBack(h)
+	}
+	return newHandlerChain(hl)
+}
+
+func newHandlerChain(hl *list.List) *handlerChain {
+	l := &handlerChain{
+		handlers: hl,
+		current:  hl.Front(),
+	}
+	return l
+}
+
+func (l *handlerChain) HandleRequest(ctx context.Context, req *Request) Responder {
+	if l.current == nil {
+		return nil
+	}
+	h := l.current.Value.(Handler)
+	l.current = l.current.Next()
+	return h.HandleRequest(ctx, req)
+}
+
 // Some built-in handlers
 func handleFavIcon(_ context.Context, _ *Request) Responder {
 	return respond.Func(func(ctx context.Context, rw http.ResponseWriter) {

@@ -53,9 +53,9 @@ type Server struct {
 	Recovery           bool
 
 	invokers struct {
-		favicon  *invokerList
-		notfound *invokerList
-		options  *invokerList
+		favicon  *handlerChain
+		notfound *handlerChain
+		options  *handlerChain
 	}
 }
 
@@ -80,9 +80,9 @@ func NewServer() *Server {
 	if s.sessionTTL < minSessionTTL {
 		s.sessionTTL = minSessionTTL
 	}
-	s.invokers.favicon = toInvokerList(HandlerFunc(handleFavIcon))
-	s.invokers.notfound = toInvokerList(HandleResponder(Status(http.StatusNotFound)))
-	s.invokers.options = toInvokerList(HandlerFunc(s.handleOptions))
+	s.invokers.favicon = toHandlerChain(HandlerFunc(handleFavIcon))
+	s.invokers.notfound = toHandlerChain(HandleResponder(Status(http.StatusNotFound)))
+	s.invokers.options = toHandlerChain(HandlerFunc(s.handleOptions))
 	s.AddTemplateFuncMap(template.FuncMap)
 	return s
 }
@@ -161,27 +161,27 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 func (s *Server) serve(ctx context.Context, req *Request, rw http.ResponseWriter) {
 	path := req.NormalizedPath()
 	method := strings.ToUpper(req.Request().Method)
-	var invokers *invokerList
+	var chain *handlerChain
 	handlers, params := s.match(method, path)
 	for k, v := range params {
 		req.params[k] = v
 	}
 	if handlers != nil && handlers.Len() > 0 {
-		invokers = newInvokerList(handlers)
+		chain = newHandlerChain(handlers)
 	} else {
 		if method == http.MethodOptions {
-			invokers = s.invokers.options
+			chain = s.invokers.options
 		} else if path == faviconPath {
-			invokers = s.invokers.favicon
+			chain = s.invokers.favicon
 		} else {
-			invokers = s.invokers.notfound
+			chain = s.invokers.notfound
 		}
 	}
 	var resp Responder
 	if s.PreHandler != nil && !reservedPaths[path] {
-		resp = s.PreHandler.HandleRequest(withNext(ctx, invokers.Invoke), req)
+		resp = s.PreHandler.HandleRequest(withHandlerChain(ctx, chain), req)
 	} else {
-		resp = invokers.Invoke(ctx, req)
+		resp = chain.HandleRequest(ctx, req)
 	}
 	if resp == nil {
 		resp = Status(http.StatusNotImplemented)
