@@ -17,7 +17,6 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"github.com/gopub/conv"
-
 	"github.com/gopub/log"
 	"github.com/gopub/types"
 	"github.com/gopub/wine/mime"
