@@ -15,6 +15,10 @@ import (
 	"github.com/gopub/wine/mime"
 )
 
+const (
+	StatusTransportFailed = 600
+)
+
 type timeoutReporter interface {
 	Timeout() bool
 }

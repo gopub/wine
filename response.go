@@ -2,9 +2,14 @@ package wine
 
 import (
 	"context"
+	"encoding/json"
+	"errors"
+	"fmt"
 	"github.com/golang/protobuf/proto"
+	"github.com/gopub/types"
 	"io"
 	"net/http"
+	"reflect"
 
 	"github.com/gopub/wine/internal/respond"
 )
@@ -41,7 +46,10 @@ func Redirect(location string, permanent bool) Responder {
 	return respond.Redirect(location, permanent)
 }
 
-func Text(status int, text string) Responder {
+func Text(status int, text string, args ...interface{}) Responder {
+	if len(args) > 0 {
+		text = fmt.Sprintf(text, args...)
+	}
 	return respond.Text(status, text)
 }
 
@@ -81,4 +89,71 @@ func TemplateHTML(name string, params interface{}) Responder {
 // Handle creates a responder with raw http handler
 func Handle(req *http.Request, h http.Handler) Responder {
 	return respond.Handle(req, h)
+}
+
+func Error(err error) Responder {
+	for {
+		u, ok := err.(interface{ Unwrap() error })
+		if !ok {
+			break
+		}
+		err = u.Unwrap()
+	}
+
+	if reflect.TypeOf(errors.New("")) == reflect.TypeOf(err) {
+		return Text(http.StatusInternalServerError, err.Error())
+	}
+
+	if s := extractStatus(err); s > 0 {
+		return Text(s, err.Error())
+	}
+	return Text(http.StatusInternalServerError, err.Error())
+}
+
+func extractStatus(err error) int {
+	keys := []string{"status", "Status", "status_code", "StatusCode", "statusCode", "code", "Code"}
+	i := indirect(err)
+	k := reflect.ValueOf(i).Kind()
+	if k != reflect.Struct && k != reflect.Map {
+		return 0
+	}
+
+	b, jErr := json.Marshal(i)
+	if jErr != nil {
+		logger.Errorf("Marshal: %v", err)
+		return 0
+	}
+	var m types.M
+	jErr = json.Unmarshal(b, &m)
+	if jErr != nil {
+		logger.Errorf("Unmarshal: %v", err)
+		return 0
+	}
+
+	for _, k := range keys {
+		s := m.Int(k)
+		if s > 0 {
+			return s
+		}
+	}
+	return http.StatusInternalServerError
+}
+
+// From html/template/content.go
+// Copyright 2011 The Go Authors. All rights reserved.
+// indirect returns the value, after dereferencing as many times
+// as necessary to reach the base type (or nil).
+func indirect(a interface{}) interface{} {
+	if a == nil {
+		return nil
+	}
+	if t := reflect.TypeOf(a); t.Kind() != reflect.Ptr {
+		// Avoid creating a reflect.Value if it's not a pointer.
+		return a
+	}
+	v := reflect.ValueOf(a)
+	for v.Kind() == reflect.Ptr && !v.IsNil() {
+		v = v.Elem()
+	}
+	return v.Interface()
 }
