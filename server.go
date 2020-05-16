@@ -51,12 +51,6 @@ type Server struct {
 	PreHandler         Handler
 	CompressionEnabled bool
 	Recovery           bool
-
-	invokers struct {
-		favicon  *handlerChain
-		notfound *handlerChain
-		options  *handlerChain
-	}
 }
 
 // NewServer returns a server
@@ -80,9 +74,6 @@ func NewServer() *Server {
 	if s.sessionTTL < minSessionTTL {
 		s.sessionTTL = minSessionTTL
 	}
-	s.invokers.favicon = toHandlerChain(HandlerFunc(handleFavIcon))
-	s.invokers.notfound = toHandlerChain(HandleResponder(Status(http.StatusNotFound)))
-	s.invokers.options = toHandlerChain(HandlerFunc(s.handleOptions))
 	s.AddTemplateFuncMap(template.FuncMap)
 	return s
 }
@@ -162,19 +153,19 @@ func (s *Server) serve(ctx context.Context, req *Request, rw http.ResponseWriter
 	path := req.NormalizedPath()
 	method := strings.ToUpper(req.Request().Method)
 	var chain *handlerChain
-	handlers, params := s.match(method, path)
+	hl, params := s.match(method, path)
 	for k, v := range params {
 		req.params[k] = v
 	}
-	if handlers != nil && handlers.Len() > 0 {
-		chain = newHandlerChain(handlers)
+	if hl != nil && hl.Len() > 0 {
+		chain = newHandlerChain(hl)
 	} else {
 		if method == http.MethodOptions {
-			chain = s.invokers.options
+			chain = toHandlerChain(HandlerFunc(s.handleOptions))
 		} else if path == faviconPath {
-			chain = s.invokers.favicon
+			chain = toHandlerChain(HandlerFunc(handleFavIcon))
 		} else {
-			chain = s.invokers.notfound
+			chain = toHandlerChain(HandleResponder(Status(http.StatusNotFound)))
 		}
 	}
 	var resp Responder

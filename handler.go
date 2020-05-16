@@ -57,12 +57,12 @@ func newHandlerChain(hl *list.List) *handlerChain {
 	return l
 }
 
-func (l *handlerChain) HandleRequest(ctx context.Context, req *Request) Responder {
-	if l.current == nil {
+func (c *handlerChain) HandleRequest(ctx context.Context, req *Request) Responder {
+	if c.current == nil {
 		return nil
 	}
-	h := l.current.Value.(Handler)
-	l.current = l.current.Next()
+	h := c.current.Value.(Handler)
+	c.current = c.current.Next()
 	return h.HandleRequest(ctx, req)
 }
 
