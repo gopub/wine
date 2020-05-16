@@ -2,6 +2,7 @@ package wine
 
 import (
 	"context"
+	"github.com/golang/protobuf/proto"
 	"io"
 	"net/http"
 
@@ -46,6 +47,10 @@ func Text(status int, text string) Responder {
 
 func JSON(status int, value interface{}) Responder {
 	return respond.JSON(status, value)
+}
+
+func Protobuf(status int, message proto.Message) Responder {
+	return respond.Protobuf(status, message)
 }
 
 // StreamFile creates a application/octet-stream response
