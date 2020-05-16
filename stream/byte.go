@@ -11,6 +11,7 @@ import (
 	"github.com/gopub/log"
 	"github.com/gopub/types"
 	"github.com/gopub/wine"
+	iopkg "github.com/gopub/wine/internal/io"
 	"github.com/gopub/wine/mime"
 )
 
@@ -122,7 +123,7 @@ func NewByteReader(client *http.Client, req *http.Request) (ByteReadCloser, erro
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		err = wine.DecodeResponse(resp, nil)
+		err = iopkg.DecodeResponse(resp, nil)
 		if err != nil {
 			return nil, fmt.Errorf("parse result: %w", err)
 		}

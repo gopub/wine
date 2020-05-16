@@ -3,22 +3,16 @@ package wine
 import (
 	"bytes"
 	"context"
-	"encoding"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
-	"reflect"
-	"strings"
 
-	"github.com/golang/protobuf/proto"
-	"github.com/gopub/conv"
 	"github.com/gopub/log"
 	"github.com/gopub/types"
+	iopkg "github.com/gopub/wine/internal/io"
 	"github.com/gopub/wine/mime"
 )
 
@@ -168,7 +162,7 @@ func (c *Client) Do(req *http.Request, result interface{}) error {
 		}
 		return fmt.Errorf("do request: %w", err)
 	}
-	return DecodeResponse(resp, result)
+	return iopkg.DecodeResponse(resp, result)
 }
 
 func (c *Client) dumpRequest(req *http.Request) {
@@ -179,104 +173,4 @@ func (c *Client) dumpRequest(req *http.Request) {
 		return
 	}
 	logger.Debugf(string(data))
-}
-
-func DecodeResponse(resp *http.Response, result interface{}) error {
-	body, err := ioutil.ReadAll(resp.Body)
-	resp.Body.Close()
-	if err != nil {
-		return fmt.Errorf("read resp body: %v", err)
-	}
-	if resp.StatusCode >= http.StatusBadRequest {
-		return types.NewError(resp.StatusCode, string(body))
-	}
-	if result == nil {
-		return nil
-	}
-	ct := mime.GetContentType(resp.Header)
-	switch {
-	case strings.Contains(ct, mime.JSON):
-		return json.Unmarshal(body, result)
-	case strings.Contains(ct, mime.Protobuf):
-		m, ok := result.(proto.Message)
-		if !ok {
-			return fmt.Errorf("expected proto.Message instead of %T", result)
-		}
-		return proto.Unmarshal(body, m)
-	case strings.Contains(ct, mime.Plain):
-		if len(body) == 0 {
-			return errors.New("no data")
-		}
-		return assign(result, body)
-	default:
-		return errors.New("invalid result")
-	}
-}
-
-func assign(dataModel interface{}, body []byte) error {
-	v := reflect.ValueOf(dataModel)
-	if v.Kind() != reflect.Ptr {
-		log.Panicf("Argument dataModel %T is not pointer", dataModel)
-	}
-
-	elem := v.Elem()
-	if !elem.CanSet() {
-		log.Panicf("Argument dataModel %T cannot be set", dataModel)
-	}
-
-	if tu, ok := v.Interface().(encoding.TextUnmarshaler); ok {
-		err := tu.UnmarshalText(body)
-		if err != nil {
-			return fmt.Errorf("unmarshal text: %w", err)
-		}
-		return nil
-	}
-
-	if bu, ok := v.Interface().(encoding.BinaryUnmarshaler); ok {
-		err := bu.UnmarshalBinary(body)
-		if err != nil {
-			return fmt.Errorf("unmarshal binary: %w", err)
-		}
-		return nil
-	}
-
-	switch elem.Kind() {
-	case reflect.String:
-		elem.SetString(string(body))
-	case reflect.Int64,
-		reflect.Int32,
-		reflect.Int,
-		reflect.Int16,
-		reflect.Int8:
-		i, err := conv.ToInt64(body)
-		if err != nil {
-			return fmt.Errorf("parse int: %v", err)
-		}
-		elem.SetInt(i)
-	case reflect.Uint64,
-		reflect.Uint32,
-		reflect.Uint,
-		reflect.Uint16,
-		reflect.Uint8:
-		i, err := conv.ToUint64(body)
-		if err != nil {
-			return fmt.Errorf("parse uint: %w", err)
-		}
-		elem.SetUint(i)
-	case reflect.Float32, reflect.Float64:
-		i, err := conv.ToFloat64(body)
-		if err != nil {
-			return fmt.Errorf("parse float: %w", err)
-		}
-		elem.SetFloat(i)
-	case reflect.Bool:
-		i, err := conv.ToBool(body)
-		if err != nil {
-			return fmt.Errorf("parse bool: %w", err)
-		}
-		elem.SetBool(i)
-	default:
-		return fmt.Errorf("cannot assign to dataModel %T", dataModel)
-	}
-	return nil
 }
