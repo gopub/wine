@@ -112,6 +112,14 @@ func Error(err error) Responder {
 }
 
 func extractStatus(err error) int {
+	if v := reflect.ValueOf(err); v.Kind() == reflect.Int {
+		n := int(v.Int())
+		if n > 0 {
+			return n
+		}
+		return 0
+	}
+
 	keys := []string{"status", "Status", "status_code", "StatusCode", "statusCode", "code", "Code"}
 	i := indirect(err)
 	k := reflect.ValueOf(i).Kind()
