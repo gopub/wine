@@ -225,12 +225,12 @@ func (r *Router) StaticFS(path string, fs http.FileSystem) {
 	})
 }
 
-// Handle binds funcList to path with any(wildcard) method
-func (r *Router) Handle(path string, funcList ...HandlerFunc) {
+// Handle binds funcs to path with any(wildcard) method
+func (r *Router) Handle(path string, funcs ...HandlerFunc) {
 	if path == "" {
 		logger.Panic("Empty path")
 	}
-	handlers := toHandlers(funcList...)
+	handlers := toHandlers(funcs...)
 	if len(handlers) == 0 {
 		logger.Panic("No handlers")
 	}
@@ -249,49 +249,49 @@ func (r *Router) Handle(path string, funcList ...HandlerFunc) {
 	}
 }
 
-// Get binds funcList to path with GET method
-func (r *Router) Get(path string, funcList ...HandlerFunc) {
-	r.Bind(http.MethodGet, path, toHandlers(funcList...)...)
+// Get binds funcs to path with GET method
+func (r *Router) Get(path string, funcs ...HandlerFunc) {
+	r.Bind(http.MethodGet, path, toHandlers(funcs...)...)
 }
 
-// Post binds funcList to path with POST method
-func (r *Router) Post(path string, funcList ...HandlerFunc) {
-	r.Bind(http.MethodPost, path, toHandlers(funcList...)...)
+// Post binds funcs to path with POST method
+func (r *Router) Post(path string, funcs ...HandlerFunc) {
+	r.Bind(http.MethodPost, path, toHandlers(funcs...)...)
 }
 
-// Put binds funcList to path with PUT method
-func (r *Router) Put(path string, funcList ...HandlerFunc) {
-	r.Bind(http.MethodPut, path, toHandlers(funcList...)...)
+// Put binds funcs to path with PUT method
+func (r *Router) Put(path string, funcs ...HandlerFunc) {
+	r.Bind(http.MethodPut, path, toHandlers(funcs...)...)
 }
 
-// Patch binds funcList to path with PATCH method
-func (r *Router) Patch(path string, funcList ...HandlerFunc) {
-	r.Bind(http.MethodPatch, path, toHandlers(funcList...)...)
+// Patch binds funcs to path with PATCH method
+func (r *Router) Patch(path string, funcs ...HandlerFunc) {
+	r.Bind(http.MethodPatch, path, toHandlers(funcs...)...)
 }
 
-// Delete binds funcList to path with DELETE method
-func (r *Router) Delete(path string, funcList ...HandlerFunc) {
-	r.Bind(http.MethodDelete, path, toHandlers(funcList...)...)
+// Delete binds funcs to path with DELETE method
+func (r *Router) Delete(path string, funcs ...HandlerFunc) {
+	r.Bind(http.MethodDelete, path, toHandlers(funcs...)...)
 }
 
-// Options binds funcList to path with OPTIONS method
-func (r *Router) Options(path string, funcList ...HandlerFunc) {
-	r.Bind(http.MethodOptions, path, toHandlers(funcList...)...)
+// Options binds funcs to path with OPTIONS method
+func (r *Router) Options(path string, funcs ...HandlerFunc) {
+	r.Bind(http.MethodOptions, path, toHandlers(funcs...)...)
 }
 
-// Head binds funcList to path with HEAD method
-func (r *Router) Head(path string, funcList ...HandlerFunc) {
-	r.Bind(http.MethodHead, path, toHandlers(funcList...)...)
+// Head binds funcs to path with HEAD method
+func (r *Router) Head(path string, funcs ...HandlerFunc) {
+	r.Bind(http.MethodHead, path, toHandlers(funcs...)...)
 }
 
-// Trace binds funcList to path with TRACE method
-func (r *Router) Trace(path string, funcList ...HandlerFunc) {
-	r.Bind(http.MethodTrace, path, toHandlers(funcList...)...)
+// Trace binds funcs to path with TRACE method
+func (r *Router) Trace(path string, funcs ...HandlerFunc) {
+	r.Bind(http.MethodTrace, path, toHandlers(funcs...)...)
 }
 
-// Connect binds funcList to path with CONNECT method
-func (r *Router) Connect(path string, funcList ...HandlerFunc) {
-	r.Bind(http.MethodConnect, path, toHandlers(funcList...)...)
+// Connect binds funcs to path with CONNECT method
+func (r *Router) Connect(path string, funcs ...HandlerFunc) {
+	r.Bind(http.MethodConnect, path, toHandlers(funcs...)...)
 }
 
 func (r *Router) getRoot(method string) *pathpkg.Node {
