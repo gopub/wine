@@ -198,13 +198,16 @@ func (s *Server) wrapResponseWriter(rw http.ResponseWriter, req *http.Request) h
 		return w
 	}
 
-	enc := req.Header.Get("Accept-Encoding")
-	cw, err := io.NewCompressResponseWriter(w, enc)
-	if err != nil {
-		log.Warnf("NewCompressResponseWriter: %v", err)
-		return w
+	encodings := strings.Split(req.Header.Get("Accept-Encoding"), ",")
+	for _, enc := range encodings {
+		enc = strings.TrimSpace(enc)
+		cw, err := io.NewCompressResponseWriter(w, enc)
+		if err == nil {
+			return cw
+		}
 	}
-	return cw
+	log.Warnf("Unsupported encodings: %v", encodings)
+	return w
 }
 
 func (s *Server) initSession(rw http.ResponseWriter, req *http.Request) string {
