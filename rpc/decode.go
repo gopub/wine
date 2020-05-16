@@ -8,17 +8,16 @@ import (
 	"io/ioutil"
 	"net/http"
 	"reflect"
-	"strconv"
 	"strings"
 
-	"github.com/gopub/log"
-
 	"github.com/golang/protobuf/proto"
+	"github.com/gopub/conv"
+	"github.com/gopub/log"
 	"github.com/gopub/types"
 	"github.com/gopub/wine/mime"
 )
 
-const logLimit = 512
+const bodyLogMaxLen = 512
 
 type Decoder interface {
 	Decode(resp *http.Response, data interface{}) error
@@ -63,7 +62,7 @@ func (r *StdDecoder) decodeJSON(status int, body []byte, data interface{}) error
 	res := &jsonResult{Data: data}
 	err := json.Unmarshal(body, res)
 	if err != nil {
-		s := trimCount(string(body), logLimit)
+		s := trimCount(string(body), bodyLogMaxLen)
 		if status >= http.StatusBadRequest {
 			return types.NewError(status, s)
 		}
@@ -75,7 +74,7 @@ func (r *StdDecoder) decodeJSON(status int, body []byte, data interface{}) error
 func (r *StdDecoder) decodeProtobuf(status int, body []byte, data interface{}) error {
 	if data == nil {
 		if status >= http.StatusBadRequest {
-			s := trimCount(string(body), logLimit)
+			s := trimCount(string(body), bodyLogMaxLen)
 			if status >= http.StatusBadRequest {
 				return types.NewError(status, s)
 			}
@@ -110,7 +109,7 @@ func (r *StdDecoder) decodePlainText(status int, body []byte, data interface{}) 
 
 func trimCount(s string, n int) string {
 	if len(s) > n {
-		return s[:logLimit] + "..."
+		return s[:bodyLogMaxLen] + "..."
 	}
 	return s
 }
@@ -150,9 +149,9 @@ func assign(dataModel interface{}, body []byte) error {
 		reflect.Int,
 		reflect.Int16,
 		reflect.Int8:
-		i, err := strconv.ParseInt(string(body), 10, 64)
+		i, err := conv.ToInt64(body)
 		if err != nil {
-			return types.NewError(StatusInvalidResponse, fmt.Sprintf("parse int: %v", err))
+			return fmt.Errorf("parse int: %v", err)
 		}
 		elem.SetInt(i)
 	case reflect.Uint64,
@@ -160,19 +159,19 @@ func assign(dataModel interface{}, body []byte) error {
 		reflect.Uint,
 		reflect.Uint16,
 		reflect.Uint8:
-		i, err := strconv.ParseUint(string(body), 10, 64)
+		i, err := conv.ToUint64(body)
 		if err != nil {
 			return fmt.Errorf("parse uint: %w", err)
 		}
 		elem.SetUint(i)
 	case reflect.Float32, reflect.Float64:
-		i, err := strconv.ParseFloat(string(body), 64)
+		i, err := conv.ToFloat64(body)
 		if err != nil {
 			return fmt.Errorf("parse float: %w", err)
 		}
 		elem.SetFloat(i)
 	case reflect.Bool:
-		i, err := strconv.ParseBool(string(body))
+		i, err := conv.ToBool(body)
 		if err != nil {
 			return fmt.Errorf("parse bool: %w", err)
 		}
