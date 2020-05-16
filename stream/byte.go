@@ -122,8 +122,9 @@ func NewByteReader(client *http.Client, req *http.Request) (ByteReadCloser, erro
 		return nil, fmt.Errorf("do request: %w", err)
 	}
 
+	de := &rpc.StdDecoder{}
 	if resp.StatusCode != http.StatusOK {
-		err = rpc.ParseResult(resp, nil, true)
+		err = de.Decode(resp, nil)
 		if err != nil {
 			return nil, fmt.Errorf("parse result: %w", err)
 		}

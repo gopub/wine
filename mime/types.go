@@ -5,11 +5,12 @@ import (
 )
 
 const (
-	Plain = "text/plain"
-	HTML  = "text/html"
-	XML2  = "text/xml"
-	XML   = "application/xml"
-	XHTML = "application/xhtml+xml"
+	Plain    = "text/plain"
+	HTML     = "text/html"
+	XML2     = "text/xml"
+	XML      = "application/xml"
+	XHTML    = "application/xhtml+xml"
+	Protobuf = "application/x-protobuf"
 
 	FormData = "multipart/form-data"
 	GIF      = "image/gif"

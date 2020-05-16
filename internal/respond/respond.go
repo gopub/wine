@@ -3,9 +3,12 @@ package respond
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strings"
 
+	"github.com/golang/protobuf/proto"
+	"github.com/gopub/conv"
 	"github.com/gopub/log"
 	"github.com/gopub/wine/mime"
 )
@@ -25,52 +28,51 @@ type Response struct {
 }
 
 // Respond writes header and body to response writer w
-func (r *Response) Respond(_ context.Context, w http.ResponseWriter) {
-	body, ok := r.value.([]byte)
-	if !ok {
-		body = r.getBytes()
+func (r *Response) Respond(ctx context.Context, w http.ResponseWriter) {
+	body, err := r.marshalBody()
+	if err != nil {
+		errResp := Text(http.StatusInternalServerError, err.Error())
+		errResp.Respond(ctx, w)
+		return
 	}
 
 	for k, v := range r.header {
 		w.Header()[k] = v
 	}
 	w.WriteHeader(r.status)
-	if _, err := w.Write(body); err != nil {
-		log.Error(err)
+	if _, err = w.Write(body); err != nil {
+		logger.Errorf("Write body: %v", err)
 	}
 }
 
-func (r *Response) getBytes() []byte {
+func (r *Response) marshalBody() ([]byte, error) {
+	if r.value == nil {
+		return nil, nil
+	}
+
 	if body, ok := r.value.([]byte); ok {
-		return body
+		return body, nil
 	}
 
-	contentType := r.header.Get(mime.ContentType)
-
+	ct := r.header.Get(mime.ContentType)
 	switch {
-	case strings.Contains(contentType, mime.JSON):
-		if r.value != nil {
-			body, err := json.Marshal(r.value)
-			if err != nil {
-				logger.Error(err)
-			}
-			return body
+	case strings.Contains(ct, mime.JSON):
+		return json.Marshal(r.value)
+	case strings.Contains(ct, mime.Protobuf):
+		if m, ok := r.value.(proto.Message); ok {
+			return proto.Marshal(m)
 		}
-	case strings.Contains(contentType, mime.Plain):
-		fallthrough
-	case strings.Contains(contentType, mime.HTML):
-		fallthrough
-	case strings.Contains(contentType, mime.XML):
-		fallthrough
-	case strings.Contains(contentType, mime.XML2):
-		if s, ok := r.value.(string); ok {
-			return []byte(s)
+		return nil, fmt.Errorf("value is %T instead of proto.message", r.value)
+	case strings.Contains(ct, mime.Plain) || strings.Contains(ct, mime.HTML) ||
+		strings.Contains(ct, mime.XML) || strings.Contains(ct, mime.XML2):
+		s, err := conv.ToString(r.value)
+		if err != nil {
+			return nil, err
 		}
+		return []byte(s), nil
 	default:
-		log.Warn("Unsupported Content-Type:", contentType)
+		return nil, fmt.Errorf("%s is not supported", ct)
 	}
-
-	return nil
 }
 
 func (r *Response) Status() int {

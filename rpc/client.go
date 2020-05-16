@@ -28,16 +28,16 @@ type Client struct {
 	header         http.Header
 	HeaderBuilder  HeaderBuilder
 	RequestLogging bool
-	UseResultModel bool
+	Decoder        Decoder
 }
 
 var DefaultClient = NewClient(http.DefaultClient)
 
 func NewClient(client *http.Client) *Client {
 	return &Client{
-		client:         client,
-		header:         make(http.Header),
-		UseResultModel: true,
+		client:  client,
+		header:  make(http.Header),
+		Decoder: &StdDecoder{},
 	}
 }
 
@@ -159,7 +159,7 @@ func (c *Client) Do(req *http.Request, result interface{}) error {
 		}
 		return fmt.Errorf("do request: %w", err)
 	}
-	return ParseResult(resp, result, !c.UseResultModel)
+	return c.Decoder.Decode(resp, result)
 }
 
 func (c *Client) dumpRequest(req *http.Request) {

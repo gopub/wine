@@ -72,7 +72,8 @@ func NewJSONReader(client *http.Client, req *http.Request) (JSONReadCloser, erro
 		return nil, fmt.Errorf("do request: %w", err)
 	}
 	if resp.StatusCode != http.StatusOK {
-		err = rpc.ParseResult(resp, nil, true)
+		de := &rpc.StdDecoder{}
+		err = de.Decode(resp, nil)
 		if err != nil {
 			return nil, fmt.Errorf("parse result: %w", err)
 		}

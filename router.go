@@ -102,8 +102,8 @@ func (r *Router) UseHandlers(handlers ...Handler) *Router {
 }
 
 // Use is similar with UseHandlers
-func (r *Router) Use(funcList ...HandlerFunc) *Router {
-	return r.UseHandlers(toHandlers(funcList...)...)
+func (r *Router) Use(funcs ...HandlerFunc) *Router {
+	return r.UseHandlers(toHandlers(funcs...)...)
 }
 
 // match finds handlers and parses path parameters according to method and path
@@ -170,7 +170,7 @@ func (r *Router) Bind(method, path string, handlers ...Handler) {
 	path = pathpkg.Normalize(r.basePath + "/" + path)
 	if path == "" {
 		if r.root.IsEndpoint() {
-			logger.Panicf("Conflict: ANY, %s", r.basePath)
+			logger.Panicf("Conflict: %s", r.basePath)
 		} else if root.IsEndpoint() {
 			logger.Panicf("Conflict: %s, %s", method, r.basePath)
 		} else {
@@ -181,7 +181,7 @@ func (r *Router) Bind(method, path string, handlers ...Handler) {
 		if pair := r.root.Conflict(nodeList); pair != nil {
 			first := pair.First.(*pathpkg.Node).Path()
 			second := pair.Second.(*pathpkg.Node).Path()
-			logger.Panicf("Conflict: ANY %s, %s %s", first, method, second)
+			logger.Panicf("Conflict: %s, %s %s", first, method, second)
 		}
 		root.Add(nodeList)
 	}
@@ -239,7 +239,7 @@ func (r *Router) Handle(path string, funcList ...HandlerFunc) {
 	path = pathpkg.Normalize(r.basePath + "/" + path)
 	if path == "" {
 		if r.root.IsEndpoint() {
-			logger.Panicf("Conflict: ANY, %s", r.basePath)
+			logger.Panicf("Conflict: %s", r.basePath)
 		} else {
 			r.root.SetHandlers(hl)
 		}
