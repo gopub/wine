@@ -24,7 +24,7 @@ const (
 	endpointPath = "_debug/endpoints"
 	echoPath     = "_debug/echo"
 	faviconPath  = "favicon.ico"
-	version      = "v1.22.19"
+	version      = "v1.22.19.1"
 )
 
 var serverUpAt = time.Now()
@@ -39,8 +39,10 @@ var reservedPaths = map[string]bool{
 }
 
 const (
+	defaultReqMaxMem  = int(8 * types.MB)
 	defaultSessionTTL = 30 * time.Minute
 	minSessionTTL     = 5 * time.Minute
+	defaultTimeout    = 10 * time.Second
 )
 
 // Server implements web server
@@ -69,11 +71,11 @@ func NewServer() *Server {
 	s := &Server{
 		sessionName:        environ.String("wine.session.name", "wsessionid"),
 		sessionTTL:         environ.Duration("wine.session.ttl", defaultSessionTTL),
-		maxRequestMemory:   types.ByteUnit(environ.SizeInBytes("wine.max_memory", int(8*types.MB))),
+		maxRequestMemory:   types.ByteUnit(environ.SizeInBytes("wine.max_memory", defaultReqMaxMem)),
 		Router:             NewRouter(),
 		Manager:            template.NewManager(),
 		Header:             header,
-		Timeout:            environ.Duration("wine.timeout", 10*time.Second),
+		Timeout:            environ.Duration("wine.timeout", defaultTimeout),
 		CompressionEnabled: environ.Bool("wine.compression", true),
 		Recovery:           environ.Bool("wine.recovery", true),
 	}
