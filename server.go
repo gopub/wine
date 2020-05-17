@@ -280,7 +280,7 @@ func (s *Server) closeWriter(w http.ResponseWriter) {
 }
 
 func (s *Server) logRequest(req *http.Request, rw http.ResponseWriter, startAt time.Time) {
-	if reservedPaths[req.URL.Path] {
+	if reservedPaths[req.RequestURI] {
 		return
 	}
 	status := 0
