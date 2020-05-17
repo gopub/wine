@@ -24,7 +24,7 @@ const (
 	endpointPath = "_debug/endpoints"
 	echoPath     = "_debug/echo"
 	faviconPath  = "favicon.ico"
-	version      = "v1.22.19.1"
+	version      = "v1.22.19.2"
 )
 
 var serverUpAt = time.Now()
@@ -280,6 +280,9 @@ func (s *Server) closeWriter(w http.ResponseWriter) {
 }
 
 func (s *Server) logRequest(req *http.Request, rw http.ResponseWriter, startAt time.Time) {
+	if reservedPaths[req.URL.Path] {
+		return
+	}
 	status := 0
 	if w, ok := rw.(*io.ResponseWriter); ok {
 		status = w.Status()
