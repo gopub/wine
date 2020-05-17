@@ -43,7 +43,7 @@ func Format(code int, format string, a ...interface{}) *Error {
 
 var rawErrType = reflect.TypeOf(errors.New(""))
 
-func GetStatus(err error) int {
+func GetCode(err error) int {
 	if reflect.TypeOf(err) == rawErrType {
 		return 0
 	}

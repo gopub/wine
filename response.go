@@ -93,7 +93,7 @@ func Error(err error) Responder {
 		return OK
 	}
 	err = errors.Cause(err)
-	if s := errors.GetStatus(err); s > 0 {
+	if s := errors.GetCode(err); s > 0 {
 		return Text(s, err.Error())
 	}
 	return Text(http.StatusInternalServerError, err.Error())
