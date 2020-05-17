@@ -313,13 +313,14 @@ func (s *Server) handleOptions(_ context.Context, req *Request) Responder {
 	}
 
 	return respond.Func(func(ctx context.Context, rw http.ResponseWriter) {
-		if len(methods) > 0 {
-			joined := []string{strings.Join(methods, ",")}
-			rw.Header()["Allow"] = joined
-			rw.Header()["Access-Control-Allow-Methods"] = joined
-			rw.WriteHeader(http.StatusNoContent)
-		} else {
+		if len(methods) == 0 {
 			rw.WriteHeader(http.StatusNotFound)
+			return
 		}
+
+		joined := []string{strings.Join(methods, ",")}
+		rw.Header()["Allow"] = joined
+		rw.Header()["Access-Control-Allow-Methods"] = joined
+		rw.WriteHeader(http.StatusNoContent)
 	})
 }
