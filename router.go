@@ -44,7 +44,7 @@ func (r *Router) clone() *Router {
 		root:         r.root,
 		methodToRoot: r.methodToRoot,
 		basePath:     r.basePath,
-		authHandler:  r.authHandler,
+		authHandler:  HandlerFunc(handleAuth),
 	}
 	nr.handlers = make([]Handler, len(r.handlers))
 	copy(nr.handlers, r.handlers)

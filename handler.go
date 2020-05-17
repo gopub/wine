@@ -98,6 +98,13 @@ func handleDate(_ context.Context, req *Request) Responder {
 	return JSON(http.StatusOK, res)
 }
 
+func handleAuth(ctx context.Context, req *Request) Responder {
+	if GetUserID(ctx) <= 0 {
+		return Text(http.StatusUnauthorized, "")
+	}
+	return Next(ctx, req)
+}
+
 func toHandlers(fs ...HandlerFunc) []Handler {
 	l := make([]Handler, len(fs))
 	for i, f := range fs {
