@@ -283,10 +283,12 @@ func (s *Server) logRequest(req *http.Request, rw http.ResponseWriter, startAt t
 		status,
 		time.Since(startAt))
 	if status >= http.StatusBadRequest {
+		cookie := req.Header.Get("Cookie")
+		ua := req.Header.Get("User-Agent")
 		if status != http.StatusUnauthorized {
-			logger.Errorf("%s | %v | %v", info, req.Header, req.PostForm)
+			logger.Errorf("%s | Cookie:%s User-Agent:%s | %v", info, cookie, ua, req.PostForm)
 		} else {
-			logger.Errorf("%s | %v", info, req.Header)
+			logger.Errorf("%s | Cookie:%s User-Agent:%s", info, cookie, ua)
 		}
 	} else {
 		logger.Info(info)
