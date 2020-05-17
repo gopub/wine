@@ -25,7 +25,7 @@ const (
 	endpointPath = "_debug/endpoints"
 	echoPath     = "_debug/echo"
 	faviconPath  = "favicon.ico"
-	version      = "v1.22.20"
+	version      = "v1.22.21"
 )
 
 var serverUpAt = time.Now()
