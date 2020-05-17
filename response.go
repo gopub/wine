@@ -2,8 +2,8 @@ package wine
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -11,7 +11,7 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"github.com/gopub/types"
-
+	"github.com/gopub/wine/errors"
 	"github.com/gopub/wine/internal/respond"
 )
 
@@ -103,6 +103,10 @@ func Error(err error) Responder {
 
 	if reflect.TypeOf(errors.New("")) == reflect.TypeOf(err) {
 		return Text(http.StatusInternalServerError, err.Error())
+	}
+
+	if err == errors.NotExists || err == sql.ErrNoRows {
+		return Text(http.StatusNotFound, err.Error())
 	}
 
 	if s := extractStatus(err); s > 0 {
