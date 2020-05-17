@@ -332,6 +332,9 @@ func (r *Router) listEndpoints(ctx context.Context, req *Request) Responder {
 	nodeToMethod := make(map[*pathpkg.Node]string, 10)
 	for method, root := range r.methodToRoot {
 		for _, node := range root.ListEndpoints() {
+			if reservedPaths[node.Path()] {
+				continue
+			}
 			l = append(l, node)
 			nodeToMethod[node] = method
 			if n := len(node.Path()); n > maxLenOfPath {
@@ -340,6 +343,9 @@ func (r *Router) listEndpoints(ctx context.Context, req *Request) Responder {
 		}
 	}
 	for _, node := range r.root.ListEndpoints() {
+		if reservedPaths[node.Path()] {
+			continue
+		}
 		l = append(l, node)
 		nodeToMethod[node] = "*"
 		if n := len(node.Path()); n > maxLenOfPath {
