@@ -88,6 +88,9 @@ func Handle(req *http.Request, h http.Handler) Responder {
 }
 
 func Error(err error) Responder {
+	if err == nil {
+		return OK
+	}
 	err = errors.Cause(err)
 	if s := errors.GetStatus(err); s > 0 {
 		return Text(s, err.Error())
