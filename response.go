@@ -105,7 +105,7 @@ func Error(err error) Responder {
 		return Text(http.StatusInternalServerError, err.Error())
 	}
 
-	if err == errors.NotExists || err == sql.ErrNoRows {
+	if err == errors.NotExist || err == sql.ErrNoRows {
 		return Text(http.StatusNotFound, err.Error())
 	}
 

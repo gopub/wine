@@ -7,7 +7,7 @@ func (e errString) Error() string {
 }
 
 const (
-	NotExists errString = "not exists"
+	NotExist errString = "not exist"
 )
 
 func String(s string) error {
