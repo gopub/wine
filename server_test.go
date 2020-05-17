@@ -39,7 +39,7 @@ func TestServerStatus(t *testing.T) {
 	})
 
 	t.Run("NotFound", func(t *testing.T) {
-		resp, err := http.DefaultClient.Get(host + "/notfound")
+		resp, err := http.DefaultClient.Get(host + "/notfoundHandler")
 		require.NoError(t, err)
 		require.Equal(t, http.StatusNotFound, resp.StatusCode)
 	})

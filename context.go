@@ -13,7 +13,7 @@ type contextKey int
 
 // Context keys
 const (
-	ckHandlerChain contextKey = iota + 1
+	ckNextHandler contextKey = iota + 1
 	ckBasicAuthUser
 	ckTemplateManager
 	ckSessionID
@@ -28,15 +28,15 @@ const (
 )
 
 func Next(ctx context.Context, req *Request) Responder {
-	i, _ := ctx.Value(ckHandlerChain).(*handlerChain)
+	i, _ := ctx.Value(ckNextHandler).(*linkedHandler)
 	if i == nil {
 		return nil
 	}
 	return i.HandleRequest(ctx, req)
 }
 
-func withHandlerChain(ctx context.Context, h *handlerChain) context.Context {
-	return context.WithValue(ctx, ckHandlerChain, h)
+func withNextHandler(ctx context.Context, h *linkedHandler) context.Context {
+	return context.WithValue(ctx, ckNextHandler, h)
 }
 
 func GetBasicAuthUser(ctx context.Context) string {

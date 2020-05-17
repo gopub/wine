@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/gopub/wine/internal/resource"
 	"net/http"
 	"runtime/debug"
 	"strings"
@@ -13,7 +14,6 @@ import (
 	"github.com/gopub/log"
 	"github.com/gopub/types"
 	"github.com/gopub/wine/internal/io"
-	"github.com/gopub/wine/internal/resource"
 	"github.com/gopub/wine/internal/respond"
 	"github.com/gopub/wine/internal/template"
 )
@@ -60,6 +60,10 @@ type Server struct {
 	PreHandler         Handler
 	CompressionEnabled bool
 	Recovery           bool
+
+	optionHandler   *linkedHandler
+	faviconHandler  *linkedHandler
+	notfoundHandler *linkedHandler
 }
 
 // NewServer returns a server
@@ -80,6 +84,11 @@ func NewServer() *Server {
 		CompressionEnabled: environ.Bool("wine.compression", true),
 		Recovery:           environ.Bool("wine.recovery", true),
 	}
+
+	s.optionHandler = toLinkedHandler(HandlerFunc(s.handleOptions))
+	s.faviconHandler = toLinkedHandler(HandleResponder(respond.Bytes(http.StatusOK, resource.Favicon)))
+	s.notfoundHandler = toLinkedHandler(HandleResponder(Status(http.StatusNotFound)))
+
 	if s.sessionTTL < minSessionTTL {
 		s.sessionTTL = minSessionTTL
 	}
@@ -161,27 +170,27 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 func (s *Server) serve(ctx context.Context, req *Request, rw http.ResponseWriter) {
 	path := req.NormalizedPath()
 	method := strings.ToUpper(req.Request().Method)
-	var chain *handlerChain
+	var h *linkedHandler
 	hl, params := s.match(method, path)
 	for k, v := range params {
 		req.params[k] = v
 	}
 	if hl != nil && hl.Len() > 0 {
-		chain = newHandlerChain(hl)
+		h = (*linkedHandler)(hl.Front())
 	} else {
 		if method == http.MethodOptions {
-			chain = toHandlerChain(HandlerFunc(s.handleOptions))
+			h = s.optionHandler
 		} else if path == faviconPath {
-			chain = toHandlerChain(HandleResponder(respond.Bytes(http.StatusOK, resource.Favicon)))
+			h = s.faviconHandler
 		} else {
-			chain = toHandlerChain(HandleResponder(Status(http.StatusNotFound)))
+			h = s.notfoundHandler
 		}
 	}
 	var resp Responder
 	if s.PreHandler != nil && !reservedPaths[path] {
-		resp = s.PreHandler.HandleRequest(withHandlerChain(ctx, chain), req)
+		resp = s.PreHandler.HandleRequest(withNextHandler(ctx, h), req)
 	} else {
-		resp = chain.HandleRequest(ctx, req)
+		resp = h.HandleRequest(ctx, req)
 	}
 	if resp == nil {
 		resp = Status(http.StatusNotImplemented)
@@ -281,12 +290,12 @@ func (s *Server) closeWriter(w http.ResponseWriter) {
 }
 
 func (s *Server) logRequest(req *http.Request, rw http.ResponseWriter, startAt time.Time) {
-	if reservedPaths[req.RequestURI[1:]] {
-		return
-	}
 	status := 0
-	if w, ok := rw.(*io.ResponseWriter); ok {
+	if w, ok := rw.(interface{ Status() int }); ok {
 		status = w.Status()
+	}
+	if reservedPaths[req.RequestURI[1:]] && status < http.StatusBadRequest {
+		return
 	}
 	info := fmt.Sprintf("%s %s %s | %d %v",
 		req.RemoteAddr,

@@ -32,34 +32,22 @@ func (h HandlerFunc) String() string {
 	return runtime.FuncForPC(reflect.ValueOf(h).Pointer()).Name()
 }
 
-type handlerChain struct {
-	handlers *list.List
-	current  *list.Element
-}
+type linkedHandler list.Element
 
-func toHandlerChain(handlers ...Handler) *handlerChain {
+func toLinkedHandler(handlers ...Handler) *linkedHandler {
 	hl := list.New()
 	for _, h := range handlers {
 		hl.PushBack(h)
 	}
-	return newHandlerChain(hl)
+	return (*linkedHandler)(hl.Front())
 }
 
-func newHandlerChain(hl *list.List) *handlerChain {
-	l := &handlerChain{
-		handlers: hl,
-		current:  hl.Front(),
-	}
-	return l
+func (h *linkedHandler) next() *linkedHandler {
+	return (*linkedHandler)((*list.Element)(h).Next())
 }
 
-func (c *handlerChain) HandleRequest(ctx context.Context, req *Request) Responder {
-	if c.current == nil {
-		return nil
-	}
-	h := c.current.Value.(Handler)
-	c.current = c.current.Next()
-	return h.HandleRequest(ctx, req)
+func (h *linkedHandler) HandleRequest(ctx context.Context, req *Request) Responder {
+	return h.Value.(Handler).HandleRequest(withNextHandler(ctx, h.next()), req)
 }
 
 func handleEcho(_ context.Context, req *Request) Responder {
