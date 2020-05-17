@@ -6,9 +6,8 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/gopub/wine/internal/respond"
-
 	"github.com/gopub/log"
+	"github.com/gopub/wine/internal/respond"
 )
 
 // NewBasicAuthHandler returns a basic auth interceptor

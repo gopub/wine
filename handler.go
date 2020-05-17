@@ -11,11 +11,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gopub/wine/internal/respond"
-
 	"github.com/gopub/log"
 	"github.com/gopub/types"
 	"github.com/gopub/wine/internal/resource"
+	"github.com/gopub/wine/internal/respond"
 	"github.com/gopub/wine/mime"
 )
 
