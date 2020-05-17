@@ -20,10 +20,6 @@ const (
 	StatusTransportFailed = 600
 )
 
-type timeoutReporter interface {
-	Timeout() bool
-}
-
 type HeaderBuilder interface {
 	Build(ctx context.Context, header http.Header) http.Header
 }
@@ -33,14 +29,16 @@ type Client struct {
 	header         http.Header
 	HeaderBuilder  HeaderBuilder
 	RequestLogging bool
+	Decoder        func(resp *http.Response, result interface{}) error
 }
 
 var DefaultClient = NewClient(http.DefaultClient)
 
 func NewClient(client *http.Client) *Client {
 	return &Client{
-		client: client,
-		header: make(http.Header),
+		client:  client,
+		header:  make(http.Header),
+		Decoder: iopkg.DecodeResponse,
 	}
 }
 
@@ -154,7 +152,7 @@ func (c *Client) Do(req *http.Request, result interface{}) error {
 		if err == context.DeadlineExceeded {
 			err = types.NewError(http.StatusRequestTimeout, err.Error())
 		} else {
-			if tr, ok := err.(timeoutReporter); ok && tr.Timeout() {
+			if tr, ok := err.(interface{ Timeout() bool }); ok && tr.Timeout() {
 				err = types.NewError(http.StatusRequestTimeout, err.Error())
 			} else {
 				err = types.NewError(StatusTransportFailed, err.Error())
@@ -162,7 +160,7 @@ func (c *Client) Do(req *http.Request, result interface{}) error {
 		}
 		return fmt.Errorf("do request: %w", err)
 	}
-	return iopkg.DecodeResponse(resp, result)
+	return c.Decoder(resp, result)
 }
 
 func (c *Client) dumpRequest(req *http.Request) {
