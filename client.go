@@ -178,6 +178,6 @@ func (c *Client) GetServerTime(ctx context.Context, serverURL string) (int64, er
 	var res struct {
 		Timestamp int64 `json:"timestamp"`
 	}
-	err := c.Get(ctx, JoinURL(serverURL, "_sys/date"), nil, &res)
+	err := c.Get(ctx, JoinURL(serverURL, sysDatePath), nil, &res)
 	return res.Timestamp, errors.Wrapf(err, "")
 }
