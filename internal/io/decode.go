@@ -2,7 +2,6 @@ package io
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -10,7 +9,7 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"github.com/gopub/conv"
-	"github.com/gopub/types"
+	"github.com/gopub/wine/errors"
 	"github.com/gopub/wine/mime"
 )
 
@@ -21,7 +20,7 @@ func DecodeResponse(resp *http.Response, result interface{}) error {
 		return fmt.Errorf("read resp body: %v", err)
 	}
 	if resp.StatusCode >= http.StatusBadRequest {
-		return types.NewError(resp.StatusCode, string(body))
+		return errors.Format(resp.StatusCode, string(body))
 	}
 	if result == nil {
 		return nil

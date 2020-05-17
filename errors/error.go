@@ -5,10 +5,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/gopub/log"
-	"github.com/gopub/types"
 	"net/http"
 	"reflect"
+
+	"github.com/gopub/log"
+	"github.com/gopub/types"
 )
 
 var logger = log.Default()

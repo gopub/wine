@@ -11,7 +11,7 @@ import (
 	"net/url"
 
 	"github.com/gopub/log"
-	"github.com/gopub/types"
+	"github.com/gopub/wine/errors"
 	iopkg "github.com/gopub/wine/internal/io"
 	"github.com/gopub/wine/mime"
 )
@@ -150,12 +150,12 @@ func (c *Client) Do(req *http.Request, result interface{}) error {
 	resp, err := c.client.Do(req)
 	if err != nil {
 		if err == context.DeadlineExceeded {
-			err = types.NewError(http.StatusRequestTimeout, err.Error())
+			err = errors.RequestTimeout(err.Error())
 		} else {
 			if tr, ok := err.(interface{ Timeout() bool }); ok && tr.Timeout() {
-				err = types.NewError(http.StatusRequestTimeout, err.Error())
+				err = errors.RequestTimeout(err.Error())
 			} else {
-				err = types.NewError(StatusTransportFailed, err.Error())
+				err = errors.Format(StatusTransportFailed, err.Error())
 			}
 		}
 		return fmt.Errorf("do request: %w", err)

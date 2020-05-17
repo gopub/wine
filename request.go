@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/gopub/wine/errors"
+
 	"github.com/gopub/types"
 	"github.com/gopub/wine/internal/io"
 	"github.com/gopub/wine/internal/path"
@@ -93,9 +95,7 @@ func (r *Request) UnmarshalParams(i interface{}) error {
 
 	if r.ContentType() == mime.JSON {
 		err := json.Unmarshal(r.Body(), i)
-		if err != nil {
-			return types.NewError(http.StatusBadRequest, "unmarshal: %v", err)
-		}
+		return errors.Wrapf(err, "unmarshal json")
 	}
 	return nil
 }

@@ -7,10 +7,10 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/gopub/log"
-	"github.com/gopub/types"
-	"github.com/gopub/wine"
 	iopkg "github.com/gopub/wine/internal/io"
+
+	"github.com/gopub/log"
+	"github.com/gopub/wine"
 	"github.com/gopub/wine/mime"
 )
 
@@ -71,12 +71,9 @@ func NewJSONReader(client *http.Client, req *http.Request) (JSONReadCloser, erro
 	if err != nil {
 		return nil, fmt.Errorf("do request: %w", err)
 	}
-	if resp.StatusCode != http.StatusOK {
-		err = iopkg.DecodeResponse(resp, nil)
-		if err != nil {
-			return nil, fmt.Errorf("parse result: %w", err)
-		}
-		return nil, types.NewError(resp.StatusCode, "unknown error")
+	err = iopkg.DecodeResponse(resp, nil)
+	if err != nil {
+		return nil, fmt.Errorf("parse result: %w", err)
 	}
 	r := newJSONReadCloser(resp.Body)
 	var greeting interface{}

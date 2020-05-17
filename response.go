@@ -3,11 +3,12 @@ package wine
 import (
 	"context"
 	"fmt"
+	"io"
+	"net/http"
+
 	"github.com/golang/protobuf/proto"
 	"github.com/gopub/wine/errors"
 	"github.com/gopub/wine/internal/respond"
-	"io"
-	"net/http"
 )
 
 // Responder interface is used by Wine server to write response to the client
