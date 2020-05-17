@@ -2,17 +2,12 @@ package wine
 
 import (
 	"context"
-	"database/sql"
-	"encoding/json"
 	"fmt"
-	"io"
-	"net/http"
-	"reflect"
-
 	"github.com/golang/protobuf/proto"
-	"github.com/gopub/types"
 	"github.com/gopub/wine/errors"
 	"github.com/gopub/wine/internal/respond"
+	"io"
+	"net/http"
 )
 
 // Responder interface is used by Wine server to write response to the client
@@ -93,80 +88,9 @@ func Handle(req *http.Request, h http.Handler) Responder {
 }
 
 func Error(err error) Responder {
-	for {
-		u, ok := err.(interface{ Unwrap() error })
-		if !ok {
-			break
-		}
-		err = u.Unwrap()
-	}
-
-	if reflect.TypeOf(errors.New("")) == reflect.TypeOf(err) {
-		return Text(http.StatusInternalServerError, err.Error())
-	}
-
-	if err == errors.NotExist || err == sql.ErrNoRows {
-		return Text(http.StatusNotFound, err.Error())
-	}
-
-	if s := extractStatus(err); s > 0 {
+	err = errors.Cause(err)
+	if s := errors.GetStatus(err); s > 0 {
 		return Text(s, err.Error())
 	}
 	return Text(http.StatusInternalServerError, err.Error())
-}
-
-func extractStatus(err error) int {
-	if v := reflect.ValueOf(err); v.Kind() == reflect.Int {
-		n := int(v.Int())
-		if n > 0 {
-			return n
-		}
-		return 0
-	}
-
-	keys := []string{"status", "Status", "status_code", "StatusCode", "statusCode", "code", "Code"}
-	i := indirect(err)
-	k := reflect.ValueOf(i).Kind()
-	if k != reflect.Struct && k != reflect.Map {
-		return 0
-	}
-
-	b, jErr := json.Marshal(i)
-	if jErr != nil {
-		logger.Errorf("Marshal: %v", err)
-		return 0
-	}
-	var m types.M
-	jErr = json.Unmarshal(b, &m)
-	if jErr != nil {
-		logger.Errorf("Unmarshal: %v", err)
-		return 0
-	}
-
-	for _, k := range keys {
-		s := m.Int(k)
-		if s > 0 {
-			return s
-		}
-	}
-	return http.StatusInternalServerError
-}
-
-// From html/template/content.go
-// Copyright 2011 The Go Authors. All rights reserved.
-// indirect returns the value, after dereferencing as many times
-// as necessary to reach the base type (or nil).
-func indirect(a interface{}) interface{} {
-	if a == nil {
-		return nil
-	}
-	if t := reflect.TypeOf(a); t.Kind() != reflect.Ptr {
-		// Avoid creating a reflect.Value if it's not a pointer.
-		return a
-	}
-	v := reflect.ValueOf(a)
-	for v.Kind() == reflect.Ptr && !v.IsNil() {
-		v = v.Elem()
-	}
-	return v.Interface()
 }

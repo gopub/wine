@@ -17,3 +17,14 @@ func Is(err, target error) bool {
 func As(err error, target interface{}) bool {
 	return errors.As(err, target)
 }
+
+func Cause(err error) error {
+	for {
+		u, ok := err.(interface{ Unwrap() error })
+		if !ok {
+			break
+		}
+		err = u.Unwrap()
+	}
+	return err
+}
