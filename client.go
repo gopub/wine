@@ -172,3 +172,12 @@ func (c *Client) dumpRequest(req *http.Request) {
 	}
 	logger.Debugf(string(data))
 }
+
+// GetServerTime only works if server is powered by wine
+func (c *Client) GetServerTime(ctx context.Context, serverURL string) (int64, error) {
+	var res struct {
+		Timestamp int64 `json:"timestamp"`
+	}
+	err := c.Get(ctx, JoinURL(serverURL, "_sys/date"), nil, &res)
+	return res.Timestamp, errors.Wrapf(err, "")
+}
