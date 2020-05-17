@@ -36,6 +36,8 @@ func NewRouter() *Router {
 func (r *Router) bindSysHandlers() {
 	r.Get(endpointPath, r.listEndpoints)
 	r.Get(sysDatePath, handleDate)
+	r.Bind(http.MethodGet, sysVersion, HandleResponder(Text(http.StatusOK, version)))
+	r.Get(sysUptime, handleUptime)
 	r.Handle(echoPath, handleEcho)
 }
 

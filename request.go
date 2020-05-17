@@ -91,10 +91,12 @@ func (r *Request) UnmarshalParams(i interface{}) error {
 	data, err := json.Marshal(r.Params())
 	if err == nil {
 		_ = json.Unmarshal(data, i)
+		fmt.Printf("%v %s\n", i, data)
 	}
 
 	if r.ContentType() == mime.JSON {
 		err := json.Unmarshal(r.Body(), i)
+		fmt.Printf("%v\n", i)
 		return errors.Wrapf(err, "unmarshal json")
 	}
 	return nil

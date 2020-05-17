@@ -9,24 +9,30 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gopub/wine/internal/respond"
-
 	"github.com/gopub/environ"
 	"github.com/gopub/log"
 	"github.com/gopub/types"
 	"github.com/gopub/wine/internal/io"
+	"github.com/gopub/wine/internal/respond"
 	"github.com/gopub/wine/internal/template"
 )
 
 const (
 	sysDatePath  = "_sys/date"
+	sysUptime    = "_sys/uptime"
+	sysVersion   = "_sys/version"
 	endpointPath = "_debug/endpoints"
 	echoPath     = "_debug/echo"
 	faviconPath  = "favicon.ico"
+	version      = "v1.22.18"
 )
+
+var serverUpAt = time.Now()
 
 var reservedPaths = map[string]bool{
 	sysDatePath:  true,
+	sysUptime:    true,
+	sysVersion:   true,
 	endpointPath: true,
 	faviconPath:  true,
 	echoPath:     true,

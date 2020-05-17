@@ -98,6 +98,10 @@ func handleDate(_ context.Context, req *Request) Responder {
 	return JSON(http.StatusOK, res)
 }
 
+func handleUptime(_ context.Context, _ *Request) Responder {
+	return Text(http.StatusOK, time.Now().Sub(serverUpAt).String())
+}
+
 func handleAuth(ctx context.Context, req *Request) Responder {
 	if GetUserID(ctx) <= 0 {
 		return Text(http.StatusUnauthorized, "")
