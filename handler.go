@@ -13,9 +13,6 @@ import (
 
 	"github.com/gopub/log"
 	"github.com/gopub/types"
-	"github.com/gopub/wine/internal/resource"
-	"github.com/gopub/wine/internal/respond"
-	"github.com/gopub/wine/mime"
 )
 
 // Handler defines interface for interceptor
@@ -63,17 +60,6 @@ func (c *handlerChain) HandleRequest(ctx context.Context, req *Request) Responde
 	h := c.current.Value.(Handler)
 	c.current = c.current.Next()
 	return h.HandleRequest(ctx, req)
-}
-
-// Some built-in handlers
-func handleFavIcon(_ context.Context, _ *Request) Responder {
-	return respond.Func(func(ctx context.Context, rw http.ResponseWriter) {
-		rw.Header().Set(mime.ContentType, mime.ICON)
-		rw.WriteHeader(http.StatusOK)
-		if _, err := rw.Write(resource.Favicon); err != nil {
-			log.FromContext(ctx).Errorf("Write: %v", err)
-		}
-	})
 }
 
 func handleEcho(_ context.Context, req *Request) Responder {

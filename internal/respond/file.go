@@ -39,7 +39,7 @@ func StreamFile(r io.Reader, name string) Func {
 
 // File creates a application/octet-stream response
 func File(b []byte, name string) Func {
-	return Func(func(ctx context.Context, w http.ResponseWriter) {
+	return func(ctx context.Context, w http.ResponseWriter) {
 		w.Header().Set(mime.ContentType, mime.OctetStream)
 		if name != "" {
 			w.Header().Set(mime.ContentDisposition, fmt.Sprintf(`attachment; filename="%s"`, name))
@@ -48,7 +48,7 @@ func File(b []byte, name string) Func {
 			log.FromContext(ctx).Errorf("write: %v", err)
 			w.WriteHeader(http.StatusInternalServerError)
 		}
-	})
+	}
 }
 
 // StaticFile serves static files

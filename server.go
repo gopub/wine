@@ -13,6 +13,7 @@ import (
 	"github.com/gopub/log"
 	"github.com/gopub/types"
 	"github.com/gopub/wine/internal/io"
+	"github.com/gopub/wine/internal/resource"
 	"github.com/gopub/wine/internal/respond"
 	"github.com/gopub/wine/internal/template"
 )
@@ -171,7 +172,7 @@ func (s *Server) serve(ctx context.Context, req *Request, rw http.ResponseWriter
 		if method == http.MethodOptions {
 			chain = toHandlerChain(HandlerFunc(s.handleOptions))
 		} else if path == faviconPath {
-			chain = toHandlerChain(HandlerFunc(handleFavIcon))
+			chain = toHandlerChain(HandleResponder(respond.Bytes(http.StatusOK, resource.Favicon)))
 		} else {
 			chain = toHandlerChain(HandleResponder(Status(http.StatusNotFound)))
 		}

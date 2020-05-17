@@ -7,9 +7,9 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/gopub/wine/errors"
-
+	"github.com/gopub/mapper"
 	"github.com/gopub/types"
+	"github.com/gopub/wine/errors"
 	"github.com/gopub/wine/internal/io"
 	"github.com/gopub/wine/internal/path"
 	"github.com/gopub/wine/mime"
@@ -88,15 +88,14 @@ func (r *Request) NormalizedPath() string {
 
 func (r *Request) UnmarshalParams(i interface{}) error {
 	// Unsafe assignment, so ignore error
-	data, err := json.Marshal(r.Params())
+	data, err := json.Marshal(r.params)
 	if err == nil {
 		_ = json.Unmarshal(data, i)
-		fmt.Printf("%v %s\n", i, data)
+		_ = mapper.Assign(i, r.params)
 	}
 
 	if r.ContentType() == mime.JSON {
 		err := json.Unmarshal(r.Body(), i)
-		fmt.Printf("%v\n", i)
 		return errors.Wrapf(err, "unmarshal json")
 	}
 	return nil
