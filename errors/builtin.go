@@ -1,6 +1,9 @@
 package errors
 
-import "errors"
+import (
+	"errors"
+	"fmt"
+)
 
 func New(text string) error {
 	return errors.New(text)
@@ -27,4 +30,12 @@ func Cause(err error) error {
 		err = u.Unwrap()
 	}
 	return err
+}
+
+func Wrapf(err error, format string, a ...interface{}) error {
+	if err == nil {
+		return nil
+	}
+	a = append(a, err)
+	return fmt.Errorf(format+": %w", a...)
 }
