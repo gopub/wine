@@ -137,27 +137,27 @@ func (r *Router) match(method string, path string) (*list.List, map[string]strin
 		return nil, map[string]string{}
 	}
 
-	unescapedParams := make(map[string]string, len(params))
+	unescaped := make(map[string]string, len(params))
 	for k, v := range params {
 		uv, err := url.PathUnescape(v)
 		if err != nil {
 			logger.Errorf("Unescape path param %s: %v", v, err)
-			unescapedParams[k] = v
+			unescaped[k] = v
 		} else {
-			unescapedParams[k] = uv
+			unescaped[k] = uv
 		}
 	}
-	return m.Handlers(), unescapedParams
+	return m.Handlers(), unescaped
 }
 
 func (r *Router) matchMethods(path string) []string {
-	var methods []string
+	var a []string
 	for m := range r.methodToRoot {
-		if handlers, _ := r.match(m, path); handlers != nil && handlers.Len() > 0 {
-			methods = append(methods, m)
+		if hl, _ := r.match(m, path); hl != nil && hl.Len() > 0 {
+			a = append(a, m)
 		}
 	}
-	return methods
+	return a
 }
 
 // Bind binds method, path with handlers
