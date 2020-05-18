@@ -29,6 +29,16 @@ func (h HandlerFunc) String() string {
 	return runtime.FuncForPC(reflect.ValueOf(h).Pointer()).Name()
 }
 
+type handlerElem list.Element
+
+func (h *handlerElem) Next() *handlerElem {
+	return (*handlerElem)((*list.Element)(h).Next())
+}
+
+func (h *handlerElem) HandleRequest(ctx context.Context, req *Request) Responder {
+	return h.Value.(Handler).HandleRequest(withNextHandler(ctx, h.Next()), req)
+}
+
 func linkHandlers(handlers ...Handler) *list.List {
 	hl := list.New()
 	for _, h := range handlers {
@@ -43,16 +53,6 @@ func linkHandlerFuncs(funcs ...HandlerFunc) *list.List {
 		hl.PushBack(h)
 	}
 	return hl
-}
-
-type handlerElem list.Element
-
-func (h *handlerElem) Next() *handlerElem {
-	return (*handlerElem)((*list.Element)(h).Next())
-}
-
-func (h *handlerElem) HandleRequest(ctx context.Context, req *Request) Responder {
-	return h.Value.(Handler).HandleRequest(withNextHandler(ctx, h.Next()), req)
 }
 
 func handleEcho(_ context.Context, req *Request) Responder {
@@ -77,13 +77,16 @@ func handleDate(_ context.Context, req *Request) Responder {
 	return JSON(http.StatusOK, res)
 }
 
-func handleUptime(_ context.Context, _ *Request) Responder {
-	return Text(http.StatusOK, time.Now().Sub(serverUpAt).String())
-}
-
 func handleAuth(ctx context.Context, req *Request) Responder {
 	if GetUserID(ctx) <= 0 {
 		return Text(http.StatusUnauthorized, "")
 	}
 	return Next(ctx, req)
+}
+
+func newUptimeHandler() HandlerFunc {
+	upAt := time.Now()
+	return func(_ context.Context, _ *Request) Responder {
+		return Text(http.StatusOK, time.Now().Sub(upAt).String())
+	}
 }

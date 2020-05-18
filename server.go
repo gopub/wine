@@ -26,10 +26,8 @@ const (
 	endpointPath = "_debug/endpoints"
 	echoPath     = "_debug/echo"
 	faviconPath  = "favicon.ico"
-	version      = "v1.23.0"
+	version      = "v1.23.0.1"
 )
-
-var serverUpAt = time.Now()
 
 var reservedPaths = map[string]bool{
 	sysDatePath:  true,
