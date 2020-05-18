@@ -21,6 +21,7 @@ type Request struct {
 	params      types.M
 	body        []byte
 	contentType string
+	sid         string
 }
 
 // Request returns original http request
@@ -41,6 +42,10 @@ func (r *Request) Body() []byte {
 // ContentType returns request's content type
 func (r *Request) ContentType() string {
 	return r.contentType
+}
+
+func (r *Request) SessionID() string {
+	return r.sid
 }
 
 // Authorization returns request's Authorization in header

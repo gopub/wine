@@ -15,7 +15,6 @@ const (
 	ckNextHandler contextKey = iota + 1
 	ckBasicAuthUser
 	ckTemplateManager
-	ckSessionID
 	ckRemoteAddr
 	ckCoordinate
 	ckAccessToken
@@ -45,15 +44,6 @@ func GetBasicAuthUser(ctx context.Context) string {
 
 func withBasicAuthUser(ctx context.Context, user string) context.Context {
 	return context.WithValue(ctx, ckBasicAuthUser, user)
-}
-
-func GetSessionID(ctx context.Context) string {
-	sid, _ := ctx.Value(ckSessionID).(string)
-	return sid
-}
-
-func withSessionID(ctx context.Context, sid string) context.Context {
-	return context.WithValue(ctx, ckSessionID, sid)
 }
 
 func getTemplateManager(ctx context.Context) *template.Manager {
@@ -164,9 +154,6 @@ func DetachContext(ctx context.Context) context.Context {
 	}
 	if u := GetBasicAuthUser(ctx); u != "" {
 		newCtx = withBasicAuthUser(ctx, u)
-	}
-	if sid := GetSessionID(ctx); sid != "" {
-		newCtx = withSessionID(ctx, sid)
 	}
 	if token := GetAccessToken(ctx); token != "" {
 		newCtx = WithAccessToken(newCtx, token)

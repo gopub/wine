@@ -143,7 +143,7 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	defer s.logRequest(req, rw, time.Now())
 
 	sid := s.initSession(rw, req)
-	ctx, cancel := s.setupContext(req.Context(), rw, sid)
+	ctx, cancel := s.setupContext(req.Context())
 	defer cancel()
 
 	parsedReq, err := parseRequest(req, s.maxRequestMemory)
@@ -153,6 +153,7 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		resp.Respond(ctx, rw)
 		return
 	}
+	parsedReq.sid = sid
 	parsedReq.params[s.sessionName] = sid
 	ctx = s.withRequestParams(ctx, parsedReq.params)
 	s.serve(ctx, parsedReq, rw)
@@ -254,10 +255,9 @@ func (s *Server) initSession(rw http.ResponseWriter, req *http.Request) string {
 	return sid
 }
 
-func (s *Server) setupContext(ctx context.Context, rw http.ResponseWriter, sid string) (context.Context, context.CancelFunc) {
+func (s *Server) setupContext(ctx context.Context) (context.Context, context.CancelFunc) {
 	ctx, cancel := context.WithTimeout(ctx, s.Timeout)
 	ctx = withTemplateManager(ctx, s.Manager)
-	ctx = withSessionID(ctx, sid)
 	return ctx, cancel
 }
 
