@@ -88,7 +88,7 @@ func (r *Request) BasicAccount() (user string, password string) {
 }
 
 func (r *Request) NormalizedPath() string {
-	return path.NormalizeRequestPath(r.request)
+	return path.Normalize(r.request.URL.Path)
 }
 
 func (r *Request) UnmarshalParams(i interface{}) error {

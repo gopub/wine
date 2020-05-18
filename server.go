@@ -276,7 +276,7 @@ func (s *Server) logRequest(req *http.Request, rw http.ResponseWriter, startAt t
 	if w, ok := rw.(interface{ Status() int }); ok {
 		status = w.Status()
 	}
-	if reservedPaths[req.RequestURI[1:]] && status < http.StatusBadRequest {
+	if reservedPaths[req.URL.Path[1:]] && status < http.StatusBadRequest {
 		return
 	}
 	info := fmt.Sprintf("%s %s %s | %d %v",

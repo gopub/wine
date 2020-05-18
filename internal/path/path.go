@@ -1,11 +1,8 @@
 package path
 
 import (
-	"net/http"
-	"regexp"
-	"strings"
-
 	"github.com/gopub/log"
+	"regexp"
 )
 
 var logger = log.Default()
@@ -53,14 +50,4 @@ func IsParam(p string) bool {
 		return false
 	}
 	return paramPathRegexp.MatchString(p)
-}
-
-func NormalizeRequestPath(req *http.Request) string {
-	p := req.RequestURI
-	i := strings.Index(p, "?")
-	if i > 0 {
-		p = req.RequestURI[:i]
-	}
-
-	return Normalize(p)
 }
