@@ -1,6 +1,7 @@
 package wine
 
 import (
+	"github.com/gopub/wine/errors"
 	"path"
 	"strings"
 
@@ -17,6 +18,7 @@ func init() {
 	logger.SetFlags(log.LstdFlags - log.Lfunction - log.Lshortfile)
 	pathpkg.SetLogger(logger)
 	respond.SetLogger(logger)
+	errors.SetLogger(logger)
 }
 
 func Logger() *log.Logger {
