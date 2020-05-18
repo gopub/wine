@@ -6,6 +6,7 @@ import (
 	"math/rand"
 	"net/http"
 	"testing"
+	"time"
 
 	"github.com/gopub/wine"
 	"github.com/gopub/wine/stream"
@@ -24,8 +25,11 @@ func TestByteStream(t *testing.T) {
 			err := w.Write(p)
 			require.NoError(t, err)
 		}
-		err := w.Close()
-		require.NoError(t, err)
+		go func() {
+			time.Sleep(2 * time.Second)
+			err := w.Close()
+			require.NoError(t, err)
+		}()
 	})
 	host := "localhost:" + fmt.Sprint(rand.Int()%1000+8000)
 	s := wine.NewServer()

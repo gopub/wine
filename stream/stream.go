@@ -3,7 +3,11 @@ package stream
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
+	"net/http"
 	"time"
+
+	"github.com/gopub/wine/errors"
 
 	"github.com/gopub/log"
 	"github.com/gopub/wine"
@@ -17,6 +21,18 @@ func InstallDebugRotes(r *wine.Router) {
 	r.Get("bytestream", NewByteHandler(debugByteStream).(wine.HandlerFunc))
 	r.Get("textstream", NewTextHandler(debugTextStream).(wine.HandlerFunc))
 	r.Get("jsonstream", NewJSONHandler(debugJSONStream).(wine.HandlerFunc))
+}
+
+func checkStatus(resp *http.Response) error {
+	if resp.StatusCode < http.StatusBadRequest {
+		return nil
+	}
+	body, err := ioutil.ReadAll(resp.Body)
+	defer resp.Body.Close()
+	if err != nil {
+		return fmt.Errorf("read body: %w", err)
+	}
+	return errors.Format(resp.StatusCode, string(body))
 }
 
 func debugByteStream(ctx context.Context, w ByteWriteCloser) {

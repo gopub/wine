@@ -2,6 +2,8 @@ package path
 
 import (
 	"container/list"
+	"fmt"
+	"reflect"
 	"strings"
 
 	"github.com/gopub/log"
@@ -38,8 +40,8 @@ func getNodeType(segment string) nodeType {
 	case IsWildcard(segment):
 		return wildcardNode
 	default:
-		logger.Panicf("Invalid segment: %s" + segment)
-		// Suppress compiling error because compiler doesn't know logger.Panicf equals to built-in panic function
+		log.Panicf("Invalid segment: %s" + segment)
+		// Suppress compiling error because compiler doesn't know log.Panicf equals to built-in panic function
 		return wildcardNode
 	}
 }
@@ -75,7 +77,7 @@ func NewNodeList(path string, handlers *list.List) *Node {
 
 func NewNode(path, segment string) *Node {
 	if len(strings.Split(segment, "/")) > 1 {
-		logger.Panicf("Invalid segment: " + segment)
+		log.Panicf("Invalid segment: " + segment)
 	}
 	n := &Node{
 		typ:      getNodeType(segment),
@@ -130,7 +132,7 @@ func (n *Node) Handlers() *list.List {
 
 func (n *Node) SetHandlers(l *list.List) {
 	if n.handlers != nil {
-		logger.Panicf("Cannot set again")
+		log.Panicf("Cannot set again")
 	}
 	n.handlers = l
 }
@@ -226,7 +228,7 @@ func (n *Node) Add(node *Node) {
 	case wildcardNode:
 		n.children = append(n.children, node)
 	default:
-		logger.Panicf("Invalid node type: %v", node.typ)
+		log.Panicf("Invalid node type: %v", node.typ)
 	}
 }
 
@@ -292,4 +294,26 @@ func (n *Node) Match(segments ...string) (*Node, map[string]string) {
 		}
 	}
 	return nil, nil
+}
+
+func (n *Node) HandlerPath() string {
+	s := new(strings.Builder)
+	for p := n.handlers.Front(); p != nil; p = p.Next() {
+		if s.Len() > 0 {
+			s.WriteString(", ")
+		}
+
+		var name string
+		if s, ok := p.Value.(fmt.Stringer); ok {
+			name = s.String()
+		} else {
+			name = reflect.TypeOf(p.Value).Name()
+		}
+
+		if strings.HasSuffix(name, "-fm") {
+			name = name[:len(name)-3]
+		}
+		s.WriteString(log.ShortPath(name))
+	}
+	return s.String()
 }

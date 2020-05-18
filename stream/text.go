@@ -9,7 +9,6 @@ import (
 
 	"github.com/gopub/log"
 	"github.com/gopub/wine"
-	iopkg "github.com/gopub/wine/internal/io"
 	"github.com/gopub/wine/mime"
 )
 
@@ -118,9 +117,8 @@ func NewTextReader(client *http.Client, req *http.Request) (TextReadCloser, erro
 	if err != nil {
 		return nil, fmt.Errorf("do request: %w", err)
 	}
-	err = iopkg.DecodeResponse(resp, nil)
-	if err != nil {
-		return nil, fmt.Errorf("parse result: %w", err)
+	if err := checkStatus(resp); err != nil {
+		return nil, err
 	}
 	r := newTextReadCloser(resp.Body)
 	greeting, err := r.Read()

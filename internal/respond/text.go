@@ -15,6 +15,9 @@ func Status(status int) *Response {
 func Text(status int, text string) *Response {
 	header := make(http.Header)
 	header.Set(mime.ContentType, mime.PlainUTF8)
+	if text == "" {
+		text = http.StatusText(status)
+	}
 	return &Response{
 		status: status,
 		header: header,

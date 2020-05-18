@@ -3,15 +3,12 @@ package wine
 import (
 	"container/list"
 	"context"
-	"fmt"
 	"net/http"
 	"net/http/httputil"
 	"reflect"
 	"runtime"
-	"strings"
 	"time"
 
-	"github.com/gopub/log"
 	"github.com/gopub/types"
 )
 
@@ -32,22 +29,30 @@ func (h HandlerFunc) String() string {
 	return runtime.FuncForPC(reflect.ValueOf(h).Pointer()).Name()
 }
 
-type linkedHandler list.Element
-
-func toLinkedHandler(handlers ...Handler) *linkedHandler {
+func linkHandlers(handlers ...Handler) *list.List {
 	hl := list.New()
 	for _, h := range handlers {
 		hl.PushBack(h)
 	}
-	return (*linkedHandler)(hl.Front())
+	return hl
 }
 
-func (h *linkedHandler) next() *linkedHandler {
-	return (*linkedHandler)((*list.Element)(h).Next())
+func linkHandlerFuncs(funcs ...HandlerFunc) *list.List {
+	hl := list.New()
+	for _, h := range funcs {
+		hl.PushBack(h)
+	}
+	return hl
 }
 
-func (h *linkedHandler) HandleRequest(ctx context.Context, req *Request) Responder {
-	return h.Value.(Handler).HandleRequest(withNextHandler(ctx, h.next()), req)
+type handlerElem list.Element
+
+func (h *handlerElem) Next() *handlerElem {
+	return (*handlerElem)((*list.Element)(h).Next())
+}
+
+func (h *handlerElem) HandleRequest(ctx context.Context, req *Request) Responder {
+	return h.Value.(Handler).HandleRequest(withNextHandler(ctx, h.Next()), req)
 }
 
 func handleEcho(_ context.Context, req *Request) Responder {
@@ -81,53 +86,4 @@ func handleAuth(ctx context.Context, req *Request) Responder {
 		return Text(http.StatusUnauthorized, "")
 	}
 	return Next(ctx, req)
-}
-
-func toHandlers(fs ...HandlerFunc) []Handler {
-	l := make([]Handler, len(fs))
-	for i, f := range fs {
-		l[i] = f
-	}
-	return l
-}
-
-func handlerListToString(l *list.List) string {
-	s := new(strings.Builder)
-	for h := l.Front(); h != nil; h = h.Next() {
-		if s.Len() > 0 {
-			s.WriteString(", ")
-		}
-
-		var name string
-		if s, ok := h.Value.(fmt.Stringer); ok {
-			name = s.String()
-		} else {
-			name = reflect.TypeOf(h.Value).Name()
-		}
-
-		if strings.HasSuffix(name, "-fm") {
-			name = name[:len(name)-3]
-		}
-		s.WriteString(shortenFilename(name))
-	}
-	return s.String()
-}
-
-func shortenFilename(filename string) string {
-	var trimmed string
-	if len(log.PackagePath) > 0 {
-		trimmed = strings.TrimPrefix(filename, log.PackagePath)
-	} else {
-		start := strings.Index(filename, log.GoSrc)
-		if start > 0 {
-			start += len(log.GoSrc)
-			trimmed = filename[start:]
-		}
-	}
-
-	l := strings.Split(trimmed, "/")
-	for i := 0; i < len(l)-1; i++ {
-		l[i] = l[i][0:1]
-	}
-	return strings.Join(l, "/")
 }

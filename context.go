@@ -3,10 +3,9 @@ package wine
 import (
 	"context"
 
-	"github.com/gopub/wine/internal/template"
-
 	"github.com/gopub/log"
 	"github.com/gopub/types"
+	"github.com/gopub/wine/internal/template"
 )
 
 type contextKey int
@@ -28,14 +27,14 @@ const (
 )
 
 func Next(ctx context.Context, req *Request) Responder {
-	i, _ := ctx.Value(ckNextHandler).(*linkedHandler)
+	i, _ := ctx.Value(ckNextHandler).(*handlerElem)
 	if i == nil {
 		return nil
 	}
 	return i.HandleRequest(ctx, req)
 }
 
-func withNextHandler(ctx context.Context, h *linkedHandler) context.Context {
+func withNextHandler(ctx context.Context, h Handler) context.Context {
 	return context.WithValue(ctx, ckNextHandler, h)
 }
 

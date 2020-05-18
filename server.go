@@ -4,11 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/gopub/wine/internal/resource"
 	"net/http"
 	"runtime/debug"
 	"strings"
 	"time"
+
+	"github.com/gopub/wine/internal/resource"
 
 	"github.com/gopub/environ"
 	"github.com/gopub/log"
@@ -60,10 +61,6 @@ type Server struct {
 	PreHandler         Handler
 	CompressionEnabled bool
 	Recovery           bool
-
-	optionHandler   *linkedHandler
-	faviconHandler  *linkedHandler
-	notfoundHandler *linkedHandler
 }
 
 // NewServer returns a server
@@ -84,10 +81,6 @@ func NewServer() *Server {
 		CompressionEnabled: environ.Bool("wine.compression", true),
 		Recovery:           environ.Bool("wine.recovery", true),
 	}
-
-	s.optionHandler = toLinkedHandler(HandlerFunc(s.handleOptions))
-	s.faviconHandler = toLinkedHandler(HandleResponder(respond.Bytes(http.StatusOK, resource.Favicon)))
-	s.notfoundHandler = toLinkedHandler(HandleResponder(Status(http.StatusNotFound)))
 
 	if s.sessionTTL < minSessionTTL {
 		s.sessionTTL = minSessionTTL
@@ -117,7 +110,7 @@ func (s *Server) Run(addr string) {
 // RunTLS starts server with tls
 func (s *Server) RunTLS(addr, certFile, keyFile string) {
 	if s.server != nil {
-		logger.Panic("Server is running")
+		log.Panic("Server is running")
 	}
 
 	logger.Infof("Running at %s ...", addr)
@@ -170,20 +163,20 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 func (s *Server) serve(ctx context.Context, req *Request, rw http.ResponseWriter) {
 	path := req.NormalizedPath()
 	method := strings.ToUpper(req.Request().Method)
-	var h *linkedHandler
+	var h Handler
 	hl, params := s.match(method, path)
 	for k, v := range params {
 		req.params[k] = v
 	}
 	if hl != nil && hl.Len() > 0 {
-		h = (*linkedHandler)(hl.Front())
+		h = (*handlerElem)(hl.Front())
 	} else {
 		if method == http.MethodOptions {
-			h = s.optionHandler
+			h = HandlerFunc(s.handleOptions)
 		} else if path == faviconPath {
-			h = s.faviconHandler
+			h = HandleResponder(respond.Bytes(http.StatusOK, resource.Favicon))
 		} else {
-			h = s.notfoundHandler
+			h = HandleResponder(Status(http.StatusNotFound))
 		}
 	}
 	var resp Responder

@@ -19,7 +19,7 @@ type Router struct {
 	root         *pathpkg.Node
 	methodToRoot map[string]*pathpkg.Node
 	basePath     string
-	handlers     []Handler
+	handlers     *list.List
 	authHandler  Handler
 }
 
@@ -28,6 +28,7 @@ func NewRouter() *Router {
 	r := &Router{
 		root:         pathpkg.NewEmptyNode(),
 		methodToRoot: make(map[string]*pathpkg.Node, 4),
+		handlers:     list.New(),
 	}
 	r.bindSysHandlers()
 	return r
@@ -47,9 +48,9 @@ func (r *Router) clone() *Router {
 		methodToRoot: r.methodToRoot,
 		basePath:     r.basePath,
 		authHandler:  HandlerFunc(handleAuth),
+		handlers:     list.New(),
 	}
-	nr.handlers = make([]Handler, len(r.handlers))
-	copy(nr.handlers, r.handlers)
+	nr.handlers.PushBackList(r.handlers)
 	return nr
 }
 
@@ -58,8 +59,10 @@ func (r *Router) SetAuthHandler(h Handler) {
 }
 
 func (r *Router) Auth() *Router {
-	for _, h := range r.handlers {
-		if h == r.authHandler {
+	// As func is not comparable, compare its address
+	a := fmt.Sprint(r.authHandler)
+	for e := r.handlers.Front(); e != nil; e = e.Next() {
+		if a == fmt.Sprint(e.Value) {
 			return r
 		}
 	}
@@ -69,7 +72,7 @@ func (r *Router) Auth() *Router {
 // Group returns a new router whose basePath is r.basePath+path
 func (r *Router) Group(path string) *Router {
 	if path == "/" {
-		logger.Panic(`Not allowed to create group "/"`)
+		log.Panic(`Not allowed to create group "/"`)
 	}
 
 	nr := r.clone()
@@ -88,16 +91,17 @@ func (r *Router) UseHandlers(handlers ...Handler) *Router {
 		if h == nil {
 			log.Fatalf("Handler is nil")
 		}
+
 		found := false
-		for _, rh := range nr.handlers {
-			if equal(h, rh) {
+		for e := nr.handlers.Front(); e != nil; e = e.Next() {
+			if equal(h, e.Value) {
 				found = true
 				break
 			}
 		}
 
 		if !found {
-			nr.handlers = append(nr.handlers, h)
+			nr.handlers.PushBack(h)
 		}
 	}
 	return nr
@@ -105,7 +109,11 @@ func (r *Router) UseHandlers(handlers ...Handler) *Router {
 
 // Use is similar with UseHandlers
 func (r *Router) Use(funcs ...HandlerFunc) *Router {
-	return r.UseHandlers(toHandlers(funcs...)...)
+	l := make([]Handler, len(funcs))
+	for i, f := range funcs {
+		l[i] = f
+	}
+	return r.UseHandlers(l...)
 }
 
 // match finds handlers and parses path parameters according to method and path
@@ -154,36 +162,40 @@ func (r *Router) matchMethods(path string) []string {
 
 // Bind binds method, path with handlers
 func (r *Router) Bind(method, path string, handlers ...Handler) {
+	r.bind(method, path, linkHandlers(handlers...))
+}
+
+// Bind binds method, path with handlers
+func (r *Router) bind(method, path string, handlers *list.List) {
 	if path == "" {
-		logger.Panic("Empty path")
+		log.Panic("Empty path")
 	}
 
 	if method == "" {
-		logger.Panic("Empty method")
+		log.Panic("Empty method")
 	}
 
-	if len(handlers) == 0 {
-		logger.Panic("No handlers")
+	if handlers == nil || handlers.Len() == 0 {
+		log.Panic("No handler")
 	}
-
+	handlers.PushFrontList(r.handlers)
 	method = strings.ToUpper(method)
 	root := r.getRoot(method)
-	hl := r.createHandlerList(handlers)
 	path = pathpkg.Normalize(r.basePath + "/" + path)
 	if path == "" {
 		if r.root.IsEndpoint() {
-			logger.Panicf("Conflict: %s", r.basePath)
+			log.Panicf("Conflict: %s", r.basePath)
 		} else if root.IsEndpoint() {
-			logger.Panicf("Conflict: %s, %s", method, r.basePath)
+			log.Panicf("Conflict: %s, %s", method, r.basePath)
 		} else {
-			root.SetHandlers(hl)
+			root.SetHandlers(handlers)
 		}
 	} else {
-		nodeList := pathpkg.NewNodeList(path, hl)
+		nodeList := pathpkg.NewNodeList(path, handlers)
 		if pair := r.root.Conflict(nodeList); pair != nil {
 			first := pair.First.(*pathpkg.Node).Path()
 			second := pair.Second.(*pathpkg.Node).Path()
-			logger.Panicf("Conflict: %s, %s %s", first, method, second)
+			log.Panicf("Conflict: %s, %s %s", first, method, second)
 		}
 		root.Add(nodeList)
 	}
@@ -230,18 +242,18 @@ func (r *Router) StaticFS(path string, fs http.FileSystem) {
 // Handle binds funcs to path with any(wildcard) method
 func (r *Router) Handle(path string, funcs ...HandlerFunc) {
 	if path == "" {
-		logger.Panic("Empty path")
-	}
-	handlers := toHandlers(funcs...)
-	if len(handlers) == 0 {
-		logger.Panic("No handlers")
+		log.Panic("Empty path")
 	}
 
-	hl := r.createHandlerList(handlers)
+	if len(funcs) == 0 {
+		log.Panic("No funcs")
+	}
+
+	hl := r.handlers
 	path = pathpkg.Normalize(r.basePath + "/" + path)
 	if path == "" {
 		if r.root.IsEndpoint() {
-			logger.Panicf("Conflict: %s", r.basePath)
+			log.Panicf("Conflict: %s", r.basePath)
 		} else {
 			r.root.SetHandlers(hl)
 		}
@@ -253,47 +265,47 @@ func (r *Router) Handle(path string, funcs ...HandlerFunc) {
 
 // Get binds funcs to path with GET method
 func (r *Router) Get(path string, funcs ...HandlerFunc) {
-	r.Bind(http.MethodGet, path, toHandlers(funcs...)...)
+	r.bind(http.MethodGet, path, linkHandlerFuncs(funcs...))
 }
 
 // Post binds funcs to path with POST method
 func (r *Router) Post(path string, funcs ...HandlerFunc) {
-	r.Bind(http.MethodPost, path, toHandlers(funcs...)...)
+	r.bind(http.MethodPost, path, linkHandlerFuncs(funcs...))
 }
 
 // Put binds funcs to path with PUT method
 func (r *Router) Put(path string, funcs ...HandlerFunc) {
-	r.Bind(http.MethodPut, path, toHandlers(funcs...)...)
+	r.bind(http.MethodPut, path, linkHandlerFuncs(funcs...))
 }
 
 // Patch binds funcs to path with PATCH method
 func (r *Router) Patch(path string, funcs ...HandlerFunc) {
-	r.Bind(http.MethodPatch, path, toHandlers(funcs...)...)
+	r.bind(http.MethodPatch, path, linkHandlerFuncs(funcs...))
 }
 
 // Delete binds funcs to path with DELETE method
 func (r *Router) Delete(path string, funcs ...HandlerFunc) {
-	r.Bind(http.MethodDelete, path, toHandlers(funcs...)...)
+	r.bind(http.MethodDelete, path, linkHandlerFuncs(funcs...))
 }
 
 // Options binds funcs to path with OPTIONS method
 func (r *Router) Options(path string, funcs ...HandlerFunc) {
-	r.Bind(http.MethodOptions, path, toHandlers(funcs...)...)
+	r.bind(http.MethodOptions, path, linkHandlerFuncs(funcs...))
 }
 
 // Head binds funcs to path with HEAD method
 func (r *Router) Head(path string, funcs ...HandlerFunc) {
-	r.Bind(http.MethodHead, path, toHandlers(funcs...)...)
+	r.bind(http.MethodHead, path, linkHandlerFuncs(funcs...))
 }
 
 // Trace binds funcs to path with TRACE method
 func (r *Router) Trace(path string, funcs ...HandlerFunc) {
-	r.Bind(http.MethodTrace, path, toHandlers(funcs...)...)
+	r.bind(http.MethodTrace, path, linkHandlerFuncs(funcs...))
 }
 
 // Connect binds funcs to path with CONNECT method
 func (r *Router) Connect(path string, funcs ...HandlerFunc) {
-	r.Bind(http.MethodConnect, path, toHandlers(funcs...)...)
+	r.bind(http.MethodConnect, path, linkHandlerFuncs(funcs...))
 }
 
 func (r *Router) getRoot(method string) *pathpkg.Node {
@@ -305,23 +317,12 @@ func (r *Router) getRoot(method string) *pathpkg.Node {
 	return root
 }
 
-func (r *Router) createHandlerList(handlers []Handler) *list.List {
-	l := list.New()
-	for _, h := range r.handlers {
-		l.PushBack(h)
-	}
-	for _, h := range handlers {
-		l.PushBack(h)
-	}
-	return l
-}
-
 // Print prints all path trees
 func (r *Router) Print() {
 	for method, root := range r.methodToRoot {
 		nodes := root.ListEndpoints()
 		for _, n := range nodes {
-			logger.Infof("%-5s %s\t%s", method, n.Path(), handlerListToString(n.Handlers()))
+			logger.Infof("%-5s %s\t%s", method, n.Path(), n.HandlerPath())
 		}
 	}
 }
@@ -356,7 +357,7 @@ func (r *Router) listEndpoints(ctx context.Context, req *Request) Responder {
 	b := new(strings.Builder)
 	for i, n := range l {
 		format := fmt.Sprintf("%%3d. %%6s /%%-%ds %%s\n", maxLenOfPath)
-		line := fmt.Sprintf(format, i+1, nodeToMethod[n], n.Path(), handlerListToString(n.Handlers()))
+		line := fmt.Sprintf(format, i+1, nodeToMethod[n], n.Path(), n.HandlerPath())
 		b.WriteString(line)
 	}
 	return Text(http.StatusOK, b.String())
