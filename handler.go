@@ -3,13 +3,8 @@ package wine
 import (
 	"container/list"
 	"context"
-	"net/http"
-	"net/http/httputil"
 	"reflect"
 	"runtime"
-	"time"
-
-	"github.com/gopub/types"
 )
 
 // Handler defines interface for interceptor
@@ -53,40 +48,4 @@ func linkHandlerFuncs(funcs ...HandlerFunc) *list.List {
 		hl.PushBack(h)
 	}
 	return hl
-}
-
-func handleEcho(_ context.Context, req *Request) Responder {
-	v, err := httputil.DumpRequest(req.request, true)
-	if err != nil {
-		return Text(http.StatusInternalServerError, err.Error())
-	}
-	return Text(http.StatusOK, string(v))
-}
-
-func handleDate(_ context.Context, req *Request) Responder {
-	ts := req.Params().DefaultInt64("timestamp", time.Now().Unix())
-	t := time.Unix(ts, 0)
-	res := types.M{
-		"timestamp": t.Unix(),
-		"time":      t.Format("15:04:05"),
-		"date":      t.Format("2006-01-02"),
-		"zone":      t.Format("-0700"),
-		"weekday":   t.Format("Mon"),
-		"month":     t.Format("Jan"),
-	}
-	return JSON(http.StatusOK, res)
-}
-
-func handleAuth(ctx context.Context, req *Request) Responder {
-	if GetUserID(ctx) <= 0 {
-		return Text(http.StatusUnauthorized, "")
-	}
-	return Next(ctx, req)
-}
-
-func newUptimeHandler() HandlerFunc {
-	upAt := time.Now()
-	return func(_ context.Context, _ *Request) Responder {
-		return Text(http.StatusOK, time.Now().Sub(upAt).String())
-	}
 }

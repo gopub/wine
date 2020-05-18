@@ -26,7 +26,7 @@ const (
 )
 
 func Next(ctx context.Context, req *Request) Responder {
-	i, _ := ctx.Value(ckNextHandler).(*handlerElem)
+	i, _ := ctx.Value(ckNextHandler).(Handler)
 	if i == nil {
 		return nil
 	}

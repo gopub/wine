@@ -20,30 +20,22 @@ import (
 )
 
 const (
-	sysDatePath  = "_sys/date"
-	sysUptime    = "_sys/uptime"
-	sysVersion   = "_sys/version"
-	endpointPath = "_debug/endpoints"
-	echoPath     = "_debug/echo"
-	faviconPath  = "favicon.ico"
-	version      = "v1.23.0.1"
-)
+	faviconPath = "favicon.ico"
 
-var reservedPaths = map[string]bool{
-	sysDatePath:  true,
-	sysUptime:    true,
-	sysVersion:   true,
-	endpointPath: true,
-	faviconPath:  true,
-	echoPath:     true,
-}
-
-const (
 	defaultReqMaxMem  = int(8 * types.MB)
 	defaultSessionTTL = 30 * time.Minute
 	minSessionTTL     = 5 * time.Minute
 	defaultTimeout    = 10 * time.Second
 )
+
+var reservedPaths = map[string]bool{
+	datePath:     true,
+	uptimePath:   true,
+	versionPath:  true,
+	endpointPath: true,
+	echoPath:     true,
+	faviconPath:  true,
+}
 
 // Server implements web server
 type Server struct {
@@ -162,21 +154,20 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 func (s *Server) serve(ctx context.Context, req *Request, rw http.ResponseWriter) {
 	path := req.NormalizedPath()
 	method := strings.ToUpper(req.Request().Method)
-	var h Handler
 	hl, params := s.match(method, path)
 	for k, v := range params {
 		req.params[k] = v
 	}
-	if hl != nil && hl.Len() > 0 {
+	var h Handler
+	switch {
+	case hl != nil && hl.Len() > 0:
 		h = (*handlerElem)(hl.Front())
-	} else {
-		if method == http.MethodOptions {
-			h = HandlerFunc(s.handleOptions)
-		} else if path == faviconPath {
-			h = HandleResponder(respond.Bytes(http.StatusOK, resource.Favicon))
-		} else {
-			h = HandleResponder(Status(http.StatusNotFound))
-		}
+	case method == http.MethodOptions:
+		h = HandlerFunc(s.handleOptions)
+	case path == faviconPath:
+		h = HandleResponder(respond.Bytes(http.StatusOK, resource.Favicon))
+	default:
+		h = HandleResponder(Status(http.StatusNotFound))
 	}
 	var resp Responder
 	if s.PreHandler != nil && !reservedPaths[path] {

@@ -36,9 +36,9 @@ func NewRouter() *Router {
 
 func (r *Router) bindSysHandlers() {
 	r.Get(endpointPath, r.listEndpoints)
-	r.Get(sysDatePath, handleDate)
-	r.Bind(http.MethodGet, sysVersion, HandleResponder(Text(http.StatusOK, version)))
-	r.Get(sysUptime, newUptimeHandler())
+	r.Get(datePath, handleDate)
+	r.Bind(http.MethodGet, versionPath, HandleResponder(Text(http.StatusOK, "v1.23.0.1")))
+	r.Get(uptimePath, newUptimeHandler())
 	r.Handle(echoPath, handleEcho)
 }
 
@@ -331,9 +331,10 @@ func (r *Router) listEndpoints(ctx context.Context, req *Request) Responder {
 	l := make(sortableNodeList, 0, 10)
 	maxLenOfPath := 0
 	nodeToMethod := make(map[*pathpkg.Node]string, 10)
+	all := req.params.Bool("all")
 	for method, root := range r.methodToRoot {
 		for _, node := range root.ListEndpoints() {
-			if reservedPaths[node.Path()] {
+			if !all && reservedPaths[node.Path()] {
 				continue
 			}
 			l = append(l, node)
@@ -344,7 +345,7 @@ func (r *Router) listEndpoints(ctx context.Context, req *Request) Responder {
 		}
 	}
 	for _, node := range r.root.ListEndpoints() {
-		if reservedPaths[node.Path()] {
+		if !all && reservedPaths[node.Path()] {
 			continue
 		}
 		l = append(l, node)
