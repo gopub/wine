@@ -7,8 +7,6 @@ import (
 	"log"
 	"net/http"
 	"net/url"
-	"reflect"
-	"sort"
 	"strings"
 
 	pathpkg "github.com/gopub/wine/internal/path"
@@ -92,9 +90,10 @@ func (r *Router) UseHandlers(handlers ...Handler) *Router {
 			log.Fatalf("Handler is nil")
 		}
 
+		name := fmt.Sprint(h)
 		found := false
 		for e := nr.handlers.Front(); e != nil; e = e.Next() {
-			if equal(h, e.Value) {
+			if fmt.Sprint(e.Value) == name {
 				found = true
 				break
 			}
@@ -328,7 +327,7 @@ func (r *Router) Print() {
 }
 
 func (r *Router) listEndpoints(ctx context.Context, req *Request) Responder {
-	l := make(sortableNodeList, 0, 10)
+	l := make([]*pathpkg.Node, 0, 10)
 	maxLenOfPath := 0
 	nodeToMethod := make(map[*pathpkg.Node]string, 10)
 	all := req.params.Bool("all")
@@ -354,7 +353,7 @@ func (r *Router) listEndpoints(ctx context.Context, req *Request) Responder {
 			maxLenOfPath = n
 		}
 	}
-	sort.Sort(l)
+	pathpkg.SortByPath(l)
 	b := new(strings.Builder)
 	for i, n := range l {
 		format := fmt.Sprintf("%%3d. %%6s /%%-%ds %%s\n", maxLenOfPath)
@@ -362,22 +361,4 @@ func (r *Router) listEndpoints(ctx context.Context, req *Request) Responder {
 		b.WriteString(line)
 	}
 	return Text(http.StatusOK, b.String())
-}
-
-type sortableNodeList []*pathpkg.Node
-
-func (l sortableNodeList) Len() int {
-	return len(l)
-}
-
-func (l sortableNodeList) Swap(i, j int) {
-	l[i], l[j] = l[j], l[i]
-}
-
-func (l sortableNodeList) Less(i, j int) bool {
-	return strings.Compare(l[i].Path(), l[j].Path()) < 0
-}
-
-func equal(v1, v2 interface{}) bool {
-	return reflect.TypeOf(v1).Comparable() && reflect.TypeOf(v2).Comparable() && v1 == v2
 }
