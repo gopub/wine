@@ -96,6 +96,8 @@ func (r *Request) UnmarshalParams(i interface{}) error {
 	data, err := json.Marshal(r.params)
 	if err == nil {
 		_ = json.Unmarshal(data, i)
+		// As all values in query will be parsed into string type
+		// mapper.Assign can convert string to int automatically
 		_ = mapper.Assign(i, r.params)
 	}
 
