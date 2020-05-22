@@ -50,6 +50,7 @@ func Format(code int, format string, a ...interface{}) *Error {
 var rawErrType = reflect.TypeOf(errors.New(""))
 
 func GetCode(err error) int {
+	err = Cause(err)
 	if reflect.TypeOf(err) == rawErrType {
 		return 0
 	}
