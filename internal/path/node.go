@@ -54,6 +54,8 @@ type Node struct {
 	paramName string // E.g. id
 	handlers  *list.List
 	children  []*Node
+
+	Description string
 }
 
 func NewNodeList(path string, handlers *list.List) *Node {
@@ -231,6 +233,14 @@ func (n *Node) Add(node *Node) {
 	default:
 		log.Panicf("Invalid node type: %v", node.typ)
 	}
+}
+
+func (n *Node) MatchPath(path string) (*Node, map[string]string) {
+	segments := strings.Split(path, "/")
+	if segments[0] != "" {
+		segments = append([]string{""}, segments...)
+	}
+	return n.Match(segments...)
 }
 
 func (n *Node) Match(segments ...string) (*Node, map[string]string) {

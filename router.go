@@ -160,12 +160,12 @@ func (r *Router) matchMethods(path string) []string {
 }
 
 // Bind binds method, path with handlers
-func (r *Router) Bind(method, path string, handlers ...Handler) {
-	r.bind(method, path, linkHandlers(handlers...))
+func (r *Router) Bind(method, path string, handlers ...Handler) *pathpkg.Node {
+	return r.bind(method, path, linkHandlers(handlers...))
 }
 
 // Bind binds method, path with handlers
-func (r *Router) bind(method, path string, handlers *list.List) {
+func (r *Router) bind(method, path string, handlers *list.List) *pathpkg.Node {
 	if path == "" {
 		log.Panic("Empty path")
 	}
@@ -198,6 +198,8 @@ func (r *Router) bind(method, path string, handlers *list.List) {
 		}
 		root.Add(nodeList)
 	}
+	node, _ := root.MatchPath(path)
+	return node
 }
 
 // StaticFile binds path to a file
@@ -239,7 +241,7 @@ func (r *Router) StaticFS(path string, fs http.FileSystem) {
 }
 
 // Handle binds funcs to path with any(wildcard) method
-func (r *Router) Handle(path string, funcs ...HandlerFunc) {
+func (r *Router) Handle(path string, funcs ...HandlerFunc) *pathpkg.Node {
 	if path == "" {
 		log.Panic("Empty path")
 	}
@@ -260,51 +262,53 @@ func (r *Router) Handle(path string, funcs ...HandlerFunc) {
 		nodeList := pathpkg.NewNodeList(path, hl)
 		r.root.Add(nodeList)
 	}
+	node, _ := r.root.MatchPath(path)
+	return node
 }
 
 // Get binds funcs to path with GET method
-func (r *Router) Get(path string, funcs ...HandlerFunc) {
-	r.bind(http.MethodGet, path, linkHandlerFuncs(funcs...))
+func (r *Router) Get(path string, funcs ...HandlerFunc) *pathpkg.Node {
+	return r.bind(http.MethodGet, path, linkHandlerFuncs(funcs...))
 }
 
 // Post binds funcs to path with POST method
-func (r *Router) Post(path string, funcs ...HandlerFunc) {
-	r.bind(http.MethodPost, path, linkHandlerFuncs(funcs...))
+func (r *Router) Post(path string, funcs ...HandlerFunc) *pathpkg.Node {
+	return r.bind(http.MethodPost, path, linkHandlerFuncs(funcs...))
 }
 
 // Put binds funcs to path with PUT method
-func (r *Router) Put(path string, funcs ...HandlerFunc) {
-	r.bind(http.MethodPut, path, linkHandlerFuncs(funcs...))
+func (r *Router) Put(path string, funcs ...HandlerFunc) *pathpkg.Node {
+	return r.bind(http.MethodPut, path, linkHandlerFuncs(funcs...))
 }
 
 // Patch binds funcs to path with PATCH method
-func (r *Router) Patch(path string, funcs ...HandlerFunc) {
-	r.bind(http.MethodPatch, path, linkHandlerFuncs(funcs...))
+func (r *Router) Patch(path string, funcs ...HandlerFunc) *pathpkg.Node {
+	return r.bind(http.MethodPatch, path, linkHandlerFuncs(funcs...))
 }
 
 // Delete binds funcs to path with DELETE method
-func (r *Router) Delete(path string, funcs ...HandlerFunc) {
-	r.bind(http.MethodDelete, path, linkHandlerFuncs(funcs...))
+func (r *Router) Delete(path string, funcs ...HandlerFunc) *pathpkg.Node {
+	return r.bind(http.MethodDelete, path, linkHandlerFuncs(funcs...))
 }
 
 // Options binds funcs to path with OPTIONS method
-func (r *Router) Options(path string, funcs ...HandlerFunc) {
-	r.bind(http.MethodOptions, path, linkHandlerFuncs(funcs...))
+func (r *Router) Options(path string, funcs ...HandlerFunc) *pathpkg.Node {
+	return r.bind(http.MethodOptions, path, linkHandlerFuncs(funcs...))
 }
 
 // Head binds funcs to path with HEAD method
-func (r *Router) Head(path string, funcs ...HandlerFunc) {
-	r.bind(http.MethodHead, path, linkHandlerFuncs(funcs...))
+func (r *Router) Head(path string, funcs ...HandlerFunc) *pathpkg.Node {
+	return r.bind(http.MethodHead, path, linkHandlerFuncs(funcs...))
 }
 
 // Trace binds funcs to path with TRACE method
-func (r *Router) Trace(path string, funcs ...HandlerFunc) {
-	r.bind(http.MethodTrace, path, linkHandlerFuncs(funcs...))
+func (r *Router) Trace(path string, funcs ...HandlerFunc) *pathpkg.Node {
+	return r.bind(http.MethodTrace, path, linkHandlerFuncs(funcs...))
 }
 
 // Connect binds funcs to path with CONNECT method
-func (r *Router) Connect(path string, funcs ...HandlerFunc) {
-	r.bind(http.MethodConnect, path, linkHandlerFuncs(funcs...))
+func (r *Router) Connect(path string, funcs ...HandlerFunc) *pathpkg.Node {
+	return r.bind(http.MethodConnect, path, linkHandlerFuncs(funcs...))
 }
 
 func (r *Router) getRoot(method string) *pathpkg.Node {
@@ -356,9 +360,14 @@ func (r *Router) listEndpoints(ctx context.Context, req *Request) Responder {
 	pathpkg.SortByPath(l)
 	b := new(strings.Builder)
 	for i, n := range l {
-		format := fmt.Sprintf("%%3d. %%6s /%%-%ds %%s\n", maxLenOfPath)
+		format := fmt.Sprintf("%%3d. %%6s /%%-%ds %%s", maxLenOfPath)
 		line := fmt.Sprintf(format, i+1, nodeToMethod[n], n.Path(), n.HandlerPath())
 		b.WriteString(line)
+		if n.Description != "" {
+			b.WriteString(" #")
+			b.WriteString(n.Description)
+		}
+		b.WriteString("\n")
 	}
 	return Text(http.StatusOK, b.String())
 }

@@ -1,8 +1,9 @@
 package path
 
 import (
-	"github.com/gopub/log"
 	"regexp"
+
+	"github.com/gopub/log"
 )
 
 var logger = log.Default()

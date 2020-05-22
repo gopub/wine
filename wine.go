@@ -1,9 +1,10 @@
 package wine
 
 import (
-	"github.com/gopub/wine/errors"
 	"path"
 	"strings"
+
+	"github.com/gopub/wine/errors"
 
 	"github.com/google/uuid"
 	"github.com/gopub/log"

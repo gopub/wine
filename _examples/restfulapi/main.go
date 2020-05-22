@@ -12,8 +12,8 @@ func main() {
 	// Place NewBasicAuthHandler handler to do authenticating
 	r := s.Router
 	service := NewItemService()
-	r.Get("/items/{id}", service.Get)
-	r.Get("/items/list", service.List)
+	r.Get("/items/{id}", service.Get).Description = "Get items by id"
+	r.Get("/items/list", service.List).Description = "List items"
 
 	r = r.Use(wine.NewBasicAuthHandler(map[string]string{"user": "password"}, "wine"))
 	r.Post("/items", service.Create)
