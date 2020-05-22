@@ -1,10 +1,12 @@
 package errors
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/gopub/wine/internal/respond"
 	"net/http"
 	"reflect"
 
@@ -32,6 +34,10 @@ func (e *Error) Error() string {
 		return s
 	}
 	return fmt.Sprintf("error: %d", e.Code)
+}
+
+func (e *Error) Respond(ctx context.Context, w http.ResponseWriter) {
+	respond.Text(e.Code, e.Message).Respond(ctx, w)
 }
 
 func Format(code int, format string, a ...interface{}) *Error {

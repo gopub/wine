@@ -88,6 +88,8 @@ func Handle(req *http.Request, h http.Handler) Responder {
 	return respond.Handle(req, h)
 }
 
+var _ Responder = (*errors.Error)(nil)
+
 func Error(err error) Responder {
 	if err == nil {
 		return OK
