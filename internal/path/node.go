@@ -4,6 +4,7 @@ import (
 	"container/list"
 	"fmt"
 	"reflect"
+	"regexp"
 	"strings"
 
 	"github.com/gopub/log"
@@ -297,6 +298,7 @@ func (n *Node) Match(segments ...string) (*Node, map[string]string) {
 }
 
 func (n *Node) HandlerPath() string {
+	reg := regexp.MustCompile(`\(\*([a-zA-Z0-9_]+)\)`)
 	s := new(strings.Builder)
 	for p := n.handlers.Front(); p != nil; p = p.Next() {
 		if s.Len() > 0 {
@@ -313,6 +315,7 @@ func (n *Node) HandlerPath() string {
 		if strings.HasSuffix(name, "-fm") {
 			name = name[:len(name)-3]
 		}
+		name = reg.ReplaceAllString(name, "$1")
 		s.WriteString(log.ShortPath(name))
 	}
 	return s.String()
