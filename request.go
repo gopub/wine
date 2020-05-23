@@ -4,13 +4,15 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
+	"os"
 	"strings"
 
 	"github.com/gopub/mapper"
 	"github.com/gopub/types"
 	"github.com/gopub/wine/errors"
-	"github.com/gopub/wine/internal/io"
+	iopkg "github.com/gopub/wine/internal/io"
 	"github.com/gopub/wine/internal/path"
 	"github.com/gopub/wine/mime"
 )
@@ -108,8 +110,36 @@ func (r *Request) UnmarshalParams(i interface{}) error {
 	return nil
 }
 
+func (r *Request) IsWebsocket() bool {
+	conn := strings.ToLower(r.Header("Connection"))
+	if conn != "upgrade" {
+		return false
+	}
+	return strings.EqualFold(r.Header("Upgrade"), "websocket")
+}
+
+func (r *Request) Header(key string) string {
+	return r.request.Header.Get(key)
+}
+
+func (r *Request) SaveFormFile(name, dst string) error {
+	f, _, err := r.request.FormFile(name)
+	if err != nil {
+		return fmt.Errorf("get form file: %w", err)
+	}
+	defer f.Close()
+
+	w, err := os.Create(dst)
+	if err != nil {
+		return err
+	}
+	defer w.Close()
+	_, err = io.Copy(w, f)
+	return fmt.Errorf("copy: %w", err)
+}
+
 func parseRequest(r *http.Request, maxMem types.ByteUnit) (*Request, error) {
-	params, body, err := io.ReadRequest(r, maxMem)
+	params, body, err := iopkg.ReadRequest(r, maxMem)
 	if err != nil {
 		return nil, fmt.Errorf("read request: %w", err)
 	}

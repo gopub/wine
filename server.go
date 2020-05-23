@@ -45,7 +45,7 @@ type Server struct {
 	sessionTTL  time.Duration
 	sessionName string
 
-	maxRequestMemory   types.ByteUnit
+	maxReqMem          types.ByteUnit
 	Header             http.Header
 	Timeout            time.Duration
 	PreHandler         Handler
@@ -63,7 +63,7 @@ func NewServer() *Server {
 	s := &Server{
 		sessionName:        environ.String("wine.session.name", "wsessionid"),
 		sessionTTL:         environ.Duration("wine.session.ttl", defaultSessionTTL),
-		maxRequestMemory:   types.ByteUnit(environ.SizeInBytes("wine.max_memory", defaultReqMaxMem)),
+		maxReqMem:          types.ByteUnit(environ.SizeInBytes("wine.max_memory", defaultReqMaxMem)),
 		Router:             NewRouter(),
 		Manager:            template.NewManager(),
 		Header:             header,
@@ -138,7 +138,7 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	ctx, cancel := s.setupContext(req.Context())
 	defer cancel()
 
-	parsedReq, err := parseRequest(req, s.maxRequestMemory)
+	parsedReq, err := parseRequest(req, s.maxReqMem)
 	if err != nil {
 		logger.Errorf("Parse request: %v", err)
 		resp := Text(http.StatusBadRequest, fmt.Sprintf("Parse request: %v", err))
