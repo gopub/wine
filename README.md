@@ -31,7 +31,7 @@ Run and test:
 
         s := wine.NewServer()
         s.Get("/time", func(ctx context.Context, req *wine.Request) wine.Responder {
-        	return wine.JSON(map[string]interface{}{"time":time.Now().Unix()})
+        	return wine.JSON(http.StatusOK, map[string]interface{}{"time":time.Now().Unix()})
         })
         s.Run(":8000")
 
@@ -97,10 +97,9 @@ Intercept and preprocess requests
     	sid := req.Params().String("sid")
     	//check sid
     	if len(sid) == 0 {
-    		return wine.JSON(map[string]interface{}{"error":"need sid"})
-    	} else {
-    		return wine.Next(ctx, request)
-    	}
+    		return errors.BadRequest("missing sid")
+    	} 
+    	return wine.Next(ctx, request)
     }
     
     func GetUserProfile(ctx context.Context, req *wine.Request) wine.Responder  {
