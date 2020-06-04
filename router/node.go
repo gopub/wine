@@ -1,4 +1,4 @@
-package path
+package router
 
 import (
 	"container/list"
@@ -47,30 +47,30 @@ func getNodeType(segment string) nodeType {
 	}
 }
 
-type Node struct {
+type node struct {
 	typ       nodeType
 	path      string // E.g. /items/{id}
 	segment   string // E.g. items or {id}
 	paramName string // E.g. id
 	handlers  *list.List
-	children  []*Node
+	children  []*node
 
 	Description string
 }
 
-func NewNodeList(path string, handlers *list.List) *Node {
+func newNodeList(path string, handlers *list.List) *node {
 	path = Normalize(path)
 	segments := strings.Split(path, "/")
-	var head, p *Node
+	var head, p *node
 	for i, s := range segments {
 		path := strings.Join(segments[:i+1], "/")
-		node := NewNode(path, s)
+		n := NewNode(path, s)
 		if p != nil {
-			p.children = []*Node{node}
+			p.children = []*node{n}
 		} else {
-			head = node
+			head = n
 		}
-		p = node
+		p = n
 	}
 	if p != nil {
 		p.handlers = handlers
@@ -78,11 +78,11 @@ func NewNodeList(path string, handlers *list.List) *Node {
 	return head
 }
 
-func NewNode(path, segment string) *Node {
+func NewNode(path, segment string) *node {
 	if len(strings.Split(segment, "/")) > 1 {
 		log.Panicf("Invalid segment: " + segment)
 	}
-	n := &Node{
+	n := &node{
 		typ:      getNodeType(segment),
 		path:     path,
 		segment:  segment,
@@ -99,26 +99,26 @@ func NewNode(path, segment string) *Node {
 	return n
 }
 
-func NewEmptyNode() *Node {
-	return &Node{
+func NewEmptyNode() *node {
+	return &node{
 		typ: staticNode,
 	}
 }
 
-func (n *Node) Type() nodeType {
+func (n *node) Type() nodeType {
 	return n.typ
 }
 
-func (n *Node) Path() string {
+func (n *node) Path() string {
 	return n.path
 }
 
-func (n *Node) IsEndpoint() bool {
+func (n *node) IsEndpoint() bool {
 	return n.handlers != nil && n.handlers.Len() > 0
 }
 
-func (n *Node) ListEndpoints() []*Node {
-	var l []*Node
+func (n *node) ListEndpoints() []*node {
+	var l []*node
 	if n.IsEndpoint() {
 		l = append(l, n)
 	}
@@ -129,18 +129,18 @@ func (n *Node) ListEndpoints() []*Node {
 	return l
 }
 
-func (n *Node) Handlers() *list.List {
+func (n *node) Handlers() *list.List {
 	return n.handlers
 }
 
-func (n *Node) SetHandlers(l *list.List) {
+func (n *node) SetHandlers(l *list.List) {
 	if n.handlers != nil {
 		log.Panicf("Cannot set again")
 	}
 	n.handlers = l
 }
 
-func (n *Node) Conflict(node *Node) *types.Pair {
+func (n *node) Conflict(node *node) *types.Pair {
 	if n.typ != node.typ {
 		return nil
 	}
@@ -180,14 +180,14 @@ func (n *Node) Conflict(node *Node) *types.Pair {
 	return nil
 }
 
-func (n *Node) Add(node *Node) {
-	var match *Node
+func (n *node) Add(nod *node) {
+	var match *node
 	for _, child := range n.children {
-		if v := child.Conflict(node); v != nil {
-			log.Panicf("Conflict: %s, %s", v.First.(*Node).path, v.Second.(*Node).path)
+		if v := child.Conflict(nod); v != nil {
+			log.Panicf("Conflict: %s, %s", v.First.(*node).path, v.Second.(*node).path)
 		}
 
-		if child.segment == node.segment {
+		if child.segment == nod.segment {
 			match = child
 			break
 		}
@@ -195,21 +195,21 @@ func (n *Node) Add(node *Node) {
 
 	// Match: reuse the same node and append new nodes
 	if match != nil {
-		if len(node.children) == 0 {
-			match.handlers = node.handlers
+		if len(nod.children) == 0 {
+			match.handlers = nod.handlers
 			return
 		}
 
-		for _, child := range node.children {
+		for _, child := range nod.children {
 			match.Add(child)
 		}
 		return
 	}
 
 	// Mismatch: append new nodes
-	switch node.typ {
+	switch nod.typ {
 	case staticNode:
-		n.children = append([]*Node{node}, n.children...)
+		n.children = append([]*node{nod}, n.children...)
 	case paramNode:
 		i := len(n.children) - 1
 		for i >= 0 {
@@ -220,22 +220,22 @@ func (n *Node) Add(node *Node) {
 		}
 
 		if i < 0 {
-			n.children = append([]*Node{node}, n.children...)
+			n.children = append([]*node{nod}, n.children...)
 		} else if i == len(n.children)-1 {
-			n.children = append(n.children, node)
+			n.children = append(n.children, nod)
 		} else {
-			n.children = append(n.children, node)
+			n.children = append(n.children, nod)
 			copy(n.children[i+2:], n.children[i+1:])
-			n.children[i+1] = node
+			n.children[i+1] = nod
 		}
 	case wildcardNode:
-		n.children = append(n.children, node)
+		n.children = append(n.children, nod)
 	default:
-		log.Panicf("Invalid node type: %v", node.typ)
+		log.Panicf("Invalid node type: %v", nod.typ)
 	}
 }
 
-func (n *Node) MatchPath(path string) (*Node, map[string]string) {
+func (n *node) MatchPath(path string) (*node, map[string]string) {
 	segments := strings.Split(path, "/")
 	if segments[0] != "" {
 		segments = append([]string{""}, segments...)
@@ -243,7 +243,7 @@ func (n *Node) MatchPath(path string) (*Node, map[string]string) {
 	return n.Match(segments...)
 }
 
-func (n *Node) Match(segments ...string) (*Node, map[string]string) {
+func (n *node) Match(segments ...string) (*node, map[string]string) {
 	if len(segments) == 0 {
 		if n.typ == wildcardNode {
 			return n, nil
@@ -261,7 +261,7 @@ func (n *Node) Match(segments ...string) (*Node, map[string]string) {
 			if n.IsEndpoint() {
 				return n, nil
 			}
-			// Perhaps some child nodes are wildcard Node which can match empty node
+			// Perhaps some child nodes are wildcard node which can match empty node
 			for _, child := range n.children {
 				if child.typ == wildcardNode {
 					return child, nil
@@ -279,7 +279,7 @@ func (n *Node) Match(segments ...string) (*Node, map[string]string) {
 			}
 		}
 	case paramNode:
-		var match *Node
+		var match *node
 		var params map[string]string
 		if len(segments) == 1 || (segments[1] == "" && n.IsEndpoint()) {
 			match = n
@@ -307,7 +307,7 @@ func (n *Node) Match(segments ...string) (*Node, map[string]string) {
 	return nil, nil
 }
 
-func (n *Node) HandlerPath() string {
+func (n *node) HandlerPath() string {
 	reg := regexp.MustCompile(`\(\*([a-zA-Z0-9_]+)\)`)
 	s := new(strings.Builder)
 	for p := n.handlers.Front(); p != nil; p = p.Next() {

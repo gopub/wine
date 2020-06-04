@@ -145,6 +145,7 @@ github.com/gopub/types v0.2.12/go.mod h1:iB4uhpKHbamyPbhaJ8+jT4J1LeKQj10jedayrW3
 github.com/gopub/types v0.2.14 h1:/x2Q6svSu7t4IV0wNz4x2L4uluMruS1oU7jJkxJpYaM=
 github.com/gopub/types v0.2.14/go.mod h1:9TwnNzanBfFwgtvGMf+wDaBfMRC9V+W1w3IuXmc1lQM=
 github.com/gorilla/websocket v1.4.0/go.mod h1:E7qHFY5m1UJ88s3WnNqhKjPHQ0heANvMoAMk2YaljkQ=
+github.com/gorilla/websocket v1.4.2 h1:+/TMaTYc4QFitKJxsQ7Yye35DkWvkdLcvGKqM+x0Ufc=
 github.com/gorilla/websocket v1.4.2/go.mod h1:YR8l580nyteQvAITg2hZ9XVh4b55+EU/adAjf1fMHhE=
 github.com/grpc-ecosystem/go-grpc-middleware v1.0.0/go.mod h1:FiyG127CGDf3tlThmgyCl78X/SZQqEOJBCDaAfeWzPs=
 github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0/go.mod h1:8NvIoxWQoOIhqOTXgfV/d3M/q6VIi02HzZEHgUlZvzk=

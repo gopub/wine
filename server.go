@@ -154,7 +154,7 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 func (s *Server) serve(ctx context.Context, req *Request, rw http.ResponseWriter) {
 	path := req.NormalizedPath()
 	method := strings.ToUpper(req.Request().Method)
-	hl, params := s.match(method, path)
+	hl, params := s.Match(method, path)
 	for k, v := range params {
 		req.params[k] = v
 	}
@@ -299,7 +299,7 @@ func (s *Server) logRequest(req *http.Request, rw http.ResponseWriter, startAt t
 }
 
 func (s *Server) handleOptions(_ context.Context, req *Request) Responder {
-	methods := s.matchMethods(req.NormalizedPath())
+	methods := s.MatchScopes(req.NormalizedPath())
 	if len(methods) > 0 {
 		methods = append(methods, http.MethodOptions)
 	}

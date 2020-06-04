@@ -1,23 +1,23 @@
-package path_test
+package router_test
 
 import (
 	"testing"
 
-	"github.com/gopub/wine/internal/path"
+	"github.com/gopub/wine/router"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestNormalize(t *testing.T) {
-	assert.Equal(t, "hello", path.Normalize("hello//"))
-	assert.Equal(t, "hello/{id}", path.Normalize("hello/{id}/"))
-	assert.Equal(t, "hello/{id}", path.Normalize("//hello/{id}/"))
-	assert.Empty(t, path.Normalize("//"))
+	assert.Equal(t, "hello", router.Normalize("hello//"))
+	assert.Equal(t, "hello/{id}", router.Normalize("hello/{id}/"))
+	assert.Equal(t, "hello/{id}", router.Normalize("//hello/{id}/"))
+	assert.Empty(t, router.Normalize("//"))
 }
 
 func TestIsStaticPath(t *testing.T) {
-	assert.Empty(t, path.IsStatic("{a}"))
-	assert.NotEmpty(t, path.IsStatic("ab"))
-	assert.Empty(t, path.IsParam("/a"))
+	assert.Empty(t, router.IsStatic("{a}"))
+	assert.NotEmpty(t, router.IsStatic("ab"))
+	assert.Empty(t, router.IsParam("/a"))
 }
 
 func TestIsParamPath(t *testing.T) {
@@ -30,7 +30,7 @@ func TestIsParamPath(t *testing.T) {
 			"{a1_}",
 		}
 		for _, v := range trueCases {
-			assert.NotEmpty(t, path.IsParam(v))
+			assert.NotEmpty(t, router.IsParam(v))
 		}
 	})
 	t.Run("false", func(t *testing.T) {
@@ -44,7 +44,7 @@ func TestIsParamPath(t *testing.T) {
 			"{1_a}",
 		}
 		for _, v := range falseCases {
-			assert.Empty(t, path.IsParam(v))
+			assert.Empty(t, router.IsParam(v))
 		}
 	})
 }

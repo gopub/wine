@@ -13,6 +13,7 @@ require (
 	github.com/gopub/log v1.2.2
 	github.com/gopub/mapper v1.0.11
 	github.com/gopub/types v0.2.14
+	github.com/gorilla/websocket v1.4.2
 	github.com/mitchellh/mapstructure v1.3.0 // indirect
 	github.com/nyaruka/phonenumbers v1.0.55 // indirect
 	github.com/pelletier/go-toml v1.7.0 // indirect

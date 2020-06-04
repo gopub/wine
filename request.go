@@ -9,11 +9,12 @@ import (
 	"os"
 	"strings"
 
+	"github.com/gopub/wine/router"
+
 	"github.com/gopub/mapper"
 	"github.com/gopub/types"
 	"github.com/gopub/wine/errors"
 	iopkg "github.com/gopub/wine/internal/io"
-	"github.com/gopub/wine/internal/path"
 	"github.com/gopub/wine/mime"
 )
 
@@ -90,7 +91,7 @@ func (r *Request) BasicAccount() (user string, password string) {
 }
 
 func (r *Request) NormalizedPath() string {
-	return path.Normalize(r.request.URL.Path)
+	return router.Normalize(r.request.URL.Path)
 }
 
 func (r *Request) UnmarshalParams(i interface{}) error {

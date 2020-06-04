@@ -1,4 +1,4 @@
-package path
+package router
 
 import (
 	"container/list"
@@ -21,17 +21,17 @@ func TestNewNode(t *testing.T) {
 func TestNode_Conflict(t *testing.T) {
 	hl := list.New()
 	hl.PushBack("")
-	root := NewNodeList("/hello/world/{param}", hl)
+	root := newNodeList("/hello/world/{param}", hl)
 
-	pair := root.Conflict(NewNodeList("/hello/world/{param}", hl))
+	pair := root.Conflict(newNodeList("/hello/world/{param}", hl))
 	assert.NotEmpty(t, pair)
 
-	pair = root.Conflict(NewNodeList("/hello/{world}", hl))
+	pair = root.Conflict(newNodeList("/hello/{world}", hl))
 	assert.Empty(t, pair)
 
-	pair = root.Conflict(NewNodeList("/hello/{world}/{param}", hl))
+	pair = root.Conflict(newNodeList("/hello/{world}/{param}", hl))
 	assert.Empty(t, pair)
 
-	pair = root.Conflict(NewNodeList("/hello/world/*", hl))
+	pair = root.Conflict(newNodeList("/hello/world/*", hl))
 	assert.Empty(t, pair)
 }

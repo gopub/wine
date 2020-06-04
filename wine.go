@@ -4,12 +4,11 @@ import (
 	"path"
 	"strings"
 
-	"github.com/gopub/wine/errors"
-
 	"github.com/google/uuid"
 	"github.com/gopub/log"
-	pathpkg "github.com/gopub/wine/internal/path"
+	"github.com/gopub/wine/errors"
 	"github.com/gopub/wine/internal/respond"
+	"github.com/gopub/wine/router"
 )
 
 var logger *log.Logger
@@ -17,7 +16,7 @@ var logger *log.Logger
 func init() {
 	logger = log.Default().Derive("Wine")
 	logger.SetFlags(log.LstdFlags - log.Lfunction - log.Lshortfile)
-	pathpkg.SetLogger(logger)
+	router.SetLogger(logger)
 	respond.SetLogger(logger)
 	errors.SetLogger(logger)
 }

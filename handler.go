@@ -34,7 +34,7 @@ func (h *handlerElem) HandleRequest(ctx context.Context, req *Request) Responder
 	return h.Value.(Handler).HandleRequest(withNextHandler(ctx, h.Next()), req)
 }
 
-func linkHandlers(handlers ...Handler) *list.List {
+func linkHandlers(handlers []Handler) *list.List {
 	hl := list.New()
 	for _, h := range handlers {
 		hl.PushBack(h)
@@ -42,7 +42,7 @@ func linkHandlers(handlers ...Handler) *list.List {
 	return hl
 }
 
-func linkHandlerFuncs(funcs ...HandlerFunc) *list.List {
+func linkHandlerFuncs(funcs []HandlerFunc) *list.List {
 	hl := list.New()
 	for _, h := range funcs {
 		hl.PushBack(h)
