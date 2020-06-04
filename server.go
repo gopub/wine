@@ -166,7 +166,7 @@ func (s *Server) serve(ctx context.Context, req *Request, rw http.ResponseWriter
 				Error(err).Respond(ctx, rw)
 				return
 			}
-			log.Debugf("%v %v", m, req.Model)
+			ctx = log.BuildContext(ctx, log.FromContext(ctx).With("model", m))
 		}
 		h = (*handlerElem)(r.FirstHandler())
 	case method == http.MethodOptions:
