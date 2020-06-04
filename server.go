@@ -154,14 +154,21 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 func (s *Server) serve(ctx context.Context, req *Request, rw http.ResponseWriter) {
 	path := req.NormalizedPath()
 	method := strings.ToUpper(req.Request().Method)
-	hl, params := s.Match(method, path)
+	r, params := s.Match(method, path)
 	for k, v := range params {
 		req.params[k] = v
 	}
 	var h Handler
 	switch {
-	case hl != nil && hl.Len() > 0:
-		h = (*handlerElem)(hl.Front())
+	case r != nil:
+		if m := r.Model(); m != nil {
+			if err := req.bindModel(m); err != nil {
+				Error(err).Respond(ctx, rw)
+				return
+			}
+			log.Debugf("%v %v", m, req.Model)
+		}
+		h = (*handlerElem)(r.FirstHandler())
 	case method == http.MethodOptions:
 		h = HandlerFunc(s.handleOptions)
 	case path == faviconPath:

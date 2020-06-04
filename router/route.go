@@ -1,6 +1,7 @@
 package router
 
 import (
+	"container/list"
 	"strings"
 )
 
@@ -13,8 +14,9 @@ func (r *Route) Path() string {
 	return r.node.path
 }
 
-func (r *Route) SetDescription(s string) {
+func (r *Route) SetDescription(s string) *Route {
 	r.node.Description = s
+	return r
 }
 
 func (r *Route) Description() string {
@@ -23,6 +25,19 @@ func (r *Route) Description() string {
 
 func (r *Route) HandlerPath() string {
 	return r.node.HandlerPath()
+}
+
+func (r *Route) FirstHandler() *list.Element {
+	return r.node.handlers.Front()
+}
+
+func (r *Route) Model() interface{} {
+	return r.node.Model
+}
+
+func (r *Route) SetModel(m interface{}) *Route {
+	r.node.Model = m
+	return r
 }
 
 type sortRouteList []*Route

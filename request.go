@@ -7,15 +7,15 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"reflect"
 	"strings"
 
-	"github.com/gopub/wine/router"
-
-	"github.com/gopub/mapper"
+	"github.com/gopub/conv"
 	"github.com/gopub/types"
 	"github.com/gopub/wine/errors"
 	iopkg "github.com/gopub/wine/internal/io"
 	"github.com/gopub/wine/mime"
+	"github.com/gopub/wine/router"
 )
 
 // Request is a wrapper of http.Request, aims to provide more convenient interface
@@ -25,6 +25,7 @@ type Request struct {
 	body        []byte
 	contentType string
 	sid         string
+	Model       interface{}
 }
 
 // Request returns original http request
@@ -96,18 +97,34 @@ func (r *Request) NormalizedPath() string {
 
 func (r *Request) UnmarshalParams(i interface{}) error {
 	// Unsafe assignment, so ignore error
-	data, err := json.Marshal(r.params)
-	if err == nil {
+	if data, err := json.Marshal(r.params); err == nil {
 		_ = json.Unmarshal(data, i)
 		// As all values in query will be parsed into string type
-		// mapper.Assign can convert string to int automatically
-		_ = mapper.Assign(i, r.params)
+		// conv.Assign can convert string to int automatically
+		_ = conv.Assign(i, r.params)
 	}
 
 	if r.ContentType() == mime.JSON {
-		err := json.Unmarshal(r.Body(), i)
-		return errors.Wrapf(err, "unmarshal json")
+		if err := json.Unmarshal(r.Body(), i); err != nil {
+			return errors.Wrapf(err, "unmarshal json")
+		}
 	}
+
+	if v, ok := r.Model.(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return errors.Wrapf(err, "cannot validate model")
+		}
+	}
+	return nil
+}
+
+func (r *Request) bindModel(m interface{}) error {
+	pv := reflect.New(reflect.TypeOf(m))
+	err := r.UnmarshalParams(pv.Interface())
+	if err != nil {
+		return err
+	}
+	r.Model = pv.Elem().Interface()
 	return nil
 }
 

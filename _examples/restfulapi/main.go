@@ -12,11 +12,11 @@ func main() {
 	// Place NewBasicAuthHandler handler to do authenticating
 	r := s.Router
 	service := NewItemService()
-	r.Get("/items/{id}", service.Get).Description = "Get items by id"
-	r.Get("/items/list", service.List).Description = "List items"
+	r.Get("/items/{id}", service.Get).SetDescription("Get items by id")
+	r.Get("/items/list", service.List).SetDescription("List items")
 
-	r = r.Use(wine.NewBasicAuthHandler(map[string]string{"user": "password"}, "wine"))
-	r.Post("/items", service.Create)
+	//r = r.Use(wine.NewBasicAuthHandler(map[string]string{"user": "password"}, "wine"))
+	r.Post("/items", service.Create).SetModel(Item{})
 
 	s.Run(":8000")
 }
@@ -61,16 +61,14 @@ func (s *ItemService) List(ctx context.Context, req *wine.Request) wine.Responde
 
 func (s *ItemService) Create(ctx context.Context, req *wine.Request) wine.Responder {
 	s.counter++
-	v := new(Item)
+	v := req.Model.(Item)
 	v.ID = s.counter
-	v.Title = req.Params().String("title")
-	v.Price = req.Params().Float64("price")
 	if v.Title == "" {
 		return wine.Text(http.StatusBadRequest, "missing title")
 	}
 	if v.Price <= 0 {
 		return wine.Text(http.StatusBadRequest, "missing price")
 	}
-	s.items = append(s.items, v)
+	s.items = append(s.items, &v)
 	return wine.JSON(http.StatusCreated, v)
 }

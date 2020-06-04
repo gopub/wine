@@ -55,6 +55,7 @@ type node struct {
 	handlers  *list.List
 	children  []*node
 
+	Model       interface{}
 	Description string
 }
 

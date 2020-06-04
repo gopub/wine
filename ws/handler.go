@@ -9,14 +9,14 @@ import (
 
 // Handler defines interface for interceptor
 type Handler interface {
-	HandleRequest(ctx context.Context, req *Request) *Response
+	HandleRequest(ctx context.Context, req interface{}) (interface{}, error)
 }
 
 // HandlerFunc converts function into Handler
-type HandlerFunc func(ctx context.Context, req *Request) *Response
+type HandlerFunc func(ctx context.Context, req interface{}) (interface{}, error)
 
 // HandleRequest is an interface method required by Handler
-func (h HandlerFunc) HandleRequest(ctx context.Context, req *Request) *Response {
+func (h HandlerFunc) HandleRequest(ctx context.Context, req interface{}) (interface{}, error) {
 	return h(ctx, req)
 }
 
@@ -30,22 +30,22 @@ func (h *handlerElem) Next() *handlerElem {
 	return (*handlerElem)((*list.Element)(h).Next())
 }
 
-func (h *handlerElem) HandleRequest(ctx context.Context, req *Request) *Response {
+func (h *handlerElem) HandleRequest(ctx context.Context, req interface{}) (interface{}, error) {
 	return h.Value.(Handler).HandleRequest(withNextHandler(ctx, h.Next()), req)
 }
 
 func linkHandlers(handlers []Handler) *list.List {
-	hl := list.New()
+	l := list.New()
 	for _, h := range handlers {
-		hl.PushBack(h)
+		l.PushBack(h)
 	}
-	return hl
+	return l
 }
 
 func linkHandlerFuncs(funcs []HandlerFunc) *list.List {
-	hl := list.New()
+	l := list.New()
 	for _, h := range funcs {
-		hl.PushBack(h)
+		l.PushBack(h)
 	}
-	return hl
+	return l
 }

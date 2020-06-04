@@ -69,14 +69,14 @@ func (r *Router) Use(handlers *list.List) *Router {
 		}
 
 		if !found {
-			nr.handlers.PushBack(h)
+			nr.handlers.PushBack(h.Value)
 		}
 	}
 	return nr
 }
 
 // Match finds handlers and parses path parameters according to method and path
-func (r *Router) Match(scope string, path string) (*list.List, map[string]string) {
+func (r *Router) Match(scope string, path string) (*Route, map[string]string) {
 	segments := strings.Split(path, "/")
 	if segments[0] != "" {
 		segments = append([]string{""}, segments...)
@@ -88,12 +88,12 @@ func (r *Router) Match(scope string, path string) (*list.List, map[string]string
 		root = global
 	}
 
-	m, params := root.Match(segments...)
-	if m == nil && root != global {
-		m, params = global.Match(segments...)
+	n, params := root.Match(segments...)
+	if n == nil && root != global {
+		n, params = global.Match(segments...)
 	}
 
-	if m == nil {
+	if n == nil {
 		return nil, map[string]string{}
 	}
 
@@ -107,13 +107,16 @@ func (r *Router) Match(scope string, path string) (*list.List, map[string]string
 			unescaped[k] = uv
 		}
 	}
-	return m.Handlers(), unescaped
+	return &Route{
+		Scope: scope,
+		node:  n,
+	}, unescaped
 }
 
 func (r *Router) MatchScopes(path string) []string {
 	var a []string
 	for m := range r.scopedRoot {
-		if hl, _ := r.Match(m, path); hl != nil && hl.Len() > 0 {
+		if rt, _ := r.Match(m, path); rt != nil {
 			a = append(a, m)
 		}
 	}
@@ -201,4 +204,8 @@ func (r *Router) ContainsHandler(h interface{}) bool {
 		}
 	}
 	return false
+}
+
+func (r *Router) Handlers() *list.List {
+	return r.handlers
 }
