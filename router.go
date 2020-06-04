@@ -27,6 +27,7 @@ func NewRouter() *Router {
 		root:         pathpkg.NewEmptyNode(),
 		methodToRoot: make(map[string]*pathpkg.Node, 4),
 		handlers:     list.New(),
+		authHandler:  HandlerFunc(handleAuth),
 	}
 	r.bindSysHandlers()
 	return r
@@ -45,7 +46,6 @@ func (r *Router) clone() *Router {
 		root:         r.root,
 		methodToRoot: r.methodToRoot,
 		basePath:     r.basePath,
-		authHandler:  HandlerFunc(handleAuth),
 		handlers:     list.New(),
 	}
 	nr.handlers.PushBackList(r.handlers)
