@@ -44,6 +44,14 @@ func (r *Router) Auth() *Router {
 	return r.UseHandlers(r.authHandler)
 }
 
+func (r *Router) Group(name string) *Router {
+	nr := r.Router.Group(name)
+	return &Router{
+		Router:      nr,
+		authHandler: r.authHandler,
+	}
+}
+
 // UseHandlers returns a new router with global handlers which will be bound with all new path patterns
 // This can be used to add interceptors
 func (r *Router) UseHandlers(handlers ...Handler) *Router {
