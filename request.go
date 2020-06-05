@@ -116,9 +116,11 @@ func (r *Request) bind(model interface{}) error {
 // bindPrototype: m represents the prototype of request.Model
 func (r *Request) bindPrototype(m interface{}) error {
 	pv := reflect.New(reflect.TypeOf(m))
-	err := r.bind(pv.Interface())
-	if err != nil {
-		return err
+	if err := r.bind(pv.Interface()); err != nil {
+		return fmt.Errorf("cannot bind: %w", err)
+	}
+	if err := conv.Validate(pv.Interface()); err != nil {
+		return fmt.Errorf("cannot validate: %w", err)
 	}
 	r.Model = pv.Elem().Interface()
 	return nil
