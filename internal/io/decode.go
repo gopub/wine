@@ -9,7 +9,7 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"github.com/gopub/conv"
-	"github.com/gopub/wine/errors"
+	"github.com/gopub/errors"
 	"github.com/gopub/wine/mime"
 )
 

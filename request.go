@@ -11,8 +11,8 @@ import (
 	"strings"
 
 	"github.com/gopub/conv"
+	"github.com/gopub/errors"
 	"github.com/gopub/types"
-	"github.com/gopub/wine/errors"
 	iopkg "github.com/gopub/wine/internal/io"
 	"github.com/gopub/wine/mime"
 	"github.com/gopub/wine/router"

@@ -10,6 +10,7 @@ require (
 	github.com/google/uuid v1.1.1
 	github.com/gopub/conv v0.3.10
 	github.com/gopub/environ v0.2.1
+	github.com/gopub/errors v0.1.0
 	github.com/gopub/gox v1.20.4
 	github.com/gopub/log v1.2.2
 	github.com/gopub/mapper v1.0.11

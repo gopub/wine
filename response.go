@@ -7,7 +7,7 @@ import (
 	"net/http"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/gopub/wine/errors"
+	"github.com/gopub/errors"
 	"github.com/gopub/wine/internal/respond"
 )
 

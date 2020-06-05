@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/gopub/wine/errors"
+	"github.com/gopub/errors"
 
 	"github.com/gopub/log"
 	"github.com/gopub/wine"

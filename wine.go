@@ -6,7 +6,6 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/gopub/log"
-	"github.com/gopub/wine/errors"
 	"github.com/gopub/wine/internal/respond"
 	"github.com/gopub/wine/router"
 )
@@ -18,7 +17,6 @@ func init() {
 	logger.SetFlags(log.LstdFlags - log.Lfunction - log.Lshortfile)
 	router.SetLogger(logger)
 	respond.SetLogger(logger)
-	errors.SetLogger(logger)
 }
 
 func Logger() *log.Logger {

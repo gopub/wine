@@ -10,8 +10,8 @@ import (
 	"net/http/httputil"
 	"net/url"
 
+	"github.com/gopub/errors"
 	"github.com/gopub/log"
-	"github.com/gopub/wine/errors"
 	iopkg "github.com/gopub/wine/internal/io"
 	"github.com/gopub/wine/mime"
 )
