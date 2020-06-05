@@ -9,12 +9,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gopub/wine/internal/resource"
-
 	"github.com/gopub/environ"
 	"github.com/gopub/log"
 	"github.com/gopub/types"
 	"github.com/gopub/wine/internal/io"
+	"github.com/gopub/wine/internal/resource"
 	"github.com/gopub/wine/internal/respond"
 	"github.com/gopub/wine/internal/template"
 )
@@ -162,7 +161,7 @@ func (s *Server) serve(ctx context.Context, req *Request, rw http.ResponseWriter
 	switch {
 	case r != nil:
 		if m := r.Model(); m != nil {
-			if err := req.bindPrototype(m); err != nil {
+			if err := req.bind(m); err != nil {
 				Error(err).Respond(ctx, rw)
 				return
 			}

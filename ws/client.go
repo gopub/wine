@@ -3,9 +3,10 @@ package ws
 import (
 	"container/list"
 	"context"
-	"github.com/gopub/types"
 	"sync"
 	"time"
+
+	"github.com/gopub/types"
 
 	"github.com/gorilla/websocket"
 )

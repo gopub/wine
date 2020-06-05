@@ -2,7 +2,6 @@ package wine
 
 import (
 	"encoding/base64"
-	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -11,7 +10,6 @@ import (
 	"strings"
 
 	"github.com/gopub/conv"
-	"github.com/gopub/errors"
 	"github.com/gopub/types"
 	iopkg "github.com/gopub/wine/internal/io"
 	"github.com/gopub/wine/mime"
@@ -95,32 +93,11 @@ func (r *Request) NormalizedPath() string {
 	return router.Normalize(r.request.URL.Path)
 }
 
-// bind request params into model which must be a pointer to struct/map
-func (r *Request) bind(model interface{}) error {
-	// Unsafe assignment, so ignore error
-	if data, err := json.Marshal(r.params); err == nil {
-		_ = json.Unmarshal(data, model)
-		// As all values in query will be parsed into string type
-		// conv.Assign can convert string to int automatically
-		_ = conv.Assign(model, r.params)
-	}
-
-	if r.ContentType() == mime.JSON {
-		if err := json.Unmarshal(r.Body(), model); err != nil {
-			return errors.Wrapf(err, "unmarshal json")
-		}
-	}
-	return nil
-}
-
-// bindPrototype: m represents the prototype of request.Model
-func (r *Request) bindPrototype(m interface{}) error {
+// bind: m represents the prototype of request.Model
+func (r *Request) bind(m interface{}) error {
 	pv := reflect.New(reflect.TypeOf(m))
-	if err := r.bind(pv.Interface()); err != nil {
-		return fmt.Errorf("cannot bind: %w", err)
-	}
-	if err := conv.Validate(pv.Interface()); err != nil {
-		return fmt.Errorf("cannot validate: %w", err)
+	if err := conv.Assign(pv.Interface, r.params); err != nil {
+		return fmt.Errorf("cannot assign: %w", err)
 	}
 	r.Model = pv.Elem().Interface()
 	return nil

@@ -3,9 +3,10 @@ package ws
 import (
 	"container/list"
 	"context"
-	"github.com/gopub/errors"
 	"reflect"
 	"runtime"
+
+	"github.com/gopub/errors"
 )
 
 // Handler defines interface for interceptor

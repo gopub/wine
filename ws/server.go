@@ -2,11 +2,12 @@ package ws
 
 import (
 	"context"
-	"github.com/gopub/log"
 	"net/http"
 	"reflect"
 	"runtime/debug"
 	"time"
+
+	"github.com/gopub/log"
 
 	"github.com/gopub/conv"
 	"github.com/gopub/errors"

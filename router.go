@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/gopub/conv"
 	"github.com/gopub/wine/router"
 )
 
@@ -55,7 +56,7 @@ func (r *Router) Group(name string) *Router {
 // UseHandlers returns a new router with global handlers which will be bound with all new path patterns
 // This can be used to add interceptors
 func (r *Router) UseHandlers(handlers ...Handler) *Router {
-	nr := r.Router.Use(linkHandlers(handlers))
+	nr := r.Router.Use(conv.ToList(handlers))
 	return &Router{
 		Router:      nr,
 		authHandler: r.authHandler,
@@ -64,7 +65,7 @@ func (r *Router) UseHandlers(handlers ...Handler) *Router {
 
 // Use is similar with UseHandlers
 func (r *Router) Use(funcs ...HandlerFunc) *Router {
-	nr := r.Router.Use(linkHandlerFuncs(funcs))
+	nr := r.Router.Use(conv.ToList(funcs))
 	return &Router{
 		Router:      nr,
 		authHandler: r.authHandler,
@@ -73,7 +74,7 @@ func (r *Router) Use(funcs ...HandlerFunc) *Router {
 
 // bind binds method, path with handlers
 func (r *Router) Bind(method, path string, handlers ...Handler) *router.Route {
-	return r.Router.Bind(method, path, linkHandlers(handlers))
+	return r.Router.Bind(method, path, conv.ToList(handlers))
 }
 
 // StaticFile binds path to a file
@@ -116,52 +117,52 @@ func (r *Router) StaticFS(path string, fs http.FileSystem) {
 
 // Handle binds funcs to path with any(wildcard) method
 func (r *Router) Handle(path string, funcs ...HandlerFunc) *router.Route {
-	return r.Router.Bind("", path, linkHandlerFuncs(funcs))
+	return r.Router.Bind("", path, conv.ToList(funcs))
 }
 
 // Get binds funcs to path with GET method
 func (r *Router) Get(path string, funcs ...HandlerFunc) *router.Route {
-	return r.Router.Bind(http.MethodGet, path, linkHandlerFuncs(funcs))
+	return r.Router.Bind(http.MethodGet, path, conv.ToList(funcs))
 }
 
 // Post binds funcs to path with POST method
 func (r *Router) Post(path string, funcs ...HandlerFunc) *router.Route {
-	return r.Router.Bind(http.MethodPost, path, linkHandlerFuncs(funcs))
+	return r.Router.Bind(http.MethodPost, path, conv.ToList(funcs))
 }
 
 // Put binds funcs to path with PUT method
 func (r *Router) Put(path string, funcs ...HandlerFunc) *router.Route {
-	return r.Router.Bind(http.MethodPut, path, linkHandlerFuncs(funcs))
+	return r.Router.Bind(http.MethodPut, path, conv.ToList(funcs))
 }
 
 // Patch binds funcs to path with PATCH method
 func (r *Router) Patch(path string, funcs ...HandlerFunc) *router.Route {
-	return r.Router.Bind(http.MethodPatch, path, linkHandlerFuncs(funcs))
+	return r.Router.Bind(http.MethodPatch, path, conv.ToList(funcs))
 }
 
 // Delete binds funcs to path with DELETE method
 func (r *Router) Delete(path string, funcs ...HandlerFunc) *router.Route {
-	return r.Router.Bind(http.MethodDelete, path, linkHandlerFuncs(funcs))
+	return r.Router.Bind(http.MethodDelete, path, conv.ToList(funcs))
 }
 
 // Options binds funcs to path with OPTIONS method
 func (r *Router) Options(path string, funcs ...HandlerFunc) *router.Route {
-	return r.Router.Bind(http.MethodOptions, path, linkHandlerFuncs(funcs))
+	return r.Router.Bind(http.MethodOptions, path, conv.ToList(funcs))
 }
 
 // Head binds funcs to path with HEAD method
 func (r *Router) Head(path string, funcs ...HandlerFunc) *router.Route {
-	return r.Router.Bind(http.MethodHead, path, linkHandlerFuncs(funcs))
+	return r.Router.Bind(http.MethodHead, path, conv.ToList(funcs))
 }
 
 // Trace binds funcs to path with TRACE method
 func (r *Router) Trace(path string, funcs ...HandlerFunc) *router.Route {
-	return r.Router.Bind(http.MethodTrace, path, linkHandlerFuncs(funcs))
+	return r.Router.Bind(http.MethodTrace, path, conv.ToList(funcs))
 }
 
 // Connect binds funcs to path with CONNECT method
 func (r *Router) Connect(path string, funcs ...HandlerFunc) *router.Route {
-	return r.Router.Bind(http.MethodConnect, path, linkHandlerFuncs(funcs))
+	return r.Router.Bind(http.MethodConnect, path, conv.ToList(funcs))
 }
 
 func (r *Router) listEndpoints(ctx context.Context, req *Request) Responder {
