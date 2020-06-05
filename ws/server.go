@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"reflect"
 	"runtime/debug"
+	"sync"
 	"time"
 
 	"github.com/gopub/log"
@@ -34,11 +35,16 @@ type response struct {
 	Error *errors.Error `json:"error"`
 }
 
+type GetAuthUserID interface {
+	GetAuthUserID() int64
+}
+
 type Server struct {
 	websocket.Upgrader
 	*Router
-	timeout    time.Duration
-	PreHandler Handler
+	timeout     time.Duration
+	PreHandler  Handler
+	connUserIDs sync.Map
 }
 
 var _ http.Handler = (*Server)(nil)
@@ -76,6 +82,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		go s.HandleRequest(conn, req)
 	}
 	conn.Close()
+	s.connUserIDs.Delete(conn)
 }
 
 func (s *Server) HandleRequest(conn *websocket.Conn, req *request) {
@@ -88,6 +95,10 @@ func (s *Server) HandleRequest(conn *websocket.Conn, req *request) {
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), s.timeout)
 	defer cancel()
+	uid, _ := s.connUserIDs.Load(conn)
+	if n, _ := uid.(int64); n > 0 {
+		ctx = wine.WithUserID(ctx, n)
+	}
 	result, err := s.Handle(ctx, req)
 	if err != nil {
 		if s := errors.GetCode(err); s > 0 {
@@ -97,6 +108,9 @@ func (s *Server) HandleRequest(conn *websocket.Conn, req *request) {
 		}
 	} else {
 		resp.Data = result
+	}
+	if u, ok := result.(GetAuthUserID); ok {
+		s.connUserIDs.Store(conn, u.GetAuthUserID())
 	}
 	if err = conn.WriteJSON(resp); err != nil {
 		logger.Errorf("WriteJSON: %v", err)
