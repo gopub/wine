@@ -39,6 +39,25 @@ type GetAuthUserID interface {
 	GetAuthUserID() int64
 }
 
+type contextKey int
+
+// Context keys
+const (
+	ckNextHandler contextKey = iota + 1
+)
+
+func Next(ctx context.Context, req interface{}) (interface{}, error) {
+	i, _ := ctx.Value(ckNextHandler).(Handler)
+	if i == nil {
+		return nil, errors.NotImplemented("")
+	}
+	return i.HandleRequest(ctx, req)
+}
+
+func withNextHandler(ctx context.Context, h Handler) context.Context {
+	return context.WithValue(ctx, ckNextHandler, h)
+}
+
 type Server struct {
 	websocket.Upgrader
 	*Router
