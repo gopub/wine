@@ -18,10 +18,6 @@ import (
 	"github.com/gopub/wine/router"
 )
 
-type Validator interface {
-	Validate() error
-}
-
 // Request is a wrapper of http.Request, aims to provide more convenient interface
 type Request struct {
 	request     *http.Request
@@ -112,12 +108,6 @@ func (r *Request) bind(model interface{}) error {
 	if r.ContentType() == mime.JSON {
 		if err := json.Unmarshal(r.Body(), model); err != nil {
 			return errors.Wrapf(err, "unmarshal json")
-		}
-	}
-
-	if v, ok := r.Model.(Validator); ok {
-		if err := v.Validate(); err != nil {
-			return errors.Wrapf(err, "cannot validate model")
 		}
 	}
 	return nil
