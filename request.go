@@ -18,6 +18,10 @@ import (
 	"github.com/gopub/wine/router"
 )
 
+type Validator interface {
+	Validate() error
+}
+
 // Request is a wrapper of http.Request, aims to provide more convenient interface
 type Request struct {
 	request     *http.Request
@@ -95,22 +99,23 @@ func (r *Request) NormalizedPath() string {
 	return router.Normalize(r.request.URL.Path)
 }
 
-func (r *Request) UnmarshalParams(i interface{}) error {
+// bind request params into model which must be a pointer to struct/map
+func (r *Request) bind(model interface{}) error {
 	// Unsafe assignment, so ignore error
 	if data, err := json.Marshal(r.params); err == nil {
-		_ = json.Unmarshal(data, i)
+		_ = json.Unmarshal(data, model)
 		// As all values in query will be parsed into string type
 		// conv.Assign can convert string to int automatically
-		_ = conv.Assign(i, r.params)
+		_ = conv.Assign(model, r.params)
 	}
 
 	if r.ContentType() == mime.JSON {
-		if err := json.Unmarshal(r.Body(), i); err != nil {
+		if err := json.Unmarshal(r.Body(), model); err != nil {
 			return errors.Wrapf(err, "unmarshal json")
 		}
 	}
 
-	if v, ok := r.Model.(interface{ Validate() error }); ok {
+	if v, ok := r.Model.(Validator); ok {
 		if err := v.Validate(); err != nil {
 			return errors.Wrapf(err, "cannot validate model")
 		}
@@ -118,9 +123,10 @@ func (r *Request) UnmarshalParams(i interface{}) error {
 	return nil
 }
 
-func (r *Request) bindModel(m interface{}) error {
+// bindPrototype: m represents the prototype of request.Model
+func (r *Request) bindPrototype(m interface{}) error {
 	pv := reflect.New(reflect.TypeOf(m))
-	err := r.UnmarshalParams(pv.Interface())
+	err := r.bind(pv.Interface())
 	if err != nil {
 		return err
 	}

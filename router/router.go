@@ -123,7 +123,7 @@ func (r *Router) MatchScopes(path string) []string {
 	return a
 }
 
-// Bind binds method, path with handlers
+// bind binds method, path with handlers
 func (r *Router) Bind(scope, path string, handlers *list.List) *Route {
 	if path == "" {
 		log.Panic("path is empty")

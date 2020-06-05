@@ -71,7 +71,7 @@ func (r *Router) Use(funcs ...HandlerFunc) *Router {
 	}
 }
 
-// Bind binds method, path with handlers
+// bind binds method, path with handlers
 func (r *Router) Bind(method, path string, handlers ...Handler) *router.Route {
 	return r.Router.Bind(method, path, linkHandlers(handlers))
 }

@@ -162,7 +162,7 @@ func (s *Server) serve(ctx context.Context, req *Request, rw http.ResponseWriter
 	switch {
 	case r != nil:
 		if m := r.Model(); m != nil {
-			if err := req.bindModel(m); err != nil {
+			if err := req.bindPrototype(m); err != nil {
 				Error(err).Respond(ctx, rw)
 				return
 			}
