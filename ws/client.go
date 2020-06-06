@@ -11,79 +11,90 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-type ConnState int
+type ClientState int
 
 const (
-	Disconnected ConnState = iota
+	Disconnected ClientState = iota
 	Connecting
 	Connected
 )
 
 type Client struct {
-	Timeout      time.Duration
-	PingInterval time.Duration
-	addr         string
+	connTimeout      time.Duration
+	timeout          time.Duration
+	pingInterval     time.Duration
+	maxReconnBackoff time.Duration
+	reconnBackoff    time.Duration
+
+	addr string
 
 	reqMu    sync.RWMutex
 	reqs     *list.List
 	reqChan  chan struct{}
 	resChanM map[int64]chan<- *response
 
-	connMu    sync.Mutex
-	conn      *websocket.Conn
-	connState ConnState
+	connMu sync.Mutex
+	conn   *websocket.Conn
+	state  ClientState
 
 	counter types.Counter
 }
 
 func NewClient(addr string) *Client {
 	c := &Client{
-		Timeout:      10 * time.Second,
-		PingInterval: 10 * time.Second,
-		addr:         addr,
-		reqs:         list.New(),
-		resChanM:     make(map[int64]chan<- *response),
-		connState:    Disconnected,
+		connTimeout:      10 * time.Second,
+		timeout:          10 * time.Second,
+		pingInterval:     10 * time.Second,
+		maxReconnBackoff: 2 * time.Second,
+		addr:             addr,
+		reqs:             list.New(),
+		resChanM:         make(map[int64]chan<- *response),
+		state:            Disconnected,
 	}
+	go c.start()
 	return c
 }
 
-func (c *Client) runLoop() {
-	maxInterval := 10 * time.Second
-	interval := time.Second
+func (c *Client) start() {
 	for {
 		c.run()
-		time.Sleep(interval)
-		interval += time.Second
-		if interval > maxInterval {
-			interval = maxInterval
+		if c.reconnBackoff > 0 {
+			time.Sleep(c.reconnBackoff)
+		}
+		c.reconnBackoff += 100 * time.Millisecond
+		if c.reconnBackoff > c.maxReconnBackoff {
+			c.reconnBackoff = c.maxReconnBackoff
 		}
 	}
 }
 
 func (c *Client) run() {
-	c.setConnState(Connecting)
-	ctx, cancel := context.WithTimeout(context.Background(), c.Timeout)
+	c.state = Connecting
+	ctx, cancel := context.WithTimeout(context.Background(), c.timeout)
 	conn, _, err := websocket.DefaultDialer.DialContext(ctx, c.addr, nil)
 	if err != nil {
 		cancel()
 		logger.Errorf("Cannot dial %s: %v", c.addr, err)
-		c.setConnState(Disconnected)
+		c.state = Disconnected
 		return
 	}
 	cancel()
 	c.conn = conn
-	c.setConnState(Connected)
-	go c.receiveLoop()
-	c.sendLoop()
+	c.state = Connected
+	done := make(chan struct{}, 1)
+	go c.receiveLoop(done)
+	c.sendLoop(done)
+	c.conn.Close()
+	c.state = Disconnected
 }
 
-func (c *Client) receiveLoop() {
+func (c *Client) receiveLoop(done chan<- struct{}) {
 	for {
 		resp := new(response)
 		err := c.conn.ReadJSON(resp)
 		if err != nil {
 			logger.Errorf("ReadJSON: %v", err)
+			done <- struct{}{}
 			return
 		}
 		c.reqMu.RLock()
@@ -95,17 +106,25 @@ func (c *Client) receiveLoop() {
 	}
 }
 
-func (c *Client) sendLoop() {
-	defer c.Disconnect()
-	t := time.NewTicker(c.PingInterval)
+func (c *Client) sendLoop(done <-chan struct{}) {
+	t := time.NewTicker(c.pingInterval)
+	m := NewNetworkMonitor()
+	defer m.Stop()
 	defer t.Stop()
 	for {
 		select {
 		case <-t.C:
 			if err := c.conn.WriteJSON(&request{}); err != nil {
 				logger.Errorf("Write: %v", err)
+				c.reconnBackoff = 0
 				return
 			}
+		case <-m.C:
+			c.reconnBackoff = 0
+			return
+		case <-done:
+			c.reconnBackoff = 0
+			return
 		case <-c.reqChan:
 			c.reqMu.Lock()
 			for it := c.reqs.Front(); it != nil; it = it.Next() {
@@ -119,13 +138,6 @@ func (c *Client) sendLoop() {
 			c.reqMu.Unlock()
 		}
 	}
-}
-
-func (c *Client) setConnState(s ConnState) {
-	if c.connState == s {
-		return
-	}
-	c.connState = s
 }
 
 func (c *Client) Send(ctx context.Context, name string, data interface{}) (interface{}, error) {
@@ -155,12 +167,30 @@ func (c *Client) Send(ctx context.Context, name string, data interface{}) (inter
 	}
 }
 
-func (c *Client) Disconnect() {
-	c.connMu.Lock()
-	defer c.connMu.Unlock()
-	if c.conn != nil {
-		c.conn.Close()
-		c.conn = nil
+func (c *Client) SetConnTimeout(t time.Duration) {
+	if t <= 0 {
+		t = 0
 	}
-	c.setConnState(Disconnected)
+	c.connTimeout = t
+}
+
+func (c *Client) SetTimeout(t time.Duration) {
+	if t <= time.Second {
+		t = time.Second
+	}
+	c.timeout = t
+}
+
+func (c *Client) SetPingInterval(t time.Duration) {
+	if t <= time.Second {
+		t = time.Second
+	}
+	c.pingInterval = t
+}
+
+func (c *Client) SetMaxReconnBackoff(t time.Duration) {
+	if t <= 0 {
+		t = 0
+	}
+	c.maxReconnBackoff = t
 }

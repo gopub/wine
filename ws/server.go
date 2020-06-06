@@ -8,10 +8,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/gopub/log"
-
 	"github.com/gopub/conv"
 	"github.com/gopub/errors"
+	"github.com/gopub/log"
 	"github.com/gopub/wine"
 	"github.com/gopub/wine/router"
 	"github.com/gorilla/websocket"
