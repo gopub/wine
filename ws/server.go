@@ -126,12 +126,16 @@ func (s *Server) HandleRequest(conn *websocket.Conn, req *request) {
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), s.timeout)
 	defer cancel()
-	uid, _ := s.connUserIDs.Load(conn)
-	if n, _ := uid.(int64); n > 0 {
-		ctx = wine.WithUserID(ctx, n)
+	var uid int64
+	if id, ok := s.connUserIDs.Load(conn); ok {
+		uid, _ = id.(int64)
+	}
+	if uid > 0 {
+		ctx = wine.WithUserID(ctx, uid)
 	}
 	result, err := s.Handle(ctx, req)
 	if err != nil {
+		logger.Errorf("uid=%d, req=%d,%s,%s: %v", uid, req.ID, req.Name, wine.JSONString(req.Data), err)
 		if s := errors.GetCode(err); s > 0 {
 			resp.Error = errors.Format(s, err.Error())
 		} else {
