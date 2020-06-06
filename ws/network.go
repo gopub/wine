@@ -29,8 +29,6 @@ func (m *NetworkMonitor) start() {
 			if !ip.Equal(newIP) {
 				m.c <- struct{}{}
 			}
-		} else if newIP != nil {
-			m.c <- struct{}{}
 		}
 		ip = newIP
 		time.Sleep(100 * time.Millisecond)

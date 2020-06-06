@@ -16,6 +16,11 @@ import (
 	"github.com/gorilla/websocket"
 )
 
+type ReadWriter interface {
+	ReadJSON(i interface{}) error
+	WriteJSON(i interface{}) error
+}
+
 var logger = log.Default()
 
 func SetLogger(l *log.Logger) {
@@ -63,7 +68,7 @@ type Server struct {
 	timeout          time.Duration
 	PreHandler       Handler
 	connUserIDs      sync.Map
-	HandshakeHandler func(conn *websocket.Conn) error
+	HandshakeHandler func(rw ReadWriter) error
 }
 
 var _ http.Handler = (*Server)(nil)

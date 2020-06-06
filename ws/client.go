@@ -3,9 +3,10 @@ package ws
 import (
 	"container/list"
 	"context"
-	"github.com/gopub/errors"
 	"sync"
 	"time"
+
+	"github.com/gopub/errors"
 
 	"github.com/gopub/types"
 
@@ -41,7 +42,7 @@ type Client struct {
 
 	counter types.Counter
 
-	HandshakeHandler func(conn *websocket.Conn) error
+	HandshakeHandler func(rw ReadWriter) error
 }
 
 func NewClient(addr string) *Client {
@@ -52,6 +53,7 @@ func NewClient(addr string) *Client {
 		maxReconnBackoff: 2 * time.Second,
 		addr:             addr,
 		reqs:             list.New(),
+		reqC:             make(chan struct{}, 1),
 		reqIDToRespC:     make(map[int64]chan<- *response),
 		state:            Disconnected,
 	}
@@ -104,6 +106,9 @@ func (c *Client) run() {
 func (c *Client) read(done chan<- struct{}) {
 	for {
 		resp := new(response)
+		if err := c.conn.SetReadDeadline(time.Now().Add(c.timeout)); err != nil {
+			logger.Errorf("SetReadDeadline: %v", err)
+		}
 		err := c.conn.ReadJSON(resp)
 		if err != nil {
 			logger.Errorf("ReadJSON: %v", err)
@@ -132,6 +137,7 @@ func (c *Client) write(done <-chan struct{}) {
 				c.reconnBackoff = 0
 				return
 			}
+			logger.Debugf("Ping")
 		case <-m.C:
 			c.reconnBackoff = 0
 			return
@@ -140,10 +146,23 @@ func (c *Client) write(done <-chan struct{}) {
 			return
 		case <-c.reqC:
 			c.reqMu.Lock()
-			for it := c.reqs.Front(); it != nil; it = it.Next() {
+			for it := c.reqs.Front(); it != nil; {
 				req := it.Value.(*request)
+				next := it.Next()
+				c.reqs.Remove(it)
+				it = next
 				if err := c.conn.WriteJSON(req); err != nil {
-					logger.Errorf("Write %s: %v", req.Name, err)
+					logger.Errorf("WriteJSON %s: %v", req.Name, err)
+					if respC, ok := c.reqIDToRespC[req.ID]; ok {
+						resp := &response{ID: req.ID, Error: errors.Format(0, err.Error())}
+						select {
+						case respC <- resp:
+							break
+						default:
+							break
+						}
+						delete(c.reqIDToRespC, req.ID)
+					}
 					c.reqMu.Unlock()
 					return
 				}
@@ -179,7 +198,10 @@ func (c *Client) Send(ctx context.Context, name string, data interface{}) (inter
 	case <-ctx.Done():
 		return nil, ctx.Err()
 	case resp := <-respC:
-		return resp.Data, resp.Error
+		if resp.Error != nil {
+			return nil, resp.Error
+		}
+		return resp.Data, nil
 	}
 }
 
