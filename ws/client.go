@@ -3,6 +3,7 @@ package ws
 import (
 	"container/list"
 	"context"
+	"github.com/gopub/errors"
 	"sync"
 	"time"
 
@@ -17,6 +18,7 @@ const (
 	Disconnected ClientState = iota
 	Connecting
 	Connected
+	Closed
 )
 
 type Client struct {
@@ -28,16 +30,18 @@ type Client struct {
 
 	addr string
 
-	reqMu    sync.RWMutex
-	reqs     *list.List
-	reqChan  chan struct{}
-	resChanM map[int64]chan<- *response
+	reqMu        sync.RWMutex
+	reqs         *list.List
+	reqC         chan struct{}
+	reqIDToRespC map[int64]chan<- *response
 
 	connMu sync.Mutex
 	conn   *websocket.Conn
 	state  ClientState
 
 	counter types.Counter
+
+	HandshakeHandler func(conn *websocket.Conn) error
 }
 
 func NewClient(addr string) *Client {
@@ -48,7 +52,7 @@ func NewClient(addr string) *Client {
 		maxReconnBackoff: 2 * time.Second,
 		addr:             addr,
 		reqs:             list.New(),
-		resChanM:         make(map[int64]chan<- *response),
+		reqIDToRespC:     make(map[int64]chan<- *response),
 		state:            Disconnected,
 	}
 	go c.start()
@@ -56,7 +60,8 @@ func NewClient(addr string) *Client {
 }
 
 func (c *Client) start() {
-	for {
+	c.reconnBackoff = 100 * time.Millisecond
+	for c.state != Closed {
 		c.run()
 		if c.reconnBackoff > 0 {
 			time.Sleep(c.reconnBackoff)
@@ -79,16 +84,24 @@ func (c *Client) run() {
 		return
 	}
 	cancel()
+	if c.HandshakeHandler != nil {
+		if err = c.HandshakeHandler(conn); err != nil {
+			logger.Errorf("Cannot handshake: %v", err)
+			conn.Close()
+			c.state = Disconnected
+			return
+		}
+	}
 	c.conn = conn
 	c.state = Connected
 	done := make(chan struct{}, 1)
-	go c.receiveLoop(done)
-	c.sendLoop(done)
+	go c.read(done)
+	c.write(done)
 	c.conn.Close()
 	c.state = Disconnected
 }
 
-func (c *Client) receiveLoop(done chan<- struct{}) {
+func (c *Client) read(done chan<- struct{}) {
 	for {
 		resp := new(response)
 		err := c.conn.ReadJSON(resp)
@@ -98,15 +111,15 @@ func (c *Client) receiveLoop(done chan<- struct{}) {
 			return
 		}
 		c.reqMu.RLock()
-		if ch, ok := c.resChanM[resp.ID]; ok {
+		if ch, ok := c.reqIDToRespC[resp.ID]; ok {
 			ch <- resp
-			delete(c.resChanM, resp.ID)
+			delete(c.reqIDToRespC, resp.ID)
 		}
 		c.reqMu.RUnlock()
 	}
 }
 
-func (c *Client) sendLoop(done <-chan struct{}) {
+func (c *Client) write(done <-chan struct{}) {
 	t := time.NewTicker(c.pingInterval)
 	m := NewNetworkMonitor()
 	defer m.Stop()
@@ -125,7 +138,7 @@ func (c *Client) sendLoop(done <-chan struct{}) {
 		case <-done:
 			c.reconnBackoff = 0
 			return
-		case <-c.reqChan:
+		case <-c.reqC:
 			c.reqMu.Lock()
 			for it := c.reqs.Front(); it != nil; it = it.Next() {
 				req := it.Value.(*request)
@@ -141,19 +154,22 @@ func (c *Client) sendLoop(done <-chan struct{}) {
 }
 
 func (c *Client) Send(ctx context.Context, name string, data interface{}) (interface{}, error) {
+	if c.state == Closed {
+		return nil, errors.New("client is closed")
+	}
 	req := &request{
 		ID:   c.counter.Next(),
 		Name: name,
 		Data: data,
 	}
-	resChan := make(chan *response, 1)
-	defer close(resChan)
+	respC := make(chan *response, 1)
+	defer close(respC)
 	c.reqMu.Lock()
 	c.reqs.PushBack(req)
-	c.resChanM[req.ID] = resChan
+	c.reqIDToRespC[req.ID] = respC
 	c.reqMu.Unlock()
 	select {
-	case c.reqChan <- struct{}{}:
+	case c.reqC <- struct{}{}:
 		break
 	default:
 		break
@@ -162,9 +178,13 @@ func (c *Client) Send(ctx context.Context, name string, data interface{}) (inter
 	select {
 	case <-ctx.Done():
 		return nil, ctx.Err()
-	case res := <-resChan:
-		return res.Data, res.Error
+	case resp := <-respC:
+		return resp.Data, resp.Error
 	}
+}
+
+func (c *Client) Close() {
+	c.state = Closed
 }
 
 func (c *Client) SetConnTimeout(t time.Duration) {

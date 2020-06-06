@@ -60,9 +60,10 @@ func withNextHandler(ctx context.Context, h Handler) context.Context {
 type Server struct {
 	websocket.Upgrader
 	*Router
-	timeout     time.Duration
-	PreHandler  Handler
-	connUserIDs sync.Map
+	timeout          time.Duration
+	PreHandler       Handler
+	connUserIDs      sync.Map
+	HandshakeHandler func(conn *websocket.Conn) error
 }
 
 var _ http.Handler = (*Server)(nil)
@@ -86,6 +87,13 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		wine.Error(err).Respond(r.Context(), w)
 		return
+	}
+	if s.HandshakeHandler != nil {
+		if err = s.HandshakeHandler(conn); err != nil {
+			logger.Errorf("Cannot handshake: %v", err)
+			conn.Close()
+			return
+		}
 	}
 	for {
 		if err = conn.SetReadDeadline(time.Now().Add(s.timeout)); err != nil {
