@@ -46,6 +46,7 @@ type Client struct {
 
 	HandshakeHandler func(rw ReadWriter) error
 	Header           types.M
+	pushDataC        chan interface{}
 }
 
 func NewClient(addr string) *Client {
@@ -60,6 +61,7 @@ func NewClient(addr string) *Client {
 		reqIDToRespC:     make(map[int64]chan<- *Response),
 		state:            Disconnected,
 		Header:           types.M{},
+		pushDataC:        make(chan interface{}, 1),
 	}
 	go c.start()
 	return c
@@ -119,6 +121,14 @@ func (c *Client) read(done chan<- struct{}) {
 			done <- struct{}{}
 			return
 		}
+		if resp.ID == 0 && resp.Data != nil {
+			select {
+			case c.pushDataC <- resp.Data:
+				break
+			default:
+				break
+			}
+		}
 		c.reqMu.RLock()
 		if ch, ok := c.reqIDToRespC[resp.ID]; ok {
 			ch <- resp
@@ -176,14 +186,14 @@ func (c *Client) write(done <-chan struct{}) {
 	}
 }
 
-func (c *Client) Call(ctx context.Context, name string, body interface{}, result interface{}) error {
+func (c *Client) Call(ctx context.Context, name string, params interface{}, result interface{}) error {
 	if c.state == Closed {
 		return errors.New("client is closed")
 	}
 	req := &Request{
 		ID:   c.counter.Next(),
 		Name: name,
-		Body: body,
+		Body: params,
 	}
 	if len(c.Header) > 0 {
 		req.Header = c.Header
@@ -248,6 +258,10 @@ func (c *Client) SetMaxReconnBackoff(t time.Duration) {
 		t = 0
 	}
 	c.maxReconnBackoff = t
+}
+
+func (c *Client) PushDataC() <-chan interface{} {
+	return c.pushDataC
 }
 
 func (c *Client) GetServerTime(ctx context.Context) (time.Time, error) {

@@ -16,12 +16,17 @@ import (
 	"github.com/gorilla/websocket"
 )
 
+type serverConn struct {
+	*websocket.Conn
+	UserID int64
+}
+
 type Server struct {
 	websocket.Upgrader
 	*Router
 	timeout          time.Duration
 	PreHandler       Handler
-	connUserIDs      sync.Map
+	uidToConns       sync.Map // uid:map[conn]bool
 	HandshakeHandler func(rw ReadWriter) error
 	ResultLogger     func(req *Request, resp *Response, cost time.Duration)
 }
@@ -45,11 +50,14 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 	}()
 
-	conn, err := s.Upgrade(w, r, nil)
+	conn := new(serverConn)
+	var err error
+	conn.Conn, err = s.Upgrade(w, r, nil)
 	if err != nil {
 		wine.Error(err).Respond(r.Context(), w)
 		return
 	}
+
 	if s.HandshakeHandler != nil {
 		if err = s.HandshakeHandler(conn); err != nil {
 			logger.Errorf("Cannot handshake: %v", err)
@@ -71,10 +79,29 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		go s.HandleRequest(conn, req)
 	}
 	conn.Close()
-	s.connUserIDs.Delete(conn)
+	s.deleteUserConn(conn)
 }
 
-func (s *Server) HandleRequest(conn *websocket.Conn, req *Request) {
+func (s *Server) deleteUserConn(conn *serverConn) {
+	if conn.UserID == 0 {
+		return
+	}
+	m, ok := s.uidToConns.Load(conn.UserID)
+	if !ok {
+		return
+	}
+	m.(*sync.Map).Delete(conn)
+}
+
+func (s *Server) saveUserConn(conn *serverConn) {
+	if conn.UserID == 0 {
+		return
+	}
+	m, _ := s.uidToConns.LoadOrStore(conn.UserID, &sync.Map{})
+	m.(*sync.Map).Store(conn, true)
+}
+
+func (s *Server) HandleRequest(conn *serverConn, req *Request) {
 	if req.ID == 0 {
 		// Heartbreak Request
 		return
@@ -87,12 +114,8 @@ func (s *Server) HandleRequest(conn *websocket.Conn, req *Request) {
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), s.timeout)
 	defer cancel()
-	var uid int64
-	if id, ok := s.connUserIDs.Load(conn); ok {
-		uid, _ = id.(int64)
-		if uid > 0 {
-			ctx = wine.WithUserID(ctx, uid)
-		}
+	if conn.UserID > 0 {
+		ctx = wine.WithUserID(ctx, conn.UserID)
 	}
 	result, err := s.Handle(ctx, req)
 	if err != nil {
@@ -105,8 +128,12 @@ func (s *Server) HandleRequest(conn *websocket.Conn, req *Request) {
 		resp.Data = result
 	}
 	if getUid, ok := result.(GetAuthUserID); ok {
-		uid = getUid.GetAuthUserID()
-		s.connUserIDs.Store(conn, uid)
+		uid := getUid.GetAuthUserID()
+		if conn.UserID != uid {
+			conn.UserID = uid
+			s.deleteUserConn(conn)
+			s.saveUserConn(conn)
+		}
 	}
 	if err = conn.WriteJSON(resp); err != nil {
 		logger.Errorf("WriteJSON: %v", err)
@@ -135,6 +162,27 @@ func (s *Server) Handle(ctx context.Context, req *Request) (interface{}, error) 
 	} else {
 		return h.HandleRequest(ctx, data)
 	}
+}
+
+func (s *Server) Push(ctx context.Context, userID int64, data interface{}) error {
+	conns, ok := s.uidToConns.Load(userID)
+	if !ok {
+		return nil
+	}
+	var firstErr error
+	conns.(*sync.Map).Range(func(key, value interface{}) bool {
+		err := key.(*serverConn).WriteJSON(&Response{
+			Data: data,
+		})
+		if err != nil {
+			logger.Errorf("WriteJSON: %v", err)
+			if firstErr != nil {
+				firstErr = err
+			}
+		}
+		return true
+	})
+	return firstErr
 }
 
 func (s *Server) logResult(req *Request, resp *Response, startAt time.Time) {
