@@ -11,6 +11,8 @@ import (
 	"github.com/gopub/wine/internal/respond"
 )
 
+type Response = respond.Response
+
 // Responder interface is used by Wine server to write response to the client
 type Responder interface {
 	// Respond will be called to write status/body to http response writer
