@@ -99,3 +99,8 @@ func Error(err error) Responder {
 	}
 	return Text(http.StatusInternalServerError, err.Error())
 }
+
+type Result struct {
+	Status int
+	Body   []byte
+}

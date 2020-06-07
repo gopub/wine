@@ -26,6 +26,7 @@ var (
 type ResponseWriter struct {
 	http.ResponseWriter
 	status int
+	body   []byte
 }
 
 func NewResponseWriter(rw http.ResponseWriter) *ResponseWriter {
@@ -47,6 +48,7 @@ func (w *ResponseWriter) Write(data []byte) (int, error) {
 	if w.status == 0 {
 		w.status = http.StatusOK
 	}
+	w.body = data
 	return w.ResponseWriter.Write(data)
 }
 
@@ -65,4 +67,8 @@ func (w *ResponseWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
 		return h.Hijack()
 	}
 	return nil, nil, errors.New("hijack not supported")
+}
+
+func (w *ResponseWriter) Body() []byte {
+	return w.body
 }

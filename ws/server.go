@@ -205,9 +205,12 @@ func logResult(req *Request, resp *Response, cost time.Duration) {
 		req.ID,
 		req.Name,
 		cost)
+	if req.uid > 0 {
+		info = fmt.Sprintf("%s | user=%d", info, req.uid)
+	}
 	if resp.Error != nil {
-		logger.Errorf("%s | uid=%d | %v", info, req.uid, resp.Error)
+		logger.Errorf("%s | %v", info, resp.Error)
 	} else {
-		logger.Infof("%s | uid=%d", info, req.uid)
+		logger.Infof(info)
 	}
 }

@@ -98,7 +98,7 @@ func (r *Request) NormalizedPath() string {
 // bind: m represents the prototype of request.Model
 func (r *Request) bind(m interface{}) error {
 	pv := reflect.New(reflect.TypeOf(m))
-	if err := conv.Assign(pv.Interface, r.params); err != nil {
+	if err := conv.Assign(pv.Interface(), r.params); err != nil {
 		return fmt.Errorf("cannot assign: %w", err)
 	}
 	r.Model = pv.Elem().Interface()

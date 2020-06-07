@@ -50,7 +50,7 @@ type Server struct {
 	PreHandler         Handler
 	CompressionEnabled bool
 	Recovery           bool
-	ResultLogger       func(req *Request, respStatus int, cost time.Duration)
+	ResultLogger       func(req *Request, result *Result, cost time.Duration)
 }
 
 // NewServer returns a server
@@ -299,37 +299,52 @@ func (s *Server) handleOptions(_ context.Context, req *Request) Responder {
 }
 
 func (s *Server) logResult(req *Request, rw http.ResponseWriter, startAt time.Time) {
-	status := 0
+	res := new(Result)
 	if getStatus, ok := rw.(interface{ Status() int }); ok {
-		status = getStatus.Status()
+		res.Status = getStatus.Status()
+	}
+	if getBody, ok := rw.(interface{ Body() []byte }); ok {
+		res.Body = getBody.Body()
 	}
 	if s.ResultLogger != nil {
-		s.ResultLogger(req, status, time.Since(startAt))
+		s.ResultLogger(req, res, time.Since(startAt))
 	}
 }
 
-func logResult(req *Request, status int, cost time.Duration) {
+func logResult(req *Request, res *Result, cost time.Duration) {
 	httpReq := req.Request()
-	if reservedPaths[httpReq.URL.Path[1:]] && status < http.StatusBadRequest {
+	if reservedPaths[httpReq.URL.Path[1:]] && res.Status < http.StatusBadRequest {
 		return
 	}
 	info := fmt.Sprintf("%s %s %s | %d %v",
 		httpReq.RemoteAddr,
 		httpReq.Method,
 		httpReq.RequestURI,
-		status,
+		res.Status,
 		cost)
-	if status >= http.StatusBadRequest {
+	if res.Status >= http.StatusBadRequest {
 		cookie := req.Header("Cookie")
 		ua := req.Header("User-Agent")
-		var params interface{}
 		if len(req.params) > 0 {
-			params = req.params
+			info = fmt.Sprintf("%s | Cookie:%s User-Agent:%s | %v", info, cookie, ua, JSONString(req.params))
+		} else if len(httpReq.PostForm) > 0 {
+			info = fmt.Sprintf("%s | Cookie:%s User-Agent:%s | %v", info, cookie, ua, JSONString(httpReq.PostForm))
 		} else {
-			params = httpReq.Form
+			info = fmt.Sprintf("%s | Cookie:%s User-Agent:%s", info, cookie, ua)
 		}
-		logger.Errorf("%s | Cookie:%s User-Agent:%s | %v | uid=%d", info, cookie, ua, JSONString(params), req.uid)
+		if req.uid > 0 {
+			info = fmt.Sprintf("%s | user=%d", info, req.uid)
+		}
+		if len(res.Body) > 0 {
+			logger.Errorf("%s | %s", info, res.Body)
+		} else {
+			logger.Errorf(info)
+		}
 	} else {
-		logger.Infof("%s | uid=%d", info, req.uid)
+		if req.uid > 0 {
+			logger.Infof("%s | uid=%d", info, req.uid)
+		} else {
+			logger.Info(info)
+		}
 	}
 }

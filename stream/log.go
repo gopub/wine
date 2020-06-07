@@ -60,6 +60,6 @@ func Log(ctx context.Context, req *wine.Request) wine.Responder {
 		if errors.Is(o.err, syscall.EPIPE) {
 			return
 		}
-		wine.Logger().Errorf("Error: %v", o.err)
+		wine.Logger().Errorf("getErr: %v", o.err)
 	})
 }
