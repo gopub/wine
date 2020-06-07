@@ -326,11 +326,11 @@ func logResult(req *Request, res *Result, cost time.Duration) {
 		cookie := req.Header("Cookie")
 		ua := req.Header("User-Agent")
 		if len(req.params) > 0 {
-			info = fmt.Sprintf("%s | User-Agent:%s | %v", info, ua, JSONString(req.params))
+			info = fmt.Sprintf("%s | %s | %v", info, ua, JSONString(req.params))
 		} else if len(httpReq.PostForm) > 0 {
-			info = fmt.Sprintf("%s | User-Agent:%s | %v", info, ua, JSONString(httpReq.PostForm))
+			info = fmt.Sprintf("%s | %s | %v", info, ua, JSONString(httpReq.PostForm))
 		} else {
-			info = fmt.Sprintf("%s | User-Agent:%s", info, ua)
+			info = fmt.Sprintf("%s | %s", info, ua)
 		}
 		if req.uid > 0 {
 			info = fmt.Sprintf("%s | user=%d", info, req.uid)
