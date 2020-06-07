@@ -33,6 +33,7 @@ func (m *NetworkMonitor) start() {
 		ip = newIP
 		time.Sleep(100 * time.Millisecond)
 	}
+	close(m.c)
 }
 
 func (m *NetworkMonitor) Stop() {
