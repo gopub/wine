@@ -1,6 +1,7 @@
 package ws
 
 import (
+	"github.com/gopub/types"
 	"net"
 
 	"github.com/gopub/errors"
@@ -26,7 +27,8 @@ type GetAuthUserID interface {
 type Request struct {
 	ID     int64       `json:"id,omitempty"`
 	Name   string      `json:"name,omitempty"`
-	Params interface{} `json:"params,omitempty"`
+	Header types.M     `json:"header,omitempty"`
+	Body   interface{} `json:"body,omitempty"`
 
 	remoteAddr net.Addr
 }

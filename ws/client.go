@@ -45,6 +45,7 @@ type Client struct {
 	counter types.Counter
 
 	HandshakeHandler func(rw ReadWriter) error
+	Header           types.M
 }
 
 func NewClient(addr string) *Client {
@@ -58,6 +59,7 @@ func NewClient(addr string) *Client {
 		reqC:             make(chan struct{}, 1),
 		reqIDToRespC:     make(map[int64]chan<- *Response),
 		state:            Disconnected,
+		Header:           types.M{},
 	}
 	go c.start()
 	return c
@@ -174,14 +176,17 @@ func (c *Client) write(done <-chan struct{}) {
 	}
 }
 
-func (c *Client) Call(ctx context.Context, name string, params interface{}, result interface{}) error {
+func (c *Client) Call(ctx context.Context, name string, body interface{}, result interface{}) error {
 	if c.state == Closed {
 		return errors.New("client is closed")
 	}
 	req := &Request{
-		ID:     c.counter.Next(),
-		Name:   name,
-		Params: params,
+		ID:   c.counter.Next(),
+		Name: name,
+		Body: body,
+	}
+	if len(c.Header) > 0 {
+		req.Header = c.Header
 	}
 	respC := make(chan *Response, 1)
 	defer close(respC)

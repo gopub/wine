@@ -33,7 +33,7 @@ func (r *Request) Request() *http.Request {
 	return r.request
 }
 
-// Params returns request parameters
+// Body returns request parameters
 func (r *Request) Params() types.M {
 	return r.params
 }
