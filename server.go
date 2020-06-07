@@ -323,7 +323,6 @@ func logResult(req *Request, res *Result, cost time.Duration) {
 		res.Status,
 		cost)
 	if res.Status >= http.StatusBadRequest {
-		cookie := req.Header("Cookie")
 		ua := req.Header("User-Agent")
 		if len(req.params) > 0 {
 			info = fmt.Sprintf("%s | %s | %v", info, ua, JSONString(req.params))
