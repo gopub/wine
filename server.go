@@ -199,14 +199,20 @@ func (s *Server) wrapResponseWriter(rw http.ResponseWriter, req *http.Request) h
 	}
 
 	encodings := strings.Split(req.Header.Get("Accept-Encoding"), ",")
+	var unsupported []string
 	for _, enc := range encodings {
 		enc = strings.TrimSpace(enc)
 		cw, err := io.NewCompressResponseWriter(w, enc)
 		if err == nil {
 			return cw
 		}
+		if enc != "" {
+			unsupported = append(unsupported, enc)
+		}
 	}
-	log.Warnf("Unsupported encodings: %v", encodings)
+	if len(unsupported) > 0 {
+		log.Warnf("Unsupported encodings: %v", unsupported)
+	}
 	return w
 }
 
