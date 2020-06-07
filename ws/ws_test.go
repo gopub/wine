@@ -27,7 +27,8 @@ func TestClient_Send(t *testing.T) {
 	}()
 	runtime.Gosched()
 	c := ws.NewClient("ws://" + addr)
-	result, err := c.Send(context.Background(), "echo", "hello")
+	var result string
+	err := c.Call(context.Background(), "echo", "hello", &result)
 	require.NoError(t, err)
 	require.Equal(t, "hello", result)
 }
@@ -68,7 +69,8 @@ func TestHandshake(t *testing.T) {
 		t.Logf("%v", m)
 		return err
 	}
-	result, err := c.Send(context.Background(), "echo", "hello")
+	var result string
+	err := c.Call(context.Background(), "echo", "hello", &result)
 	require.NoError(t, err)
 	require.Equal(t, "hello", result)
 }

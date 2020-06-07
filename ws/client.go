@@ -6,6 +6,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/gopub/conv"
+
 	"github.com/gopub/errors"
 
 	"github.com/gopub/types"
@@ -172,14 +174,14 @@ func (c *Client) write(done <-chan struct{}) {
 	}
 }
 
-func (c *Client) Send(ctx context.Context, name string, data interface{}) (interface{}, error) {
+func (c *Client) Call(ctx context.Context, name string, params interface{}, result interface{}) error {
 	if c.state == Closed {
-		return nil, errors.New("client is closed")
+		return errors.New("client is closed")
 	}
 	req := &Request{
-		ID:   c.counter.Next(),
-		Name: name,
-		Data: data,
+		ID:     c.counter.Next(),
+		Name:   name,
+		Params: params,
 	}
 	respC := make(chan *Response, 1)
 	defer close(respC)
@@ -196,12 +198,18 @@ func (c *Client) Send(ctx context.Context, name string, data interface{}) (inter
 
 	select {
 	case <-ctx.Done():
-		return nil, ctx.Err()
+		return ctx.Err()
 	case resp := <-respC:
 		if resp.Error != nil {
-			return nil, resp.Error
+			return resp.Error
 		}
-		return resp.Data, nil
+		if result != nil {
+			if resp.Data != nil {
+				return conv.Assign(result, resp.Data)
+			}
+			return errors.New("no data")
+		}
+		return nil
 	}
 }
 

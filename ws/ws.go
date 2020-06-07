@@ -1,10 +1,11 @@
 package ws
 
 import (
+	"net"
+
 	"github.com/gopub/errors"
 	"github.com/gopub/log"
 	"github.com/gopub/wine"
-	"net"
 )
 
 var logger = wine.Logger()
@@ -23,9 +24,9 @@ type GetAuthUserID interface {
 }
 
 type Request struct {
-	ID   int64       `json:"id,omitempty"`
-	Name string      `json:"name,omitempty"`
-	Data interface{} `json:"data,omitempty"`
+	ID     int64       `json:"id,omitempty"`
+	Name   string      `json:"name,omitempty"`
+	Params interface{} `json:"params,omitempty"`
 
 	remoteAddr net.Addr
 }

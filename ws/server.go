@@ -120,10 +120,10 @@ func (s *Server) Handle(ctx context.Context, req *Request) (interface{}, error) 
 		return nil, errors.NotFound("")
 	}
 
-	data := req.Data
+	data := req.Params
 	if m := r.Model(); m != nil {
 		pv := reflect.New(reflect.TypeOf(m))
-		if err := conv.Assign(pv.Interface(), req.Data); err != nil {
+		if err := conv.Assign(pv.Interface(), req.Params); err != nil {
 			return nil, err
 		}
 		data = pv.Elem().Interface()
