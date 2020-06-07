@@ -230,6 +230,7 @@ func (c *Client) Call(ctx context.Context, name string, params interface{}, resu
 
 func (c *Client) Close() {
 	c.state = Closed
+	close(c.pushDataC)
 }
 
 func (c *Client) SetConnTimeout(t time.Duration) {
