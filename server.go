@@ -50,6 +50,7 @@ type Server struct {
 	PreHandler         Handler
 	CompressionEnabled bool
 	Recovery           bool
+	ResultLogger       func(req *Request, respStatus int, cost time.Duration)
 }
 
 // NewServer returns a server
@@ -69,6 +70,7 @@ func NewServer() *Server {
 		Timeout:            environ.Duration("wine.timeout", defaultTimeout),
 		CompressionEnabled: environ.Bool("wine.compression", true),
 		Recovery:           environ.Bool("wine.recovery", true),
+		ResultLogger:       logResult,
 	}
 
 	if s.sessionTTL < minSessionTTL {
@@ -120,34 +122,34 @@ func (s *Server) Shutdown() error {
 }
 
 // ServeHTTP implements for http.Handler interface, which will handle each http request
-func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
+func (s *Server) ServeHTTP(rw http.ResponseWriter, httpReq *http.Request) {
+	startAt := time.Now()
 	if s.Recovery {
 		defer func() {
 			if e := recover(); e != nil {
-				logger.Errorf("%v: %+v\n", req, e)
+				logger.Errorf("%v: %+v\n", httpReq, e)
 				logger.Errorf("\n%s\n", string(debug.Stack()))
 			}
 		}()
 	}
-	rw = s.wrapResponseWriter(rw, req)
+	rw = s.wrapResponseWriter(rw, httpReq)
 	defer s.closeWriter(rw)
-	defer s.logRequest(req, rw, time.Now())
-
-	sid := s.initSession(rw, req)
-	ctx, cancel := s.setupContext(req.Context())
+	sid := s.initSession(rw, httpReq)
+	ctx, cancel := s.setupContext(httpReq.Context())
 	defer cancel()
 
-	parsedReq, err := parseRequest(req, s.maxReqMem)
+	req, err := parseRequest(httpReq, s.maxReqMem)
 	if err != nil {
-		logger.Errorf("Parse request: %v", err)
 		resp := Text(http.StatusBadRequest, fmt.Sprintf("Parse request: %v", err))
 		resp.Respond(ctx, rw)
+		s.logResult(&Request{request: httpReq}, rw, startAt)
 		return
 	}
-	parsedReq.sid = sid
-	parsedReq.params[s.sessionName] = sid
-	ctx = s.withRequestParams(ctx, parsedReq.params)
-	s.serve(ctx, parsedReq, rw)
+	req.sid = sid
+	req.params[s.sessionName] = sid
+	ctx = s.withRequestParams(ctx, req.params)
+	s.serve(ctx, req, rw)
+	s.logResult(&Request{request: httpReq}, rw, startAt)
 }
 
 func (s *Server) serve(ctx context.Context, req *Request, rw http.ResponseWriter) {
@@ -277,33 +279,6 @@ func (s *Server) closeWriter(w http.ResponseWriter) {
 	}
 }
 
-func (s *Server) logRequest(req *http.Request, rw http.ResponseWriter, startAt time.Time) {
-	status := 0
-	if w, ok := rw.(interface{ Status() int }); ok {
-		status = w.Status()
-	}
-	if reservedPaths[req.URL.Path[1:]] && status < http.StatusBadRequest {
-		return
-	}
-	info := fmt.Sprintf("%s %s %s | %d %v",
-		req.RemoteAddr,
-		req.Method,
-		req.RequestURI,
-		status,
-		time.Since(startAt))
-	if status >= http.StatusBadRequest {
-		cookie := req.Header.Get("Cookie")
-		ua := req.Header.Get("User-Agent")
-		if status != http.StatusUnauthorized {
-			logger.Errorf("%s | Cookie:%s User-Agent:%s | %v", info, cookie, ua, req.PostForm)
-		} else {
-			logger.Errorf("%s | Cookie:%s User-Agent:%s", info, cookie, ua)
-		}
-	} else {
-		logger.Info(info)
-	}
-}
-
 func (s *Server) handleOptions(_ context.Context, req *Request) Responder {
 	methods := s.MatchScopes(req.NormalizedPath())
 	if len(methods) > 0 {
@@ -321,4 +296,40 @@ func (s *Server) handleOptions(_ context.Context, req *Request) Responder {
 		rw.Header()["Access-Control-Allow-Methods"] = joined
 		rw.WriteHeader(http.StatusNoContent)
 	})
+}
+
+func (s *Server) logResult(req *Request, rw http.ResponseWriter, startAt time.Time) {
+	status := 0
+	if getStatus, ok := rw.(interface{ Status() int }); ok {
+		status = getStatus.Status()
+	}
+	if s.ResultLogger != nil {
+		s.ResultLogger(req, status, time.Since(startAt))
+	}
+}
+
+func logResult(req *Request, status int, cost time.Duration) {
+	httpReq := req.Request()
+	if reservedPaths[httpReq.URL.Path[1:]] && status < http.StatusBadRequest {
+		return
+	}
+	info := fmt.Sprintf("%s %s %s | %d %v",
+		httpReq.RemoteAddr,
+		httpReq.Method,
+		httpReq.RequestURI,
+		status,
+		cost)
+	if status >= http.StatusBadRequest {
+		cookie := req.Header("Cookie")
+		ua := req.Header("User-Agent")
+		var params interface{}
+		if len(req.params) > 0 {
+			params = req.params
+		} else {
+			params = httpReq.Form
+		}
+		logger.Errorf("%s | Cookie:%s User-Agent:%s | %v | uid=%d", info, cookie, ua, JSONString(params), req.uid)
+	} else {
+		logger.Infof("%s | uid=%d", info, req.uid)
+	}
 }

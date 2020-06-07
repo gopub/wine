@@ -2,6 +2,8 @@ package ws
 
 import (
 	"context"
+	"fmt"
+	"net"
 	"net/http"
 	"reflect"
 	"runtime/debug"
@@ -21,26 +23,37 @@ type ReadWriter interface {
 	WriteJSON(i interface{}) error
 }
 
-var logger = log.Default()
+var logger = wine.Logger()
 
 func SetLogger(l *log.Logger) {
 	logger = l
 }
 
-type request struct {
-	ID   int64       `json:"id"`
-	Name string      `json:"name"`
-	Data interface{} `json:"data"`
+type Request struct {
+	ID   int64       `json:"id,omitempty"`
+	Name string      `json:"name,omitempty"`
+	Data interface{} `json:"data,omitempty"`
+
+	uid        int64
+	remoteAddr net.Addr
 }
 
-type response struct {
-	ID    int64         `json:"id"`
-	Data  interface{}   `json:"data"`
-	Error *errors.Error `json:"error"`
+func (r *Request) UserID() int64 {
+	return r.uid
 }
 
-type GetAuthUserID interface {
-	GetAuthUserID() int64
+func (r *Request) SetUserID(id int64) {
+	r.uid = id
+}
+
+func (r *Request) RemoteAddr() net.Addr {
+	return r.remoteAddr
+}
+
+type Response struct {
+	ID    int64         `json:"id,omitempty"`
+	Data  interface{}   `json:"data,omitempty"`
+	Error *errors.Error `json:"error,omitempty"`
 }
 
 type contextKey int
@@ -69,14 +82,17 @@ type Server struct {
 	PreHandler       Handler
 	connUserIDs      sync.Map
 	HandshakeHandler func(rw ReadWriter) error
+	ResultLogger     func(req *Request, resp *Response, cost time.Duration)
 }
 
 var _ http.Handler = (*Server)(nil)
 
 func NewServer() *Server {
-	s := new(Server)
-	s.Router = NewRouter()
-	s.timeout = 10 * time.Second
+	s := &Server{
+		Router:       NewRouter(),
+		timeout:      10 * time.Second,
+		ResultLogger: logResult,
+	}
 	return s
 }
 
@@ -105,37 +121,39 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			logger.Errorf("SetReadDeadline: %v", err)
 			break
 		}
-		req := new(request)
+		req := new(Request)
 		if err := conn.ReadJSON(req); err != nil {
 			logger.Errorf("ReadJSON: %v", err)
 			break
 		}
+		req.remoteAddr = conn.RemoteAddr()
 		go s.HandleRequest(conn, req)
 	}
 	conn.Close()
 	s.connUserIDs.Delete(conn)
 }
 
-func (s *Server) HandleRequest(conn *websocket.Conn, req *request) {
+func (s *Server) HandleRequest(conn *websocket.Conn, req *Request) {
 	if req.ID == 0 {
-		// Heartbreak request
+		// Heartbreak Request
 		return
 	}
-	resp := &response{
+	resp := &Response{
 		ID: req.ID,
+	}
+	if s.ResultLogger != nil {
+		defer s.logResult(req, resp, time.Now())
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), s.timeout)
 	defer cancel()
-	var uid int64
 	if id, ok := s.connUserIDs.Load(conn); ok {
-		uid, _ = id.(int64)
-	}
-	if uid > 0 {
-		ctx = wine.WithUserID(ctx, uid)
+		req.uid, _ = id.(int64)
+		if req.uid > 0 {
+			ctx = wine.WithUserID(ctx, req.uid)
+		}
 	}
 	result, err := s.Handle(ctx, req)
 	if err != nil {
-		logger.Errorf("uid=%d, req=%d,%s,%s: %v", uid, req.ID, req.Name, wine.JSONString(req.Data), err)
 		if s := errors.GetCode(err); s > 0 {
 			resp.Error = errors.Format(s, err.Error())
 		} else {
@@ -144,16 +162,14 @@ func (s *Server) HandleRequest(conn *websocket.Conn, req *request) {
 	} else {
 		resp.Data = result
 	}
-	if u, ok := result.(GetAuthUserID); ok {
-		s.connUserIDs.Store(conn, u.GetAuthUserID())
-	}
+	s.connUserIDs.Store(conn, req.uid)
 	if err = conn.WriteJSON(resp); err != nil {
 		logger.Errorf("WriteJSON: %v", err)
 		conn.Close()
 	}
 }
 
-func (s *Server) Handle(ctx context.Context, req *request) (interface{}, error) {
+func (s *Server) Handle(ctx context.Context, req *Request) (interface{}, error) {
 	r, _ := s.Match("", router.Normalize(req.Name))
 	if r == nil {
 		return nil, errors.NotFound("")
@@ -173,5 +189,25 @@ func (s *Server) Handle(ctx context.Context, req *request) (interface{}, error) 
 		return s.PreHandler.HandleRequest(withNextHandler(ctx, h), data)
 	} else {
 		return h.HandleRequest(ctx, data)
+	}
+}
+
+func (s *Server) logResult(req *Request, resp *Response, startAt time.Time) {
+	if s.ResultLogger == nil {
+		return
+	}
+	s.ResultLogger(req, resp, time.Since(startAt))
+}
+
+func logResult(req *Request, resp *Response, cost time.Duration) {
+	info := fmt.Sprintf("%s %d %s | %v",
+		req.remoteAddr,
+		req.ID,
+		req.Name,
+		cost)
+	if resp.Error != nil {
+		logger.Errorf("%s | uid=%d | %v", info, req.uid, resp.Error)
+	} else {
+		logger.Infof("%s | uid=%d", info, req.uid)
 	}
 }

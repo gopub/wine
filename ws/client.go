@@ -34,7 +34,7 @@ type Client struct {
 	reqMu        sync.RWMutex
 	reqs         *list.List
 	reqC         chan struct{}
-	reqIDToRespC map[int64]chan<- *response
+	reqIDToRespC map[int64]chan<- *Response
 
 	connMu sync.Mutex
 	conn   *websocket.Conn
@@ -54,7 +54,7 @@ func NewClient(addr string) *Client {
 		addr:             addr,
 		reqs:             list.New(),
 		reqC:             make(chan struct{}, 1),
-		reqIDToRespC:     make(map[int64]chan<- *response),
+		reqIDToRespC:     make(map[int64]chan<- *Response),
 		state:            Disconnected,
 	}
 	go c.start()
@@ -105,7 +105,7 @@ func (c *Client) run() {
 
 func (c *Client) read(done chan<- struct{}) {
 	for {
-		resp := new(response)
+		resp := new(Response)
 		if err := c.conn.SetReadDeadline(time.Now().Add(c.timeout)); err != nil {
 			logger.Errorf("SetReadDeadline: %v", err)
 		}
@@ -132,7 +132,7 @@ func (c *Client) write(done <-chan struct{}) {
 	for {
 		select {
 		case <-t.C:
-			if err := c.conn.WriteJSON(&request{}); err != nil {
+			if err := c.conn.WriteJSON(&Request{}); err != nil {
 				logger.Errorf("Write: %v", err)
 				c.reconnBackoff = 0
 				return
@@ -147,14 +147,14 @@ func (c *Client) write(done <-chan struct{}) {
 		case <-c.reqC:
 			c.reqMu.Lock()
 			for it := c.reqs.Front(); it != nil; {
-				req := it.Value.(*request)
+				req := it.Value.(*Request)
 				next := it.Next()
 				c.reqs.Remove(it)
 				it = next
 				if err := c.conn.WriteJSON(req); err != nil {
 					logger.Errorf("WriteJSON %s: %v", req.Name, err)
 					if respC, ok := c.reqIDToRespC[req.ID]; ok {
-						resp := &response{ID: req.ID, Error: errors.Format(0, err.Error())}
+						resp := &Response{ID: req.ID, Error: errors.Format(0, err.Error())}
 						select {
 						case respC <- resp:
 							break
@@ -176,12 +176,12 @@ func (c *Client) Send(ctx context.Context, name string, data interface{}) (inter
 	if c.state == Closed {
 		return nil, errors.New("client is closed")
 	}
-	req := &request{
+	req := &Request{
 		ID:   c.counter.Next(),
 		Name: name,
 		Data: data,
 	}
-	respC := make(chan *response, 1)
+	respC := make(chan *Response, 1)
 	defer close(respC)
 	c.reqMu.Lock()
 	c.reqs.PushBack(req)

@@ -24,6 +24,8 @@ type Request struct {
 	contentType string
 	sid         string
 	Model       interface{}
+
+	uid int64
 }
 
 // Request returns original http request
@@ -129,6 +131,14 @@ func (r *Request) SaveFormFile(name, dst string) error {
 	defer w.Close()
 	_, err = io.Copy(w, f)
 	return fmt.Errorf("copy: %w", err)
+}
+
+func (r *Request) UserID() int64 {
+	return r.uid
+}
+
+func (r *Request) SetUserID(id int64) {
+	r.uid = id
 }
 
 func parseRequest(r *http.Request, maxMem types.ByteUnit) (*Request, error) {
