@@ -3,7 +3,6 @@ package ws
 import (
 	"context"
 	"fmt"
-	"net"
 	"net/http"
 	"reflect"
 	"runtime/debug"
@@ -16,24 +15,6 @@ import (
 	"github.com/gopub/wine/router"
 	"github.com/gorilla/websocket"
 )
-
-type Request struct {
-	ID   int64       `json:"id,omitempty"`
-	Name string      `json:"name,omitempty"`
-	Data interface{} `json:"data,omitempty"`
-
-	remoteAddr net.Addr
-}
-
-func (r *Request) RemoteAddr() net.Addr {
-	return r.remoteAddr
-}
-
-type Response struct {
-	ID    int64         `json:"id,omitempty"`
-	Data  interface{}   `json:"data,omitempty"`
-	Error *errors.Error `json:"error,omitempty"`
-}
 
 type Server struct {
 	websocket.Upgrader
