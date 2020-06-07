@@ -269,7 +269,7 @@ func (c *Client) GetServerTime(ctx context.Context) (time.Time, error) {
 	var res struct {
 		Timestamp int64 `json:"timestamp"`
 	}
-	err := c.Call(ctx, "WS.GetDate", nil, &res)
+	err := c.Call(ctx, "ws.getDate", nil, &res)
 	if err != nil {
 		return time.Time{}, err
 	}

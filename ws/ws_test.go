@@ -74,3 +74,37 @@ func TestHandshake(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, "hello", result)
 }
+
+type AuthUserID int64
+
+func (a AuthUserID) GetAuthUserID() int64 {
+	return int64(a)
+}
+
+func TestServer_Push(t *testing.T) {
+	var uid = AuthUserID(types.NewID().Int())
+	addr := fmt.Sprintf("localhost:%d", 1024+rand.Int()%10000)
+	s := ws.NewServer()
+	s.Bind("auth", func(ctx context.Context, req interface{}) (interface{}, error) {
+		return uid, nil
+	})
+	go func() {
+		err := http.ListenAndServe(addr, s)
+		require.NoError(t, err)
+	}()
+	runtime.Gosched()
+	c := ws.NewClient("ws://" + addr)
+	ctx := context.Background()
+	err := c.Call(ctx, "auth", nil, nil)
+	require.NoError(t, err)
+	data := types.NewID().Pretty()
+	err = s.Push(ctx, int64(uid), data)
+	require.NoError(t, err)
+	time.Sleep(time.Second) // Ensure client receive the data
+	select {
+	case res := <-c.PushDataC():
+		require.Equal(t, data, res)
+	default:
+		assert.Fail(t, "cannot recv push data")
+	}
+}

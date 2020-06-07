@@ -51,7 +51,7 @@ func NewRouter() *Router {
 		Router:      router.New(),
 		authHandler: HandlerFunc(handleAuth),
 	}
-	r.Bind("WS.GetDate", handleDate)
+	r.Bind("ws.getDate", handleDate)
 	return r
 }
 
