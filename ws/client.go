@@ -249,3 +249,14 @@ func (c *Client) SetMaxReconnBackoff(t time.Duration) {
 	}
 	c.maxReconnBackoff = t
 }
+
+func (c *Client) GetServerTime(ctx context.Context) (time.Time, error) {
+	var res struct {
+		Timestamp int64 `json:"timestamp"`
+	}
+	err := c.Call(ctx, "WS.GetDate", nil, &m)
+	if err != nil {
+		return time.Time{}, err
+	}
+	return time.Unix(res.Timestamp, 0), nil
+}

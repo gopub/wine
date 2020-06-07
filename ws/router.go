@@ -3,8 +3,10 @@ package ws
 import (
 	"container/list"
 	"context"
+	"github.com/gopub/types"
 	"reflect"
 	"runtime"
+	"time"
 
 	"github.com/gopub/conv"
 	"github.com/gopub/errors"
@@ -49,6 +51,7 @@ func NewRouter() *Router {
 		Router:      router.New(),
 		authHandler: HandlerFunc(handleAuth),
 	}
+	r.Bind("WS.GetDate", handleDate)
 	return r
 }
 
@@ -85,11 +88,24 @@ func (r *Router) Bind(path string, funcs ...HandlerFunc) *router.Route {
 	return r.Router.Bind("", path, conv.ToList(funcs))
 }
 
-func handleAuth(ctx context.Context, data interface{}) (interface{}, error) {
+func handleAuth(ctx context.Context, params interface{}) (interface{}, error) {
 	if wine.GetUserID(ctx) <= 0 {
 		return nil, errors.Unauthorized("")
 	}
-	return Next(ctx, data)
+	return Next(ctx, params)
+}
+
+func handleDate(_ context.Context, _ interface{}) (interface{}, error) {
+	t := time.Now()
+	res := types.M{
+		"timestamp": t.Unix(),
+		"time":      t.Format("15:04:05"),
+		"date":      t.Format("2006-01-02"),
+		"zone":      t.Format("-0700"),
+		"weekday":   t.Format("Mon"),
+		"month":     t.Format("Jan"),
+	}
+	return res, nil
 }
 
 type contextKey int
