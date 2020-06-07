@@ -12,38 +12,17 @@ import (
 
 	"github.com/gopub/conv"
 	"github.com/gopub/errors"
-	"github.com/gopub/log"
 	"github.com/gopub/wine"
 	"github.com/gopub/wine/router"
 	"github.com/gorilla/websocket"
 )
-
-type ReadWriter interface {
-	ReadJSON(i interface{}) error
-	WriteJSON(i interface{}) error
-}
-
-var logger = wine.Logger()
-
-func SetLogger(l *log.Logger) {
-	logger = l
-}
 
 type Request struct {
 	ID   int64       `json:"id,omitempty"`
 	Name string      `json:"name,omitempty"`
 	Data interface{} `json:"data,omitempty"`
 
-	uid        int64
 	remoteAddr net.Addr
-}
-
-func (r *Request) UserID() int64 {
-	return r.uid
-}
-
-func (r *Request) SetUserID(id int64) {
-	r.uid = id
 }
 
 func (r *Request) RemoteAddr() net.Addr {
@@ -54,25 +33,6 @@ type Response struct {
 	ID    int64         `json:"id,omitempty"`
 	Data  interface{}   `json:"data,omitempty"`
 	Error *errors.Error `json:"error,omitempty"`
-}
-
-type contextKey int
-
-// Context keys
-const (
-	ckNextHandler contextKey = iota + 1
-)
-
-func Next(ctx context.Context, req interface{}) (interface{}, error) {
-	i, _ := ctx.Value(ckNextHandler).(Handler)
-	if i == nil {
-		return nil, errors.NotImplemented("")
-	}
-	return i.HandleRequest(ctx, req)
-}
-
-func withNextHandler(ctx context.Context, h Handler) context.Context {
-	return context.WithValue(ctx, ckNextHandler, h)
 }
 
 type Server struct {
@@ -146,10 +106,11 @@ func (s *Server) HandleRequest(conn *websocket.Conn, req *Request) {
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), s.timeout)
 	defer cancel()
+	var uid int64
 	if id, ok := s.connUserIDs.Load(conn); ok {
-		req.uid, _ = id.(int64)
-		if req.uid > 0 {
-			ctx = wine.WithUserID(ctx, req.uid)
+		uid, _ = id.(int64)
+		if uid > 0 {
+			ctx = wine.WithUserID(ctx, uid)
 		}
 	}
 	result, err := s.Handle(ctx, req)
@@ -162,7 +123,10 @@ func (s *Server) HandleRequest(conn *websocket.Conn, req *Request) {
 	} else {
 		resp.Data = result
 	}
-	s.connUserIDs.Store(conn, req.uid)
+	if getUid, ok := result.(GetAuthUserID); ok {
+		uid = getUid.GetAuthUserID()
+		s.connUserIDs.Store(conn, uid)
+	}
 	if err = conn.WriteJSON(resp); err != nil {
 		logger.Errorf("WriteJSON: %v", err)
 		conn.Close()
@@ -205,8 +169,11 @@ func logResult(req *Request, resp *Response, cost time.Duration) {
 		req.ID,
 		req.Name,
 		cost)
-	if req.uid > 0 {
-		info = fmt.Sprintf("%s | user=%d", info, req.uid)
+	if getUid, ok := resp.Data.(GetAuthUserID); ok {
+		uid := getUid.GetAuthUserID()
+		if uid > 0 {
+			info = fmt.Sprintf("%s | user=%d", info, uid)
+		}
 	}
 	if resp.Error != nil {
 		logger.Errorf("%s | %v", info, resp.Error)
