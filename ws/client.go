@@ -239,7 +239,7 @@ func (c *Client) Close() {
 
 func (c *Client) SetConnTimeout(t time.Duration) {
 	if t <= 0 {
-		t = 0
+		t = time.Second
 	}
 	c.connTimeout = t
 }
