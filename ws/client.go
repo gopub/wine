@@ -238,14 +238,14 @@ func (c *Client) Close() {
 }
 
 func (c *Client) SetConnTimeout(t time.Duration) {
-	if t <= 0 {
+	if t < time.Second {
 		t = time.Second
 	}
 	c.connTimeout = t
 }
 
 func (c *Client) SetPingInterval(t time.Duration) {
-	if t <= time.Second {
+	if t < time.Second {
 		t = time.Second
 	}
 	c.pingInterval = t
