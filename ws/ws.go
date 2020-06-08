@@ -1,8 +1,9 @@
 package ws
 
 import (
-	"github.com/gopub/types"
 	"net"
+
+	"github.com/gopub/types"
 
 	"github.com/gopub/errors"
 	"github.com/gopub/log"

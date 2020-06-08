@@ -3,10 +3,11 @@ package ws
 import (
 	"container/list"
 	"context"
-	"github.com/gopub/types"
 	"reflect"
 	"runtime"
 	"time"
+
+	"github.com/gopub/types"
 
 	"github.com/gopub/conv"
 	"github.com/gopub/errors"

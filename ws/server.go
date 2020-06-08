@@ -11,6 +11,7 @@ import (
 
 	"github.com/gopub/conv"
 	"github.com/gopub/errors"
+	"github.com/gopub/types"
 	"github.com/gopub/wine"
 	"github.com/gopub/wine/router"
 	"github.com/gorilla/websocket"
@@ -18,7 +19,23 @@ import (
 
 type serverConn struct {
 	*websocket.Conn
-	UserID int64
+	userID int64
+
+	mu     sync.RWMutex
+	header types.M
+}
+
+func (c *serverConn) SetHeader(k string, v interface{}) {
+	c.mu.Lock()
+	c.header[k] = v
+	c.mu.Unlock()
+}
+
+func (c *serverConn) GetHeader(k string) interface{} {
+	c.mu.RLock()
+	v := c.header[k]
+	c.mu.RUnlock()
+	return v
 }
 
 type Server struct {
@@ -76,6 +93,9 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			break
 		}
 		req.remoteAddr = conn.RemoteAddr()
+		for k, v := range req.Header {
+			conn.SetHeader(k, v)
+		}
 		go s.HandleRequest(conn, req)
 	}
 	conn.Close()
@@ -83,10 +103,10 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) deleteUserConn(conn *serverConn) {
-	if conn.UserID == 0 {
+	if conn.userID == 0 {
 		return
 	}
-	m, ok := s.uidToConns.Load(conn.UserID)
+	m, ok := s.uidToConns.Load(conn.userID)
 	if !ok {
 		return
 	}
@@ -94,10 +114,10 @@ func (s *Server) deleteUserConn(conn *serverConn) {
 }
 
 func (s *Server) saveUserConn(conn *serverConn) {
-	if conn.UserID == 0 {
+	if conn.userID == 0 {
 		return
 	}
-	m, _ := s.uidToConns.LoadOrStore(conn.UserID, &sync.Map{})
+	m, _ := s.uidToConns.LoadOrStore(conn.userID, &sync.Map{})
 	m.(*sync.Map).Store(conn, true)
 }
 
@@ -114,9 +134,13 @@ func (s *Server) HandleRequest(conn *serverConn, req *Request) {
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), s.timeout)
 	defer cancel()
-	if conn.UserID > 0 {
-		ctx = wine.WithUserID(ctx, conn.UserID)
+	if conn.userID > 0 {
+		ctx = wine.WithUserID(ctx, conn.userID)
 	}
+	if deviceID, ok := conn.GetHeader("device_id").(string); ok && deviceID != "" {
+		ctx = wine.WithDeviceID(ctx, deviceID)
+	}
+	ctx = wine.WithRemoteAddr(ctx, conn.RemoteAddr().String())
 	result, err := s.Handle(ctx, req)
 	if err != nil {
 		if s := errors.GetCode(err); s > 0 {
@@ -129,8 +153,8 @@ func (s *Server) HandleRequest(conn *serverConn, req *Request) {
 	}
 	if getUid, ok := result.(GetAuthUserID); ok {
 		uid := getUid.GetAuthUserID()
-		if conn.UserID != uid {
-			conn.UserID = uid
+		if conn.userID != uid {
+			conn.userID = uid
 			s.deleteUserConn(conn)
 			s.saveUserConn(conn)
 		}
