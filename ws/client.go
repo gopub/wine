@@ -4,6 +4,7 @@ import (
 	"container/list"
 	"context"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/gopub/conv"
@@ -42,7 +43,7 @@ type Client struct {
 	conn   *websocket.Conn
 	state  ClientState
 
-	counter types.Counter
+	id int64
 
 	HandshakeHandler func(rw ReadWriter) error
 	Header           types.M
@@ -62,9 +63,15 @@ func NewClient(addr string) *Client {
 		state:            Disconnected,
 		Header:           types.M{},
 		pushDataC:        make(chan interface{}, 1),
+		id:               1,
 	}
 	go c.start()
 	return c
+}
+
+func (c *Client) nextID() int64 {
+	atomic.AddInt64(&c.id, 2)
+	return c.id
 }
 
 func (c *Client) start() {
@@ -110,18 +117,16 @@ func (c *Client) run() {
 }
 
 func (c *Client) read(done chan<- struct{}) {
+	defer logger.Debug("Exited")
 	for {
 		resp := new(Response)
-		if err := c.conn.SetReadDeadline(time.Now().Add(c.timeout)); err != nil {
-			logger.Errorf("SetReadDeadline: %v", err)
-		}
 		err := c.conn.ReadJSON(resp)
 		if err != nil {
 			logger.Errorf("ReadJSON: %v", err)
 			done <- struct{}{}
 			return
 		}
-		if resp.ID == 0 && resp.Data != nil {
+		if resp.IsPush() && resp.Data != nil {
 			select {
 			case c.pushDataC <- resp.Data:
 				break
@@ -139,6 +144,7 @@ func (c *Client) read(done chan<- struct{}) {
 }
 
 func (c *Client) write(done <-chan struct{}) {
+	defer logger.Debug("Exited")
 	t := time.NewTicker(c.pingInterval)
 	m := NewNetworkMonitor()
 	defer m.Stop()
@@ -191,7 +197,7 @@ func (c *Client) Call(ctx context.Context, name string, params interface{}, resu
 		return errors.New("client is closed")
 	}
 	req := &Request{
-		ID:   c.counter.Next(),
+		ID:   c.nextID(),
 		Name: name,
 		Body: params,
 	}

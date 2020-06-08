@@ -7,6 +7,7 @@ import (
 	"reflect"
 	"runtime/debug"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/gopub/conv"
@@ -24,6 +25,8 @@ type serverConn struct {
 
 	mu     sync.RWMutex
 	header types.M
+
+	id int64
 }
 
 func newServerConn(conn *websocket.Conn) *serverConn {
@@ -50,9 +53,22 @@ func (c *serverConn) GetHeader(k string) interface{} {
 	return v
 }
 
+func (c *serverConn) WriteJSON(i interface{}) error {
+	c.mu.Lock()
+	err := c.Conn.WriteJSON(i)
+	c.mu.Unlock()
+	return err
+}
+
+func (c *serverConn) NextID() int64 {
+	atomic.AddInt64(&c.id, 2)
+	return c.id
+}
+
 type Server struct {
 	websocket.Upgrader
 	*Router
+	readTimeout      time.Duration
 	timeout          time.Duration
 	PreHandler       Handler
 	uidToConns       sync.Map // uid:map[conn]bool
@@ -66,6 +82,7 @@ var _ http.Handler = (*Server)(nil)
 func NewServer() *Server {
 	s := &Server{
 		Router:       NewRouter(),
+		readTimeout:  environ.Duration("wine.read_timeout", 20*time.Second),
 		timeout:      environ.Duration("wine.timeout", 10*time.Second),
 		ResultLogger: logResult,
 		Recovery:     environ.Bool("wine.recovery", true),
@@ -89,16 +106,18 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	conn := newServerConn(wconn)
-
+	logger.Debugf("New conn %s", wconn.RemoteAddr())
 	if s.HandshakeHandler != nil {
+		logger.Debugf("Start handshaking")
 		if err = s.HandshakeHandler(conn); err != nil {
 			logger.Errorf("Cannot handshake: %v", err)
 			conn.Close()
 			return
 		}
+		logger.Debugf("Finish handshaking")
 	}
 	for {
-		if err = conn.SetReadDeadline(time.Now().Add(s.timeout)); err != nil {
+		if err = conn.SetReadDeadline(time.Now().Add(s.readTimeout)); err != nil {
 			logger.Errorf("SetReadDeadline: %v", err)
 			break
 		}
@@ -115,6 +134,11 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	conn.Close()
 	s.deleteUserConn(conn)
+	if conn.userID != 0 {
+		logger.Debugf("Close conn: %s, user=%d", conn.RemoteAddr().String(), conn.userID)
+	} else {
+		logger.Debugf("Close conn: %s", conn.RemoteAddr().String())
+	}
 }
 
 func (s *Server) deleteUserConn(conn *serverConn) {
@@ -138,7 +162,7 @@ func (s *Server) saveUserConn(conn *serverConn) {
 
 func (s *Server) HandleRequest(conn *serverConn, req *Request) {
 	if req.ID == 0 {
-		// Heartbreak Request
+		logger.Debugf("Recv ping")
 		return
 	}
 	resp := &Response{
@@ -210,7 +234,9 @@ func (s *Server) Push(ctx context.Context, userID int64, data interface{}) error
 	}
 	var firstErr error
 	conns.(*sync.Map).Range(func(key, value interface{}) bool {
-		err := key.(*serverConn).WriteJSON(&Response{
+		conn := key.(*serverConn)
+		err := conn.WriteJSON(&Response{
+			ID:   conn.NextID(),
 			Data: data,
 		})
 		if err != nil {

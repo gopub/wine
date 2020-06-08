@@ -43,3 +43,7 @@ type Response struct {
 	Data  interface{}   `json:"data,omitempty"`
 	Error *errors.Error `json:"error,omitempty"`
 }
+
+func (r *Response) IsPush() bool {
+	return r.ID != 0 && r.ID%2 == 0
+}
