@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/gopub/conv"
+	"github.com/gopub/environ"
 	"github.com/gopub/errors"
 	"github.com/gopub/types"
 	"github.com/gopub/wine"
@@ -23,6 +24,13 @@ type serverConn struct {
 
 	mu     sync.RWMutex
 	header types.M
+}
+
+func newServerConn(conn *websocket.Conn) *serverConn {
+	return &serverConn{
+		Conn:   conn,
+		header: types.M{},
+	}
 }
 
 func (c *serverConn) SetHeader(k string, v interface{}) {
@@ -50,6 +58,7 @@ type Server struct {
 	uidToConns       sync.Map // uid:map[conn]bool
 	HandshakeHandler func(rw ReadWriter) error
 	ResultLogger     func(req *Request, resp *Response, cost time.Duration)
+	Recovery         bool
 }
 
 var _ http.Handler = (*Server)(nil)
@@ -57,27 +66,29 @@ var _ http.Handler = (*Server)(nil)
 func NewServer() *Server {
 	s := &Server{
 		Router:       NewRouter(),
-		timeout:      10 * time.Second,
+		timeout:      environ.Duration("wine.timeout", 10*time.Second),
 		ResultLogger: logResult,
+		Recovery:     environ.Bool("wine.recovery", true),
 	}
 	return s
 }
 
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	defer func() {
-		if e := recover(); e != nil {
-			logger.Errorf("%v: %+v\n", r, e)
-			logger.Errorf("\n%s\n", string(debug.Stack()))
-		}
-	}()
+	if s.Recovery {
+		defer func() {
+			if e := recover(); e != nil {
+				logger.Errorf("%v: %+v\n", r, e)
+				logger.Errorf("\n%s\n", string(debug.Stack()))
+			}
+		}()
+	}
 
-	conn := new(serverConn)
-	var err error
-	conn.Conn, err = s.Upgrade(w, r, nil)
+	wconn, err := s.Upgrade(w, r, nil)
 	if err != nil {
 		wine.Error(err).Respond(r.Context(), w)
 		return
 	}
+	conn := newServerConn(wconn)
 
 	if s.HandshakeHandler != nil {
 		if err = s.HandshakeHandler(conn); err != nil {
