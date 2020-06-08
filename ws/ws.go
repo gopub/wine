@@ -47,3 +47,7 @@ type Response struct {
 func (r *Response) IsPush() bool {
 	return r.ID != 0 && r.ID%2 == 0
 }
+
+const (
+	methodGetDate = "ws.getDate"
+)

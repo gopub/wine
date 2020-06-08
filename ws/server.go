@@ -118,12 +118,12 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	for {
 		if err = conn.SetReadDeadline(time.Now().Add(s.readTimeout)); err != nil {
-			logger.Errorf("SetReadDeadline: %v", err)
+			logger.Errorf("Cannot set read deadline: %v", err)
 			break
 		}
 		req := new(Request)
 		if err := conn.ReadJSON(req); err != nil {
-			logger.Errorf("ReadJSON: %v", err)
+			logger.Errorf("Cannot read: %v", err)
 			break
 		}
 		req.remoteAddr = conn.RemoteAddr()
@@ -162,7 +162,7 @@ func (s *Server) saveUserConn(conn *serverConn) {
 
 func (s *Server) HandleRequest(conn *serverConn, req *Request) {
 	if req.ID == 0 {
-		logger.Debugf("Recv ping")
+		logger.Debugf("Received ping")
 		return
 	}
 	resp := &Response{

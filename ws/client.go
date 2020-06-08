@@ -117,12 +117,12 @@ func (c *Client) run() {
 }
 
 func (c *Client) read(done chan<- struct{}) {
-	defer logger.Debug("Exited")
+	defer logger.Debug("Exited read loop")
 	for {
 		resp := new(Response)
 		err := c.conn.ReadJSON(resp)
 		if err != nil {
-			logger.Errorf("ReadJSON: %v", err)
+			logger.Errorf("Cannot read: %v", err)
 			done <- struct{}{}
 			return
 		}
@@ -144,7 +144,7 @@ func (c *Client) read(done chan<- struct{}) {
 }
 
 func (c *Client) write(done <-chan struct{}) {
-	defer logger.Debug("Exited")
+	defer logger.Debug("Exited write loop")
 	t := time.NewTicker(c.pingInterval)
 	m := NewNetworkMonitor()
 	defer m.Stop()
@@ -153,7 +153,7 @@ func (c *Client) write(done <-chan struct{}) {
 		select {
 		case <-t.C:
 			if err := c.conn.WriteJSON(&Request{}); err != nil {
-				logger.Errorf("Write: %v", err)
+				logger.Errorf("Cannot ping: %v", err)
 				c.reconnBackoff = 0
 				return
 			}
@@ -172,7 +172,7 @@ func (c *Client) write(done <-chan struct{}) {
 				c.reqs.Remove(it)
 				it = next
 				if err := c.conn.WriteJSON(req); err != nil {
-					logger.Errorf("WriteJSON %s: %v", req.Name, err)
+					logger.Errorf("Cannot write %s: %v", req.Name, err)
 					if respC, ok := c.reqIDToRespC[req.ID]; ok {
 						resp := &Response{ID: req.ID, Error: errors.Format(0, err.Error())}
 						select {
@@ -275,7 +275,7 @@ func (c *Client) GetServerTime(ctx context.Context) (time.Time, error) {
 	var res struct {
 		Timestamp int64 `json:"timestamp"`
 	}
-	err := c.Call(ctx, "ws.getDate", nil, &res)
+	err := c.Call(ctx, methodGetDate, nil, &res)
 	if err != nil {
 		return time.Time{}, err
 	}
