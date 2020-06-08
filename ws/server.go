@@ -27,7 +27,11 @@ type serverConn struct {
 
 func (c *serverConn) SetHeader(k string, v interface{}) {
 	c.mu.Lock()
-	c.header[k] = v
+	if v == nil {
+		delete(c.header, k)
+	} else {
+		c.header[k] = v
+	}
 	c.mu.Unlock()
 }
 
