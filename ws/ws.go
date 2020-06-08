@@ -2,6 +2,7 @@ package ws
 
 import (
 	"net"
+	"time"
 
 	"github.com/gopub/types"
 
@@ -31,7 +32,11 @@ type Request struct {
 	Header types.M     `json:"header,omitempty"`
 	Body   interface{} `json:"body,omitempty"`
 
+	// server side
 	remoteAddr net.Addr
+
+	// client side
+	createdAt time.Time
 }
 
 func (r *Request) RemoteAddr() net.Addr {

@@ -107,7 +107,7 @@ func (c *Client) Delete(ctx context.Context, endpoint string, query url.Values, 
 
 	u, err := url.Parse(endpoint)
 	if err != nil {
-		return fmt.Errorf("parse url: %w", err)
+		return fmt.Errorf("cannot parse url %s: %w", endpoint, err)
 	}
 	q := u.Query()
 	for k, vs := range query {
@@ -124,13 +124,13 @@ func (c *Client) call(ctx context.Context, method string, endpoint string, param
 	if params != nil {
 		data, err := json.Marshal(params)
 		if err != nil {
-			return fmt.Errorf("marshal: %w", err)
+			return fmt.Errorf("cannot marshal: %w", err)
 		}
 		body = bytes.NewBuffer(data)
 	}
 	req, err := http.NewRequest(method, endpoint, body)
 	if err != nil {
-		return fmt.Errorf("create request: %s, %s, %w", method, endpoint, err)
+		return fmt.Errorf("cannot create request: %s, %s, %w", method, endpoint, err)
 	}
 	if params != nil {
 		req.Header.Set(mime.ContentType, mime.JSON)
@@ -158,7 +158,7 @@ func (c *Client) Do(req *http.Request, result interface{}) error {
 				err = errors.Format(StatusTransportFailed, err.Error())
 			}
 		}
-		return fmt.Errorf("do request: %w", err)
+		return fmt.Errorf("cannot send request: %w", err)
 	}
 	return c.Decoder(resp, result)
 }

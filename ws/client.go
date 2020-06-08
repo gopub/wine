@@ -3,6 +3,7 @@ package ws
 import (
 	"container/list"
 	"context"
+	"github.com/gopub/wine"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -47,6 +48,8 @@ type Client struct {
 	HandshakeHandler func(rw ReadWriter) error
 	Header           types.M
 	pushDataC        chan interface{}
+
+	ResultLogger func(req *Request, resp *Response)
 }
 
 func NewClient(addr string) *Client {
@@ -63,6 +66,7 @@ func NewClient(addr string) *Client {
 		pushDataC:        make(chan interface{}, 1),
 		id:               1,
 	}
+	c.ResultLogger = c.logResult
 	go c.start()
 	return c
 }
@@ -198,6 +202,8 @@ func (c *Client) Call(ctx context.Context, name string, params interface{}, resu
 		ID:   c.nextID(),
 		Name: name,
 		Body: params,
+
+		createdAt: time.Now(),
 	}
 	if len(c.Header) > 0 {
 		req.Header = c.Header
@@ -217,8 +223,14 @@ func (c *Client) Call(ctx context.Context, name string, params interface{}, resu
 
 	select {
 	case <-ctx.Done():
+		if c.ResultLogger != nil {
+			c.ResultLogger(req, &Response{ID: req.ID, Error: errors.Format(0, ctx.Err().Error())})
+		}
 		return ctx.Err()
 	case resp := <-respC:
+		if c.ResultLogger != nil {
+			c.ResultLogger(req, resp)
+		}
 		if resp.Error != nil {
 			return resp.Error
 		}
@@ -271,4 +283,13 @@ func (c *Client) GetServerTime(ctx context.Context) (time.Time, error) {
 		return time.Time{}, err
 	}
 	return time.Unix(res.Timestamp, 0), nil
+}
+
+func (c *Client) logResult(req *Request, resp *Response) {
+	cost := time.Since(req.createdAt)
+	if resp.Error != nil {
+		logger.Errorf("%d %s | %v | %v | %v", resp.ID, req.Name, wine.JSONString(req.Body), resp.Error, cost)
+	} else {
+		logger.Infof("%d %s | %v", resp.ID, req.Name, cost)
+	}
 }
