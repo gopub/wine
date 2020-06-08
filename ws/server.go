@@ -270,7 +270,7 @@ func logResult(req *Request, resp *Response, cost time.Duration) {
 		}
 	}
 	if resp.Error != nil {
-		logger.Errorf("%s | %v", info, resp.Error)
+		logger.Errorf("%s | %s | %v", info, wine.JSONString(req.Body), resp.Error)
 	} else {
 		logger.Infof(info)
 	}
