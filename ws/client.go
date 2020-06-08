@@ -27,7 +27,6 @@ const (
 
 type Client struct {
 	connTimeout      time.Duration
-	timeout          time.Duration
 	pingInterval     time.Duration
 	maxReconnBackoff time.Duration
 	reconnBackoff    time.Duration
@@ -53,7 +52,6 @@ type Client struct {
 func NewClient(addr string) *Client {
 	c := &Client{
 		connTimeout:      10 * time.Second,
-		timeout:          10 * time.Second,
 		pingInterval:     10 * time.Second,
 		maxReconnBackoff: 2 * time.Second,
 		addr:             addr,
@@ -90,11 +88,11 @@ func (c *Client) start() {
 
 func (c *Client) run() {
 	c.state = Connecting
-	ctx, cancel := context.WithTimeout(context.Background(), c.timeout)
+	ctx, cancel := context.WithTimeout(context.Background(), c.connTimeout)
 	conn, _, err := websocket.DefaultDialer.DialContext(ctx, c.addr, nil)
 	if err != nil {
 		cancel()
-		logger.Errorf("Cannot dial %s: %v", c.addr, err)
+		logger.Errorf("Cannot connect %s: %v", c.addr, err)
 		c.state = Disconnected
 		return
 	}
@@ -244,13 +242,6 @@ func (c *Client) SetConnTimeout(t time.Duration) {
 		t = 0
 	}
 	c.connTimeout = t
-}
-
-func (c *Client) SetTimeout(t time.Duration) {
-	if t <= time.Second {
-		t = time.Second
-	}
-	c.timeout = t
 }
 
 func (c *Client) SetPingInterval(t time.Duration) {
