@@ -3,10 +3,11 @@ package ws
 import (
 	"container/list"
 	"context"
-	"github.com/gopub/wine"
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/gopub/wine"
 
 	"github.com/gopub/conv"
 

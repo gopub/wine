@@ -1,16 +1,48 @@
 package ws
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/golang/protobuf/proto"
-	"github.com/gopub/errors"
-	"github.com/gorilla/websocket"
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/golang/protobuf/proto"
+	"github.com/gopub/errors"
+	"github.com/gorilla/websocket"
 )
+
+type Call struct {
+	ID   int
+	Name string
+	Data []byte
+}
+
+func toCall(pc *Packet_Call) *Call {
+	return &Call{
+		ID:   int(pc.Id),
+		Name: pc.Name,
+		Data: pc.Data,
+	}
+}
+
+type Reply struct {
+	ID    int
+	Data  []byte
+	Error *errors.Error
+}
+
+func toReply(pr *Packet_Reply) *Reply {
+	r := new(Reply)
+	r.ID = int(pr.Id)
+	switch v := pr.Result.(type) {
+	case *Packet_Reply_Data:
+		r.Data = v.Data
+	case *Packet_Reply_Error:
+		r.Error = errors.Format(int(v.Error.Code), v.Error.Message)
+	}
+	return r
+}
 
 type Conn struct {
 	connMu sync.RWMutex
@@ -39,46 +71,30 @@ func NewConn(conn *websocket.Conn) *Conn {
 	return c
 }
 
-func (c *Conn) CallJSON(ctx context.Context, name string, params interface{}, result interface{}) error {
+func (c *Conn) Call(name string, params interface{}) (<-chan *Reply, error) {
 	data, err := json.Marshal(params)
 	if err != nil {
-		return fmt.Errorf("cannot marshal params: %w", err)
+		return nil, fmt.Errorf("cannot marshal params: %w", err)
 	}
-	call := &Call{
+	call := &Packet_Call{
 		Id:   atomic.AddInt32(&c.packetID, 1),
 		Name: name,
 		Data: data,
 	}
 	p := new(Packet)
 	p.ContentType = Packet_JSON
-	p.Content = &Packet_Call{
+	p.Content = &Packet_Call_{
 		Call: call,
 	}
 	if err = c.write(p); err != nil {
-		return fmt.Errorf("cannot write packet: %w", err)
+		return nil, fmt.Errorf("cannot write packet: %w", err)
 	}
 	replyC := make(chan *Reply, 1)
 	c.replyChanM.Store(int(call.Id), replyC)
-	defer close(replyC)
-	select {
-	case <-ctx.Done():
-		return ctx.Err()
-	case reply := <-replyC:
-		switch res := reply.Result.(type) {
-		case *Reply_Data:
-			if result != nil {
-				if err = json.Unmarshal(res.Data, result); err != nil {
-					return fmt.Errorf("cannot unmarshal result: %w", err)
-				}
-			}
-		case *Reply_Error:
-			return errors.Format(int(res.Error.Code), res.Error.Message)
-		}
-	}
-	return nil
+	return replyC, nil
 }
 
-func (c *Conn) PushJSON(v interface{}) error {
+func (c *Conn) Push(v interface{}) error {
 	data, err := json.Marshal(v)
 	if err != nil {
 		return fmt.Errorf("cannot marshal json: %w", err)
@@ -91,38 +107,38 @@ func (c *Conn) PushJSON(v interface{}) error {
 	return c.write(p)
 }
 
-func (c *Conn) ReplyJSON(id int, v interface{}) error {
+func (c *Conn) ReplyData(id int, v interface{}) error {
 	data, err := json.Marshal(v)
 	if err != nil {
 		return fmt.Errorf("cannot marshal json: %w", err)
 	}
-	r := &Reply{
+	r := &Packet_Reply{
 		Id: int32(id),
-	}
-	r.Result = &Reply_Data{
-		Data: data,
+		Result: &Packet_Reply_Data{
+			Data: data,
+		},
 	}
 	p := new(Packet)
 	p.ContentType = Packet_JSON
-	p.Content = &Packet_Reply{
+	p.Content = &Packet_Reply_{
 		Reply: r,
 	}
 	return c.write(p)
 }
 
 func (c *Conn) ReplyError(id int, err error) error {
-	r := &Reply{
+	r := &Packet_Reply{
 		Id: int32(id),
-	}
-	r.Result = &Reply_Error{
-		Error: &Error{
-			Code:    int32(errors.GetCode(err)),
-			Message: err.Error(),
+		Result: &Packet_Reply_Error{
+			Error: &Packet_Error{
+				Code:    int32(errors.GetCode(err)),
+				Message: err.Error(),
+			},
 		},
 	}
 	p := new(Packet)
 	p.ContentType = Packet_JSON
-	p.Content = &Packet_Reply{
+	p.Content = &Packet_Reply_{
 		Reply: r,
 	}
 	return c.write(p)
@@ -177,19 +193,19 @@ func (c *Conn) startReadLoop() {
 		}
 
 		switch v := p.Content.(type) {
-		case *Packet_Call:
+		case *Packet_Call_:
 			select {
-			case c.callC <- v.Call:
+			case c.callC <- toCall(v.Call):
 				break
 			default:
 				logger.Errorf("Cannot write into call channel")
 			}
-		case *Packet_Reply:
+		case *Packet_Reply_:
 			id := int(v.Reply.Id)
 			rc, ok := c.replyChanM.Load(id)
 			if ok {
 				c.replyChanM.Delete(id)
-				rc.(chan<- *Reply) <- v.Reply
+				rc.(chan<- *Reply) <- toReply(v.Reply)
 			}
 		case *Packet_Push:
 			c.pushC <- v.Push
