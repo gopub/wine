@@ -1,0 +1,38 @@
+syntax = "proto3";
+
+package ws;
+
+option go_package = "github.com/gopub/wine/ws";
+
+// compile command: protoc packet.proto --go_out=."
+
+message Error {
+    int32 code = 1;
+    string message = 2;
+}
+
+message Call {
+    int32 id = 1;
+    string name = 2;
+    bytes data = 3;
+}
+
+message Reply {
+    int32 id = 1;
+    oneof result {
+        bytes data = 2;
+        Error error = 3;
+    }
+}
+
+message Packet {
+    enum ContentType {
+        JSON = 0;
+    }
+    ContentType contentType = 1;
+    oneof Content {
+        Call call = 2;
+        Reply reply = 3;
+        bytes push = 4;
+    }
+}
