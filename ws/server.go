@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/proto"
-
 	"github.com/gopub/environ"
 	"github.com/gopub/errors"
 	"github.com/gopub/wine"
