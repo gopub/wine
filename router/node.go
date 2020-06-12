@@ -7,6 +7,8 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/golang/protobuf/proto"
+
 	"github.com/gopub/log"
 	"github.com/gopub/types"
 )
@@ -55,8 +57,9 @@ type node struct {
 	handlers  *list.List
 	children  []*node
 
-	Model       interface{}
-	Description string
+	JSONModel     interface{}
+	ProtobufModel proto.Message
+	Description   string
 }
 
 func newNodeList(path string, handlers *list.List) *node {

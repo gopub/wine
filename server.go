@@ -162,12 +162,18 @@ func (s *Server) serve(ctx context.Context, req *Request, rw http.ResponseWriter
 	var h Handler
 	switch {
 	case r != nil:
-		if m := r.Model(); m != nil {
-			if err := req.bind(m); err != nil {
+		if m := r.JSONModel(); m != nil {
+			if err := req.bindJSON(m); err != nil {
 				Error(err).Respond(ctx, rw)
 				return
 			}
 			ctx = log.BuildContext(ctx, log.FromContext(ctx).With("model", m))
+		} else if msg := r.ProtobufModel(); msg != nil {
+			if err := req.bindProtobuf(msg); err != nil {
+				Error(err).Respond(ctx, rw)
+				return
+			}
+			ctx = log.BuildContext(ctx, log.FromContext(ctx).With("model", JSONString(msg)))
 		}
 		h = (*handlerElem)(r.FirstHandler())
 	case method == http.MethodOptions:

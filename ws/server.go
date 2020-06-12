@@ -11,6 +11,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/golang/protobuf/proto"
+
 	"github.com/gopub/environ"
 	"github.com/gopub/errors"
 	"github.com/gopub/wine"
@@ -189,10 +191,16 @@ func (s *Server) Handle(ctx context.Context, req *Request) (interface{}, error) 
 	}
 
 	var params interface{} = req.Data
-	if m := r.Model(); m != nil {
+	if m := r.JSONModel(); m != nil {
 		pv := reflect.New(reflect.TypeOf(m))
 		if err := json.Unmarshal(req.Data, pv.Interface()); err != nil {
-			return nil, err
+			return nil, fmt.Errorf("cannot unmarshal json: %w", err)
+		}
+		params = pv.Elem().Interface()
+	} else if msg := r.ProtobufModel(); msg != nil {
+		pv := reflect.New(reflect.TypeOf(msg))
+		if err := proto.Unmarshal(req.Data, pv.Interface().(proto.Message)); err != nil {
+			return nil, fmt.Errorf("cannot unmarshal protobuf: %w", err)
 		}
 		params = pv.Elem().Interface()
 	}

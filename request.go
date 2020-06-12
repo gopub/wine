@@ -9,6 +9,8 @@ import (
 	"reflect"
 	"strings"
 
+	"github.com/golang/protobuf/proto"
+
 	"github.com/gopub/conv"
 	"github.com/gopub/types"
 	iopkg "github.com/gopub/wine/internal/io"
@@ -95,11 +97,20 @@ func (r *Request) NormalizedPath() string {
 	return router.Normalize(r.request.URL.Path)
 }
 
-// bind: m represents the prototype of request.Model
-func (r *Request) bind(m interface{}) error {
+// bindJSON: m represents the prototype of request.JSONModel
+func (r *Request) bindJSON(m interface{}) error {
 	pv := reflect.New(reflect.TypeOf(m))
 	if err := conv.Assign(pv.Interface(), r.params); err != nil {
 		return fmt.Errorf("cannot assign: %w", err)
+	}
+	r.Model = pv.Elem().Interface()
+	return nil
+}
+
+func (r *Request) bindProtobuf(m proto.Message) error {
+	pv := reflect.New(reflect.TypeOf(m))
+	if err := proto.Unmarshal(r.body, pv.Interface().(proto.Message)); err != nil {
+		return fmt.Errorf("cannot unmarshal protobuf message: %w", err)
 	}
 	r.Model = pv.Elem().Interface()
 	return nil
