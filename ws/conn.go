@@ -10,26 +10,26 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-func NewCall(id int, name string, data []byte) *Call {
+func NewCall(id int32, name string, data []byte) *Call {
 	return &Call{
-		Id:   int32(id),
+		Id:   id,
 		Name: name,
 		Data: data,
 	}
 }
 
-func NewDataReply(id int, data []byte) *Reply {
+func NewDataReply(id int32, data []byte) *Reply {
 	return &Reply{
-		Id: int32(id),
+		Id: id,
 		Result: &Reply_Data{
 			Data: data,
 		},
 	}
 }
 
-func NewErrorReply(id int, err error) *Reply {
+func NewErrorReply(id int32, err error) *Reply {
 	return &Reply{
-		Id: int32(id),
+		Id: id,
 		Result: &Reply_Error{
 			Error: &Error{
 				Code:    int32(errors.GetCode(err)),
@@ -39,11 +39,15 @@ func NewErrorReply(id int, err error) *Reply {
 	}
 }
 
+type PacketReadWriter interface {
+	Read() (*Packet, error)
+	Write(p *Packet) error
+}
+
 type Conn struct {
 	mu          sync.RWMutex
 	conn        *websocket.Conn
 	readTimeout time.Duration
-	userID      int64
 }
 
 func NewConn(conn *websocket.Conn) *Conn {

@@ -2,12 +2,15 @@ package ws_test
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"math/rand"
 	"net/http"
 	"runtime"
 	"testing"
 	"time"
+
+	"github.com/gopub/wine"
 
 	"github.com/gopub/types"
 	"github.com/gopub/wine/ws"
@@ -20,7 +23,7 @@ func TestClient_Send(t *testing.T) {
 	s := ws.NewServer()
 	s.Bind("echo", func(ctx context.Context, req interface{}) (interface{}, error) {
 		return req, nil
-	})
+	}).SetModel("")
 	go func() {
 		err := http.ListenAndServe(addr, s)
 		require.NoError(t, err)
@@ -38,16 +41,15 @@ func TestHandshake(t *testing.T) {
 	s := ws.NewServer()
 	s.Bind("echo", func(ctx context.Context, req interface{}) (interface{}, error) {
 		return req, nil
-	})
-	s.HandshakeHandler = func(rw ws.ReadWriter) error {
-		var m types.M
-		err := rw.ReadJSON(&m)
+	}).SetModel("")
+	s.Handshake = func(rw ws.PacketReadWriter) error {
+		p, err := rw.Read()
 		assert.NoError(t, err)
 		if err != nil {
 			return err
 		}
-		t.Logf("%v", m)
-		err = rw.WriteJSON(types.M{"time": time.Now()})
+		t.Logf("%s", wine.JSONString(p))
+		err = rw.Write(p)
 		assert.NoError(t, err)
 		return err
 	}
@@ -57,16 +59,21 @@ func TestHandshake(t *testing.T) {
 	}()
 	runtime.Gosched()
 	c := ws.NewClient("ws://" + addr)
-	c.HandshakeHandler = func(rw ws.ReadWriter) error {
-		err := rw.WriteJSON(types.M{"greeting": "hello from tom"})
+	c.Handshake = func(rw ws.PacketReadWriter) error {
+		data, err := json.Marshal(types.M{"greeting": "hello from tom"})
+		require.NoError(t, err)
+		p := new(ws.Packet)
+		p.V = &ws.Packet_Push{
+			Push: data,
+		}
+		err = rw.Write(p)
 		assert.NoError(t, err)
 		if err != nil {
 			return err
 		}
-		var m types.M
-		err = rw.ReadJSON(&m)
+		p, err = rw.Read()
 		assert.NoError(t, err)
-		t.Logf("%v", m)
+		t.Logf("%v", wine.JSONString(p))
 		return err
 	}
 	var result string
@@ -102,7 +109,10 @@ func TestServer_Push(t *testing.T) {
 	require.NoError(t, err)
 	time.Sleep(time.Second) // Ensure client receive the data
 	select {
-	case res := <-c.PushDataC():
+	case pushData := <-c.PushDataC():
+		var res string
+		err = json.Unmarshal(pushData, &res)
+		require.NoError(t, err)
 		require.Equal(t, data, res)
 	default:
 		assert.Fail(t, "cannot recv push data")

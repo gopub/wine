@@ -3,13 +3,11 @@ package ws
 import (
 	"container/list"
 	"context"
+	"encoding/json"
+	"fmt"
 	"sync"
 	"sync/atomic"
 	"time"
-
-	"github.com/gopub/wine"
-
-	"github.com/gopub/conv"
 
 	"github.com/gopub/errors"
 
@@ -35,22 +33,21 @@ type Client struct {
 
 	addr string
 
-	reqMu        sync.RWMutex
-	reqs         *list.List
-	reqC         chan struct{}
-	reqIDToRespC map[int64]chan<- *Response
+	newCallC chan struct{}
+	mu       sync.RWMutex // guard calls, replyM
+	calls    *list.List
+	replyM   map[int32]chan<- *Reply
 
-	connMu sync.Mutex
-	conn   *websocket.Conn
-	state  ClientState
+	conn  *Conn
+	state ClientState
 
-	id int64
+	callID int32
 
-	HandshakeHandler func(rw ReadWriter) error
-	Header           types.M
-	pushDataC        chan interface{}
+	Handshake func(rw PacketReadWriter) error
+	Header    types.M
+	pushDataC chan []byte
 
-	ResultLogger func(req *Request, resp *Response)
+	CallLogger func(call *Call, reply *Reply, callAt time.Time)
 }
 
 func NewClient(addr string) *Client {
@@ -59,22 +56,22 @@ func NewClient(addr string) *Client {
 		pingInterval:     10 * time.Second,
 		maxReconnBackoff: 2 * time.Second,
 		addr:             addr,
-		reqs:             list.New(),
-		reqC:             make(chan struct{}, 1),
-		reqIDToRespC:     make(map[int64]chan<- *Response),
+		calls:            list.New(),
+		newCallC:         make(chan struct{}, 1),
+		replyM:           make(map[int32]chan<- *Reply),
 		state:            Disconnected,
 		Header:           types.M{},
-		pushDataC:        make(chan interface{}, 1),
-		id:               1,
+		pushDataC:        make(chan []byte, 1),
+		callID:           1,
 	}
-	c.ResultLogger = c.logResult
+	c.CallLogger = c.logCall
 	go c.start()
 	return c
 }
 
-func (c *Client) nextID() int64 {
-	atomic.AddInt64(&c.id, 2)
-	return c.id
+func (c *Client) nextCallID() int32 {
+	atomic.AddInt32(&c.callID, 2)
+	return c.callID
 }
 
 func (c *Client) start() {
@@ -102,15 +99,15 @@ func (c *Client) run() {
 		return
 	}
 	cancel()
-	if c.HandshakeHandler != nil {
-		if err = c.HandshakeHandler(conn); err != nil {
+	c.conn = NewConn(conn)
+	if c.Handshake != nil {
+		if err = c.Handshake(c.conn); err != nil {
 			logger.Errorf("Cannot handshake: %v", err)
-			conn.Close()
+			c.conn.Close()
 			c.state = Disconnected
 			return
 		}
 	}
-	c.conn = conn
 	c.state = Connected
 	done := make(chan struct{}, 1)
 	go c.read(done)
@@ -122,27 +119,36 @@ func (c *Client) run() {
 func (c *Client) read(done chan<- struct{}) {
 	defer logger.Debug("Exited read loop")
 	for {
-		resp := new(Response)
-		err := c.conn.ReadJSON(resp)
+		p, err := c.conn.Read()
 		if err != nil {
 			logger.Errorf("Cannot read: %v", err)
 			done <- struct{}{}
 			return
 		}
-		if resp.IsPush() && resp.Data != nil {
+		if v, ok := p.V.(*Packet_Push); ok {
 			select {
-			case c.pushDataC <- resp.Data:
+			case c.pushDataC <- v.Push:
 				break
 			default:
 				break
 			}
 		}
-		c.reqMu.RLock()
-		if ch, ok := c.reqIDToRespC[resp.ID]; ok {
-			ch <- resp
-			delete(c.reqIDToRespC, resp.ID)
+		switch v := p.V.(type) {
+		case *Packet_Push:
+			select {
+			case c.pushDataC <- v.Push:
+				break
+			default:
+				break
+			}
+		case *Packet_Reply:
+			c.mu.RLock()
+			if ch, ok := c.replyM[v.Reply.Id]; ok {
+				ch <- v.Reply
+				delete(c.replyM, v.Reply.Id)
+			}
+			c.mu.RUnlock()
 		}
-		c.reqMu.RUnlock()
 	}
 }
 
@@ -155,7 +161,7 @@ func (c *Client) write(done <-chan struct{}) {
 	for {
 		select {
 		case <-t.C:
-			if err := c.conn.WriteJSON(&Request{}); err != nil {
+			if err := c.conn.Push(nil); err != nil {
 				logger.Errorf("Cannot ping: %v", err)
 				c.reconnBackoff = 0
 				return
@@ -167,30 +173,29 @@ func (c *Client) write(done <-chan struct{}) {
 		case <-done:
 			c.reconnBackoff = 0
 			return
-		case <-c.reqC:
-			c.reqMu.Lock()
-			for it := c.reqs.Front(); it != nil; {
-				req := it.Value.(*Request)
+		case <-c.newCallC:
+			c.mu.Lock()
+		CallLoop:
+			for it := c.calls.Front(); it != nil; {
+				ca := it.Value.(*Call)
 				next := it.Next()
-				c.reqs.Remove(it)
+				c.calls.Remove(it)
 				it = next
-				if err := c.conn.WriteJSON(req); err != nil {
-					logger.Errorf("Cannot write %s: %v", req.Name, err)
-					if respC, ok := c.reqIDToRespC[req.ID]; ok {
-						resp := &Response{ID: req.ID, Error: errors.Format(0, err.Error())}
+				if err := c.conn.Call(ca); err != nil {
+					logger.Errorf("Cannot call %s: %v", ca.Name, err)
+					if rc, ok := c.replyM[ca.Id]; ok {
 						select {
-						case respC <- resp:
+						case rc <- NewErrorReply(ca.Id, err):
 							break
 						default:
 							break
 						}
-						delete(c.reqIDToRespC, req.ID)
+						delete(c.replyM, ca.Id)
 					}
-					c.reqMu.Unlock()
-					return
+					break CallLoop
 				}
 			}
-			c.reqMu.Unlock()
+			c.mu.Unlock()
 		}
 	}
 }
@@ -199,47 +204,47 @@ func (c *Client) Call(ctx context.Context, name string, params interface{}, resu
 	if c.state == Closed {
 		return errors.New("client is closed")
 	}
-	req := &Request{
-		ID:   c.nextID(),
-		Name: name,
-		Body: params,
-
-		createdAt: time.Now(),
+	data, err := json.Marshal(params)
+	if err != nil {
+		return fmt.Errorf("cannot marshal params: %w", err)
 	}
-	if len(c.Header) > 0 {
-		req.Header = c.Header
-	}
-	respC := make(chan *Response, 1)
-	defer close(respC)
-	c.reqMu.Lock()
-	c.reqs.PushBack(req)
-	c.reqIDToRespC[req.ID] = respC
-	c.reqMu.Unlock()
+	ca := NewCall(c.nextCallID(), name, data)
+	replyC := make(chan *Reply, 1)
+	c.mu.Lock()
+	c.calls.PushBack(ca)
+	c.replyM[ca.Id] = replyC
+	c.mu.Unlock()
 	select {
-	case c.reqC <- struct{}{}:
+	case c.newCallC <- struct{}{}:
 		break
 	default:
 		break
 	}
 
+	startAt := time.Now()
 	select {
 	case <-ctx.Done():
-		if c.ResultLogger != nil {
-			c.ResultLogger(req, &Response{ID: req.ID, Error: errors.Format(0, ctx.Err().Error())})
+		if c.CallLogger != nil {
+			c.CallLogger(ca, NewErrorReply(ca.Id, ctx.Err()), startAt)
 		}
 		return ctx.Err()
-	case resp := <-respC:
-		if c.ResultLogger != nil {
-			c.ResultLogger(req, resp)
+	case reply := <-replyC:
+		if c.CallLogger != nil {
+			c.CallLogger(ca, reply, startAt)
 		}
-		if resp.Error != nil {
-			return resp.Error
-		}
-		if result != nil {
-			if resp.Data != nil {
-				return conv.Assign(result, resp.Data)
+		switch v := reply.Result.(type) {
+		case *Reply_Data:
+			if result == nil {
+				break
 			}
-			return errors.New("no data")
+			if len(v.Data) == 0 {
+				return errors.New("no data")
+			}
+			if err := json.Unmarshal(v.Data, result); err != nil {
+				return fmt.Errorf("cannot unmarshal result: %w", err)
+			}
+		case *Reply_Error:
+			return errors.Format(int(v.Error.Code), v.Error.Message)
 		}
 		return nil
 	}
@@ -271,7 +276,7 @@ func (c *Client) SetMaxReconnBackoff(t time.Duration) {
 	c.maxReconnBackoff = t
 }
 
-func (c *Client) PushDataC() <-chan interface{} {
+func (c *Client) PushDataC() <-chan []byte {
 	return c.pushDataC
 }
 
@@ -286,11 +291,12 @@ func (c *Client) GetServerTime(ctx context.Context) (time.Time, error) {
 	return time.Unix(res.Timestamp, 0), nil
 }
 
-func (c *Client) logResult(req *Request, resp *Response) {
-	cost := time.Since(req.createdAt)
-	if resp.Error != nil {
-		logger.Errorf("%d %s | %v | %v | %v", resp.ID, req.Name, wine.JSONString(req.Body), resp.Error, cost)
-	} else {
-		logger.Infof("%d %s | %v", resp.ID, req.Name, cost)
+func (c *Client) logCall(call *Call, reply *Reply, callAt time.Time) {
+	cost := time.Since(callAt)
+	switch v := reply.Result.(type) {
+	case *Reply_Data:
+		logger.Infof("%d %s | %v", call.Id, call.Name, cost)
+	case *Reply_Error:
+		logger.Errorf("%d %s | %s | %d:%s | %v", call.Id, call.Name, call.Data, v.Error.Code, v.Error.Message, cost)
 	}
 }

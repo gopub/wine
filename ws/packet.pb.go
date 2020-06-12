@@ -5,8 +5,9 @@ package ws
 
 import (
 	fmt "fmt"
-	proto "github.com/golang/protobuf/proto"
 	math "math"
+
+	proto "github.com/golang/protobuf/proto"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -68,7 +69,7 @@ func (m *Error) GetMessage() string {
 }
 
 type Call struct {
-	Id                   int32    `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	Id                   int32    `protobuf:"varint,1,opt,name=callID,proto3" json:"callID,omitempty"`
 	Name                 string   `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
 	Data                 []byte   `protobuf:"bytes,3,opt,name=data,proto3" json:"data,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
@@ -123,7 +124,7 @@ func (m *Call) GetData() []byte {
 }
 
 type Reply struct {
-	Id int32 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	Id int32 `protobuf:"varint,1,opt,name=callID,proto3" json:"callID,omitempty"`
 	// Types that are valid to be assigned to Result:
 	//	*Reply_Data
 	//	*Reply_Error

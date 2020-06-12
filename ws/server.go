@@ -2,90 +2,61 @@ package ws
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"net"
 	"net/http"
 	"reflect"
 	"runtime/debug"
 	"sync"
-	"sync/atomic"
 	"time"
 
-	"github.com/gopub/conv"
 	"github.com/gopub/environ"
 	"github.com/gopub/errors"
-	"github.com/gopub/types"
 	"github.com/gopub/wine"
 	"github.com/gopub/wine/router"
 	"github.com/gorilla/websocket"
 )
 
+type Request struct {
+	ID   int32
+	Name string
+	Data []byte
+
+	// server side
+	remoteAddr net.Addr
+}
+
+func (r *Request) RemoteAddr() net.Addr {
+	return r.remoteAddr
+}
+
 type serverConn struct {
-	*websocket.Conn
+	*Conn
 	userID int64
-
-	mu     sync.RWMutex
-	header types.M
-
-	id int64
-}
-
-func newServerConn(conn *websocket.Conn) *serverConn {
-	return &serverConn{
-		Conn:   conn,
-		header: types.M{},
-	}
-}
-
-func (c *serverConn) SetHeader(k string, v interface{}) {
-	c.mu.Lock()
-	if v == nil {
-		delete(c.header, k)
-	} else {
-		c.header[k] = v
-	}
-	c.mu.Unlock()
-}
-
-func (c *serverConn) GetHeader(k string) interface{} {
-	c.mu.RLock()
-	v := c.header[k]
-	c.mu.RUnlock()
-	return v
-}
-
-func (c *serverConn) WriteJSON(i interface{}) error {
-	c.mu.Lock()
-	err := c.Conn.WriteJSON(i)
-	c.mu.Unlock()
-	return err
-}
-
-func (c *serverConn) NextID() int64 {
-	atomic.AddInt64(&c.id, 2)
-	return c.id
 }
 
 type Server struct {
 	websocket.Upgrader
 	*Router
-	readTimeout      time.Duration
-	timeout          time.Duration
-	PreHandler       Handler
-	uidToConns       sync.Map // uid:map[conn]bool
-	HandshakeHandler func(rw ReadWriter) error
-	ResultLogger     func(req *Request, resp *Response, cost time.Duration)
-	Recovery         bool
+	readTimeout time.Duration
+	timeout     time.Duration
+	PreHandler  Handler
+	userConns   sync.Map // uid:map[conn]bool
+	Handshake   func(rw PacketReadWriter) error
+	CallLogger  func(req *Request, resultOrErr interface{}, cost time.Duration)
+	Recovery    bool
 }
 
 var _ http.Handler = (*Server)(nil)
 
 func NewServer() *Server {
 	s := &Server{
-		Router:       NewRouter(),
-		readTimeout:  environ.Duration("wine.read_timeout", 20*time.Second),
-		timeout:      environ.Duration("wine.timeout", 10*time.Second),
-		ResultLogger: logResult,
-		Recovery:     environ.Bool("wine.recovery", true),
+		Router:      NewRouter(),
+		readTimeout: environ.Duration("wine.read_timeout", 20*time.Second),
+		timeout:     environ.Duration("wine.timeout", 10*time.Second),
+		CallLogger:  logCall,
+		Recovery:    environ.Bool("wine.recovery", true),
 	}
 	return s
 }
@@ -105,11 +76,12 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		wine.Error(err).Respond(r.Context(), w)
 		return
 	}
-	conn := newServerConn(wconn)
+	conn := &serverConn{Conn: NewConn(wconn)}
+	conn.readTimeout = s.readTimeout
 	logger.Debugf("New conn %s", wconn.RemoteAddr())
-	if s.HandshakeHandler != nil {
+	if s.Handshake != nil {
 		logger.Debugf("Start handshaking")
-		if err = s.HandshakeHandler(conn); err != nil {
+		if err = s.Handshake(conn); err != nil {
 			logger.Errorf("Cannot handshake: %v", err)
 			conn.Close()
 			return
@@ -117,27 +89,29 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		logger.Debugf("Finish handshaking")
 	}
 	for {
-		if err = conn.SetReadDeadline(time.Now().Add(s.readTimeout)); err != nil {
-			logger.Errorf("Cannot set read deadline: %v", err)
-			break
-		}
-		req := new(Request)
-		if err := conn.ReadJSON(req); err != nil {
+		p, err := conn.Read()
+		if err != nil {
 			logger.Errorf("Cannot read: %v", err)
 			break
 		}
-		req.remoteAddr = conn.RemoteAddr()
-		for k, v := range req.Header {
-			conn.SetHeader(k, v)
+		switch v := p.V.(type) {
+		case *Packet_Call:
+			req := new(Request)
+			req.ID = v.Call.Id
+			req.Name = v.Call.Name
+			req.Data = v.Call.Data
+			req.remoteAddr = wconn.RemoteAddr()
+			go s.HandleRequest(conn, req)
+		default:
+			break
 		}
-		go s.HandleRequest(conn, req)
 	}
 	conn.Close()
 	s.deleteUserConn(conn)
 	if conn.userID != 0 {
-		logger.Debugf("Close conn: %s, user=%d", conn.RemoteAddr().String(), conn.userID)
+		logger.Debugf("Close conn: %s, user=%d", wconn.RemoteAddr(), conn.userID)
 	} else {
-		logger.Debugf("Close conn: %s", conn.RemoteAddr().String())
+		logger.Debugf("Close conn: %s", wconn.RemoteAddr())
 	}
 }
 
@@ -145,7 +119,7 @@ func (s *Server) deleteUserConn(conn *serverConn) {
 	if conn.userID == 0 {
 		return
 	}
-	m, ok := s.uidToConns.Load(conn.userID)
+	m, ok := s.userConns.Load(conn.userID)
 	if !ok {
 		return
 	}
@@ -156,7 +130,7 @@ func (s *Server) saveUserConn(conn *serverConn) {
 	if conn.userID == 0 {
 		return
 	}
-	m, _ := s.uidToConns.LoadOrStore(conn.userID, &sync.Map{})
+	m, _ := s.userConns.LoadOrStore(conn.userID, &sync.Map{})
 	m.(*sync.Map).Store(conn, true)
 }
 
@@ -165,30 +139,33 @@ func (s *Server) HandleRequest(conn *serverConn, req *Request) {
 		logger.Debugf("Received ping")
 		return
 	}
-	resp := &Response{
-		ID: req.ID,
-	}
-	if s.ResultLogger != nil {
-		defer s.logResult(req, resp, time.Now())
-	}
+	startAt := time.Now()
 	ctx, cancel := context.WithTimeout(context.Background(), s.timeout)
 	defer cancel()
 	if conn.userID > 0 {
 		ctx = wine.WithUserID(ctx, conn.userID)
 	}
-	if deviceID, ok := conn.GetHeader("device_id").(string); ok && deviceID != "" {
-		ctx = wine.WithDeviceID(ctx, deviceID)
-	}
-	ctx = wine.WithRemoteAddr(ctx, conn.RemoteAddr().String())
+	//if deviceID, ok := conn.GetHeader("device_id").(string); ok && deviceID != "" {
+	//	ctx = wine.WithDeviceID(ctx, deviceID)
+	//}
+	var reply *Reply
+	var resultOrErr interface{}
+	ctx = wine.WithRemoteAddr(ctx, conn.conn.RemoteAddr().String())
 	result, err := s.Handle(ctx, req)
 	if err != nil {
+		resultOrErr = err
 		if s := errors.GetCode(err); s > 0 {
-			resp.Error = errors.Format(s, err.Error())
+			reply = NewErrorReply(req.ID, errors.Format(s, err.Error()))
 		} else {
-			resp.Error = errors.Format(http.StatusInternalServerError, err.Error())
+			reply = NewErrorReply(req.ID, errors.Format(http.StatusInternalServerError, err.Error()))
 		}
 	} else {
-		resp.Data = result
+		resultOrErr = result
+		data, err := json.Marshal(result)
+		if err != nil {
+			reply = NewErrorReply(req.ID, errors.Format(http.StatusInternalServerError, err.Error()))
+		}
+		reply = NewDataReply(req.ID, data)
 	}
 	if getUid, ok := result.(GetAuthUserID); ok {
 		uid := getUid.GetAuthUserID()
@@ -198,10 +175,11 @@ func (s *Server) HandleRequest(conn *serverConn, req *Request) {
 			s.saveUserConn(conn)
 		}
 	}
-	if err = conn.WriteJSON(resp); err != nil {
-		logger.Errorf("WriteJSON: %v", err)
+	if err = conn.Reply(reply); err != nil {
+		logger.Errorf("Cannot write reply: %v", err)
 		conn.Close()
 	}
+	s.logCall(req, resultOrErr, startAt)
 }
 
 func (s *Server) Handle(ctx context.Context, req *Request) (interface{}, error) {
@@ -210,37 +188,38 @@ func (s *Server) Handle(ctx context.Context, req *Request) (interface{}, error) 
 		return nil, errors.NotFound("")
 	}
 
-	data := req.Body
+	var params interface{} = req.Data
 	if m := r.Model(); m != nil {
 		pv := reflect.New(reflect.TypeOf(m))
-		if err := conv.Assign(pv.Interface(), req.Body); err != nil {
+		if err := json.Unmarshal(req.Data, pv.Interface()); err != nil {
 			return nil, err
 		}
-		data = pv.Elem().Interface()
+		params = pv.Elem().Interface()
 	}
 
 	h := (*handlerElem)(r.FirstHandler())
 	if s.PreHandler != nil {
-		return s.PreHandler.HandleRequest(withNextHandler(ctx, h), data)
+		return s.PreHandler.HandleRequest(withNextHandler(ctx, h), params)
 	} else {
-		return h.HandleRequest(ctx, data)
+		return h.HandleRequest(ctx, params)
 	}
 }
 
-func (s *Server) Push(ctx context.Context, userID int64, data interface{}) error {
-	conns, ok := s.uidToConns.Load(userID)
+func (s *Server) Push(ctx context.Context, userID int64, v interface{}) error {
+	conns, ok := s.userConns.Load(userID)
 	if !ok {
 		return nil
+	}
+	data, err := json.Marshal(v)
+	if err != nil {
+		return fmt.Errorf("cannot marshal: %w", err)
 	}
 	var firstErr error
 	conns.(*sync.Map).Range(func(key, value interface{}) bool {
 		conn := key.(*serverConn)
-		err := conn.WriteJSON(&Response{
-			ID:   conn.NextID(),
-			Data: data,
-		})
+		err := conn.Push(data)
 		if err != nil {
-			logger.Errorf("WriteJSON: %v", err)
+			logger.Errorf("Cannot push: %v", err)
 			if firstErr != nil {
 				firstErr = err
 			}
@@ -250,27 +229,27 @@ func (s *Server) Push(ctx context.Context, userID int64, data interface{}) error
 	return firstErr
 }
 
-func (s *Server) logResult(req *Request, resp *Response, startAt time.Time) {
-	if s.ResultLogger == nil {
+func (s *Server) logCall(req *Request, resultOrErr interface{}, startAt time.Time) {
+	if s.CallLogger == nil {
 		return
 	}
-	s.ResultLogger(req, resp, time.Since(startAt))
+	s.CallLogger(req, resultOrErr, time.Since(startAt))
 }
 
-func logResult(req *Request, resp *Response, cost time.Duration) {
+func logCall(req *Request, resultOrErr interface{}, cost time.Duration) {
 	info := fmt.Sprintf("%s %d %s | %v",
 		req.remoteAddr,
 		req.ID,
 		req.Name,
 		cost)
-	if getUid, ok := resp.Data.(GetAuthUserID); ok {
+	if getUid, ok := resultOrErr.(GetAuthUserID); ok {
 		uid := getUid.GetAuthUserID()
 		if uid > 0 {
 			info = fmt.Sprintf("%s | user=%d", info, uid)
 		}
 	}
-	if resp.Error != nil {
-		logger.Errorf("%s | %s | %v", info, wine.JSONString(req.Body), resp.Error)
+	if err, ok := resultOrErr.(error); ok {
+		logger.Errorf("%s | %s | %v", info, req.Data, err)
 	} else {
 		logger.Infof(info)
 	}
