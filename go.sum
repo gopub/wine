@@ -98,6 +98,8 @@ github.com/gopub/conv v0.3.4/go.mod h1:fkjKAhFUBePpeF+07oJCakpDyTS6kgSMcYd2DEV6d
 github.com/gopub/conv v0.3.11/go.mod h1:e6VjS83+vHUeWls8YHGfTw95V9oNC0PW0t+GqL1bc7M=
 github.com/gopub/conv v0.3.16 h1:noZC53TnJPqZxhb0P8DR7gB/JKrYsfek1F61nc15NPk=
 github.com/gopub/conv v0.3.16/go.mod h1:e6VjS83+vHUeWls8YHGfTw95V9oNC0PW0t+GqL1bc7M=
+github.com/gopub/conv v0.3.18 h1:ir657YtlpP6aSw4PlB1uQ1rMM76l3s0nhf7n9dksUtw=
+github.com/gopub/conv v0.3.18/go.mod h1:e6VjS83+vHUeWls8YHGfTw95V9oNC0PW0t+GqL1bc7M=
 github.com/gopub/environ v0.2.2 h1:Wvt6j6Dt0y38V9Z6WCOpHAPq4uOByz3kYOfHGfr1RZ4=
 github.com/gopub/environ v0.2.2/go.mod h1:eW/mDv73DoJ33e4rt7PYBomrHbCEm1JygbqWpdkIRuE=
 github.com/gopub/errors v0.1.0 h1:Tbkr1y9gH6rsUHarBdAqGQdQiO5dUmOW7qqP8Uotd4w=

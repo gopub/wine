@@ -1,7 +1,6 @@
 package wine
 
 import (
-	"encoding/json"
 	"path"
 	"strings"
 
@@ -32,9 +31,4 @@ func JoinURL(segment ...string) string {
 
 func NewUUID() string {
 	return strings.ReplaceAll(uuid.New().String(), "-", "")
-}
-
-func JSONString(i interface{}) string {
-	b, _ := json.Marshal(i)
-	return string(b)
 }

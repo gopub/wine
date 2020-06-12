@@ -9,6 +9,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gopub/conv"
+
 	"github.com/gopub/environ"
 	"github.com/gopub/log"
 	"github.com/gopub/types"
@@ -173,7 +175,7 @@ func (s *Server) serve(ctx context.Context, req *Request, rw http.ResponseWriter
 				Error(err).Respond(ctx, rw)
 				return
 			}
-			ctx = log.BuildContext(ctx, log.FromContext(ctx).With("model", JSONString(msg)))
+			ctx = log.BuildContext(ctx, log.FromContext(ctx).With("model", conv.MustJSONString(msg)))
 		}
 		h = (*handlerElem)(r.FirstHandler())
 	case method == http.MethodOptions:
@@ -337,9 +339,9 @@ func logResult(req *Request, res *Result, cost time.Duration) {
 	if res.Status >= http.StatusBadRequest {
 		ua := req.Header("User-Agent")
 		if len(req.params) > 0 {
-			info = fmt.Sprintf("%s | %s | %v", info, ua, JSONString(req.params))
+			info = fmt.Sprintf("%s | %s | %v", info, ua, conv.MustJSONString(req.params))
 		} else if len(httpReq.PostForm) > 0 {
-			info = fmt.Sprintf("%s | %s | %v", info, ua, JSONString(httpReq.PostForm))
+			info = fmt.Sprintf("%s | %s | %v", info, ua, conv.MustJSONString(httpReq.PostForm))
 		} else {
 			info = fmt.Sprintf("%s | %s", info, ua)
 		}

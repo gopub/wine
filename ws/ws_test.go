@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gopub/wine"
+	"github.com/gopub/conv"
 
 	"github.com/gopub/types"
 	"github.com/gopub/wine/ws"
@@ -48,7 +48,7 @@ func TestHandshake(t *testing.T) {
 		if err != nil {
 			return err
 		}
-		t.Logf("%s", wine.JSONString(p))
+		t.Logf("%s", conv.MustJSONString(p))
 		err = rw.Write(p)
 		assert.NoError(t, err)
 		return err
@@ -73,7 +73,7 @@ func TestHandshake(t *testing.T) {
 		}
 		p, err = rw.Read()
 		assert.NoError(t, err)
-		t.Logf("%v", wine.JSONString(p))
+		t.Logf("%v", conv.MustJSONString(p))
 		return err
 	}
 	var result string

@@ -4,13 +4,14 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/gopub/types"
 	"net"
 	"net/http"
 	"reflect"
 	"runtime/debug"
 	"sync"
 	"time"
+
+	"github.com/gopub/types"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/gopub/environ"
