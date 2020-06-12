@@ -42,11 +42,17 @@ func (r *Route) ProtobufModel() proto.Message {
 }
 
 func (r *Route) SetJSONModel(m interface{}) *Route {
+	if r.node.ProtobufModel != nil {
+		panic("Cannot set both json model and protobuf model")
+	}
 	r.node.JSONModel = m
 	return r
 }
 
 func (r *Route) SetProtobufModel(m proto.Message) *Route {
+	if r.node.JSONModel != nil {
+		panic("Cannot set both json model and protobuf model")
+	}
 	r.node.ProtobufModel = m
 	return r
 }

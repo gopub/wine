@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/gopub/types"
 	"net"
 	"net/http"
 	"reflect"
@@ -35,6 +36,24 @@ func (r *Request) RemoteAddr() net.Addr {
 type serverConn struct {
 	*Conn
 	userID int64
+	header *Header
+}
+
+func (c *serverConn) Header(k string) string {
+	return c.header.Entries[k]
+}
+
+func (c *serverConn) BuildContext(ctx context.Context) context.Context {
+	if c.userID > 0 {
+		ctx = wine.WithUserID(ctx, c.userID)
+	}
+	if deviceID := c.Header("device_id"); deviceID != "" {
+		ctx = wine.WithDeviceID(ctx, deviceID)
+	}
+	if loc, _ := types.NewPointFromString(c.Header("coordinate")); loc != nil {
+		ctx = wine.WithCoordinate(ctx, loc)
+	}
+	return ctx
 }
 
 type Server struct {
@@ -77,11 +96,14 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		wine.Error(err).Respond(r.Context(), w)
 		return
 	}
-	conn := &serverConn{Conn: NewConn(wconn)}
+	conn := &serverConn{
+		Conn:   NewConn(wconn),
+		header: &Header{Entries: map[string]string{}},
+	}
 	conn.readTimeout = s.readTimeout
 	logger.Debugf("New conn %s", wconn.RemoteAddr())
 	if s.Handshake != nil {
-		logger.Debugf("Start handshaking")
+		logger.Debugf("Handshaking")
 		if err = s.Handshake(conn); err != nil {
 			logger.Errorf("Cannot handshake: %v", err)
 			conn.Close()
@@ -103,6 +125,10 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			req.Data = v.Call.Data
 			req.remoteAddr = wconn.RemoteAddr()
 			go s.HandleRequest(conn, req)
+		case *Packet_Header:
+			for k, val := range v.Header.Entries {
+				conn.header.Entries[k] = val
+			}
 		default:
 			break
 		}
@@ -143,12 +169,7 @@ func (s *Server) HandleRequest(conn *serverConn, req *Request) {
 	startAt := time.Now()
 	ctx, cancel := context.WithTimeout(context.Background(), s.timeout)
 	defer cancel()
-	if conn.userID > 0 {
-		ctx = wine.WithUserID(ctx, conn.userID)
-	}
-	//if deviceID, ok := conn.GetHeader("device_id").(string); ok && deviceID != "" {
-	//	ctx = wine.WithDeviceID(ctx, deviceID)
-	//}
+	ctx = conn.BuildContext(ctx)
 	var reply *Reply
 	var resultOrErr interface{}
 	ctx = wine.WithRemoteAddr(ctx, conn.conn.RemoteAddr().String())

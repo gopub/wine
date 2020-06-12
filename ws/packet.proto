@@ -25,10 +25,15 @@ message Reply {
     }
 }
 
+message Header {
+    map<string, string> entries = 1;
+}
+
 message Packet {
     oneof v {
         bytes push = 1;
         Call call = 2;
         Reply reply = 3;
+        Header header = 4;
     }
 }
