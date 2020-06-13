@@ -16,7 +16,7 @@ func main() {
 	r.Get("/items/list", service.List).SetDescription("List items")
 
 	//r = r.Use(wine.NewBasicAuthHandler(map[string]string{"user": "password"}, "wine"))
-	r.Post("/items", service.Create).SetJSONModel(Item{})
+	r.Post("/items", service.Create).SetModel(Item{})
 
 	s.Run(":8000")
 }

@@ -72,7 +72,7 @@ func (r *Router) Use(funcs ...HandlerFunc) *Router {
 	}
 }
 
-// bindJSON binds method, path with handlers
+// bind binds method, path with handlers
 func (r *Router) Bind(method, path string, handlers ...Handler) *router.Route {
 	return r.Router.Bind(method, path, conv.ToList(handlers))
 }

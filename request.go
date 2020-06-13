@@ -97,22 +97,21 @@ func (r *Request) NormalizedPath() string {
 	return router.Normalize(r.request.URL.Path)
 }
 
-// bindJSON: m represents the prototype of request.JSONModel
-func (r *Request) bindJSON(m interface{}) error {
-	pv := reflect.New(reflect.TypeOf(m))
-	if err := conv.Assign(pv.Interface(), r.params); err != nil {
-		return fmt.Errorf("cannot assign: %w", err)
+// bind: m represents the prototype of request.Model
+func (r *Request) bind(m interface{}) error {
+	if _, ok := m.(proto.Message); ok {
+		pv := reflect.New(reflect.TypeOf(m).Elem())
+		if err := proto.Unmarshal(r.body, pv.Interface().(proto.Message)); err != nil {
+			return fmt.Errorf("cannot unmarshal protobuf message: %w", err)
+		}
+		r.Model = pv.Interface()
+	} else {
+		pv := reflect.New(reflect.TypeOf(m))
+		if err := conv.Assign(pv.Interface(), r.params); err != nil {
+			return fmt.Errorf("cannot assign: %w", err)
+		}
+		r.Model = pv.Elem().Interface()
 	}
-	r.Model = pv.Elem().Interface()
-	return nil
-}
-
-func (r *Request) bindProtobuf(m proto.Message) error {
-	pv := reflect.New(reflect.TypeOf(m))
-	if err := proto.Unmarshal(r.body, pv.Interface().(proto.Message)); err != nil {
-		return fmt.Errorf("cannot unmarshal protobuf message: %w", err)
-	}
-	r.Model = pv.Elem().Interface()
 	return nil
 }
 

@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"math/rand"
 	"net/http"
+	"runtime"
 	"testing"
 
 	"github.com/gopub/wine"
@@ -60,7 +61,7 @@ func TestServerMethod(t *testing.T) {
 	addr := fmt.Sprintf("localhost:%d", rand.Int()%1000+8000)
 	host := "http://" + addr
 	go server.Run(addr)
-
+	runtime.Gosched()
 	t.Run("GET", func(t *testing.T) {
 		resp, err := http.DefaultClient.Get(host)
 		require.NoError(t, err)

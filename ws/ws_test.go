@@ -23,7 +23,7 @@ func TestClient_Send(t *testing.T) {
 	s := ws.NewServer()
 	s.Bind("echo", func(ctx context.Context, req interface{}) (interface{}, error) {
 		return req, nil
-	}).SetJSONModel("")
+	}).SetModel("")
 	go func() {
 		err := http.ListenAndServe(addr, s)
 		require.NoError(t, err)
@@ -41,7 +41,7 @@ func TestHandshake(t *testing.T) {
 	s := ws.NewServer()
 	s.Bind("echo", func(ctx context.Context, req interface{}) (interface{}, error) {
 		return req, nil
-	}).SetJSONModel("")
+	}).SetModel("")
 	s.Handshake = func(rw ws.PacketReadWriter) error {
 		p, err := rw.Read()
 		assert.NoError(t, err)

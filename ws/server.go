@@ -11,11 +11,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/gopub/types"
-
 	"github.com/golang/protobuf/proto"
 	"github.com/gopub/environ"
 	"github.com/gopub/errors"
+	"github.com/gopub/types"
 	"github.com/gopub/wine"
 	"github.com/gopub/wine/router"
 	"github.com/gorilla/websocket"
@@ -180,7 +179,7 @@ func (s *Server) HandleRequest(conn *serverConn, req *Request) {
 		}
 	} else {
 		resultOrErr = result
-		data, err := json.Marshal(result)
+		data, err := marshal(result)
 		if err != nil {
 			reply = NewErrorReply(req.ID, errors.Format(http.StatusInternalServerError, err.Error()))
 		}
@@ -208,18 +207,20 @@ func (s *Server) Handle(ctx context.Context, req *Request) (interface{}, error) 
 	}
 
 	var params interface{} = req.Data
-	if m := r.JSONModel(); m != nil {
-		pv := reflect.New(reflect.TypeOf(m))
-		if err := json.Unmarshal(req.Data, pv.Interface()); err != nil {
-			return nil, fmt.Errorf("cannot unmarshal json: %w", err)
+	if m := r.Model(); m != nil {
+		if _, ok := m.(proto.Message); ok {
+			pv := reflect.New(reflect.TypeOf(m).Elem())
+			if err := proto.Unmarshal(req.Data, pv.Interface().(proto.Message)); err != nil {
+				return nil, fmt.Errorf("cannot unmarshal protobuf: %w", err)
+			}
+			params = pv.Interface()
+		} else {
+			pv := reflect.New(reflect.TypeOf(m))
+			if err := json.Unmarshal(req.Data, pv.Interface()); err != nil {
+				return nil, fmt.Errorf("cannot unmarshal json: %w", err)
+			}
+			params = pv.Elem().Interface()
 		}
-		params = pv.Elem().Interface()
-	} else if msg := r.ProtobufModel(); msg != nil {
-		pv := reflect.New(reflect.TypeOf(msg))
-		if err := proto.Unmarshal(req.Data, pv.Interface().(proto.Message)); err != nil {
-			return nil, fmt.Errorf("cannot unmarshal protobuf: %w", err)
-		}
-		params = pv.Elem().Interface()
 	}
 
 	h := (*handlerElem)(r.FirstHandler())
@@ -235,15 +236,14 @@ func (s *Server) Push(ctx context.Context, userID int64, v interface{}) error {
 	if !ok {
 		return nil
 	}
-	data, err := json.Marshal(v)
+	data, err := marshal(v)
 	if err != nil {
 		return fmt.Errorf("cannot marshal: %w", err)
 	}
 	var firstErr error
 	conns.(*sync.Map).Range(func(key, value interface{}) bool {
 		conn := key.(*serverConn)
-		err := conn.Push(data)
-		if err != nil {
+		if err = conn.Push(data); err != nil {
 			logger.Errorf("Cannot push: %v", err)
 			if firstErr != nil {
 				firstErr = err
@@ -252,6 +252,16 @@ func (s *Server) Push(ctx context.Context, userID int64, v interface{}) error {
 		return true
 	})
 	return firstErr
+}
+
+func marshal(v interface{}) ([]byte, error) {
+	if m, ok := v.(proto.Message); ok {
+		data, err := proto.Marshal(m)
+		return data, errors.Wrapf(err, "cannot marshal protobuf")
+	} else {
+		data, err := json.Marshal(v)
+		return data, errors.Wrapf(err, "cannot marshal json")
+	}
 }
 
 func (s *Server) logCall(req *Request, resultOrErr interface{}, startAt time.Time) {

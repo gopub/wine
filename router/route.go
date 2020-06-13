@@ -3,8 +3,6 @@ package router
 import (
 	"container/list"
 	"strings"
-
-	"github.com/golang/protobuf/proto"
 )
 
 type Route struct {
@@ -33,27 +31,12 @@ func (r *Route) FirstHandler() *list.Element {
 	return r.node.handlers.Front()
 }
 
-func (r *Route) JSONModel() interface{} {
-	return r.node.JSONModel
+func (r *Route) Model() interface{} {
+	return r.node.Model
 }
 
-func (r *Route) ProtobufModel() proto.Message {
-	return r.node.ProtobufModel
-}
-
-func (r *Route) SetJSONModel(m interface{}) *Route {
-	if r.node.ProtobufModel != nil {
-		panic("Cannot set both json model and protobuf model")
-	}
-	r.node.JSONModel = m
-	return r
-}
-
-func (r *Route) SetProtobufModel(m proto.Message) *Route {
-	if r.node.JSONModel != nil {
-		panic("Cannot set both json model and protobuf model")
-	}
-	r.node.ProtobufModel = m
+func (r *Route) SetModel(m interface{}) *Route {
+	r.node.Model = m
 	return r
 }
 
