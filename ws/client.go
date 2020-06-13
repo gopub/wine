@@ -267,14 +267,15 @@ func (c *Client) Call(ctx context.Context, name string, params interface{}, resu
 	}
 }
 
-func (c *Client) WriteHeader(ctx context.Context, key, value string) error {
+func (c *Client) SetHeader(h map[string]string) {
 	c.mu.Lock()
-	c.header[key] = value
-	c.mu.Unlock()
-	if c.state != Connected {
-		return nil
+	for k, v := range h {
+		c.header[k] = v
 	}
-	return c.writeHeader()
+	c.mu.Unlock()
+	if c.state == Connected {
+		go c.writeHeader()
+	}
 }
 
 func (c *Client) Close() {
