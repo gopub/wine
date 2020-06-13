@@ -37,21 +37,17 @@ func (r *Request) RemoteAddr() net.Addr {
 type serverConn struct {
 	*Conn
 	userID int64
-	header *Header
-}
-
-func (c *serverConn) Header(k string) string {
-	return c.header.Entries[k]
+	header map[string]string
 }
 
 func (c *serverConn) BuildContext(ctx context.Context) context.Context {
 	if c.userID > 0 {
 		ctx = wine.WithUserID(ctx, c.userID)
 	}
-	if deviceID := c.Header("device_id"); deviceID != "" {
+	if deviceID := c.header["device_id"]; deviceID != "" {
 		ctx = wine.WithDeviceID(ctx, deviceID)
 	}
-	if loc, _ := types.NewPointFromString(c.Header("coordinate")); loc != nil {
+	if loc, _ := types.NewPointFromString(c.header["coordinate"]); loc != nil {
 		ctx = wine.WithCoordinate(ctx, loc)
 	}
 	return ctx
@@ -99,7 +95,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	conn := &serverConn{
 		Conn:   NewConn(wconn),
-		header: &Header{Entries: map[string]string{}},
+		header: map[string]string{},
 	}
 	conn.readTimeout = s.readTimeout
 	logger.Debugf("New conn %s", wconn.RemoteAddr())
@@ -128,7 +124,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			go s.HandleRequest(conn, req)
 		case *Packet_Header:
 			for k, val := range v.Header.Entries {
-				conn.header.Entries[k] = val
+				conn.header[k] = val
 			}
 		default:
 			break

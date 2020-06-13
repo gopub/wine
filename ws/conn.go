@@ -45,15 +45,17 @@ type PacketReadWriter interface {
 }
 
 type Conn struct {
-	mu          sync.RWMutex
-	conn        *websocket.Conn
-	readTimeout time.Duration
+	mu           sync.RWMutex
+	conn         *websocket.Conn
+	readTimeout  time.Duration
+	writeTimeout time.Duration
 }
 
 func NewConn(conn *websocket.Conn) *Conn {
 	c := &Conn{
-		conn:        conn,
-		readTimeout: 10 * time.Second,
+		conn:         conn,
+		readTimeout:  20 * time.Second,
+		writeTimeout: 10 * time.Second,
 	}
 	return c
 }
@@ -82,8 +84,12 @@ func (c *Conn) Write(p *Packet) error {
 		return fmt.Errorf("cannot marshal packet: %w", err)
 	}
 	c.mu.Lock()
+	defer c.mu.Unlock()
+	err = c.conn.SetWriteDeadline(time.Now().Add(c.writeTimeout))
+	if err != nil {
+		return fmt.Errorf("cannot set write deadline: %w", err)
+	}
 	err = c.conn.WriteMessage(websocket.BinaryMessage, data)
-	c.mu.Unlock()
 	return errors.Wrapf(err, "cannot write binary message")
 }
 

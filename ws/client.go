@@ -11,8 +11,6 @@ import (
 
 	"github.com/gopub/errors"
 
-	"github.com/gopub/types"
-
 	"github.com/gorilla/websocket"
 )
 
@@ -37,6 +35,7 @@ type Client struct {
 	mu       sync.RWMutex // guard calls, replyM
 	calls    *list.List
 	replyM   map[int32]chan<- *Reply
+	header   map[string]string
 
 	conn  *Conn
 	state ClientState
@@ -44,7 +43,6 @@ type Client struct {
 	callID int32
 
 	Handshake func(rw PacketReadWriter) error
-	Header    types.M
 	pushDataC chan []byte
 
 	CallLogger func(call *Call, reply *Reply, callAt time.Time)
@@ -60,9 +58,9 @@ func NewClient(addr string) *Client {
 		newCallC:         make(chan struct{}, 1),
 		replyM:           make(map[int32]chan<- *Reply),
 		state:            Disconnected,
-		Header:           types.M{},
 		pushDataC:        make(chan []byte, 1),
 		callID:           1,
+		header:           map[string]string{},
 	}
 	c.CallLogger = c.logCall
 	go c.start()
@@ -107,6 +105,11 @@ func (c *Client) run() {
 			c.state = Disconnected
 			return
 		}
+	}
+	if err = c.writeHeader(); err != nil {
+		c.conn.Close()
+		c.state = Disconnected
+		return
 	}
 	c.state = Connected
 	done := make(chan struct{}, 1)
@@ -200,6 +203,20 @@ func (c *Client) write(done <-chan struct{}) {
 	}
 }
 
+func (c *Client) writeHeader() error {
+	if len(c.header) == 0 {
+		return nil
+	}
+	h := &Header{
+		Entries: c.header,
+	}
+	p := new(Packet)
+	p.V = &Packet_Header{
+		Header: h,
+	}
+	return c.conn.Write(p)
+}
+
 func (c *Client) Call(ctx context.Context, name string, params interface{}, result interface{}) error {
 	if c.state == Closed {
 		return errors.New("client is closed")
@@ -250,9 +267,23 @@ func (c *Client) Call(ctx context.Context, name string, params interface{}, resu
 	}
 }
 
+func (c *Client) WriteHeader(ctx context.Context, key, value string) error {
+	c.mu.Lock()
+	c.header[key] = value
+	c.mu.Unlock()
+	if c.state != Connected {
+		return nil
+	}
+	return c.writeHeader()
+}
+
 func (c *Client) Close() {
 	c.state = Closed
 	close(c.pushDataC)
+}
+
+func (c *Client) State() ClientState {
+	return c.state
 }
 
 func (c *Client) SetConnTimeout(t time.Duration) {
