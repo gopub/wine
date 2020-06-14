@@ -24,7 +24,7 @@ const (
 )
 
 type Client struct {
-	connTimeout      time.Duration
+	dialTimeout      time.Duration
 	pingInterval     time.Duration
 	maxReconnBackoff time.Duration
 	reconnBackoff    time.Duration
@@ -37,8 +37,9 @@ type Client struct {
 	replyM   map[int32]chan<- *Reply
 	header   map[string]string
 
-	conn  *Conn
-	state ClientState
+	conn   *Conn
+	state  ClientState
+	stateC chan ClientState
 
 	callID int32
 
@@ -50,7 +51,7 @@ type Client struct {
 
 func NewClient(addr string) *Client {
 	c := &Client{
-		connTimeout:      10 * time.Second,
+		dialTimeout:      10 * time.Second,
 		pingInterval:     10 * time.Second,
 		maxReconnBackoff: 2 * time.Second,
 		addr:             addr,
@@ -58,6 +59,7 @@ func NewClient(addr string) *Client {
 		newCallC:         make(chan struct{}, 1),
 		replyM:           make(map[int32]chan<- *Reply),
 		state:            Disconnected,
+		stateC:           make(chan ClientState, 1),
 		pushDataC:        make(chan []byte, 1),
 		callID:           1,
 		header:           map[string]string{},
@@ -87,13 +89,13 @@ func (c *Client) start() {
 }
 
 func (c *Client) run() {
-	c.state = Connecting
-	ctx, cancel := context.WithTimeout(context.Background(), c.connTimeout)
+	c.setState(Connecting)
+	ctx, cancel := context.WithTimeout(context.Background(), c.dialTimeout)
 	conn, _, err := websocket.DefaultDialer.DialContext(ctx, c.addr, nil)
 	if err != nil {
 		cancel()
 		logger.Errorf("Cannot connect %s: %v", c.addr, err)
-		c.state = Disconnected
+		c.setState(Disconnected)
 		return
 	}
 	cancel()
@@ -101,22 +103,19 @@ func (c *Client) run() {
 	if c.Handshake != nil {
 		if err = c.Handshake(c.conn); err != nil {
 			logger.Errorf("Cannot handshake: %v", err)
-			c.conn.Close()
-			c.state = Disconnected
+			c.setState(Disconnected)
 			return
 		}
 	}
 	if err = c.writeHeader(); err != nil {
-		c.conn.Close()
-		c.state = Disconnected
+		c.setState(Disconnected)
 		return
 	}
-	c.state = Connected
+	c.setState(Connected)
 	done := make(chan struct{}, 1)
 	go c.read(done)
 	c.write(done)
-	c.conn.Close()
-	c.state = Disconnected
+	c.setState(Disconnected)
 }
 
 func (c *Client) read(done chan<- struct{}) {
@@ -279,19 +278,44 @@ func (c *Client) SetHeader(h map[string]string) {
 }
 
 func (c *Client) Close() {
-	c.state = Closed
+	c.setState(Closed)
 	close(c.pushDataC)
+	close(c.stateC)
+}
+
+func (c *Client) setState(s ClientState) {
+	if c.state == s || c.state == Closed {
+		return
+	}
+	c.state = s
+	switch s {
+	case Disconnected, Closed:
+		if c.conn != nil {
+			c.conn.Close()
+			c.conn = nil
+		}
+	}
+	select {
+	case c.stateC <- s:
+		break
+	default:
+		break
+	}
 }
 
 func (c *Client) State() ClientState {
 	return c.state
 }
 
-func (c *Client) SetConnTimeout(t time.Duration) {
+func (c *Client) StateC() <-chan ClientState {
+	return c.stateC
+}
+
+func (c *Client) SetDialTimeout(t time.Duration) {
 	if t < time.Second {
 		t = time.Second
 	}
-	c.connTimeout = t
+	c.dialTimeout = t
 }
 
 func (c *Client) SetPingInterval(t time.Duration) {
