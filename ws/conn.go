@@ -68,11 +68,11 @@ func (c *Conn) Call(id int32, name string, params interface{}) error {
 }
 
 func (c *Conn) WriteData(v interface{}) error {
-	data, err := MarshalData(v)
+	p, err := NewDataPacket(v)
 	if err != nil {
-		return fmt.Errorf("cannot marshal: %w", err)
+		return err
 	}
-	return c.Write(&Packet{V: &Packet_Data{data}})
+	return c.Write(p)
 }
 
 func (c *Conn) Reply(id int32, resultOrErr interface{}) error {

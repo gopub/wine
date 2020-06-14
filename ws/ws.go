@@ -112,6 +112,18 @@ func NewReply(id int32, resultOrErr interface{}) *Reply {
 	return r
 }
 
+func NewDataPacket(v interface{}) (*Packet, error) {
+	data, err := MarshalData(v)
+	if err != nil {
+		return nil, err
+	}
+	p := new(Packet)
+	p.V = &Packet_Data{
+		Data: data,
+	}
+	return p, nil
+}
+
 type PacketReadWriter interface {
 	Read() (*Packet, error)
 	Write(p *Packet) error
