@@ -118,6 +118,7 @@ func (c *Client) run() {
 	c.setState(Connected)
 	done := make(chan struct{}, 1)
 	go c.read(done)
+	go c.auth()
 	c.write(done)
 	c.setState(Disconnected)
 }
@@ -263,6 +264,7 @@ func (c *Client) Call(ctx context.Context, name string, params interface{}, resu
 			if v.Error.Code == http.StatusUnauthorized {
 				// Check flag in case recursive calling Authenticator
 				if c.Authenticator != nil && ctx.Value(keyAuthFlag) == nil {
+					// Reuse ctx, so total timeout equals to one call timeout
 					ctx = context.WithValue(ctx, keyAuthFlag, true)
 					err = c.Authenticator(ctx, c)
 					if err == nil {
@@ -355,6 +357,16 @@ func (c *Client) GetServerTime(ctx context.Context) (time.Time, error) {
 		return time.Time{}, err
 	}
 	return time.Unix(res.Timestamp, 0), nil
+}
+
+func (c *Client) auth() {
+	if c.Authenticator == nil {
+		return
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), c.dialTimeout)
+	defer cancel()
+	ctx = context.WithValue(ctx, keyAuthFlag, true)
+	c.Authenticator(ctx, c)
 }
 
 func (c *Client) logCall(call *Call, reply *Reply, callAt time.Time) {
