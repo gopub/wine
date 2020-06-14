@@ -63,8 +63,8 @@ func TestHandshake(t *testing.T) {
 		data, err := json.Marshal(types.M{"greeting": "hello from tom"})
 		require.NoError(t, err)
 		p := new(ws.Packet)
-		p.V = &ws.Packet_Push{
-			Push: &ws.Data{
+		p.V = &ws.Packet_Data{
+			Data: &ws.Data{
 				V: &ws.Data_Json{Json: data},
 			},
 		}
@@ -111,7 +111,7 @@ func TestServer_Push(t *testing.T) {
 	require.NoError(t, err)
 	time.Sleep(time.Second) // Ensure client receive the data
 	select {
-	case pushData := <-c.PushDataC():
+	case pushData := <-c.DataC():
 		var res string
 		err = ws.UnmarshalData(pushData, &res)
 		require.NoError(t, err)

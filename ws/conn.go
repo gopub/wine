@@ -105,12 +105,12 @@ func (c *Conn) Call(ca *Call) error {
 	return c.Write(&Packet{V: &Packet_Call{ca}})
 }
 
-func (c *Conn) Push(result interface{}) error {
-	data, err := MarshalData(result)
+func (c *Conn) WriteData(v interface{}) error {
+	data, err := MarshalData(v)
 	if err != nil {
-		return fmt.Errorf("cannot marshal result: %w", err)
+		return fmt.Errorf("cannot marshal: %w", err)
 	}
-	return c.Write(&Packet{V: &Packet_Push{data}})
+	return c.Write(&Packet{V: &Packet_Data{data}})
 }
 
 func (c *Conn) Reply(r *Reply) error {

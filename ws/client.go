@@ -42,7 +42,7 @@ type Client struct {
 	callID int32
 
 	Handshake func(rw PacketReadWriter) error
-	pushDataC chan *Data
+	dataC     chan *Data
 
 	CallLogger func(call *Call, reply *Reply, callAt time.Time)
 }
@@ -58,7 +58,7 @@ func NewClient(addr string) *Client {
 		replyM:           make(map[int32]chan<- *Reply),
 		state:            Disconnected,
 		stateC:           make(chan ClientState, 1),
-		pushDataC:        make(chan *Data, 1),
+		dataC:            make(chan *Data, 1),
 		callID:           1,
 		header:           map[string]string{},
 	}
@@ -125,18 +125,18 @@ func (c *Client) read(done chan<- struct{}) {
 			done <- struct{}{}
 			return
 		}
-		if v, ok := p.V.(*Packet_Push); ok {
+		if v, ok := p.V.(*Packet_Data); ok {
 			select {
-			case c.pushDataC <- v.Push:
+			case c.dataC <- v.Data:
 				break
 			default:
 				break
 			}
 		}
 		switch v := p.V.(type) {
-		case *Packet_Push:
+		case *Packet_Data:
 			select {
-			case c.pushDataC <- v.Push:
+			case c.dataC <- v.Data:
 				break
 			default:
 				break
@@ -161,7 +161,7 @@ func (c *Client) write(done <-chan struct{}) {
 	for {
 		select {
 		case <-t.C:
-			if err := c.conn.Push(nil); err != nil {
+			if err := c.conn.WriteData(nil); err != nil {
 				logger.Errorf("Cannot ping: %v", err)
 				c.reconnBackoff = 0
 				return
@@ -273,7 +273,7 @@ func (c *Client) SetHeader(h map[string]string) {
 
 func (c *Client) Close() {
 	c.setState(Closed)
-	close(c.pushDataC)
+	close(c.dataC)
 	close(c.stateC)
 }
 
@@ -326,8 +326,8 @@ func (c *Client) SetMaxReconnBackoff(t time.Duration) {
 	c.maxReconnBackoff = t
 }
 
-func (c *Client) PushDataC() <-chan *Data {
-	return c.pushDataC
+func (c *Client) DataC() <-chan *Data {
+	return c.dataC
 }
 
 func (c *Client) GetServerTime(ctx context.Context) (time.Time, error) {

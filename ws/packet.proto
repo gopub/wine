@@ -39,7 +39,7 @@ message Header {
 
 message Packet {
     oneof v {
-        Data push = 1;
+        Data data = 1;
         Call call = 2;
         Reply reply = 3;
         Header header = 4;

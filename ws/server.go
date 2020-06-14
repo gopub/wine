@@ -232,7 +232,7 @@ func (s *Server) Push(ctx context.Context, userID int64, v interface{}) error {
 	var firstErr error
 	conns.(*sync.Map).Range(func(key, value interface{}) bool {
 		conn := key.(*serverConn)
-		if err = conn.Push(data); err != nil {
+		if err = conn.WriteData(data); err != nil {
 			logger.Errorf("Cannot push: %v", err)
 			if firstErr != nil {
 				firstErr = err
