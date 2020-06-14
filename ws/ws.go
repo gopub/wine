@@ -116,3 +116,18 @@ type PacketReadWriter interface {
 	Read() (*Packet, error)
 	Write(p *Packet) error
 }
+
+func (m *Packet) UnmarshalData(v interface{}) error {
+	switch v := m.V.(type) {
+	case *Packet_Data:
+		if v.Data != nil {
+			return v.Data.Unmarshal(v)
+		}
+	case *Packet_Reply:
+		switch res := v.Reply.Result.(type) {
+		case *Reply_Data:
+			return res.Data.Unmarshal(v)
+		}
+	}
+	return nil
+}
