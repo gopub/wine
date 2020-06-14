@@ -59,7 +59,7 @@ func TestHandshake(t *testing.T) {
 	}()
 	runtime.Gosched()
 	c := ws.NewClient("ws://" + addr)
-	c.Handshake = func(rw ws.PacketReadWriter) error {
+	c.Handshaker = func(rw ws.PacketReadWriter) error {
 		data, err := json.Marshal(types.M{"greeting": "hello from tom"})
 		require.NoError(t, err)
 		p := new(ws.Packet)

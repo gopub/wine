@@ -143,3 +143,11 @@ func (m *Packet) UnmarshalData(v interface{}) error {
 	}
 	return nil
 }
+
+type contextKey int
+
+// Context keys
+const (
+	ckNextHandler contextKey = iota + 1
+	keyAuthFlag
+)

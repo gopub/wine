@@ -4,6 +4,7 @@ import (
 	"container/list"
 	"context"
 	"fmt"
+	"net/http"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -20,6 +21,10 @@ const (
 	Connected
 	Closed
 )
+
+type Caller interface {
+	Call(ctx context.Context, name string, params interface{}, result interface{}) error
+}
 
 type Client struct {
 	dialTimeout      time.Duration
@@ -41,8 +46,9 @@ type Client struct {
 
 	callID int32
 
-	Handshake func(rw PacketReadWriter) error
-	dataC     chan *Data
+	Handshaker    func(rw PacketReadWriter) error
+	Authenticator func(ctx context.Context, c Caller) error
+	dataC         chan *Data
 
 	CallLogger func(call *Call, reply *Reply, callAt time.Time)
 }
@@ -98,8 +104,8 @@ func (c *Client) run() {
 	}
 	cancel()
 	c.conn = NewConn(conn)
-	if c.Handshake != nil {
-		if err = c.Handshake(c.conn); err != nil {
+	if c.Handshaker != nil {
+		if err = c.Handshaker(c.conn); err != nil {
 			logger.Errorf("Cannot handshake: %v", err)
 			c.setState(Disconnected)
 			return
@@ -254,6 +260,16 @@ func (c *Client) Call(ctx context.Context, name string, params interface{}, resu
 				return fmt.Errorf("cannot unmarshal result: %w", err)
 			}
 		case *Reply_Error:
+			if v.Error.Code == http.StatusUnauthorized {
+				// Check flag in case recursive calling Authenticator
+				if c.Authenticator != nil && ctx.Value(keyAuthFlag) == nil {
+					ctx = context.WithValue(ctx, keyAuthFlag, true)
+					err = c.Authenticator(ctx, c)
+					if err == nil {
+						return c.Call(ctx, name, params, result)
+					}
+				}
+			}
 			return errors.Format(int(v.Error.Code), v.Error.Message)
 		}
 		return nil

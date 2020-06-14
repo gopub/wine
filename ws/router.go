@@ -109,13 +109,6 @@ func handleDate(_ context.Context, _ interface{}) (interface{}, error) {
 	return res, nil
 }
 
-type contextKey int
-
-// Context keys
-const (
-	ckNextHandler contextKey = iota + 1
-)
-
 func Next(ctx context.Context, req interface{}) (interface{}, error) {
 	i, _ := ctx.Value(ckNextHandler).(Handler)
 	if i == nil {
