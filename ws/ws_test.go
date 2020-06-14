@@ -113,7 +113,7 @@ func TestServer_Push(t *testing.T) {
 	select {
 	case pushData := <-c.DataC():
 		var res string
-		err = ws.UnmarshalData(pushData, &res)
+		err = pushData.Unmarshal(&res)
 		require.NoError(t, err)
 		require.Equal(t, data, res, conv.MustJSONString(pushData.V))
 	default:

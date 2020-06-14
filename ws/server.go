@@ -164,23 +164,13 @@ func (s *Server) HandleRequest(conn *serverConn, req *Request) {
 	ctx, cancel := context.WithTimeout(context.Background(), s.timeout)
 	defer cancel()
 	ctx = conn.BuildContext(ctx)
-	var reply *Reply
 	var resultOrErr interface{}
 	ctx = wine.WithRemoteAddr(ctx, conn.conn.RemoteAddr().String())
 	result, err := s.Handle(ctx, req)
 	if err != nil {
 		resultOrErr = err
-		if s := errors.GetCode(err); s > 0 {
-			reply = NewErrorReply(req.ID, errors.Format(s, err.Error()))
-		} else {
-			reply = NewErrorReply(req.ID, errors.Format(http.StatusInternalServerError, err.Error()))
-		}
 	} else {
 		resultOrErr = result
-		reply, err = NewDataReply(req.ID, result)
-		if err != nil {
-			reply = NewErrorReply(req.ID, errors.Format(http.StatusInternalServerError, err.Error()))
-		}
 	}
 	if getUid, ok := result.(GetAuthUserID); ok {
 		uid := getUid.GetAuthUserID()
@@ -190,7 +180,7 @@ func (s *Server) HandleRequest(conn *serverConn, req *Request) {
 			s.saveUserConn(conn)
 		}
 	}
-	if err = conn.Reply(reply); err != nil {
+	if err = conn.Reply(req.ID, resultOrErr); err != nil {
 		logger.Errorf("Cannot write reply: %v", err)
 		conn.Close()
 	}
@@ -206,7 +196,7 @@ func (s *Server) Handle(ctx context.Context, req *Request) (interface{}, error) 
 	var params interface{} = req.Data
 	if m := r.Model(); m != nil {
 		pv := reflect.New(reflect.TypeOf(m))
-		if err := UnmarshalData(req.Data, pv.Interface()); err != nil {
+		if err := req.Data.Unmarshal(pv.Interface()); err != nil {
 			return nil, fmt.Errorf("cannot unmarshal data: %w", err)
 		}
 		params = pv.Elem().Interface()

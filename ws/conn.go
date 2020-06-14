@@ -10,48 +10,6 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-func NewCall(id int32, name string, params interface{}) (*Call, error) {
-	data, err := MarshalData(params)
-	if err != nil {
-		return nil, err
-	}
-	return &Call{
-		Id:   id,
-		Name: name,
-		Data: data,
-	}, nil
-}
-
-func NewDataReply(id int32, result interface{}) (*Reply, error) {
-	data, err := MarshalData(result)
-	if err != nil {
-		return nil, err
-	}
-	return &Reply{
-		Id: id,
-		Result: &Reply_Data{
-			Data: data,
-		},
-	}, nil
-}
-
-func NewErrorReply(id int32, err error) *Reply {
-	return &Reply{
-		Id: id,
-		Result: &Reply_Error{
-			Error: &Error{
-				Code:    int32(errors.GetCode(err)),
-				Message: err.Error(),
-			},
-		},
-	}
-}
-
-type PacketReadWriter interface {
-	Read() (*Packet, error)
-	Write(p *Packet) error
-}
-
 type Conn struct {
 	mu           sync.RWMutex
 	conn         *websocket.Conn
@@ -101,7 +59,11 @@ func (c *Conn) Write(p *Packet) error {
 	return errors.Wrapf(err, "cannot write binary message")
 }
 
-func (c *Conn) Call(ca *Call) error {
+func (c *Conn) Call(id int32, name string, params interface{}) error {
+	ca, err := NewCall(id, name, params)
+	if err != nil {
+		return err
+	}
 	return c.Write(&Packet{V: &Packet_Call{ca}})
 }
 
@@ -113,8 +75,8 @@ func (c *Conn) WriteData(v interface{}) error {
 	return c.Write(&Packet{V: &Packet_Data{data}})
 }
 
-func (c *Conn) Reply(r *Reply) error {
-	return c.Write(&Packet{V: &Packet_Reply{r}})
+func (c *Conn) Reply(id int32, resultOrErr interface{}) error {
+	return c.Write(&Packet{V: &Packet_Reply{NewReply(id, resultOrErr)}})
 }
 
 func (c *Conn) Close() {

@@ -181,11 +181,11 @@ func (c *Client) write(done <-chan struct{}) {
 				next := it.Next()
 				c.calls.Remove(it)
 				it = next
-				if err := c.conn.Call(ca); err != nil {
+				if err := c.conn.Call(ca.Id, ca.Name, ca.Data); err != nil {
 					logger.Errorf("Cannot call %s: %v", ca.Name, err)
 					if rc, ok := c.replyM[ca.Id]; ok {
 						select {
-						case rc <- NewErrorReply(ca.Id, err):
+						case rc <- NewReply(ca.Id, err):
 							break
 						default:
 							break
@@ -238,7 +238,7 @@ func (c *Client) Call(ctx context.Context, name string, params interface{}, resu
 	select {
 	case <-ctx.Done():
 		if c.CallLogger != nil {
-			c.CallLogger(ca, NewErrorReply(ca.Id, ctx.Err()), startAt)
+			c.CallLogger(ca, NewReply(ca.Id, ctx.Err()), startAt)
 		}
 		return ctx.Err()
 	case reply := <-replyC:
@@ -250,7 +250,7 @@ func (c *Client) Call(ctx context.Context, name string, params interface{}, resu
 			if result == nil {
 				break
 			}
-			if err := UnmarshalData(v.Data, result); err != nil {
+			if err := v.Data.Unmarshal(result); err != nil {
 				return fmt.Errorf("cannot unmarshal result: %w", err)
 			}
 		case *Reply_Error:
