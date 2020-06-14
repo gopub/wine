@@ -10,21 +10,29 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-func NewCall(id int32, name string, data []byte) *Call {
+func NewCall(id int32, name string, params interface{}) (*Call, error) {
+	data, err := MarshalData(params)
+	if err != nil {
+		return nil, err
+	}
 	return &Call{
 		Id:   id,
 		Name: name,
 		Data: data,
-	}
+	}, nil
 }
 
-func NewDataReply(id int32, data []byte) *Reply {
+func NewDataReply(id int32, result interface{}) (*Reply, error) {
+	data, err := MarshalData(result)
+	if err != nil {
+		return nil, err
+	}
 	return &Reply{
 		Id: id,
 		Result: &Reply_Data{
 			Data: data,
 		},
-	}
+	}, nil
 }
 
 func NewErrorReply(id int32, err error) *Reply {
@@ -97,7 +105,11 @@ func (c *Conn) Call(ca *Call) error {
 	return c.Write(&Packet{V: &Packet_Call{ca}})
 }
 
-func (c *Conn) Push(data []byte) error {
+func (c *Conn) Push(result interface{}) error {
+	data, err := MarshalData(result)
+	if err != nil {
+		return fmt.Errorf("cannot marshal result: %w", err)
+	}
 	return c.Write(&Packet{V: &Packet_Push{data}})
 }
 

@@ -64,7 +64,9 @@ func TestHandshake(t *testing.T) {
 		require.NoError(t, err)
 		p := new(ws.Packet)
 		p.V = &ws.Packet_Push{
-			Push: data,
+			Push: &ws.Data{
+				V: &ws.Data_Json{Json: data},
+			},
 		}
 		err = rw.Write(p)
 		assert.NoError(t, err)
@@ -111,9 +113,9 @@ func TestServer_Push(t *testing.T) {
 	select {
 	case pushData := <-c.PushDataC():
 		var res string
-		err = json.Unmarshal(pushData, &res)
+		err = ws.UnmarshalData(pushData, &res)
 		require.NoError(t, err)
-		require.Equal(t, data, res)
+		require.Equal(t, data, res, conv.MustJSONString(pushData.V))
 	default:
 		assert.Fail(t, "cannot recv push data")
 	}

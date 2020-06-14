@@ -3,14 +3,12 @@ package ws
 import (
 	"container/list"
 	"context"
-	"encoding/json"
 	"fmt"
 	"sync"
 	"sync/atomic"
 	"time"
 
 	"github.com/gopub/errors"
-
 	"github.com/gorilla/websocket"
 )
 
@@ -44,7 +42,7 @@ type Client struct {
 	callID int32
 
 	Handshake func(rw PacketReadWriter) error
-	pushDataC chan []byte
+	pushDataC chan *Data
 
 	CallLogger func(call *Call, reply *Reply, callAt time.Time)
 }
@@ -60,7 +58,7 @@ func NewClient(addr string) *Client {
 		replyM:           make(map[int32]chan<- *Reply),
 		state:            Disconnected,
 		stateC:           make(chan ClientState, 1),
-		pushDataC:        make(chan []byte, 1),
+		pushDataC:        make(chan *Data, 1),
 		callID:           1,
 		header:           map[string]string{},
 	}
@@ -220,11 +218,10 @@ func (c *Client) Call(ctx context.Context, name string, params interface{}, resu
 	if c.state == Closed {
 		return errors.New("client is closed")
 	}
-	data, err := json.Marshal(params)
+	ca, err := NewCall(c.nextCallID(), name, params)
 	if err != nil {
-		return fmt.Errorf("cannot marshal params: %w", err)
+		return fmt.Errorf("cannot create call object: %w", err)
 	}
-	ca := NewCall(c.nextCallID(), name, data)
 	replyC := make(chan *Reply, 1)
 	c.mu.Lock()
 	c.calls.PushBack(ca)
@@ -253,10 +250,7 @@ func (c *Client) Call(ctx context.Context, name string, params interface{}, resu
 			if result == nil {
 				break
 			}
-			if len(v.Data) == 0 {
-				return errors.New("no data")
-			}
-			if err := json.Unmarshal(v.Data, result); err != nil {
+			if err := UnmarshalData(v.Data, result); err != nil {
 				return fmt.Errorf("cannot unmarshal result: %w", err)
 			}
 		case *Reply_Error:
@@ -332,7 +326,7 @@ func (c *Client) SetMaxReconnBackoff(t time.Duration) {
 	c.maxReconnBackoff = t
 }
 
-func (c *Client) PushDataC() <-chan []byte {
+func (c *Client) PushDataC() <-chan *Data {
 	return c.pushDataC
 }
 

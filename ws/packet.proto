@@ -11,16 +11,23 @@ message Error {
     string message = 2;
 }
 
+message Data {
+    oneof v {
+        bytes json = 1;
+        bytes protobuf = 2;
+    }
+}
+
 message Call {
     int32 id = 1;
     string name = 2;
-    bytes data = 3;
+    Data data = 3;
 }
 
 message Reply {
     int32 id = 1;
     oneof result {
-        bytes data = 2;
+        Data data = 2;
         Error error = 3;
     }
 }
@@ -29,9 +36,10 @@ message Header {
     map<string, string> entries = 1;
 }
 
+
 message Packet {
     oneof v {
-        bytes push = 1;
+        Data push = 1;
         Call call = 2;
         Reply reply = 3;
         Header header = 4;

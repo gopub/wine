@@ -2,7 +2,6 @@ package ws
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"net"
 	"net/http"
@@ -11,7 +10,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/golang/protobuf/proto"
 	"github.com/gopub/environ"
 	"github.com/gopub/errors"
 	"github.com/gopub/types"
@@ -23,7 +21,7 @@ import (
 type Request struct {
 	ID   int32
 	Name string
-	Data []byte
+	Data *Data
 
 	// server side
 	remoteAddr net.Addr
@@ -179,11 +177,10 @@ func (s *Server) HandleRequest(conn *serverConn, req *Request) {
 		}
 	} else {
 		resultOrErr = result
-		data, err := marshal(result)
+		reply, err = NewDataReply(req.ID, result)
 		if err != nil {
 			reply = NewErrorReply(req.ID, errors.Format(http.StatusInternalServerError, err.Error()))
 		}
-		reply = NewDataReply(req.ID, data)
 	}
 	if getUid, ok := result.(GetAuthUserID); ok {
 		uid := getUid.GetAuthUserID()
@@ -208,19 +205,11 @@ func (s *Server) Handle(ctx context.Context, req *Request) (interface{}, error) 
 
 	var params interface{} = req.Data
 	if m := r.Model(); m != nil {
-		if _, ok := m.(proto.Message); ok {
-			pv := reflect.New(reflect.TypeOf(m).Elem())
-			if err := proto.Unmarshal(req.Data, pv.Interface().(proto.Message)); err != nil {
-				return nil, fmt.Errorf("cannot unmarshal protobuf: %w", err)
-			}
-			params = pv.Interface()
-		} else {
-			pv := reflect.New(reflect.TypeOf(m))
-			if err := json.Unmarshal(req.Data, pv.Interface()); err != nil {
-				return nil, fmt.Errorf("cannot unmarshal json: %w", err)
-			}
-			params = pv.Elem().Interface()
+		pv := reflect.New(reflect.TypeOf(m))
+		if err := UnmarshalData(req.Data, pv.Interface()); err != nil {
+			return nil, fmt.Errorf("cannot unmarshal data: %w", err)
 		}
+		params = pv.Elem().Interface()
 	}
 
 	h := (*handlerElem)(r.FirstHandler())
@@ -236,7 +225,7 @@ func (s *Server) Push(ctx context.Context, userID int64, v interface{}) error {
 	if !ok {
 		return nil
 	}
-	data, err := marshal(v)
+	data, err := MarshalData(v)
 	if err != nil {
 		return fmt.Errorf("cannot marshal: %w", err)
 	}
@@ -252,16 +241,6 @@ func (s *Server) Push(ctx context.Context, userID int64, v interface{}) error {
 		return true
 	})
 	return firstErr
-}
-
-func marshal(v interface{}) ([]byte, error) {
-	if m, ok := v.(proto.Message); ok {
-		data, err := proto.Marshal(m)
-		return data, errors.Wrapf(err, "cannot marshal protobuf")
-	} else {
-		data, err := json.Marshal(v)
-		return data, errors.Wrapf(err, "cannot marshal json")
-	}
 }
 
 func (s *Server) logCall(req *Request, resultOrErr interface{}, startAt time.Time) {
