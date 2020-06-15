@@ -267,6 +267,7 @@ func (c *Client) Call(ctx context.Context, name string, params interface{}, resu
 					ctx = context.WithValue(ctx, keyAuthFlag, true)
 					err = c.Authenticator(ctx, c)
 					if err == nil {
+						logger.Debug("Authenticated")
 						return c.Call(ctx, name, params, result)
 					}
 				}
@@ -365,7 +366,10 @@ func (c *Client) auth() {
 	ctx, cancel := context.WithTimeout(context.Background(), c.dialTimeout)
 	defer cancel()
 	ctx = context.WithValue(ctx, keyAuthFlag, true)
-	c.Authenticator(ctx, c)
+	err := c.Authenticator(ctx, c)
+	if err == nil {
+		logger.Debug("Authenticated")
+	}
 }
 
 func (c *Client) logCall(call *Call, reply *Reply, callAt time.Time) {
