@@ -1,6 +1,7 @@
 package wine
 
 import (
+	"github.com/gopub/conv"
 	"path"
 	"strings"
 
@@ -35,4 +36,10 @@ func NewUUID() string {
 
 type LogStringer interface {
 	LogString() string
+}
+
+type Validator = conv.Validator
+
+func Validate(i interface{}) error {
+	return conv.Validate(i)
 }
