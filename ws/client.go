@@ -75,7 +75,7 @@ func NewClient(addr string) *Client {
 }
 
 func (c *Client) nextCallID() int32 {
-	atomic.AddInt32(&c.callID, 2)
+	atomic.AddInt32(&c.callID, 1)
 	return c.callID
 }
 

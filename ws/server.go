@@ -265,7 +265,16 @@ func logCall(req *Request, resultOrErr interface{}, cost time.Duration) {
 		if s, ok := resultOrErr.(wine.LogStringer); ok {
 			logger.Infof("%s | %s", info, s.LogString())
 		} else {
-			logger.Info(info)
+			switch v := reflect.ValueOf(resultOrErr); v.Kind() {
+			case reflect.Slice, reflect.Array, reflect.Map:
+				if req.Model != nil {
+					logger.Infof("%s | %s | size=%d", info, conv.MustJSONString(req.Model), v.Len())
+				} else {
+					logger.Infof("%s | size=%d", info, v.Len())
+				}
+			default:
+				logger.Info(info)
+			}
 		}
 	}
 }
