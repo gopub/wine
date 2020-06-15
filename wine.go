@@ -32,3 +32,7 @@ func JoinURL(segment ...string) string {
 func NewUUID() string {
 	return strings.ReplaceAll(uuid.New().String(), "-", "")
 }
+
+type LogStringer interface {
+	LogString() string
+}

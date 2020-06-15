@@ -262,6 +262,10 @@ func logCall(req *Request, resultOrErr interface{}, cost time.Duration) {
 	if err, ok := resultOrErr.(error); ok {
 		logger.Errorf("%s | %s | %v", info, conv.MustJSONString(req.Model), err)
 	} else {
-		logger.Infof(info)
+		if s, ok := resultOrErr.(wine.LogStringer); ok {
+			logger.Infof("%s | %s", s.LogString())
+		} else {
+			logger.Info(info)
+		}
 	}
 }
