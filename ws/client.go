@@ -9,8 +9,6 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/gopub/log"
-
 	"github.com/gopub/errors"
 	"github.com/gorilla/websocket"
 )
@@ -157,8 +155,6 @@ func (c *Client) read(done chan<- struct{}) {
 				delete(c.replyM, v.Reply.Id)
 			}
 			c.mu.RUnlock()
-		case *Packet_Hello:
-			log.Debug("Received hello")
 		}
 	}
 }
@@ -177,7 +173,6 @@ func (c *Client) write(done <-chan struct{}) {
 				c.reconnBackoff = 0
 				return
 			}
-			logger.Debugf("Sent hello")
 		case <-m.C:
 			c.reconnBackoff = 0
 			return

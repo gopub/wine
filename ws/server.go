@@ -158,10 +158,6 @@ func (s *Server) saveUserConn(conn *serverConn) {
 }
 
 func (s *Server) HandleRequest(conn *serverConn, req *Request) {
-	if req.ID == 0 {
-		logger.Debugf("Received ping")
-		return
-	}
 	startAt := time.Now()
 	ctx, cancel := context.WithTimeout(context.Background(), s.timeout)
 	defer cancel()
