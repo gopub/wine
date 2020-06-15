@@ -36,6 +36,9 @@ message Header {
     map<string, string> entries = 1;
 }
 
+message Hello {
+
+}
 
 message Packet {
     oneof v {
@@ -43,5 +46,6 @@ message Packet {
         Call call = 2;
         Reply reply = 3;
         Header header = 4;
+        Hello hello = 5;
     }
 }

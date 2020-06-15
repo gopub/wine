@@ -26,9 +26,6 @@ const (
 )
 
 func MarshalData(v interface{}) (*Data, error) {
-	if v == nil {
-		return nil, nil
-	}
 	if d, ok := v.(*Data); ok {
 		return d, nil
 	}

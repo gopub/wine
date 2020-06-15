@@ -32,7 +32,7 @@ func (c *Conn) Read() (*Packet, error) {
 	}
 	t, data, err := c.conn.ReadMessage()
 	if err != nil {
-		return nil, fmt.Errorf("cannot read message")
+		return nil, fmt.Errorf("cannot read message: %w", err)
 	}
 	if t != websocket.BinaryMessage {
 		return nil, fmt.Errorf("expect message type %d got %d", websocket.BinaryMessage, t)
@@ -77,6 +77,10 @@ func (c *Conn) WriteData(v interface{}) error {
 
 func (c *Conn) Reply(id int32, resultOrErr interface{}) error {
 	return c.Write(&Packet{V: &Packet_Reply{NewReply(id, resultOrErr)}})
+}
+
+func (c *Conn) Hello() error {
+	return c.Write(&Packet{V: &Packet_Hello{Hello: new(Hello)}})
 }
 
 func (c *Conn) Close() {
