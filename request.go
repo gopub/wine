@@ -112,7 +112,7 @@ func (r *Request) bind(m interface{}) error {
 		}
 		r.Model = pv.Elem().Interface()
 	}
-	return conv.Validate(r.Model)
+	return Validate(r.Model)
 }
 
 func (r *Request) IsWebsocket() bool {

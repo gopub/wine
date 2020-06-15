@@ -42,7 +42,7 @@ func (r *Request) bind(m interface{}) error {
 		return err
 	}
 	r.Model = pv.Elem().Interface()
-	return conv.Validate(r.Model)
+	return wine.Validate(r.Model)
 }
 
 type serverConn struct {
