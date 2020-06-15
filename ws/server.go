@@ -10,6 +10,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/gopub/conv"
 	"github.com/gopub/environ"
 	"github.com/gopub/errors"
 	"github.com/gopub/types"
@@ -25,10 +26,23 @@ type Request struct {
 
 	// server side
 	remoteAddr net.Addr
+	Model      interface{}
 }
 
 func (r *Request) RemoteAddr() net.Addr {
 	return r.remoteAddr
+}
+
+func (r *Request) bind(m interface{}) error {
+	if m == nil {
+		return nil
+	}
+	pv := reflect.New(reflect.TypeOf(m))
+	if err := r.Data.Unmarshal(pv.Interface()); err != nil {
+		return err
+	}
+	r.Model = pv.Elem().Interface()
+	return nil
 }
 
 type serverConn struct {
@@ -191,20 +205,15 @@ func (s *Server) Handle(ctx context.Context, req *Request) (interface{}, error) 
 		return nil, errors.NotFound("")
 	}
 
-	var params interface{} = req.Data
-	if m := r.Model(); m != nil {
-		pv := reflect.New(reflect.TypeOf(m))
-		if err := req.Data.Unmarshal(pv.Interface()); err != nil {
-			return nil, fmt.Errorf("cannot unmarshal data: %w", err)
-		}
-		params = pv.Elem().Interface()
+	if err := req.bind(r.Model()); err != nil {
+		return nil, fmt.Errorf("cannot bind model %T: %w", r.Model(), err)
 	}
 
 	h := (*handlerElem)(r.FirstHandler())
 	if s.PreHandler != nil {
-		return s.PreHandler.HandleRequest(withNextHandler(ctx, h), params)
+		return s.PreHandler.HandleRequest(withNextHandler(ctx, h), req.Model)
 	} else {
-		return h.HandleRequest(ctx, params)
+		return h.HandleRequest(ctx, req.Model)
 	}
 }
 
@@ -239,7 +248,7 @@ func (s *Server) logCall(req *Request, resultOrErr interface{}, startAt time.Tim
 }
 
 func logCall(req *Request, resultOrErr interface{}, cost time.Duration) {
-	info := fmt.Sprintf("%s %d %s | %v",
+	info := fmt.Sprintf("%s #%d %s %v",
 		req.remoteAddr,
 		req.ID,
 		req.Name,
@@ -251,7 +260,7 @@ func logCall(req *Request, resultOrErr interface{}, cost time.Duration) {
 		}
 	}
 	if err, ok := resultOrErr.(error); ok {
-		logger.Errorf("%s | %s | %v", info, req.Data, err)
+		logger.Errorf("%s | %s | %v", info, conv.MustJSONString(req.Model), err)
 	} else {
 		logger.Infof(info)
 	}
