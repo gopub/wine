@@ -103,7 +103,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			conn.Close()
 			return
 		}
-		logger.Debugf("Finish handshaking")
+		logger.Debugf("Handshake completed")
 	}
 	for {
 		p, err := conn.Read()
