@@ -41,7 +41,7 @@ func (r *Response) Respond(ctx context.Context, w http.ResponseWriter) {
 	}
 	w.WriteHeader(r.status)
 	if _, err = w.Write(body); err != nil {
-		logger.Errorf("Write body: %v", err)
+		logger.Errorf("Cannot write body: %v", err)
 	}
 }
 
