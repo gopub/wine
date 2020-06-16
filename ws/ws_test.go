@@ -120,3 +120,26 @@ func TestServer_Push(t *testing.T) {
 		assert.Fail(t, "cannot recv push data")
 	}
 }
+
+func TestRouter_BindModel(t *testing.T) {
+	type Foo struct {
+		Value int
+	}
+	addr := fmt.Sprintf("localhost:%d", 1024+rand.Int()%10000)
+	s := ws.NewServer()
+	s.Bind("echo", func(ctx context.Context, params interface{}) (interface{}, error) {
+		return params.(*Foo), nil
+	}).SetModel(&Foo{})
+	go func() {
+		err := http.ListenAndServe(addr, s)
+		require.NoError(t, err)
+	}()
+	runtime.Gosched()
+	c := ws.NewClient("ws://" + addr)
+	ctx := context.Background()
+	var res Foo
+	err := c.Call(ctx, "echo", Foo{Value: 10}, &res)
+	require.NoError(t, err)
+	require.Equal(t, 10, res.Value)
+	time.Sleep(time.Second)
+}
