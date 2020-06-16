@@ -379,6 +379,6 @@ func (c *Client) logCall(call *Call, reply *Reply, callAt time.Time) {
 	case *Reply_Data:
 		logger.Infof("#%d %s %v", call.Id, call.Name, cost)
 	case *Reply_Error:
-		logger.Errorf("#%d %s %v | %s | %d:%s", call.Id, call.Name, conv.MustJSONString(call.Data), v.Error.Code, v.Error.Message, cost)
+		logger.Errorf("#%d %s %v | %s | %d:%s", call.Id, call.Name, cost, conv.MustJSONString(call.Data), v.Error.Code, v.Error.Message)
 	}
 }
