@@ -178,13 +178,14 @@ func (s *Server) HandleRequest(conn *serverConn, req *Request) {
 	ctx = conn.BuildContext(ctx)
 	var resultOrErr interface{}
 	ctx = wine.WithRemoteAddr(ctx, conn.conn.RemoteAddr().String())
+	ctx = withPusher(ctx, s)
 	result, err := s.Handle(ctx, req)
 	if err != nil {
 		resultOrErr = err
 	} else {
 		resultOrErr = result
 	}
-	if getUid, ok := result.(GetAuthUserID); ok {
+	if getUid, ok := resultOrErr.(GetAuthUserID); ok {
 		uid := getUid.GetAuthUserID()
 		if conn.userID != uid {
 			conn.userID = uid
@@ -217,7 +218,7 @@ func (s *Server) Handle(ctx context.Context, req *Request) (interface{}, error) 
 	}
 }
 
-func (s *Server) Push(ctx context.Context, userID int64, v interface{}) error {
+func (s *Server) Push(userID int64, v interface{}) error {
 	conns, ok := s.userConns.Load(userID)
 	if !ok {
 		return nil

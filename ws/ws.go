@@ -1,6 +1,7 @@
 package ws
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -146,5 +147,19 @@ type contextKey int
 // Context keys
 const (
 	ckNextHandler contextKey = iota + 1
-	keyAuthFlag
+	ckAuthFlag
+	ckPusher
 )
+
+type Pusher interface {
+	Push(userID int64, v interface{}) error
+}
+
+func GetPusher(ctx context.Context) Pusher {
+	p, _ := ctx.Value(ckPusher).(Pusher)
+	return p
+}
+
+func withPusher(ctx context.Context, p Pusher) context.Context {
+	return context.WithValue(ctx, ckPusher, p)
+}

@@ -263,9 +263,9 @@ func (c *Client) Call(ctx context.Context, name string, params interface{}, resu
 		case *Reply_Error:
 			if v.Error.Code == http.StatusUnauthorized {
 				// Check flag in case recursive calling Authenticator
-				if c.Authenticator != nil && ctx.Value(keyAuthFlag) == nil {
+				if c.Authenticator != nil && ctx.Value(ckAuthFlag) == nil {
 					// Reuse ctx, so total timeout equals to one call timeout
-					ctx = context.WithValue(ctx, keyAuthFlag, true)
+					ctx = context.WithValue(ctx, ckAuthFlag, true)
 					err = c.Authenticator(ctx, c)
 					if err == nil {
 						logger.Debug("Authenticated")
@@ -366,7 +366,7 @@ func (c *Client) auth() {
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), c.dialTimeout)
 	defer cancel()
-	ctx = context.WithValue(ctx, keyAuthFlag, true)
+	ctx = context.WithValue(ctx, ckAuthFlag, true)
 	err := c.Authenticator(ctx, c)
 	if err == nil {
 		logger.Debug("Authenticated")
