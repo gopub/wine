@@ -4,12 +4,12 @@ import (
 	"container/list"
 	"context"
 	"fmt"
-	"github.com/gopub/conv"
 	"net/http"
 	"sync"
 	"sync/atomic"
 	"time"
 
+	"github.com/gopub/conv"
 	"github.com/gopub/errors"
 	"github.com/gorilla/websocket"
 )

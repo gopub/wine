@@ -152,7 +152,7 @@ const (
 )
 
 type Pusher interface {
-	Push(userID int64, v interface{}) error
+	Push(ctx context.Context, userID int64, v interface{}) error
 }
 
 func GetPusher(ctx context.Context) Pusher {
