@@ -50,6 +50,7 @@ type Client struct {
 	Handshaker    func(rw PacketReadWriter) error
 	Authenticator func(ctx context.Context, c Caller) error
 	dataC         chan *Data
+	pushC         chan *Push
 
 	CallLogger func(call *Call, reply *Reply, callAt time.Time)
 }
@@ -66,6 +67,7 @@ func NewClient(addr string) *Client {
 		state:            Disconnected,
 		stateC:           make(chan ClientState, 1),
 		dataC:            make(chan *Data, 1),
+		pushC:            make(chan *Push, 1),
 		callID:           1,
 		header:           map[string]string{},
 	}
@@ -145,6 +147,13 @@ func (c *Client) read(done chan<- struct{}) {
 		case *Packet_Data:
 			select {
 			case c.dataC <- v.Data:
+				break
+			default:
+				break
+			}
+		case *Packet_Push:
+			select {
+			case c.pushC <- v.Push:
 				break
 			default:
 				break
@@ -347,6 +356,10 @@ func (c *Client) SetMaxReconnBackoff(t time.Duration) {
 
 func (c *Client) DataC() <-chan *Data {
 	return c.dataC
+}
+
+func (c *Client) PushC() <-chan *Push {
+	return c.pushC
 }
 
 func (c *Client) GetServerTime(ctx context.Context) (time.Time, error) {

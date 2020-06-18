@@ -67,6 +67,14 @@ func (c *Conn) Call(id int32, name string, params interface{}) error {
 	return c.Write(&Packet{V: &Packet_Call{ca}})
 }
 
+func (c *Conn) Push(typ int32, data interface{}) error {
+	p, err := NewPushPacket(typ, data)
+	if err != nil {
+		return err
+	}
+	return c.Write(p)
+}
+
 func (c *Conn) WriteData(v interface{}) error {
 	p, err := NewDataPacket(v)
 	if err != nil {

@@ -218,19 +218,19 @@ func (s *Server) Handle(ctx context.Context, req *Request) (interface{}, error) 
 	}
 }
 
-func (s *Server) Push(ctx context.Context, userID int64, v interface{}) error {
+func (s *Server) Push(ctx context.Context, userID int64, typ int32, data interface{}) error {
 	conns, ok := s.userConns.Load(userID)
 	if !ok {
 		return nil
 	}
-	data, err := MarshalData(v)
+	d, err := MarshalData(data)
 	if err != nil {
 		return fmt.Errorf("cannot marshal: %w", err)
 	}
 	var firstErr error
 	conns.(*sync.Map).Range(func(key, value interface{}) bool {
 		conn := key.(*serverConn)
-		if err = conn.WriteData(data); err != nil {
+		if err = conn.Push(typ, d); err != nil {
 			logger.Errorf("Write data: user=%d, %v", userID, err)
 			if firstErr != nil {
 				firstErr = err

@@ -18,6 +18,11 @@ message Data {
     }
 }
 
+message Push {
+    int32 type = 1;
+    Data data = 2;
+}
+
 message Call {
     int32 id = 1;
     string name = 2;
@@ -42,10 +47,11 @@ message Hello {
 
 message Packet {
     oneof v {
-        Data data = 1;
-        Call call = 2;
-        Reply reply = 3;
-        Header header = 4;
-        Hello hello = 5;
+        Call call = 1;
+        Data data = 2;
+        Header header = 3;
+        Hello hello = 4;
+        Push push = 5;
+        Reply reply = 6;
     }
 }

@@ -122,6 +122,21 @@ func NewDataPacket(v interface{}) (*Packet, error) {
 	return p, nil
 }
 
+func NewPushPacket(typ int32, data interface{}) (*Packet, error) {
+	d, err := MarshalData(data)
+	if err != nil {
+		return nil, err
+	}
+	p := new(Packet)
+	p.V = &Packet_Push{
+		Push: &Push{
+			Type: typ,
+			Data: d,
+		},
+	}
+	return p, nil
+}
+
 type PacketReadWriter interface {
 	Read() (*Packet, error)
 	Write(p *Packet) error
@@ -152,7 +167,7 @@ const (
 )
 
 type Pusher interface {
-	Push(ctx context.Context, userID int64, v interface{}) error
+	Push(ctx context.Context, userID int64, typ int32, data interface{}) error
 }
 
 func GetPusher(ctx context.Context) Pusher {
