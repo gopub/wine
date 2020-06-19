@@ -3,6 +3,8 @@ module github.com/gopub/wine
 go 1.13
 
 require (
+	github.com/aliyun/aliyun-oss-go-sdk v2.1.2+incompatible
+	github.com/aws/aws-sdk-go v1.32.5
 	github.com/disintegration/imaging v1.6.2
 	github.com/fsnotify/fsnotify v1.4.9 // indirect
 	github.com/golang/protobuf v1.4.2
