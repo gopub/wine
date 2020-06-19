@@ -30,6 +30,8 @@ type ImageWriter struct {
 	thumbnails []*Thumbnail
 }
 
+var _ wine.Handler = (*ImageWriter)(nil)
+
 func NewImageWriter(w Writer) *ImageWriter {
 	return &ImageWriter{
 		w: w,
@@ -114,36 +116,22 @@ func (w *ImageWriter) thumbnail(ctx context.Context, img image.Image, name strin
 	return w.w.Write(ctx, obj)
 }
 
-type SaveImageHandler struct {
-	w *ImageWriter
-}
-
-var _ wine.Handler = (*SaveImageHandler)(nil)
-
-func NewImageHandler(w Writer) *SaveImageHandler {
-	return &SaveImageHandler{w: NewImageWriter(w)}
-}
-
-func (h *SaveImageHandler) AddThumbnails(thumbnails ...*Thumbnail) {
-	h.w.AddThumbnails(thumbnails...)
-}
-
-func (h *SaveImageHandler) HandleRequest(ctx context.Context, req *wine.Request) wine.Responder {
+func (w *ImageWriter) HandleRequest(ctx context.Context, req *wine.Request) wine.Responder {
 	if req.Request().MultipartForm != nil {
-		return h.saveMultipart(ctx, req.Request().MultipartForm)
+		return w.saveMultipart(ctx, req.Request().MultipartForm)
 	}
-	return h.saveBody(ctx, req.Body())
+	return w.saveBody(ctx, req.Body())
 }
 
-func (h *SaveImageHandler) saveBody(ctx context.Context, body []byte) wine.Responder {
-	url, err := h.w.Write(ctx, wine.NewUUID(), body)
+func (w *ImageWriter) saveBody(ctx context.Context, body []byte) wine.Responder {
+	url, err := w.Write(ctx, wine.NewUUID(), body)
 	if err != nil {
 		return wine.Error(err)
 	}
 	return wine.JSON(http.StatusOK, []string{url})
 }
 
-func (h *SaveImageHandler) saveMultipart(ctx context.Context, form *multipart.Form) wine.Responder {
+func (w *ImageWriter) saveMultipart(ctx context.Context, form *multipart.Form) wine.Responder {
 	urls := make([]string, 0, 1)
 	for _, fileHeaders := range form.File {
 		for _, fh := range fileHeaders {
@@ -157,7 +145,7 @@ func (h *SaveImageHandler) saveMultipart(ctx context.Context, form *multipart.Fo
 				return wine.Error(err)
 			}
 
-			url, err := h.w.Write(ctx, wine.NewUUID(), b)
+			url, err := w.Write(ctx, wine.NewUUID(), b)
 			if err != nil {
 				return wine.Error(err)
 			}

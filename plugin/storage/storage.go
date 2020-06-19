@@ -21,9 +21,6 @@ func (o *Object) Validate() error {
 
 	if o.MIMEType == "" {
 		o.MIMEType = http.DetectContentType(o.Content)
-		if o.MIMEType == "" {
-			return errors.BadRequest("missing mime_type")
-		}
 	}
 
 	if o.Name == "" {
@@ -44,4 +41,8 @@ func NewObject(content []byte) (*Object, error) {
 
 type Writer interface {
 	Write(ctx context.Context, o *Object) (url string, err error)
+}
+
+type Reader interface {
+	Read(ctx context.Context, name string) ([]byte, error)
 }
