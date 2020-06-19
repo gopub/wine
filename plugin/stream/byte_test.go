@@ -6,26 +6,30 @@ import (
 	"math/rand"
 	"net/http"
 	"testing"
+	"time"
 
 	"github.com/gopub/wine"
-	"github.com/gopub/wine/stream"
+	"github.com/gopub/wine/plugin/stream"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-func TestTextStream(t *testing.T) {
-	packets := []string{
-		"测试",
-		"Test",
-		"",
+func TestByteStream(t *testing.T) {
+	packets := [][]byte{
+		{0x0A, 0x01, 0x02},
+		{},
+		[]byte("hello"),
 	}
-	h := stream.NewTextHandler(func(ctx context.Context, w stream.TextWriteCloser) {
-		for _, s := range packets {
-			err := w.Write(s)
+	h := stream.NewByteHandler(func(ctx context.Context, w stream.ByteWriteCloser) {
+		for _, p := range packets {
+			err := w.Write(p)
 			require.NoError(t, err)
 		}
-		err := w.Close()
-		require.NoError(t, err)
+		go func() {
+			time.Sleep(2 * time.Second)
+			err := w.Close()
+			require.NoError(t, err)
+		}()
 	})
 	host := "localhost:" + fmt.Sprint(rand.Int()%1000+8000)
 	s := wine.NewServer()
@@ -34,17 +38,17 @@ func TestTextStream(t *testing.T) {
 
 	req, err := http.NewRequest(http.MethodGet, "http://"+host, nil)
 	require.NoError(t, err)
-	r, err := stream.NewTextReader(http.DefaultClient, req)
+	r, err := stream.NewByteReader(http.DefaultClient, req)
 	require.NoError(t, err)
 
-	var res []string
+	var res [][]byte
 	for {
-		s, err := r.Read()
+		p, err := r.Read()
 		if err != nil {
 			r.Close()
 			break
 		}
-		res = append(res, s)
+		res = append(res, p)
 	}
 	err = s.Shutdown()
 	assert.NoError(t, err)

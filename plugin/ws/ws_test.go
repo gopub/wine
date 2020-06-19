@@ -13,7 +13,7 @@ import (
 	"github.com/gopub/conv"
 
 	"github.com/gopub/types"
-	"github.com/gopub/wine/ws"
+	"github.com/gopub/wine/plugin/ws"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -107,15 +107,16 @@ func TestServer_Push(t *testing.T) {
 	err := c.Call(ctx, "auth", nil, nil)
 	require.NoError(t, err)
 	data := types.NewID().Pretty()
-	err = s.Push(ctx, int64(uid), data)
+	err = s.Push(ctx, int64(uid), 10, data)
 	require.NoError(t, err)
 	time.Sleep(time.Second) // Ensure client receive the data
 	select {
-	case pushData := <-c.DataC():
+	case push := <-c.PushC():
 		var res string
-		err = pushData.Unmarshal(&res)
+		err = push.Data.Unmarshal(&res)
 		require.NoError(t, err)
-		require.Equal(t, data, res, conv.MustJSONString(pushData.V))
+		require.Equal(t, 10, int(push.Type))
+		require.Equal(t, data, res, conv.MustJSONString(push))
 	default:
 		assert.Fail(t, "cannot recv push data")
 	}
