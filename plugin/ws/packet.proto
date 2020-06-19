@@ -13,8 +13,9 @@ message Error {
 
 message Data {
     oneof v {
-        bytes json = 1;
-        bytes protobuf = 2;
+        bytes raw = 1;
+        bytes json = 2;
+        bytes protobuf = 3;
     }
 }
 

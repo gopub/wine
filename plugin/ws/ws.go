@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"reflect"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/gopub/errors"
@@ -31,7 +32,11 @@ func MarshalData(v interface{}) (*Data, error) {
 		return d, nil
 	}
 	d := new(Data)
-	if m, ok := v.(proto.Message); ok {
+	if b, ok := v.([]byte); ok {
+		d.V = &Data_Raw{
+			Raw: b,
+		}
+	} else if m, ok := v.(proto.Message); ok {
 		b, err := proto.Marshal(m)
 		if err != nil {
 			return nil, err
@@ -39,7 +44,6 @@ func MarshalData(v interface{}) (*Data, error) {
 		d.V = &Data_Protobuf{
 			Protobuf: b,
 		}
-		return d, nil
 	} else {
 		b, err := json.Marshal(v)
 		if err != nil {
@@ -48,8 +52,8 @@ func MarshalData(v interface{}) (*Data, error) {
 		d.V = &Data_Json{
 			Json: b,
 		}
-		return d, nil
 	}
+	return d, nil
 }
 
 func (m *Data) Unmarshal(v interface{}) error {
@@ -61,6 +65,13 @@ func (m *Data) Unmarshal(v interface{}) error {
 			return proto.Unmarshal(dv.Protobuf, m)
 		}
 		return fmt.Errorf("v is %T not of proto.Message type", v)
+	case *Data_Raw:
+		val := reflect.ValueOf(v)
+		if val.Kind() != reflect.Ptr || val.Elem().Type() != reflect.SliceOf(reflect.TypeOf(byte(0))) {
+			return fmt.Errorf("cannot unmarshal []byte into %T", v)
+		}
+		val.Elem().SetBytes(dv.Raw)
+		return nil
 	default:
 		return fmt.Errorf("cannot unmarshal data type: %T", v)
 	}
