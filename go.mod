@@ -3,6 +3,7 @@ module github.com/gopub/wine
 go 1.13
 
 require (
+	github.com/disintegration/imaging v1.6.2
 	github.com/fsnotify/fsnotify v1.4.9 // indirect
 	github.com/golang/protobuf v1.4.2
 	github.com/google/go-cmp v0.4.0
