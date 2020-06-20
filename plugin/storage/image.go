@@ -80,7 +80,7 @@ func (w *ImageWriter) Write(ctx context.Context, name string, data []byte) (stri
 		return "", err
 	}
 	for _, t := range w.thumbnails {
-		name := fmt.Sprintf("%s_%dx%d.%s", o.Name, t.Width, t.Height, format)
+		name := fmt.Sprintf("%s-%dx%d.%s", o.Name, t.Width, t.Height, format)
 		if _, err = w.thumbnail(ctx, img, name, t); err != nil {
 			return "", fmt.Errorf("thumbnail: %#v, %w", t, err)
 		}
