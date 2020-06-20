@@ -151,11 +151,11 @@ func NewPushPacket(typ int32, data interface{}) (*Packet, error) {
 func (m *Data) LogString() string {
 	switch v := m.V.(type) {
 	case *Data_Raw:
-		return string(v.Raw)
+		return fmt.Sprintf("[raw bytes: %d]", len(v.Raw))
 	case *Data_Json:
 		return string(v.Json)
 	case *Data_Protobuf:
-		return fmt.Sprintf("[protobuf bytes: %m]", len(v.Protobuf))
+		return fmt.Sprintf("[protobuf bytes: %d]", len(v.Protobuf))
 	default:
 		return fmt.Sprintf("[type: %T]", v)
 	}
@@ -167,15 +167,15 @@ type PacketReadWriter interface {
 }
 
 func (m *Packet) UnmarshalData(v interface{}) error {
-	switch v := m.V.(type) {
+	switch val := m.V.(type) {
 	case *Packet_Data:
-		if v.Data != nil {
-			return v.Data.Unmarshal(v)
+		if val.Data != nil {
+			return val.Data.Unmarshal(v)
 		}
 	case *Packet_Reply:
-		switch res := v.Reply.Result.(type) {
+		switch res := val.Reply.Result.(type) {
 		case *Reply_Data:
-			return res.Data.Unmarshal(v)
+			return res.Data.Unmarshal(val)
 		}
 	}
 	return nil
