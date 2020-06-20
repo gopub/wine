@@ -128,7 +128,7 @@ func (w *ImageWriter) saveBody(ctx context.Context, body []byte) wine.Responder 
 	if err != nil {
 		return wine.Error(err)
 	}
-	return wine.JSON(http.StatusOK, []string{url})
+	return wine.JSON(http.StatusOK, url)
 }
 
 func (w *ImageWriter) saveMultipart(ctx context.Context, form *multipart.Form) wine.Responder {
@@ -154,6 +154,9 @@ func (w *ImageWriter) saveMultipart(ctx context.Context, form *multipart.Form) w
 	}
 	if len(urls) == 0 {
 		return errors.BadRequest("missing image")
+	}
+	if len(urls) == 1 {
+		return wine.JSON(http.StatusOK, urls[0])
 	}
 	return wine.JSON(http.StatusOK, urls)
 }
