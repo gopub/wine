@@ -148,6 +148,19 @@ func NewPushPacket(typ int32, data interface{}) (*Packet, error) {
 	return p, nil
 }
 
+func (m *Data) LogString() string {
+	switch v := m.V.(type) {
+	case *Data_Raw:
+		return string(v.Raw)
+	case *Data_Json:
+		return string(v.Json)
+	case *Data_Protobuf:
+		return fmt.Sprintf("[protobuf bytes: %m]", len(v.Protobuf))
+	default:
+		return fmt.Sprintf("[type: %T]", v)
+	}
+}
+
 type PacketReadWriter interface {
 	Read() (*Packet, error)
 	Write(p *Packet) error
