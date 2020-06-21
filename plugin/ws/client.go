@@ -23,6 +23,21 @@ const (
 	Closed
 )
 
+func (s ClientState) String() string {
+	switch s {
+	case Disconnected:
+		return "Disconnected"
+	case Connecting:
+		return "Connecting"
+	case Connected:
+		return "Connected"
+	case Closed:
+		return "Closed"
+	default:
+		return fmt.Sprint(int(s))
+	}
+}
+
 type Caller interface {
 	Call(ctx context.Context, name string, params interface{}, result interface{}) error
 }
@@ -62,12 +77,12 @@ func NewClient(addr string) *Client {
 		maxReconnBackoff: 2 * time.Second,
 		addr:             addr,
 		calls:            list.New(),
-		newCallC:         make(chan struct{}, 1),
+		newCallC:         make(chan struct{}, 2),
 		replyM:           make(map[int32]chan<- *Reply),
 		state:            Disconnected,
-		stateC:           make(chan ClientState, 1),
-		dataC:            make(chan *Data, 1),
-		pushC:            make(chan *Push, 1),
+		stateC:           make(chan ClientState, 2),
+		dataC:            make(chan *Data, 2),
+		pushC:            make(chan *Push, 2),
 		callID:           1,
 		header:           map[string]string{},
 	}
@@ -319,9 +334,9 @@ func (c *Client) setState(s ClientState) {
 	}
 	select {
 	case c.stateC <- s:
-		break
+		log.Debug("State: %v", s)
 	default:
-		break
+		log.Warnf("State channel is overflow")
 	}
 }
 
