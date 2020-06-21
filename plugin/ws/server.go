@@ -13,6 +13,7 @@ import (
 	"github.com/gopub/conv"
 	"github.com/gopub/environ"
 	"github.com/gopub/errors"
+	"github.com/gopub/log"
 	"github.com/gopub/types"
 	"github.com/gopub/wine"
 	"github.com/gopub/wine/router"
@@ -219,6 +220,7 @@ func (s *Server) Handle(ctx context.Context, req *Request) (interface{}, error) 
 }
 
 func (s *Server) Push(ctx context.Context, userID int64, typ int32, data interface{}) error {
+	logger := log.FromContext(ctx).With("user_id", userID, "type", typ, "data", data)
 	conns, ok := s.userConns.Load(userID)
 	if !ok {
 		return nil
@@ -231,10 +233,12 @@ func (s *Server) Push(ctx context.Context, userID int64, typ int32, data interfa
 	conns.(*sync.Map).Range(func(key, value interface{}) bool {
 		conn := key.(*serverConn)
 		if err = conn.Push(typ, d); err != nil {
-			logger.Errorf("Write data: user=%d, %v", userID, err)
+			logger.Errorf("Push: %v", err)
 			if firstErr != nil {
 				firstErr = err
 			}
+		} else {
+			logger.Debugf("Push successfully")
 		}
 		if ctx.Err() != nil {
 			if firstErr == nil {

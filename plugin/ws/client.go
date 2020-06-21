@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/gopub/errors"
+	"github.com/gopub/log"
 	"github.com/gorilla/websocket"
 )
 
@@ -148,14 +149,14 @@ func (c *Client) read(done chan<- struct{}) {
 			case c.dataC <- v.Data:
 				break
 			default:
-				break
+				log.Warnf("Data channel is overflow")
 			}
 		case *Packet_Push:
 			select {
 			case c.pushC <- v.Push:
 				break
 			default:
-				break
+				log.Warnf("Push channel is overflow")
 			}
 		case *Packet_Reply:
 			c.mu.RLock()
