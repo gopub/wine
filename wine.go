@@ -4,9 +4,8 @@ import (
 	"path"
 	"strings"
 
-	"github.com/gopub/conv"
-
 	"github.com/google/uuid"
+	"github.com/gopub/conv"
 	"github.com/gopub/log"
 	"github.com/gopub/wine/internal/respond"
 	"github.com/gopub/wine/router"

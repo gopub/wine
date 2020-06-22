@@ -7,7 +7,6 @@ import (
 	"net/url"
 
 	"github.com/aliyun/aliyun-oss-go-sdk/oss"
-	"github.com/gopub/log"
 	"github.com/gopub/wine"
 )
 
@@ -38,7 +37,7 @@ func NewAliBucket(endpoint, keyID, keySecret, name string) *AliBucket {
 	u.Host = fmt.Sprintf("%s.%s", name, u.Host)
 	client, err := oss.New(endpoint, keyID, keySecret)
 	if err != nil {
-		log.Fatalf("Failed: %v", err)
+		panic(fmt.Sprintf("Cannot create oss client: %v", err))
 	}
 	b, err := client.Bucket(name)
 	if err != nil {
