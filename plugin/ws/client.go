@@ -334,7 +334,7 @@ func (c *Client) setState(s ClientState) {
 	}
 	select {
 	case c.stateC <- s:
-		log.Debug("State: %v", s)
+		log.Debugf("State: %v", s)
 	default:
 		log.Warnf("State channel is overflow")
 	}
