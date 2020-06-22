@@ -14,7 +14,6 @@ import (
 	"github.com/gopub/environ"
 	"github.com/gopub/errors"
 	"github.com/gopub/log"
-	"github.com/gopub/types"
 	"github.com/gopub/wine"
 	"github.com/gopub/wine/router"
 	"github.com/gorilla/websocket"
@@ -55,12 +54,6 @@ type serverConn struct {
 func (c *serverConn) BuildContext(ctx context.Context) context.Context {
 	if c.userID > 0 {
 		ctx = wine.WithUserID(ctx, c.userID)
-	}
-	if deviceID := c.header["device_id"]; deviceID != "" {
-		ctx = wine.WithDeviceID(ctx, deviceID)
-	}
-	if loc, _ := types.NewPointFromString(c.header["coordinate"]); loc != nil {
-		ctx = wine.WithCoordinate(ctx, loc)
 	}
 	return ctx
 }
@@ -178,8 +171,8 @@ func (s *Server) HandleRequest(conn *serverConn, req *Request) {
 	defer cancel()
 	ctx = conn.BuildContext(ctx)
 	var resultOrErr interface{}
-	ctx = wine.WithRemoteAddr(ctx, conn.conn.RemoteAddr().String())
 	ctx = withPusher(ctx, s)
+	ctx = withHeader(ctx, conn.header)
 	result, err := s.Handle(ctx, req)
 	if err != nil {
 		resultOrErr = err

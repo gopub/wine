@@ -188,6 +188,7 @@ const (
 	ckNextHandler contextKey = iota + 1
 	ckAuthFlag
 	ckPusher
+	ckHeader
 )
 
 type Pusher interface {
@@ -201,4 +202,16 @@ func GetPusher(ctx context.Context) Pusher {
 
 func withPusher(ctx context.Context, p Pusher) context.Context {
 	return context.WithValue(ctx, ckPusher, p)
+}
+
+func GetHeader(ctx context.Context, key string) string {
+	h, ok := ctx.Value(ckHeader).(map[string]string)
+	if !ok {
+		return ""
+	}
+	return h[key]
+}
+
+func withHeader(ctx context.Context, h map[string]string) context.Context {
+	return context.WithValue(ctx, ckHeader, h)
 }

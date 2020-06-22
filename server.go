@@ -149,7 +149,6 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, httpReq *http.Request) {
 	}
 	req.sid = sid
 	req.params[s.sessionName] = sid
-	ctx = s.withRequestParams(ctx, req.params)
 	s.serve(ctx, req, rw)
 	s.logResult(&Request{request: httpReq}, rw, startAt)
 }
@@ -266,16 +265,6 @@ func (s *Server) setupContext(ctx context.Context) (context.Context, context.Can
 	ctx, cancel := context.WithTimeout(ctx, s.Timeout)
 	ctx = withTemplateManager(ctx, s.Manager)
 	return ctx, cancel
-}
-
-func (s *Server) withRequestParams(ctx context.Context, params types.M) context.Context {
-	if loc, _ := types.NewPointFromString(params.String("coordinate")); loc != nil {
-		ctx = WithCoordinate(ctx, loc)
-	}
-	if deviceID := params.String("device_id"); deviceID != "" {
-		ctx = WithDeviceID(ctx, deviceID)
-	}
-	return ctx
 }
 
 func (s *Server) closeWriter(w http.ResponseWriter) {

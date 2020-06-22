@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/gopub/log"
-	"github.com/gopub/types"
 	"github.com/gopub/wine/internal/template"
 )
 
@@ -87,30 +86,6 @@ func WithAccessToken(ctx context.Context, token string) context.Context {
 	return context.WithValue(ctx, ckAccessToken, token)
 }
 
-func GetRemoteAddr(ctx context.Context) string {
-	ip, _ := ctx.Value(ckRemoteAddr).(string)
-	return ip
-}
-
-func WithRemoteAddr(ctx context.Context, addr string) context.Context {
-	if addr == "" {
-		return ctx
-	}
-	return context.WithValue(ctx, ckRemoteAddr, addr)
-}
-
-func GetDeviceID(ctx context.Context) string {
-	id, _ := ctx.Value(ckDeviceID).(string)
-	return id
-}
-
-func WithDeviceID(ctx context.Context, deviceID string) context.Context {
-	if deviceID == "" {
-		return ctx
-	}
-	return context.WithValue(ctx, ckDeviceID, deviceID)
-}
-
 func GetTraceID(ctx context.Context) string {
 	id, _ := ctx.Value(ckTraceID).(string)
 	return id
@@ -121,18 +96,6 @@ func WithTraceID(ctx context.Context, traceID string) context.Context {
 		return ctx
 	}
 	return context.WithValue(ctx, ckTraceID, traceID)
-}
-
-func GetCoordinate(ctx context.Context) *types.Point {
-	p, _ := ctx.Value(ckCoordinate).(*types.Point)
-	return p
-}
-
-func WithCoordinate(ctx context.Context, p *types.Point) context.Context {
-	if p == nil {
-		return ctx
-	}
-	return context.WithValue(ctx, ckCoordinate, p)
 }
 
 func WithSudo(ctx context.Context) context.Context {
@@ -157,15 +120,6 @@ func DetachContext(ctx context.Context) context.Context {
 	}
 	if token := GetAccessToken(ctx); token != "" {
 		newCtx = WithAccessToken(newCtx, token)
-	}
-	if deviceID := GetDeviceID(ctx); deviceID != "" {
-		newCtx = WithDeviceID(newCtx, deviceID)
-	}
-	if c := GetCoordinate(ctx); c != nil {
-		newCtx = WithCoordinate(newCtx, c)
-	}
-	if addr := GetRemoteAddr(ctx); addr != "" {
-		newCtx = WithRemoteAddr(newCtx, addr)
 	}
 	if traceID := GetTraceID(ctx); traceID != "" {
 		newCtx = WithTraceID(newCtx, traceID)
