@@ -131,6 +131,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			for k, val := range v.Header.Entries {
 				conn.header[k] = val
 			}
+			log.Debug("Header:", conn.header)
 		case *Packet_Hello:
 			go conn.Hello()
 		default:

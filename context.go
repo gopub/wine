@@ -14,13 +14,10 @@ const (
 	ckNextHandler contextKey = iota + 1
 	ckBasicAuthUser
 	ckTemplateManager
-	ckRemoteAddr
-	ckCoordinate
 	ckAccessToken
 	ckUserID
 	ckTraceID
 	ckUser
-	ckDeviceID
 	ckSudo
 )
 
