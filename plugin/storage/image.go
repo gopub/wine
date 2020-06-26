@@ -6,16 +6,17 @@ import (
 	"fmt"
 	"image"
 	"image/jpeg"
+	"image/png"
 	"io/ioutil"
 	"mime"
 	"mime/multipart"
 	"net/http"
+	"path"
 	"strings"
-
-	"github.com/gopub/wine"
 
 	"github.com/disintegration/imaging"
 	"github.com/gopub/errors"
+	"github.com/gopub/wine"
 	wm "github.com/gopub/wine/mime"
 )
 
@@ -104,14 +105,25 @@ func (w *ImageWriter) thumbnail(ctx context.Context, img image.Image, name strin
 	}
 
 	buf := bytes.NewBuffer(nil)
-	err := jpeg.Encode(buf, tImg, &jpeg.Options{Quality: t.Quality})
-	if err != nil {
-		return "", fmt.Errorf("encode image to jpeg: %w", err)
-	}
-	obj := &Object{
-		Name:     name,
-		Content:  buf.Bytes(),
-		MIMEType: wm.JPEG,
+	var obj *Object
+	if path.Ext(name) == ".png" {
+		if err := png.Encode(buf, tImg); err != nil {
+			return "", fmt.Errorf("encode image to jpeg: %w", err)
+		}
+		obj = &Object{
+			Name:     name,
+			Content:  buf.Bytes(),
+			MIMEType: wm.PNG,
+		}
+	} else {
+		if err := jpeg.Encode(buf, tImg, &jpeg.Options{Quality: t.Quality}); err != nil {
+			return "", fmt.Errorf("encode image to jpeg: %w", err)
+		}
+		obj = &Object{
+			Name:     name,
+			Content:  buf.Bytes(),
+			MIMEType: wm.JPEG,
+		}
 	}
 	return w.w.Write(ctx, obj)
 }
