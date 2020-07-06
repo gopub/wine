@@ -10,7 +10,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/gopub/conv"
 	"github.com/gopub/environ"
 	"github.com/gopub/errors"
 	"github.com/gopub/log"
@@ -265,7 +264,7 @@ func logCall(req *Request, resultOrErr interface{}, cost time.Duration) {
 		}
 	}
 	if err, ok := resultOrErr.(error); ok {
-		logger.Errorf("%s | %s | %v", info, conv.MustJSONString(req.Model), err)
+		logger.Errorf("%s | %s | %v", info, req.Data.LogString(), err)
 	} else {
 		if s, ok := resultOrErr.(wine.LogStringer); ok {
 			logger.Infof("%s | %s", info, s.LogString())
@@ -273,7 +272,7 @@ func logCall(req *Request, resultOrErr interface{}, cost time.Duration) {
 			switch v := reflect.ValueOf(resultOrErr); v.Kind() {
 			case reflect.Slice, reflect.Array, reflect.Map:
 				if req.Model != nil {
-					logger.Infof("%s | %s | size=%d", info, conv.MustJSONString(req.Model), v.Len())
+					logger.Infof("%s | %s | size=%d", info, req.Data.LogString(), v.Len())
 				} else {
 					logger.Infof("%s | size=%d", info, v.Len())
 				}

@@ -149,6 +149,9 @@ func NewPushPacket(typ int32, data interface{}) (*Packet, error) {
 }
 
 func (m *Data) LogString() string {
+	if m == nil {
+		return "null"
+	}
 	switch v := m.V.(type) {
 	case *Data_Raw:
 		return fmt.Sprintf("[raw bytes: %d]", len(v.Raw))
