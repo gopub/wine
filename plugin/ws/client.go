@@ -99,7 +99,9 @@ func (c *Client) nextCallID() int32 {
 func (c *Client) start() {
 	c.reconnBackoff = 100 * time.Millisecond
 	for c.state != Closed {
+		c.setState(Connecting)
 		c.run()
+		c.setState(Disconnected)
 		if c.reconnBackoff > 0 {
 			time.Sleep(c.reconnBackoff)
 		}
@@ -111,13 +113,11 @@ func (c *Client) start() {
 }
 
 func (c *Client) run() {
-	c.setState(Connecting)
 	ctx, cancel := context.WithTimeout(context.Background(), c.dialTimeout)
 	conn, _, err := websocket.DefaultDialer.DialContext(ctx, c.addr, nil)
 	if err != nil {
 		cancel()
 		logger.Errorf("Cannot connect %s: %v", c.addr, err)
-		c.setState(Disconnected)
 		return
 	}
 	cancel()
@@ -125,12 +125,10 @@ func (c *Client) run() {
 	if c.Handshaker != nil {
 		if err = c.Handshaker(c.conn); err != nil {
 			logger.Errorf("Cannot handshake: %v", err)
-			c.setState(Disconnected)
 			return
 		}
 	}
 	if err = c.writeHeader(); err != nil {
-		c.setState(Disconnected)
 		return
 	}
 	c.setState(Connected)
@@ -138,7 +136,6 @@ func (c *Client) run() {
 	go c.read(done)
 	go c.auth()
 	c.write(done)
-	c.setState(Disconnected)
 }
 
 func (c *Client) read(done chan<- struct{}) {
@@ -246,9 +243,6 @@ func (c *Client) writeHeader() error {
 }
 
 func (c *Client) Call(ctx context.Context, name string, params interface{}, result interface{}) error {
-	if c.state == Closed {
-		return errors.New("client is closed")
-	}
 	ca, err := NewCall(c.nextCallID(), name, params)
 	if err != nil {
 		return fmt.Errorf("cannot create call object: %w", err)
@@ -321,16 +315,16 @@ func (c *Client) Close() {
 }
 
 func (c *Client) setState(s ClientState) {
-	if c.state == s || c.state == Closed {
+	if c.state == s {
+		return
+	}
+	if c.state == Closed {
+		log.Warn("Client is closed")
 		return
 	}
 	c.state = s
-	switch s {
-	case Disconnected, Closed:
-		if c.conn != nil {
-			c.conn.Close()
-			c.conn = nil
-		}
+	if s == Closed {
+		c.conn.Close()
 	}
 	select {
 	case c.stateC <- s:

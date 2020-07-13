@@ -2,6 +2,7 @@ package ws
 
 import (
 	"fmt"
+	"github.com/gopub/log"
 	"sync"
 	"time"
 
@@ -47,16 +48,19 @@ func (c *Conn) Read() (*Packet, error) {
 func (c *Conn) Write(p *Packet) error {
 	data, err := proto.Marshal(p)
 	if err != nil {
-		return fmt.Errorf("cannot marshal packet: %w", err)
+		return fmt.Errorf("marshal packet: %w", err)
 	}
 	c.mu.Lock()
+	if c.conn == nil {
+		return errors.New("cannot write to a closed conn")
+	}
 	defer c.mu.Unlock()
 	err = c.conn.SetWriteDeadline(time.Now().Add(c.writeTimeout))
 	if err != nil {
-		return fmt.Errorf("cannot set write deadline: %w", err)
+		return fmt.Errorf("set write deadline: %w", err)
 	}
 	err = c.conn.WriteMessage(websocket.BinaryMessage, data)
-	return errors.Wrapf(err, "cannot write binary message")
+	return errors.Wrapf(err, "write binary message")
 }
 
 func (c *Conn) Call(id int32, name string, params interface{}) error {
@@ -92,7 +96,15 @@ func (c *Conn) Hello() error {
 }
 
 func (c *Conn) Close() {
+	if c.conn == nil {
+		log.Warn("Already closed")
+		return
+	}
 	c.mu.Lock()
-	c.conn.Close()
+	if c.conn != nil {
+		if err := c.conn.Close(); err != nil {
+			log.Errorf("Close websocket conn: %w", err)
+		}
+	}
 	c.mu.Unlock()
 }
