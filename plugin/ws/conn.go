@@ -105,6 +105,7 @@ func (c *Conn) Close() {
 		if err := c.conn.Close(); err != nil {
 			log.Errorf("Close websocket conn: %w", err)
 		}
+		c.conn = nil
 	}
 	c.mu.Unlock()
 }
