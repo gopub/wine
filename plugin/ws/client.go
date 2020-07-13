@@ -323,7 +323,7 @@ func (c *Client) setState(s ClientState) {
 		return
 	}
 	c.state = s
-	if s == Closed {
+	if s == Closed && c.conn != nil {
 		c.conn.Close()
 	}
 	select {
