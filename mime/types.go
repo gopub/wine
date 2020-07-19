@@ -27,6 +27,7 @@ const (
 	PDF            = "application/pdf"
 	MSWord         = "application/msword"
 	GZIP           = "application/x-gzip"
+	WASM           = "application/wasm"
 )
 
 const (
