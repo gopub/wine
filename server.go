@@ -4,13 +4,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"mime"
 	"net/http"
+	"path"
 	"runtime/debug"
 	"strings"
 	"time"
 
 	"github.com/gopub/conv"
-
 	"github.com/gopub/environ"
 	"github.com/gopub/log"
 	"github.com/gopub/types"
@@ -194,6 +195,11 @@ func (s *Server) wrapResponseWriter(rw http.ResponseWriter, req *http.Request) h
 	for k, v := range s.Header {
 		rw.Header()[k] = v
 	}
+
+	if t := mime.TypeByExtension(path.Ext(req.URL.Path)); t != "" {
+		rw.Header().Set("Content-Type", t)
+	}
+
 	w := io.NewResponseWriter(rw)
 	if !s.CompressionEnabled {
 		return w
