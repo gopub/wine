@@ -4,7 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math/rand"
 	"mime"
+	"net"
 	"net/http"
 	"path"
 	"runtime/debug"
@@ -48,7 +50,6 @@ type Server struct {
 	sessionName string
 
 	maxReqMem          types.ByteUnit
-	Header             http.Header
 	Timeout            time.Duration
 	PreHandler         Handler
 	CompressionEnabled bool
@@ -69,7 +70,6 @@ func NewServer() *Server {
 		maxReqMem:          types.ByteUnit(environ.SizeInBytes("wine.max_memory", defaultReqMaxMem)),
 		Router:             NewRouter(),
 		Manager:            template.NewManager(),
-		Header:             header,
 		Timeout:            environ.Duration("wine.timeout", defaultTimeout),
 		CompressionEnabled: environ.Bool("wine.compression", true),
 		Recovery:           environ.Bool("wine.recovery", true),
@@ -86,7 +86,7 @@ func NewServer() *Server {
 // Run starts server
 func (s *Server) Run(addr string) {
 	if s.server != nil {
-		logger.Fatalf("Server is running")
+		logger.Panicf("Server is running")
 	}
 
 	logger.Infof("Running at %s ...", addr)
@@ -96,7 +96,7 @@ func (s *Server) Run(addr string) {
 		if errors.Is(err, http.ErrServerClosed) {
 			logger.Infof("Server closed")
 		} else {
-			logger.Fatalf("ListenAndServe: %v", err)
+			logger.Panicf("ListenAndServe: %v", err)
 		}
 	}
 }
@@ -114,7 +114,7 @@ func (s *Server) RunTLS(addr, certFile, keyFile string) {
 		if errors.Is(err, http.ErrServerClosed) {
 			logger.Infof("Server closed")
 		} else {
-			logger.Fatalf("ListenAndServe: %v", err)
+			logger.Panicf("ListenAndServe: %v", err)
 		}
 	}
 }
@@ -155,15 +155,18 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, httpReq *http.Request) {
 }
 
 func (s *Server) serve(ctx context.Context, req *Request, rw http.ResponseWriter) {
-	path := req.NormalizedPath()
+	np := req.NormalizedPath()
 	method := strings.ToUpper(req.Request().Method)
-	r, params := s.Match(method, path)
+	r, params := s.Match(method, np)
 	for k, v := range params {
 		req.params[k] = v
 	}
 	var h Handler
 	switch {
 	case r != nil:
+		for k, v := range r.Header() {
+			rw.Header()[k] = v
+		}
 		if m := r.Model(); m != nil {
 			if err := req.bind(m); err != nil {
 				Error(err).Respond(ctx, rw)
@@ -174,13 +177,13 @@ func (s *Server) serve(ctx context.Context, req *Request, rw http.ResponseWriter
 		h = (*handlerElem)(r.FirstHandler())
 	case method == http.MethodOptions:
 		h = HandlerFunc(s.handleOptions)
-	case path == faviconPath:
+	case np == faviconPath:
 		h = HandleResponder(respond.Bytes(http.StatusOK, resource.Favicon))
 	default:
 		h = HandleResponder(Status(http.StatusNotFound))
 	}
 	var resp Responder
-	if s.PreHandler != nil && !reservedPaths[path] {
+	if s.PreHandler != nil && !reservedPaths[np] {
 		resp = s.PreHandler.HandleRequest(withNextHandler(ctx, h), req)
 	} else {
 		resp = h.HandleRequest(ctx, req)
@@ -192,12 +195,12 @@ func (s *Server) serve(ctx context.Context, req *Request, rw http.ResponseWriter
 }
 
 func (s *Server) wrapResponseWriter(rw http.ResponseWriter, req *http.Request) http.ResponseWriter {
-	for k, v := range s.Header {
-		rw.Header()[k] = v
-	}
-
 	if t := mime.TypeByExtension(path.Ext(req.URL.Path)); t != "" {
 		rw.Header().Set("Content-Type", t)
+	}
+
+	for k, v := range s.Router.Header() {
+		rw.Header()[k] = v
 	}
 
 	w := io.NewResponseWriter(rw)
@@ -349,4 +352,35 @@ func logResult(req *Request, res *Result, cost time.Duration) {
 			logger.Info(info)
 		}
 	}
+}
+
+type TestServer struct {
+	*Server
+	URL string
+}
+
+func NewTestServer() *TestServer {
+	return &TestServer{
+		Server: NewServer(),
+	}
+}
+
+func (s *TestServer) Run() string {
+	for n := 0; n < 10; n++ {
+		addr := fmt.Sprintf("localhost:%d", rand.Int()%1e4+1e4)
+		conn, err := net.Dial("TCP", addr)
+		if err != nil {
+			go s.Server.Run(addr)
+			s.URL = "http://" + addr
+			break
+		}
+		conn.Close()
+	}
+	return s.URL
+}
+
+func (s *TestServer) RunTLS() string {
+	// TODO:
+	log.Panic("Not implemented")
+	return s.URL
 }

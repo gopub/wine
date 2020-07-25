@@ -2,9 +2,7 @@ package wine_test
 
 import (
 	"context"
-	"fmt"
 	"io/ioutil"
-	"math/rand"
 	"net/http"
 	"runtime"
 	"testing"
@@ -15,7 +13,7 @@ import (
 )
 
 func TestServerStatus(t *testing.T) {
-	server := wine.NewServer()
+	server := wine.NewTestServer()
 	r := server.Router
 	r.Get("/ok", func(ctx context.Context, req *wine.Request) wine.Responder {
 		return wine.OK
@@ -23,31 +21,28 @@ func TestServerStatus(t *testing.T) {
 	r.Get("/forbidden", func(ctx context.Context, req *wine.Request) wine.Responder {
 		return wine.Status(http.StatusForbidden)
 	})
-	addr := fmt.Sprintf("localhost:%d", rand.Int()%1000+8000)
-	host := "http://" + addr
-	go server.Run(addr)
-
+	url := server.Run()
 	t.Run("OK", func(t *testing.T) {
-		resp, err := http.DefaultClient.Get(host + "/ok")
+		resp, err := http.DefaultClient.Get(url + "/ok")
 		require.NoError(t, err)
 		require.Equal(t, http.StatusOK, resp.StatusCode)
 	})
 
 	t.Run("Forbidden", func(t *testing.T) {
-		resp, err := http.DefaultClient.Get(host + "/forbidden")
+		resp, err := http.DefaultClient.Get(url + "/forbidden")
 		require.NoError(t, err)
 		require.Equal(t, http.StatusForbidden, resp.StatusCode)
 	})
 
 	t.Run("NotFound", func(t *testing.T) {
-		resp, err := http.DefaultClient.Get(host + "/notfoundHandler")
+		resp, err := http.DefaultClient.Get(url + "/notfoundHandler")
 		require.NoError(t, err)
 		require.Equal(t, http.StatusNotFound, resp.StatusCode)
 	})
 }
 
 func TestServerMethod(t *testing.T) {
-	server := wine.NewServer()
+	server := wine.NewTestServer()
 	r := server.Router
 	r.Get("/", func(ctx context.Context, req *wine.Request) wine.Responder {
 		return wine.Text(http.StatusOK, "GET")
@@ -58,12 +53,10 @@ func TestServerMethod(t *testing.T) {
 	r.Put("/", func(ctx context.Context, req *wine.Request) wine.Responder {
 		return wine.Text(http.StatusOK, "PUT")
 	})
-	addr := fmt.Sprintf("localhost:%d", rand.Int()%1000+8000)
-	host := "http://" + addr
-	go server.Run(addr)
+	url := server.Run()
 	runtime.Gosched()
 	t.Run("GET", func(t *testing.T) {
-		resp, err := http.DefaultClient.Get(host)
+		resp, err := http.DefaultClient.Get(url)
 		require.NoError(t, err)
 		require.Equal(t, http.StatusOK, resp.StatusCode)
 		body, err := ioutil.ReadAll(resp.Body)
@@ -73,7 +66,7 @@ func TestServerMethod(t *testing.T) {
 	})
 
 	t.Run("POST", func(t *testing.T) {
-		resp, err := http.DefaultClient.Post(host, mime.Plain, nil)
+		resp, err := http.DefaultClient.Post(url, mime.Plain, nil)
 		require.NoError(t, err)
 		require.Equal(t, http.StatusOK, resp.StatusCode)
 		body, err := ioutil.ReadAll(resp.Body)
@@ -83,7 +76,7 @@ func TestServerMethod(t *testing.T) {
 	})
 
 	t.Run("PUT", func(t *testing.T) {
-		req, err := http.NewRequest(http.MethodPut, host, nil)
+		req, err := http.NewRequest(http.MethodPut, url, nil)
 		require.NoError(t, err)
 		resp, err := http.DefaultClient.Do(req)
 		require.NoError(t, err)
@@ -95,10 +88,33 @@ func TestServerMethod(t *testing.T) {
 	})
 
 	t.Run("NotFound", func(t *testing.T) {
-		req, err := http.NewRequest(http.MethodDelete, host, nil)
+		req, err := http.NewRequest(http.MethodDelete, url, nil)
 		require.NoError(t, err)
 		resp, err := http.DefaultClient.Do(req)
 		require.NoError(t, err)
 		require.Equal(t, http.StatusNotFound, resp.StatusCode)
+	})
+}
+
+func TestServer_Header(t *testing.T) {
+	server := wine.NewTestServer()
+	url := server.Run()
+	t.Run("RootHeader", func(t *testing.T) {
+		v := wine.NewUUID()
+		key := "RootHeader"
+		server.AddHeader(key, v)
+		resp, err := http.Get(url)
+		require.NoError(t, err)
+		require.Equal(t, v, resp.Header.Get(key))
+	})
+	t.Run("PathHeader", func(t *testing.T) {
+		v := wine.NewUUID()
+		key := "PathHeader"
+		server.Get("/hello", func(ctx context.Context, req *wine.Request) wine.Responder {
+			return wine.OK
+		}).SetHeader(key, v)
+		resp, err := http.Get(url + "/hello")
+		require.NoError(t, err)
+		require.Equal(t, v, resp.Header.Get(key))
 	})
 }
