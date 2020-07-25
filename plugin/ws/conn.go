@@ -2,12 +2,12 @@ package ws
 
 import (
 	"fmt"
-	"github.com/gopub/log"
 	"sync"
 	"time"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/gopub/errors"
+	"github.com/gopub/log"
 	"github.com/gorilla/websocket"
 )
 

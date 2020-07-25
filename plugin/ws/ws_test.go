@@ -48,7 +48,6 @@ func TestHandshake(t *testing.T) {
 		if err != nil {
 			return err
 		}
-		t.Logf("%s", conv.MustJSONString(p))
 		err = rw.Write(p)
 		assert.NoError(t, err)
 		return err
