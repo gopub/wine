@@ -1,9 +1,10 @@
 package wine
 
 import (
-	"github.com/gopub/conv"
 	"net/http"
 	"strings"
+
+	"github.com/gopub/conv"
 )
 
 type Header struct {
