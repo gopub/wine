@@ -51,11 +51,11 @@ func (r *Router) Use(funcs ...HandlerFunc) *Router {
 	}
 }
 
-func (r *Router) BindHandlers(path string, handlers ...Handler) *router.Route {
+func (r *Router) BindHandlers(path string, handlers ...Handler) *router.Endpoint {
 	return r.Router.Bind("", path, conv.ToList(handlers))
 }
 
-func (r *Router) Bind(path string, funcs ...HandlerFunc) *router.Route {
+func (r *Router) Bind(path string, funcs ...HandlerFunc) *router.Endpoint {
 	return r.Router.Bind("", path, conv.ToList(funcs))
 }
 

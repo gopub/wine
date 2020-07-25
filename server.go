@@ -124,6 +124,11 @@ func (s *Server) Shutdown() error {
 	return s.server.Shutdown(context.Background())
 }
 
+func (s *Server) Match(scope string, path string) (*Endpoint, map[string]string) {
+	e, p := s.Router.Match(scope, path)
+	return s.toEndpoint(e), p
+}
+
 // ServeHTTP implements for http.Handler interface, which will handle each http request
 func (s *Server) ServeHTTP(rw http.ResponseWriter, httpReq *http.Request) {
 	startAt := time.Now()
@@ -164,9 +169,7 @@ func (s *Server) serve(ctx context.Context, req *Request, rw http.ResponseWriter
 	var h Handler
 	switch {
 	case r != nil:
-		for k, v := range r.Header() {
-			rw.Header()[k] = v
-		}
+		r.Header().WriteTo(rw)
 		if m := r.Model(); m != nil {
 			if err := req.bind(m); err != nil {
 				Error(err).Respond(ctx, rw)
@@ -199,9 +202,7 @@ func (s *Server) wrapResponseWriter(rw http.ResponseWriter, req *http.Request) h
 		rw.Header().Set("Content-Type", t)
 	}
 
-	for k, v := range s.Router.Header() {
-		rw.Header()[k] = v
-	}
+	s.Router.md.Header.WriteTo(rw)
 
 	w := io.NewResponseWriter(rw)
 	if !s.CompressionEnabled {

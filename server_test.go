@@ -102,7 +102,7 @@ func TestServer_Header(t *testing.T) {
 	t.Run("RootHeader", func(t *testing.T) {
 		v := wine.NewUUID()
 		key := "RootHeader"
-		server.AddHeader(key, v)
+		server.Header().Add(key, v)
 		resp, err := http.Get(url)
 		require.NoError(t, err)
 		require.Equal(t, v, resp.Header.Get(key))
@@ -112,7 +112,7 @@ func TestServer_Header(t *testing.T) {
 		key := "PathHeader"
 		server.Get("/hello", func(ctx context.Context, req *wine.Request) wine.Responder {
 			return wine.OK
-		}).SetHeader(key, v)
+		}).Header().Add(key, v)
 		resp, err := http.Get(url + "/hello")
 		require.NoError(t, err)
 		require.Equal(t, v, resp.Header.Get(key))
