@@ -17,7 +17,7 @@ import (
 	"github.com/disintegration/imaging"
 	"github.com/gopub/errors"
 	"github.com/gopub/wine"
-	wm "github.com/gopub/wine/mime"
+	mimepkg "github.com/gopub/wine/mime"
 )
 
 type Thumbnail struct {
@@ -69,9 +69,9 @@ func (w *ImageWriter) Write(ctx context.Context, name string, data []byte) (stri
 		return "", fmt.Errorf("decode: %w", err)
 	}
 	o := &Object{
-		Name:     name,
-		Content:  data,
-		MIMEType: mime.TypeByExtension("." + format),
+		Name:    name,
+		Content: data,
+		Type:    mime.TypeByExtension("." + format),
 	}
 	if err = o.Validate(); err != nil {
 		return "", fmt.Errorf("validate: %w", err)
@@ -111,18 +111,18 @@ func (w *ImageWriter) thumbnail(ctx context.Context, img image.Image, name strin
 			return "", fmt.Errorf("encode image to jpeg: %w", err)
 		}
 		obj = &Object{
-			Name:     name,
-			Content:  buf.Bytes(),
-			MIMEType: wm.PNG,
+			Name:    name,
+			Content: buf.Bytes(),
+			Type:    mimepkg.PNG,
 		}
 	} else {
 		if err := jpeg.Encode(buf, tImg, &jpeg.Options{Quality: t.Quality}); err != nil {
 			return "", fmt.Errorf("encode image to jpeg: %w", err)
 		}
 		obj = &Object{
-			Name:     name,
-			Content:  buf.Bytes(),
-			MIMEType: wm.JPEG,
+			Name:    name,
+			Content: buf.Bytes(),
+			Type:    mimepkg.JPEG,
 		}
 	}
 	return w.w.Write(ctx, obj)

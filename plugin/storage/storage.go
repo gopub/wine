@@ -9,9 +9,9 @@ import (
 )
 
 type Object struct {
-	Name     string `json:"name"`
-	Content  []byte `json:"content"`
-	MIMEType string `json:"mime_type"`
+	Name    string `json:"name"`
+	Content []byte `json:"content"`
+	Type    string `json:"type"`
 }
 
 func (o *Object) Validate() error {
@@ -19,8 +19,8 @@ func (o *Object) Validate() error {
 		return errors.BadRequest("missing content")
 	}
 
-	if o.MIMEType == "" {
-		o.MIMEType = http.DetectContentType(o.Content)
+	if o.Type == "" {
+		o.Type = http.DetectContentType(o.Content)
 	}
 
 	if o.Name == "" {

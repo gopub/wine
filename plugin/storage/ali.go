@@ -57,8 +57,8 @@ func (b *AliBucket) Name() string {
 
 func (b *AliBucket) Write(ctx context.Context, obj *Object) (string, error) {
 	options := []oss.Option{oss.ACL(b.ACL), oss.CacheControl(b.CacheControl)}
-	if obj.MIMEType != "" {
-		options = append(options, oss.ContentType(obj.MIMEType))
+	if obj.Type != "" {
+		options = append(options, oss.ContentType(obj.Type))
 	}
 
 	if err := b.bucket.PutObject(obj.Name, bytes.NewBuffer(obj.Content), options...); err != nil {

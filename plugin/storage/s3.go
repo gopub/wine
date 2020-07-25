@@ -51,8 +51,8 @@ func (s *S3Bucket) Write(ctx context.Context, o *Object) (string, error) {
 		CacheControl: aws.String(s.CacheControl),
 	}
 
-	if o.MIMEType != "" {
-		input.ContentType = aws.String(o.MIMEType)
+	if o.Type != "" {
+		input.ContentType = aws.String(o.Type)
 	}
 
 	result, err := s.uploader.Upload(input)
