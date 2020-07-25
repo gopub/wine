@@ -287,6 +287,8 @@ func (s *Server) closeWriter(w http.ResponseWriter) {
 }
 
 func (s *Server) handleOptions(_ context.Context, req *Request) Responder {
+	// TODO: how to handle preflight correctly?
+
 	methods := s.MatchScopes(req.NormalizedPath())
 	if len(methods) > 0 {
 		methods = append(methods, http.MethodOptions)
