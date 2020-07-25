@@ -1,9 +1,9 @@
 package wine
 
 import (
-	"net/http"
-
 	"github.com/gopub/conv"
+	"net/http"
+	"strings"
 )
 
 type Header struct {
@@ -36,14 +36,19 @@ func (h *Header) AllowOrigins(origins ...string) {
 	h.Header["Access-Control-Allow-Origin"] = origins
 }
 
-func (h *Header) ExposeHeaders(headers ...string) {
-	h.Header["Access-Control-Expose-Headers"] = headers
-}
-
 func (h *Header) AllowMethods(methods ...string) {
-	h.Header["Access-Control-Allow-Methods"] = methods
+	// Combine multiple values separated by comma. Multiple lines style is also fine.
+	h.Header.Set("Access-Control-Allow-Methods", strings.Join(methods, ","))
 }
 
 func (h *Header) AllowCredentials(b bool) {
 	h.Header.Set("Access-Control-Allow-Credentials", conv.MustString(b))
+}
+
+func (h *Header) AllowHeaders(headers ...string) {
+	h.Header.Set("Access-Control-Allow-Headers", strings.Join(headers, ","))
+}
+
+func (h *Header) ExposeHeaders(headers ...string) {
+	h.Header.Set("Access-Control-Expose-Headers", strings.Join(headers, ","))
 }
