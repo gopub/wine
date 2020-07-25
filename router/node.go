@@ -3,6 +3,7 @@ package router
 import (
 	"container/list"
 	"fmt"
+	"net/http"
 	"reflect"
 	"regexp"
 	"strings"
@@ -57,6 +58,7 @@ type node struct {
 
 	Model       interface{}
 	Description string
+	Header      http.Header
 }
 
 func newNodeList(path string, handlers *list.List) *node {

@@ -2,6 +2,7 @@ package router
 
 import (
 	"container/list"
+	"net/http"
 	"strings"
 )
 
@@ -38,6 +39,18 @@ func (r *Route) Model() interface{} {
 func (r *Route) SetModel(m interface{}) *Route {
 	r.node.Model = m
 	return r
+}
+
+func (r *Route) Header() http.Header {
+	return r.node.Header
+}
+
+func (r *Route) SetHeader(key, value string) {
+	r.node.Header.Set(key, value)
+}
+
+func (r *Route) AddHeader(key, value string) {
+	r.node.Header.Add(key, value)
 }
 
 type sortRouteList []*Route

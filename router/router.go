@@ -4,6 +4,7 @@ import (
 	"container/list"
 	"fmt"
 	"log"
+	"net/http"
 	"net/url"
 	"sort"
 	"strings"
@@ -14,6 +15,7 @@ type Router struct {
 	scopedRoot map[string]*node
 	basePath   string
 	handlers   *list.List
+	header     http.Header
 }
 
 // New new a Router
@@ -21,6 +23,7 @@ func New() *Router {
 	r := &Router{
 		scopedRoot: make(map[string]*node, 4),
 		handlers:   list.New(),
+		header:     make(http.Header),
 	}
 	r.scopedRoot[""] = NewEmptyNode()
 	return r
@@ -31,6 +34,10 @@ func (r *Router) clone() *Router {
 		scopedRoot: r.scopedRoot,
 		basePath:   r.basePath,
 		handlers:   list.New(),
+		header:     make(http.Header),
+	}
+	for k, v := range r.header {
+		nr.header[k] = v
 	}
 	nr.handlers.PushBackList(r.handlers)
 	return nr
@@ -157,6 +164,12 @@ func (r *Router) Bind(scope, path string, handlers *list.List) *Route {
 		root.Add(nl)
 	}
 	n, _ := root.MatchPath(path)
+	if n.Header == nil {
+		n.Header = make(http.Header)
+	}
+	for k, v := range r.header {
+		n.Header[k] = v
+	}
 	return &Route{
 		Scope: scope,
 		node:  n,
@@ -208,4 +221,16 @@ func (r *Router) ContainsHandler(h interface{}) bool {
 
 func (r *Router) Handlers() *list.List {
 	return r.handlers
+}
+
+func (r *Router) SetHeader(key, value string) {
+	r.header.Set(key, value)
+}
+
+func (r *Router) AddHeader(key, value string) {
+	r.header.Add(key, value)
+}
+
+func (r *Router) Header() http.Header {
+	return r.header
 }
