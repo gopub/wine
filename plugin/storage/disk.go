@@ -23,7 +23,17 @@ func NewDiskBucket(dir string) *DiskBucket {
 
 func (b *DiskBucket) Write(ctx context.Context, o *Object) error {
 	name := filepath.Join(b.dir, o.Name)
-	return ioutil.WriteFile(name, o.Content, 0644)
+	errC := make(chan error, 1)
+	go func() {
+		defer close(errC)
+		errC <- ioutil.WriteFile(name, o.Content, 0644)
+	}()
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	case err := <-errC:
+		return err
+	}
 }
 
 func (b *DiskBucket) Read(ctx context.Context, name string) ([]byte, error) {

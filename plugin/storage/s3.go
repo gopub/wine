@@ -3,7 +3,7 @@ package storage
 import (
 	"bytes"
 	"context"
-
+	"errors"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
@@ -55,9 +55,26 @@ func (s *S3Bucket) Write(ctx context.Context, o *Object) (string, error) {
 		input.ContentType = aws.String(o.Type)
 	}
 
-	result, err := s.uploader.Upload(input)
-	if err != nil {
-		return "", err
+	resultOrErr := make(chan interface{}, 1)
+	go func() {
+		defer close(resultOrErr)
+		result, err := s.uploader.Upload(input)
+		if err != nil {
+			resultOrErr <- err
+		} else {
+			resultOrErr <- result
+		}
+	}()
+	select {
+	case <-ctx.Done():
+		return "", ctx.Err()
+	case v := <-resultOrErr:
+		if res, ok := v.(*s3manager.UploadOutput); ok {
+			return res.Location, nil
+		} else if err, ok := v.(error); ok {
+			return "", err
+		} else {
+			return "", errors.New("unknown error")
+		}
 	}
-	return result.Location, nil
 }

@@ -61,14 +61,30 @@ func (b *AliBucket) Write(ctx context.Context, obj *Object) (string, error) {
 		options = append(options, oss.ContentType(obj.Type))
 	}
 
-	if err := b.bucket.PutObject(obj.Name, bytes.NewBuffer(obj.Content), options...); err != nil {
-		return "", fmt.Errorf("put object: %w", err)
-	}
+	errC := make(chan error, 1)
+	go func() {
+		defer close(errC)
+		if err := b.bucket.PutObject(obj.Name, bytes.NewBuffer(obj.Content), options...); err != nil {
+			errC <- fmt.Errorf("put object: %w", err)
+			return
+		}
 
-	// TODO: ACL options above doesn't work, set ACL again
-	err := b.bucket.SetObjectACL(obj.Name, oss.ACLPublicRead)
-	if err != nil {
-		return "", fmt.Errorf("set object ACL: %w", err)
+		// TODO: ACL options above doesn't work, set ACL again
+		err := b.bucket.SetObjectACL(obj.Name, oss.ACLPublicRead)
+		if err != nil {
+			errC <- fmt.Errorf("set object ACL: %w", err)
+			return
+		}
+		errC <- nil
+	}()
+
+	select {
+	case <-ctx.Done():
+		return "", ctx.Err()
+	case err := <-errC:
+		if err != nil {
+			return "", err
+		}
+		return wine.JoinURL(b.baseURL, obj.Name), nil
 	}
-	return wine.JoinURL(b.baseURL, obj.Name), nil
 }
