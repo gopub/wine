@@ -55,7 +55,7 @@ func NewRouter() *Router {
 func (r *Router) bindSysHandlers() {
 	r.Get(endpointPath, r.listEndpoints)
 	r.Get(datePath, handleDate)
-	r.Bind(http.MethodGet, versionPath, HandleResponder(Text(http.StatusOK, "v1.23.0.2")))
+	r.Bind(http.MethodGet, versionPath, HandleResponder(Text(http.StatusOK, "v1.26.5")))
 	r.Get(uptimePath, newUptimeHandler())
 	r.Handle(echoPath, handleEcho)
 }
