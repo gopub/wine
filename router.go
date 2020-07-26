@@ -229,7 +229,7 @@ func (r *Router) toEndpoint(e *router.Endpoint) *Endpoint {
 	if e == nil {
 		return nil
 	}
-	e.SetMetadata(r.md)
+	e.SetMetadata(r.md.clone())
 	return &Endpoint{
 		Endpoint: e,
 	}
