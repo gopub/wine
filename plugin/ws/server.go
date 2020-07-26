@@ -154,7 +154,18 @@ func (s *Server) deleteUserConn(conn *serverConn) {
 	if !ok {
 		return
 	}
-	m.(*sync.Map).Delete(conn)
+	sm := m.(*sync.Map)
+	sm.Delete(conn)
+
+	// TODO: race condition with func saveUserConn
+	empty := true
+	sm.Range(func(key, value interface{}) bool {
+		empty = false
+		return false
+	})
+	if empty {
+		s.userConns.Delete(conn.userID)
+	}
 }
 
 func (s *Server) saveUserConn(conn *serverConn) {
