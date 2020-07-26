@@ -52,12 +52,26 @@ func Text(status int, text string, args ...interface{}) Responder {
 	return respond.Text(status, text)
 }
 
-func JSON(status int, value interface{}) Responder {
-	return respond.JSON(status, value)
+func JSON(status int, obj interface{}) Responder {
+	return respond.JSON(status, obj)
+}
+
+func JSONError(obj interface{}, err error) Responder {
+	if err != nil {
+		return Error(err)
+	}
+	return JSON(http.StatusOK, err)
 }
 
 func Protobuf(status int, message proto.Message) Responder {
 	return respond.Protobuf(status, message)
+}
+
+func ProtobufError(message proto.Message, err error) Responder {
+	if err != nil {
+		return Error(err)
+	}
+	return Protobuf(http.StatusOK, message)
 }
 
 // StreamFile creates a application/octet-stream response
