@@ -14,6 +14,8 @@ import (
 	"github.com/gorilla/websocket"
 )
 
+const ErrCanceled errors.String = "request canceled"
+
 type ClientState int
 
 const (
@@ -295,6 +297,20 @@ func (c *Client) Call(ctx context.Context, name string, params interface{}, resu
 		}
 		return nil
 	}
+}
+
+func (c *Client) CancelAll() {
+	c.mu.Lock()
+	for id, replyC := range c.replyM {
+		select {
+		case replyC <- NewReply(id, ErrCanceled):
+			break
+		default:
+			break
+		}
+	}
+	c.replyM = make(map[int32]chan<- *Reply)
+	c.mu.Unlock()
 }
 
 func (c *Client) SetHeader(h map[string]string) {
