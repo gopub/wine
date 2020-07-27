@@ -215,6 +215,15 @@ func GetHeader(ctx context.Context, key string) string {
 	return h[key]
 }
 
+func GetHeaders(ctx context.Context) map[string]string {
+	h, _ := ctx.Value(ckHeader).(map[string]string)
+	m := make(map[string]string, len(h))
+	for k, v := range h {
+		m[k] = v
+	}
+	return m
+}
+
 func withHeader(ctx context.Context, h map[string]string) context.Context {
 	return context.WithValue(ctx, ckHeader, h)
 }
