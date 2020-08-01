@@ -342,9 +342,9 @@ func logResult(req *Request, res *Result, cost time.Duration) {
 		}
 	} else {
 		if req.uid > 0 {
-			logger.Infof("%s | uid=%d", info, req.uid)
+			logger.Debugf("%s | uid=%d", info, req.uid)
 		} else {
-			logger.Info(info)
+			logger.Debug(info)
 		}
 	}
 }

@@ -177,7 +177,7 @@ func (r *Router) Print() {
 	for method, root := range r.scopedRoot {
 		nodes := root.ListEndpoints()
 		for _, n := range nodes {
-			logger.Infof("%-5s %s\t%s", method, n.Path(), n.HandlerPath())
+			logger.Debugf("%-5s %s\t%s", method, n.Path(), n.HandlerPath())
 		}
 	}
 }

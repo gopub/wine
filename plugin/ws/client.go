@@ -415,7 +415,7 @@ func (c *Client) logCall(call *Call, reply *Reply, callAt time.Time) {
 	cost := time.Since(callAt)
 	switch v := reply.Result.(type) {
 	case *Reply_Data:
-		logger.Infof("#%d %s %v", call.Id, call.Name, cost)
+		logger.Debugf("#%d %s %v", call.Id, call.Name, cost)
 	case *Reply_Error:
 		logger.Errorf("#%d %s %v | %s | %d:%s", call.Id, call.Name, cost, call.Data.LogString(), v.Error.Code, v.Error.Message)
 	}

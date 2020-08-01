@@ -278,17 +278,17 @@ func logCall(req *Request, resultOrErr interface{}, cost time.Duration) {
 		logger.Errorf("%s | %s | %v", info, req.Data.LogString(), err)
 	} else {
 		if s, ok := resultOrErr.(wine.LogStringer); ok {
-			logger.Infof("%s | %s", info, s.LogString())
+			logger.Debugf("%s | %s", info, s.LogString())
 		} else {
 			switch v := reflect.ValueOf(resultOrErr); v.Kind() {
 			case reflect.Slice, reflect.Array, reflect.Map:
 				if req.Model != nil {
-					logger.Infof("%s | %s | size=%d", info, req.Data.LogString(), v.Len())
+					logger.Debugf("%s | %s | size=%d", info, req.Data.LogString(), v.Len())
 				} else {
-					logger.Infof("%s | size=%d", info, v.Len())
+					logger.Debugf("%s | size=%d", info, v.Len())
 				}
 			default:
-				logger.Info(info)
+				logger.Debug(info)
 			}
 		}
 	}
