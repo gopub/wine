@@ -131,8 +131,10 @@ func (c *Client) run() {
 		}
 	}
 	if err = c.writeHeader(); err != nil {
+		logger.Errorf("Cannot write header: %v", err)
 		return
 	}
+	logger.Debugf("Wrote header: %v", c.header)
 	c.setState(Connected)
 	done := make(chan struct{}, 1)
 	go c.read(done)
