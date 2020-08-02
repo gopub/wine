@@ -104,7 +104,7 @@ func (s *Server) Run(addr string) {
 // RunTLS starts server with tls
 func (s *Server) RunTLS(addr, certFile, keyFile string) {
 	if s.server != nil {
-		log.Panic("Server is running")
+		logger.Panic("Server is running")
 	}
 
 	logger.Infof("Running at %s ...", addr)
@@ -376,6 +376,6 @@ func (s *TestServer) Run() string {
 
 func (s *TestServer) RunTLS() string {
 	// TODO:
-	log.Panic("Not implemented")
+	logger.Panic("Not implemented")
 	return s.URL
 }

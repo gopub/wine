@@ -41,7 +41,7 @@ func getNodeType(segment string) nodeType {
 	case IsWildcard(segment):
 		return wildcardNode
 	default:
-		log.Panicf("Invalid segment: %s" + segment)
+		logger.Panicf("Invalid segment: %s" + segment)
 		// Suppress compiling error because compiler doesn't know log.Panicf equals to built-in panic function
 		return wildcardNode
 	}
@@ -83,7 +83,7 @@ func newNodeList(path string, handlers *list.List) *node {
 
 func NewNode(path, segment string) *node {
 	if len(strings.Split(segment, "/")) > 1 {
-		log.Panicf("Invalid segment: " + segment)
+		logger.Panicf("Invalid segment: " + segment)
 	}
 	n := &node{
 		typ:      getNodeType(segment),
@@ -138,7 +138,7 @@ func (n *node) Handlers() *list.List {
 
 func (n *node) SetHandlers(l *list.List) {
 	if n.handlers != nil {
-		log.Panicf("Cannot set again")
+		logger.Panicf("Cannot set again")
 	}
 	n.handlers = l
 }
@@ -187,7 +187,7 @@ func (n *node) Add(nod *node) {
 	var match *node
 	for _, child := range n.children {
 		if v := child.Conflict(nod); v != nil {
-			log.Panicf("Conflict: %s, %s", v.First.(*node).path, v.Second.(*node).path)
+			logger.Panicf("Conflict: %s, %s", v.First.(*node).path, v.Second.(*node).path)
 		}
 
 		if child.segment == nod.segment {
@@ -234,7 +234,7 @@ func (n *node) Add(nod *node) {
 	case wildcardNode:
 		n.children = append(n.children, nod)
 	default:
-		log.Panicf("Invalid node type: %v", nod.typ)
+		logger.Panicf("Invalid node type: %v", nod.typ)
 	}
 }
 

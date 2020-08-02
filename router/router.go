@@ -3,7 +3,6 @@ package router
 import (
 	"container/list"
 	"fmt"
-	"log"
 	"net/url"
 	"sort"
 	"strings"
@@ -43,7 +42,7 @@ func (r *Router) BasePath() string {
 // Group returns a new router whose basePath is r.basePath+path
 func (r *Router) Group(path string) *Router {
 	if path == "/" {
-		log.Panic(`Not allowed to create group "/"`)
+		logger.Panic(`Not allowed to create group "/"`)
 	}
 
 	nr := r.clone()
@@ -126,11 +125,11 @@ func (r *Router) MatchScopes(path string) []string {
 // bind binds scope, path with handlers
 func (r *Router) Bind(scope, path string, handlers *list.List) *Endpoint {
 	if path == "" {
-		log.Panic("path is empty")
+		logger.Panic("path is empty")
 	}
 
 	if handlers == nil || handlers.Len() == 0 {
-		log.Panic("handlers cannot be empty")
+		logger.Panic("handlers cannot be empty")
 	}
 
 	scope = strings.ToUpper(scope)
@@ -140,11 +139,11 @@ func (r *Router) Bind(scope, path string, handlers *list.List) *Endpoint {
 	path = Normalize(r.basePath + "/" + path)
 	if path == "" {
 		if root.IsEndpoint() {
-			log.Panicf("Conflict: %s, %s", scope, r.basePath)
+			logger.Panicf("Conflict: %s, %s", scope, r.basePath)
 		}
 
 		if global.IsEndpoint() {
-			log.Panicf("Conflict: %s", r.basePath)
+			logger.Panicf("Conflict: %s", r.basePath)
 		}
 		root.SetHandlers(handlers)
 	} else {
@@ -152,7 +151,7 @@ func (r *Router) Bind(scope, path string, handlers *list.List) *Endpoint {
 		if pair := global.Conflict(nl); pair != nil {
 			first := pair.First.(*node).Path()
 			second := pair.Second.(*node).Path()
-			log.Panicf("Conflict: %s, %s %s", first, scope, second)
+			logger.Panicf("Conflict: %s, %s %s", first, scope, second)
 		}
 		root.Add(nl)
 	}

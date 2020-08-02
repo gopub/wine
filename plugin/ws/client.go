@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/gopub/errors"
-	"github.com/gopub/log"
 	"github.com/gorilla/websocket"
 )
 
@@ -58,9 +57,10 @@ type Client struct {
 	replyM   map[int32]chan<- *Reply
 	header   map[string]string
 
-	conn   *Conn
-	state  ClientState
-	stateC chan ClientState
+	conn    *Conn
+	state   ClientState
+	stateC  chan ClientState
+	stateMu sync.Mutex
 
 	callID int32
 
@@ -165,14 +165,14 @@ func (c *Client) read(done chan<- struct{}) {
 			case c.dataC <- v.Data:
 				break
 			default:
-				log.Warnf("Data channel is overflow")
+				logger.Warnf("Data channel is overflow")
 			}
 		case *Packet_Push:
 			select {
 			case c.pushC <- v.Push:
 				break
 			default:
-				log.Warnf("Push channel is overflow")
+				logger.Warnf("Push channel is overflow")
 			}
 		case *Packet_Reply:
 			c.mu.RLock()
@@ -322,7 +322,10 @@ func (c *Client) SetHeader(h map[string]string) {
 	}
 	c.mu.Unlock()
 	if c.state == Connected {
+		logger.Debugf("Writing header: %v", h)
 		go c.writeHeader()
+	} else {
+		logger.Debugf("Delay writing header: %v", h)
 	}
 }
 
@@ -333,22 +336,26 @@ func (c *Client) Close() {
 }
 
 func (c *Client) setState(s ClientState) {
+	l := logger.With("state", s)
+	c.stateMu.Lock()
+	defer c.stateMu.Unlock()
 	if c.state == s {
 		return
 	}
 	if c.state == Closed {
-		log.Warn("Client is closed")
+		l.Errorf("Cannot change closed client's state")
 		return
 	}
 	c.state = s
 	if s == Closed && c.conn != nil {
 		c.conn.Close()
 	}
+
 	select {
 	case c.stateC <- s:
-		log.Debugf("State: %v", s)
+		l.Debugf("State: %v", s)
 	default:
-		log.Warnf("State channel is overflow")
+		l.Warnf("State channel is overflow")
 	}
 }
 
