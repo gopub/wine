@@ -84,12 +84,12 @@ func NewClient(addr string) *Client {
 		maxReconnBackoff: 2 * time.Second,
 		addr:             addr,
 		calls:            list.New(),
-		newCallC:         make(chan struct{}, 16),
+		newCallC:         make(chan struct{}, 256),
 		replyM:           make(map[int32]chan<- *Reply),
 		state:            Disconnected,
 		stateC:           make(chan ClientState, 4),
-		dataC:            make(chan *Data, 16),
-		pushC:            make(chan *Push, 16),
+		dataC:            make(chan *Data, 256),
+		pushC:            make(chan *Push, 256),
 		callID:           1,
 		header:           map[string]string{},
 	}
@@ -265,7 +265,7 @@ func (c *Client) Call(ctx context.Context, name string, params interface{}, resu
 	case c.newCallC <- struct{}{}:
 		break
 	default:
-		break
+		return errors.New("too many pending calls")
 	}
 
 	startAt := time.Now()
