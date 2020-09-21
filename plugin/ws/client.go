@@ -266,10 +266,11 @@ func (c *Client) Call(ctx context.Context, name string, params interface{}, resu
 	startAt := time.Now()
 	select {
 	case <-ctx.Done():
+		err = fmt.Errorf("cannot deliver the call: %w", ctx.Err())
 		if c.CallLogger != nil {
-			c.CallLogger(ca, NewReply(ca.Id, ctx.Err()), startAt)
+			c.CallLogger(ca, NewReply(ca.Id, err), startAt)
 		}
-		return ctx.Err()
+		return err
 	case reply := <-replyC:
 		if c.CallLogger != nil {
 			c.CallLogger(ca, reply, startAt)
