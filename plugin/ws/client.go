@@ -15,6 +15,11 @@ import (
 
 const ErrCanceled errors.String = "request canceled"
 
+const (
+	StatusTransportFailed = 600
+	Status
+)
+
 type ClientState int
 
 const (
@@ -266,11 +271,18 @@ func (c *Client) Call(ctx context.Context, name string, params interface{}, resu
 	startAt := time.Now()
 	select {
 	case <-ctx.Done():
-		err = fmt.Errorf("cannot deliver the call: %w", ctx.Err())
 		if c.CallLogger != nil {
-			c.CallLogger(ca, NewReply(ca.Id, err), startAt)
+			reply := new(Reply)
+			reply.Id = ca.Id
+			reply.Result = &Reply_Error{
+				Error: &Error{
+					Code:    StatusTransportFailed,
+					Message: ctx.Err().Error(),
+				},
+			}
+			c.CallLogger(ca, reply, startAt)
 		}
-		return err
+		return ctx.Err()
 	case reply := <-replyC:
 		if c.CallLogger != nil {
 			c.CallLogger(ca, reply, startAt)

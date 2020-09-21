@@ -92,7 +92,9 @@ func NewCall(id int32, name string, params interface{}) (*Call, error) {
 func NewReply(id int32, resultOrErr interface{}) *Reply {
 	r := new(Reply)
 	r.Id = id
-	if err, ok := resultOrErr.(error); ok {
+	if err, ok := resultOrErr.(*Reply_Error); ok {
+		r.Result = err
+	} else if err, ok := resultOrErr.(error); ok {
 		code := errors.GetCode(err)
 		if code <= 0 {
 			code = http.StatusInternalServerError
