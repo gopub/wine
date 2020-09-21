@@ -178,12 +178,21 @@ func (s *Server) saveUserConn(conn *serverConn) {
 
 func (s *Server) HandleRequest(conn *serverConn, req *Request) {
 	startAt := time.Now()
+	if s.Recovery {
+		defer func() {
+			if e := recover(); e != nil {
+				s.logCall(req, e, startAt)
+				logger.Errorf("\n%s\n", string(debug.Stack()))
+			}
+		}()
+	}
 	ctx, cancel := context.WithTimeout(context.Background(), s.timeout)
 	defer cancel()
 	ctx = conn.BuildContext(ctx)
 	var resultOrErr interface{}
 	ctx = withPusher(ctx, s)
 	ctx = withHeader(ctx, conn.header)
+
 	result, err := s.Handle(ctx, req)
 	if err != nil {
 		resultOrErr = err
