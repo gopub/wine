@@ -49,7 +49,11 @@ func Text(status int, text string, args ...interface{}) Responder {
 	if len(args) > 0 {
 		text = fmt.Sprintf(text, args...)
 	}
-	return respond.Text(status, text)
+	return respond.PlainText(status, text)
+}
+
+func CSS(status int, css string) Responder {
+	return respond.CSS(status, css)
 }
 
 func JSON(status int, obj interface{}) Responder {

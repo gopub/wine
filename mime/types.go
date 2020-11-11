@@ -8,6 +8,7 @@ const (
 	Plain    = "text/plain"
 	HTML     = "text/html"
 	XML2     = "text/xml"
+	CSS      = "text/css"
 	XML      = "application/xml"
 	XHTML    = "application/xhtml+xml"
 	Protobuf = "application/x-protobuf"

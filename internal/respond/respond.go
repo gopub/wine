@@ -31,7 +31,7 @@ type Response struct {
 func (r *Response) Respond(ctx context.Context, w http.ResponseWriter) {
 	body, err := r.marshalBody()
 	if err != nil {
-		errResp := Text(http.StatusInternalServerError, err.Error())
+		errResp := PlainText(http.StatusInternalServerError, err.Error())
 		errResp.Respond(ctx, w)
 		return
 	}

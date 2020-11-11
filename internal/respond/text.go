@@ -8,11 +8,11 @@ import (
 
 // Status returns a response only with a status code
 func Status(status int) *Response {
-	return Text(status, http.StatusText(status))
+	return PlainText(status, http.StatusText(status))
 }
 
-// Text sends a text response
-func Text(status int, text string) *Response {
+// PlainText sends a text response
+func PlainText(status int, text string) *Response {
 	header := make(http.Header)
 	header.Set(mime.ContentType, mime.PlainUTF8)
 	if text == "" {
@@ -22,5 +22,19 @@ func Text(status int, text string) *Response {
 		status: status,
 		header: header,
 		value:  text,
+	}
+}
+
+// PlainText sends a text response
+func CSS(status int, css string) *Response {
+	header := make(http.Header)
+	header.Set(mime.ContentType, mime.CSS)
+	if css == "" {
+		css = http.StatusText(status)
+	}
+	return &Response{
+		status: status,
+		header: header,
+		value:  css,
 	}
 }
