@@ -93,6 +93,11 @@ func StaticFile(req *http.Request, path string) Responder {
 	return respond.StaticFile(req, path)
 }
 
+// Image serves image
+func Image(contentType string, content []byte) Responder {
+	return respond.Image(contentType, content)
+}
+
 func HTML(status int, html string) Responder {
 	return respond.HTML(status, html)
 }

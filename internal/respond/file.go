@@ -57,3 +57,16 @@ func StaticFile(req *http.Request, filePath string) Func {
 		http.ServeFile(w, req, filePath)
 	})
 }
+
+func Image(contentType string, content []byte) Func {
+	if contentType == "" {
+		contentType = http.DetectContentType(content)
+	}
+	return func(ctx context.Context, w http.ResponseWriter) {
+		w.Header().Set(mime.ContentType, contentType)
+		if _, err := w.Write(content); err != nil {
+			log.FromContext(ctx).Errorf("write: %v", err)
+			w.WriteHeader(http.StatusInternalServerError)
+		}
+	}
+}
