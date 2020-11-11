@@ -11,7 +11,7 @@ func Status(status int) *Response {
 	return PlainText(status, http.StatusText(status))
 }
 
-// PlainText sends a text response
+// PlainText sends a text/plain response
 func PlainText(status int, text string) *Response {
 	header := make(http.Header)
 	header.Set(mime.ContentType, mime.PlainUTF8)
@@ -25,7 +25,7 @@ func PlainText(status int, text string) *Response {
 	}
 }
 
-// PlainText sends a text response
+// CSS sends a text/css response
 func CSS(status int, css string) *Response {
 	header := make(http.Header)
 	header.Set(mime.ContentType, mime.CSS)

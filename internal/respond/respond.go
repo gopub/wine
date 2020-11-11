@@ -31,6 +31,7 @@ type Response struct {
 func (r *Response) Respond(ctx context.Context, w http.ResponseWriter) {
 	body, err := r.marshalBody()
 	if err != nil {
+		logger.Errorf("Cannot marshal body: %v", err)
 		errResp := PlainText(http.StatusInternalServerError, err.Error())
 		errResp.Respond(ctx, w)
 		return
@@ -54,6 +55,10 @@ func (r *Response) marshalBody() ([]byte, error) {
 		return body, nil
 	}
 
+	if s, ok := r.value.(string); ok {
+		return []byte(s), nil
+	}
+
 	ct := r.header.Get(mime.ContentType)
 	switch {
 	case strings.Contains(ct, mime.JSON):
@@ -64,7 +69,7 @@ func (r *Response) marshalBody() ([]byte, error) {
 		}
 		return nil, fmt.Errorf("value is %T instead of proto.message", r.value)
 	case strings.Contains(ct, mime.Plain) || strings.Contains(ct, mime.HTML) ||
-		strings.Contains(ct, mime.XML) || strings.Contains(ct, mime.XML2):
+		strings.Contains(ct, mime.XML) || strings.Contains(ct, mime.XML2) || strings.Contains(ct, mime.CSS):
 		s, err := conv.ToString(r.value)
 		if err != nil {
 			return nil, err
