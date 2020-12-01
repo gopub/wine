@@ -253,6 +253,7 @@ func (s *Server) Push(ctx context.Context, userID int64, typ int32, data interfa
 		} else {
 			logger.Debugf("Push successfully")
 		}
+
 		if ctx.Err() != nil {
 			if firstErr == nil {
 				firstErr = ctx.Err()
@@ -285,20 +286,18 @@ func logCall(req *Request, resultOrErr interface{}, cost time.Duration) {
 	}
 	if err, ok := resultOrErr.(error); ok {
 		logger.Errorf("%s | %s | %v", info, req.Data.LogString(), err)
+	} else if s, ok := resultOrErr.(wine.LogStringer); ok {
+		logger.Debugf("%s | %s", info, s.LogString())
 	} else {
-		if s, ok := resultOrErr.(wine.LogStringer); ok {
-			logger.Debugf("%s | %s", info, s.LogString())
-		} else {
-			switch v := reflect.ValueOf(resultOrErr); v.Kind() {
-			case reflect.Slice, reflect.Array, reflect.Map:
-				if req.Model != nil {
-					logger.Debugf("%s | %s | size=%d", info, req.Data.LogString(), v.Len())
-				} else {
-					logger.Debugf("%s | size=%d", info, v.Len())
-				}
-			default:
-				logger.Debug(info)
+		switch v := reflect.ValueOf(resultOrErr); v.Kind() {
+		case reflect.Slice, reflect.Array, reflect.Map:
+			if req.Model != nil {
+				logger.Debugf("%s | %s | size=%d", info, req.Data.LogString(), v.Len())
+			} else {
+				logger.Debugf("%s | size=%d", info, v.Len())
 			}
+		default:
+			logger.Debug(info)
 		}
 	}
 }
