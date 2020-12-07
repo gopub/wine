@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+
 	"github.com/gopub/log"
 	"github.com/gopub/wine"
 )
