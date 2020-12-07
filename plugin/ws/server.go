@@ -47,7 +47,6 @@ func (r *Request) bind(m interface{}) error {
 type serverConn struct {
 	*Conn
 	userID int64
-	tag    string
 	header map[string]string
 }
 
@@ -65,7 +64,6 @@ type Server struct {
 	timeout     time.Duration
 	PreHandler  Handler
 	userConns   sync.Map // uid:map[conn]bool
-	taggedConns sync.Map // tag:map[conn]bool
 	Handshake   func(rw PacketReadWriter) error
 	CallLogger  func(req *Request, resultOrErr interface{}, cost time.Duration)
 	Recovery    bool
@@ -101,12 +99,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	conn := &serverConn{
 		Conn:   NewConn(wconn),
-		tag:    r.Header.Get(KeyTag),
 		header: map[string]string{},
-	}
-	if conn.tag != "" {
-		s.saveTaggedConn(conn)
-		defer s.deleteTaggedConn(conn)
 	}
 	conn.readTimeout = s.readTimeout
 	logger.Debugf("New conn %s", wconn.RemoteAddr())
@@ -150,35 +143,6 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		logger.Debugf("Close conn: %s, user=%d", wconn.RemoteAddr(), conn.userID)
 	} else {
 		logger.Debugf("Close conn: %s", wconn.RemoteAddr())
-	}
-}
-
-func (s *Server) saveTaggedConn(conn *serverConn) {
-	if conn.tag == "" {
-		return
-	}
-	m, _ := s.taggedConns.LoadOrStore(conn.tag, &sync.Map{})
-	m.(*sync.Map).Store(conn, true)
-}
-func (s *Server) deleteTaggedConn(conn *serverConn) {
-	if conn.tag == "" {
-		return
-	}
-	conns, ok := s.taggedConns.Load(conn.tag)
-	if !ok {
-		return
-	}
-	m := conns.(*sync.Map)
-	m.Delete(conn)
-
-	// TODO: race condition with func saveTaggedConn
-	empty := true
-	m.Range(func(key, value interface{}) bool {
-		empty = false
-		return false
-	})
-	if empty {
-		s.taggedConns.Delete(conn.tag)
 	}
 }
 
@@ -268,32 +232,18 @@ func (s *Server) Handle(ctx context.Context, req *Request) (interface{}, error) 
 	}
 }
 
-func (s *Server) PushWithTag(ctx context.Context, tag string, typ int32, data interface{}) error {
-	logger := log.FromContext(ctx).With("tag", tag, "type", typ, "data", data)
-	conns, ok := s.taggedConns.Load(tag)
-	if !ok {
-		return nil
-	}
-	return s.batchPush(log.BuildContext(ctx, logger), conns.(*sync.Map), typ, data)
-}
-
-func (s *Server) PushToUser(ctx context.Context, userID int64, typ int32, data interface{}) error {
+func (s *Server) Push(ctx context.Context, userID int64, typ int32, data interface{}) error {
 	logger := log.FromContext(ctx).With("user_id", userID, "type", typ, "data", data)
 	conns, ok := s.userConns.Load(userID)
 	if !ok {
 		return nil
 	}
-	return s.batchPush(log.BuildContext(ctx, logger), conns.(*sync.Map), typ, data)
-}
-
-func (s *Server) batchPush(ctx context.Context, conns *sync.Map, typ int32, data interface{}) error {
-	logger := log.FromContext(ctx)
 	d, err := MarshalData(data)
 	if err != nil {
 		return fmt.Errorf("cannot marshal: %w", err)
 	}
 	var firstErr error
-	conns.Range(func(key, value interface{}) bool {
+	conns.(*sync.Map).Range(func(key, value interface{}) bool {
 		conn := key.(*serverConn)
 		if err = conn.Push(typ, d); err != nil {
 			logger.Errorf("Push: %v", err)
