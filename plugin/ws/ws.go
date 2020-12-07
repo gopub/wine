@@ -197,7 +197,8 @@ const (
 )
 
 type Pusher interface {
-	Push(ctx context.Context, userID int64, typ int32, data interface{}) error
+	PushToUser(ctx context.Context, userID int64, typ int32, data interface{}) error
+	PushWithTag(ctx context.Context, tag string, typ int32, data interface{}) error
 }
 
 func GetPusher(ctx context.Context) Pusher {
@@ -229,3 +230,7 @@ func GetHeaders(ctx context.Context) map[string]string {
 func withHeader(ctx context.Context, h map[string]string) context.Context {
 	return context.WithValue(ctx, ckHeader, h)
 }
+
+const (
+	KeyTag = "ws_tag"
+)

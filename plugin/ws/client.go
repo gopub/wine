@@ -74,10 +74,16 @@ type Client struct {
 	dataC         chan *Data
 	pushC         chan *Push
 
+	tag string
+
 	CallLogger func(call *Call, reply *Reply, callAt time.Time)
 }
 
 func NewClient(addr string) *Client {
+	return NewTaggedClient(addr, "")
+}
+
+func NewTaggedClient(addr, tag string) *Client {
 	c := &Client{
 		dialTimeout:      10 * time.Second,
 		pingInterval:     10 * time.Second,
@@ -92,6 +98,7 @@ func NewClient(addr string) *Client {
 		pushC:            make(chan *Push, 256),
 		callID:           1,
 		header:           map[string]string{},
+		tag:              tag,
 	}
 	c.CallLogger = c.logCall
 	go c.start()
@@ -121,7 +128,12 @@ func (c *Client) start() {
 
 func (c *Client) run() {
 	ctx, cancel := context.WithTimeout(context.Background(), c.dialTimeout)
-	conn, _, err := websocket.DefaultDialer.DialContext(ctx, c.addr, nil)
+	var h http.Header
+	if c.tag != "" {
+		h = http.Header{}
+		h.Set(KeyTag, c.tag)
+	}
+	conn, _, err := websocket.DefaultDialer.DialContext(ctx, c.addr, h)
 	if err != nil {
 		cancel()
 		logger.Errorf("Cannot connect %s: %v", c.addr, err)
