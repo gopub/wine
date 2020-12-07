@@ -64,7 +64,7 @@ func JSONError(obj interface{}, err error) Responder {
 	if err != nil {
 		return Error(err)
 	}
-	return JSON(http.StatusOK, err)
+	return JSON(http.StatusOK, obj)
 }
 
 func Protobuf(status int, message proto.Message) Responder {
