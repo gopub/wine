@@ -47,6 +47,7 @@ func (r *Request) bind(m interface{}) error {
 type serverConn struct {
 	*Conn
 	userID int64
+	tag    string // tag is useful to handle different applications within one server
 	header map[string]string
 }
 
@@ -55,6 +56,13 @@ func (c *serverConn) BuildContext(ctx context.Context) context.Context {
 		ctx = wine.WithUserID(ctx, c.userID)
 	}
 	return ctx
+}
+
+func makeConnKey(tag string, userID int64) interface{} {
+	if tag == "" {
+		return userID
+	}
+	return fmt.Sprintf("%s-%d", tag, userID)
 }
 
 type Server struct {
@@ -100,6 +108,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	conn := &serverConn{
 		Conn:   NewConn(wconn),
 		header: map[string]string{},
+		tag:    r.Header.Get(headerKeyTag),
 	}
 	conn.readTimeout = s.readTimeout
 	logger.Debugf("New conn %s", wconn.RemoteAddr())
@@ -150,7 +159,8 @@ func (s *Server) deleteUserConn(conn *serverConn) {
 	if conn.userID == 0 {
 		return
 	}
-	conns, ok := s.userConns.Load(conn.userID)
+	key := makeConnKey(conn.tag, conn.userID)
+	conns, ok := s.userConns.Load(key)
 	if !ok {
 		return
 	}
@@ -164,7 +174,7 @@ func (s *Server) deleteUserConn(conn *serverConn) {
 		return false
 	})
 	if empty {
-		s.userConns.Delete(conn.userID)
+		s.userConns.Delete(key)
 	}
 }
 
@@ -172,7 +182,7 @@ func (s *Server) saveUserConn(conn *serverConn) {
 	if conn.userID == 0 {
 		return
 	}
-	m, _ := s.userConns.LoadOrStore(conn.userID, &sync.Map{})
+	m, _ := s.userConns.LoadOrStore(makeConnKey(conn.tag, conn.userID), &sync.Map{})
 	m.(*sync.Map).Store(conn, true)
 }
 
@@ -234,7 +244,8 @@ func (s *Server) Handle(ctx context.Context, req *Request) (interface{}, error) 
 
 func (s *Server) Push(ctx context.Context, userID int64, typ int32, data interface{}) error {
 	logger := log.FromContext(ctx).With("user_id", userID, "type", typ, "data", data)
-	conns, ok := s.userConns.Load(userID)
+	key := makeConnKey(GetTag(ctx), userID)
+	conns, ok := s.userConns.Load(key)
 	if !ok {
 		return nil
 	}

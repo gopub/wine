@@ -194,6 +194,7 @@ const (
 	ckAuthFlag
 	ckPusher
 	ckHeader
+	ckTag
 )
 
 type Pusher interface {
@@ -229,3 +230,14 @@ func GetHeaders(ctx context.Context) map[string]string {
 func withHeader(ctx context.Context, h map[string]string) context.Context {
 	return context.WithValue(ctx, ckHeader, h)
 }
+
+func GetTag(ctx context.Context) string {
+	t, _ := ctx.Value(ckTag).(string)
+	return t
+}
+
+func withTag(ctx context.Context, tag string) context.Context {
+	return context.WithValue(ctx, ckTag, tag)
+}
+
+const headerKeyTag = "Wine-Conn-Tag"

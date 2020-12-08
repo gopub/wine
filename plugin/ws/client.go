@@ -61,6 +61,7 @@ type Client struct {
 	calls    *list.List
 	replyM   map[int32]chan<- *Reply
 	header   map[string]string
+	tag      string
 
 	conn    *Conn
 	state   ClientState
@@ -78,6 +79,10 @@ type Client struct {
 }
 
 func NewClient(addr string) *Client {
+	return NewTaggedClient(addr, "")
+}
+
+func NewTaggedClient(addr, tag string) *Client {
 	c := &Client{
 		dialTimeout:      10 * time.Second,
 		pingInterval:     10 * time.Second,
@@ -121,7 +126,12 @@ func (c *Client) start() {
 
 func (c *Client) run() {
 	ctx, cancel := context.WithTimeout(context.Background(), c.dialTimeout)
-	conn, _, err := websocket.DefaultDialer.DialContext(ctx, c.addr, nil)
+	var reqHeader http.Header
+	if c.tag != "" {
+		reqHeader = http.Header{}
+		reqHeader.Set(headerKeyTag, c.tag)
+	}
+	conn, _, err := websocket.DefaultDialer.DialContext(ctx, c.addr, reqHeader)
 	if err != nil {
 		cancel()
 		logger.Errorf("Cannot connect %s: %v", c.addr, err)
