@@ -50,15 +50,6 @@ func (r *Response) marshalBody() ([]byte, error) {
 	if r.value == nil {
 		return nil, nil
 	}
-
-	if body, ok := r.value.([]byte); ok {
-		return body, nil
-	}
-
-	if s, ok := r.value.(string); ok {
-		return []byte(s), nil
-	}
-
 	ct := r.header.Get(mime.ContentType)
 	switch {
 	case strings.Contains(ct, mime.JSON):
