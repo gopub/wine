@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package ws;
 
-option go_package = "github.com/gopub/wine/ws";
+option go_package = "github.com/gopub/wine/websocket";
 
 // compile command: protoc packet.proto --go_out=."
 
