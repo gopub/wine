@@ -1,4 +1,4 @@
-package ws_test
+package websocket_test
 
 import (
 	"context"
@@ -11,16 +11,15 @@ import (
 	"time"
 
 	"github.com/gopub/conv"
-
 	"github.com/gopub/types"
-	"github.com/gopub/wine/plugin/ws"
+	"github.com/gopub/wine/websocket"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestClient_Send(t *testing.T) {
 	addr := fmt.Sprintf("localhost:%d", 1024+rand.Int()%10000)
-	s := ws.NewServer()
+	s := websocket.NewServer()
 	s.Bind("echo", func(ctx context.Context, req interface{}) (interface{}, error) {
 		return req, nil
 	}).SetModel("")
@@ -29,7 +28,7 @@ func TestClient_Send(t *testing.T) {
 		require.NoError(t, err)
 	}()
 	runtime.Gosched()
-	c := ws.NewClient("ws://" + addr)
+	c := websocket.NewClient("ws://" + addr)
 	var result string
 	err := c.Call(context.Background(), "echo", "hello", &result)
 	require.NoError(t, err)
@@ -38,11 +37,11 @@ func TestClient_Send(t *testing.T) {
 
 func TestHandshake(t *testing.T) {
 	addr := fmt.Sprintf("localhost:%d", 1024+rand.Int()%10000)
-	s := ws.NewServer()
+	s := websocket.NewServer()
 	s.Bind("echo", func(ctx context.Context, req interface{}) (interface{}, error) {
 		return req, nil
 	}).SetModel("")
-	s.Handshake = func(rw ws.PacketReadWriter) error {
+	s.Handshake = func(rw websocket.PacketReadWriter) error {
 		p, err := rw.Read()
 		assert.NoError(t, err)
 		if err != nil {
@@ -57,14 +56,14 @@ func TestHandshake(t *testing.T) {
 		require.NoError(t, err)
 	}()
 	runtime.Gosched()
-	c := ws.NewClient("ws://" + addr)
-	c.Handshaker = func(rw ws.PacketReadWriter) error {
+	c := websocket.NewClient("ws://" + addr)
+	c.Handshaker = func(rw websocket.PacketReadWriter) error {
 		data, err := json.Marshal(types.M{"greeting": "hello from tom"})
 		require.NoError(t, err)
-		p := new(ws.Packet)
-		p.V = &ws.Packet_Data{
-			Data: &ws.Data{
-				V: &ws.Data_Json{Json: data},
+		p := new(websocket.Packet)
+		p.V = &websocket.Packet_Data{
+			Data: &websocket.Data{
+				V: &websocket.Data_Json{Json: data},
 			},
 		}
 		err = rw.Write(p)
@@ -92,7 +91,7 @@ func (a AuthUserID) GetAuthUserID() int64 {
 func TestServer_Push(t *testing.T) {
 	var uid = AuthUserID(types.NewID().Int())
 	addr := fmt.Sprintf("localhost:%d", 1024+rand.Int()%10000)
-	s := ws.NewServer()
+	s := websocket.NewServer()
 	s.Bind("auth", func(ctx context.Context, req interface{}) (interface{}, error) {
 		return uid, nil
 	})
@@ -101,7 +100,7 @@ func TestServer_Push(t *testing.T) {
 		require.NoError(t, err)
 	}()
 	runtime.Gosched()
-	c := ws.NewClient("ws://" + addr)
+	c := websocket.NewClient("ws://" + addr)
 	ctx := context.Background()
 	err := c.Call(ctx, "auth", nil, nil)
 	require.NoError(t, err)
@@ -126,7 +125,7 @@ func TestRouter_BindModel(t *testing.T) {
 		Value int
 	}
 	addr := fmt.Sprintf("localhost:%d", 1024+rand.Int()%10000)
-	s := ws.NewServer()
+	s := websocket.NewServer()
 	s.Bind("echo", func(ctx context.Context, params interface{}) (interface{}, error) {
 		return params.(*Foo), nil
 	}).SetModel(&Foo{})
@@ -135,7 +134,7 @@ func TestRouter_BindModel(t *testing.T) {
 		require.NoError(t, err)
 	}()
 	runtime.Gosched()
-	c := ws.NewClient("ws://" + addr)
+	c := websocket.NewClient("ws://" + addr)
 	ctx := context.Background()
 	var res Foo
 	err := c.Call(ctx, "echo", Foo{Value: 10}, &res)

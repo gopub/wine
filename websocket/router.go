@@ -1,4 +1,4 @@
-package ws
+package websocket
 
 import (
 	"context"
@@ -22,7 +22,7 @@ func NewRouter() *Router {
 		Router:      router.New(),
 		authHandler: HandlerFunc(handleAuth),
 	}
-	r.Bind("ws.getDate", handleDate)
+	r.Bind("websocket.getDate", handleDate)
 	return r
 }
 

@@ -1,4 +1,4 @@
-package ws
+package websocket
 
 import (
 	"context"
@@ -24,7 +24,7 @@ type GetAuthUserID interface {
 }
 
 const (
-	methodGetDate = "ws.getDate"
+	methodGetDate = "websocket.getDate"
 )
 
 func MarshalData(v interface{}) (*Data, error) {
