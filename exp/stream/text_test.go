@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	"github.com/gopub/wine"
-	"github.com/gopub/wine/plugin/stream"
+	"github.com/gopub/wine/exp/stream"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
