@@ -37,7 +37,7 @@ func (e *Endpoint) Header() *Header {
 // Router implements routing function
 type Router struct {
 	*router.Router
-	authHandler Handler
+	authChecker Handler
 	md          *metadata
 }
 
@@ -45,7 +45,7 @@ type Router struct {
 func NewRouter() *Router {
 	r := &Router{
 		Router:      router.New(),
-		authHandler: HandlerFunc(handleAuth),
+		authChecker: HandlerFunc(checkAuth),
 		md:          newMetadata(),
 	}
 	r.bindSysHandlers()
@@ -60,22 +60,29 @@ func (r *Router) bindSysHandlers() {
 	r.Handle(echoPath, handleEcho)
 }
 
-func (r *Router) SetAuthHandler(h Handler) {
-	r.authHandler = h
+// SetAuthChecker check if the request is authenticated.
+// AuthChecker should not do authenticating which is supposed to be done ahead.
+// Authentication can be done in PreHandler, which can identify every incoming request.
+// Some endpoints are public no matter authenticated or not, however some may need to check authentication.
+// In PreHandler, authentication may succeed or fail, it doesn't matter.
+// AuthChecker will fail all non-authenticated requests
+// Regarding to authorization, it's related to business logic, so the router won't handle this.
+func (r *Router) SetAuthChecker(h Handler) {
+	r.authChecker = h
 }
 
-func (r *Router) Auth() *Router {
-	if r.ContainsHandler(r.authHandler) {
+func (r *Router) RequireAuth() *Router {
+	if r.ContainsHandler(r.authChecker) {
 		return r
 	}
-	return r.UseHandlers(r.authHandler)
+	return r.UseHandlers(r.authChecker)
 }
 
 func (r *Router) Group(name string) *Router {
 	nr := r.Router.Group(name)
 	return &Router{
 		Router:      nr,
-		authHandler: r.authHandler,
+		authChecker: r.authChecker,
 		md:          r.md.clone(),
 	}
 }
@@ -86,7 +93,7 @@ func (r *Router) UseHandlers(handlers ...Handler) *Router {
 	nr := r.Router.Use(conv.ToList(handlers))
 	return &Router{
 		Router:      nr,
-		authHandler: r.authHandler,
+		authChecker: r.authChecker,
 		md:          r.md.clone(),
 	}
 }
@@ -96,7 +103,7 @@ func (r *Router) Use(funcs ...HandlerFunc) *Router {
 	nr := r.Router.Use(conv.ToList(funcs))
 	return &Router{
 		Router:      nr,
-		authHandler: r.authHandler,
+		authChecker: r.authChecker,
 		md:          r.md.clone(),
 	}
 }

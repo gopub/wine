@@ -39,7 +39,7 @@ func handleDate(_ context.Context, req *Request) Responder {
 	return JSON(http.StatusOK, res)
 }
 
-func handleAuth(ctx context.Context, req *Request) Responder {
+func checkAuth(ctx context.Context, req *Request) Responder {
 	if GetUserID(ctx) <= 0 {
 		return Text(http.StatusUnauthorized, "")
 	}

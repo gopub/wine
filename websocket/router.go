@@ -14,40 +14,47 @@ import (
 
 type Router struct {
 	*router.Router
-	authHandler Handler
+	authChecker Handler
 }
 
 func NewRouter() *Router {
 	r := &Router{
 		Router:      router.New(),
-		authHandler: HandlerFunc(handleAuth),
+		authChecker: HandlerFunc(checkAuth),
 	}
 	r.Bind("websocket.getDate", handleDate)
 	return r
 }
 
-func (r *Router) SetAuthHandler(h Handler) {
-	r.authHandler = h
+// SetAuthChecker check if the request is authenticated.
+// AuthChecker should not do authenticating which is supposed to be done ahead.
+// Authentication can be done in PreHandler, which can identify every incoming request.
+// Some endpoints are public no matter authenticated or not, however some may need to check authentication.
+// In PreHandler, authentication may succeed or fail, it doesn't matter.
+// AuthChecker will fail all non-authenticated requests
+// Regarding to authorization, it's related to business logic, so the router won't handle this.
+func (r *Router) SetAuthChecker(h Handler) {
+	r.authChecker = h
 }
 
-func (r *Router) Auth() *Router {
-	if r.ContainsHandler(r.authHandler) {
+func (r *Router) RequireAuth() *Router {
+	if r.ContainsHandler(r.authChecker) {
 		return r
 	}
-	return r.UseHandlers(r.authHandler)
+	return r.UseHandlers(r.authChecker)
 }
 
 func (r *Router) UseHandlers(handlers ...Handler) *Router {
 	return &Router{
 		Router:      r.Router.Use(conv.ToList(handlers)),
-		authHandler: r.authHandler,
+		authChecker: r.authChecker,
 	}
 }
 
 func (r *Router) Use(funcs ...HandlerFunc) *Router {
 	return &Router{
 		Router:      r.Router.Use(conv.ToList(funcs)),
-		authHandler: r.authHandler,
+		authChecker: r.authChecker,
 	}
 }
 
@@ -59,7 +66,7 @@ func (r *Router) Bind(path string, funcs ...HandlerFunc) *router.Endpoint {
 	return r.Router.Bind("", path, conv.ToList(funcs))
 }
 
-func handleAuth(ctx context.Context, params interface{}) (interface{}, error) {
+func checkAuth(ctx context.Context, params interface{}) (interface{}, error) {
 	if wine.GetUserID(ctx) <= 0 {
 		return nil, errors.Unauthorized("")
 	}
