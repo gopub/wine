@@ -110,6 +110,9 @@ func (c *Client) start() {
 	for c.state != Closed {
 		c.setState(Connecting)
 		c.run()
+		if c.state == Closed {
+			break
+		}
 		c.setState(Disconnected)
 		if c.reconnBackoff > 0 {
 			time.Sleep(c.reconnBackoff)
@@ -123,7 +126,7 @@ func (c *Client) start() {
 
 func (c *Client) run() {
 	ctx, cancel := context.WithTimeout(context.Background(), c.dialTimeout)
-	conn, _, err := websocket.DefaultDialer.DialContext(ctx, c.addr, nil)
+	conn, _, err := websocket.DefaultDialer.DialContext(ctx, c.addr, c.header)
 	if err != nil {
 		cancel()
 		logger.Errorf("Cannot connect %s: %v", c.addr, err)
@@ -154,7 +157,9 @@ func (c *Client) read(done chan<- struct{}) {
 	for {
 		p, err := c.conn.Read()
 		if err != nil {
-			logger.Errorf("Cannot read: %v", err)
+			if c.state == Connected {
+				logger.Errorf("Cannot read: %v", err)
+			}
 			done <- struct{}{}
 			return
 		}
@@ -213,8 +218,6 @@ func (c *Client) write(done <-chan struct{}) {
 			c.reconnBackoff = 0
 			return
 		case <-c.newCallC:
-
-			fmt.Println(c.calls.Len())
 			c.mu.Lock()
 		CallLoop:
 			for it := c.calls.Front(); it != nil; {
@@ -223,7 +226,9 @@ func (c *Client) write(done <-chan struct{}) {
 				c.calls.Remove(it)
 				it = next
 				if err := c.conn.Call(ca.Id, ca.Name, ca.Data); err != nil {
-					logger.Errorf("Cannot call %s: %v", ca.Name, err)
+					if c.state == Connected {
+						logger.Errorf("Cannot call %s: %v", ca.Name, err)
+					}
 					if rc, ok := c.replyM[ca.Id]; ok {
 						select {
 						case rc <- NewReply(ca.Id, err):
@@ -235,7 +240,6 @@ func (c *Client) write(done <-chan struct{}) {
 					}
 					break CallLoop
 				}
-				fmt.Println(ca.Id, ca.Name)
 			}
 			c.mu.Unlock()
 		}
@@ -361,7 +365,7 @@ func (c *Client) setState(s ClientState) {
 		return
 	}
 	if c.state == Closed {
-		l.Errorf("Cannot change closed client's state")
+		l.Errorf("Cannot change state from %v to %v", c.state, s)
 		return
 	}
 	c.state = s

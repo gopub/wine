@@ -114,6 +114,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	conn := &serverConn{
 		Conn:     NewConn(wconn),
+		header:   r.Header,
 		metadata: map[string]string{},
 	}
 	conn.readTimeout = s.readTimeout
