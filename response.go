@@ -119,7 +119,7 @@ func Error(err error) Responder {
 	if err == nil {
 		return OK
 	}
-	if s := errors.GetCode(err); s > 0 {
+	if s := errors.GetCode(err); s >= 100 && s <= 999 {
 		return Text(s, err.Error())
 	}
 	return Text(http.StatusInternalServerError, err.Error())
