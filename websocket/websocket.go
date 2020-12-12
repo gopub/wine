@@ -23,6 +23,10 @@ type GetAuthUserID interface {
 	GetAuthUserID() int64
 }
 
+type GetConnID interface {
+	GetConnID() interface{}
+}
+
 const (
 	methodGetDate = "websocket.getDate"
 )
@@ -192,52 +196,14 @@ type contextKey int
 const (
 	ckNextHandler contextKey = iota + 1
 	ckAuthFlag
-	ckPusher
-	ckHeader
-	ckTag
+	ckServerConn
 )
 
-type Pusher interface {
-	Push(ctx context.Context, userID int64, typ int32, data interface{}) error
+func GetServerConn(ctx context.Context) *serverConn {
+	c, _ := ctx.Value(ckServerConn).(*serverConn)
+	return c
 }
 
-func GetPusher(ctx context.Context) Pusher {
-	p, _ := ctx.Value(ckPusher).(Pusher)
-	return p
+func withServerConn(ctx context.Context, c *serverConn) context.Context {
+	return context.WithValue(ctx, ckServerConn, c)
 }
-
-func withPusher(ctx context.Context, p Pusher) context.Context {
-	return context.WithValue(ctx, ckPusher, p)
-}
-
-func GetHeader(ctx context.Context, key string) string {
-	h, ok := ctx.Value(ckHeader).(map[string]string)
-	if !ok {
-		return ""
-	}
-	return h[key]
-}
-
-func GetHeaders(ctx context.Context) map[string]string {
-	h, _ := ctx.Value(ckHeader).(map[string]string)
-	m := make(map[string]string, len(h))
-	for k, v := range h {
-		m[k] = v
-	}
-	return m
-}
-
-func withHeader(ctx context.Context, h map[string]string) context.Context {
-	return context.WithValue(ctx, ckHeader, h)
-}
-
-func GetTag(ctx context.Context) string {
-	t, _ := ctx.Value(ckTag).(string)
-	return t
-}
-
-func withTag(ctx context.Context, tag string) context.Context {
-	return context.WithValue(ctx, ckTag, tag)
-}
-
-const headerKeyTag = "Wine-Conn-Tag"

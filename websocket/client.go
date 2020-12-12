@@ -49,6 +49,7 @@ type Caller interface {
 }
 
 type Client struct {
+	header           http.Header
 	dialTimeout      time.Duration
 	pingInterval     time.Duration
 	maxReconnBackoff time.Duration
@@ -60,8 +61,7 @@ type Client struct {
 	mu       sync.RWMutex // guard calls, replyM
 	calls    *list.List
 	replyM   map[int32]chan<- *Reply
-	header   map[string]string
-	tag      string
+	metadata map[string]string
 
 	conn    *Conn
 	state   ClientState
@@ -78,12 +78,9 @@ type Client struct {
 	CallLogger func(call *Call, reply *Reply, callAt time.Time)
 }
 
-func NewClient(addr string) *Client {
-	return NewTaggedClient(addr, "")
-}
-
-func NewTaggedClient(addr, tag string) *Client {
+func NewClient(addr string, header http.Header) *Client {
 	c := &Client{
+		header:           header,
 		dialTimeout:      10 * time.Second,
 		pingInterval:     10 * time.Second,
 		maxReconnBackoff: 2 * time.Second,
@@ -96,7 +93,7 @@ func NewTaggedClient(addr, tag string) *Client {
 		dataC:            make(chan *Data, 256),
 		pushC:            make(chan *Push, 256),
 		callID:           1,
-		header:           map[string]string{},
+		metadata:         map[string]string{},
 	}
 	c.CallLogger = c.logCall
 	go c.start()
@@ -126,12 +123,7 @@ func (c *Client) start() {
 
 func (c *Client) run() {
 	ctx, cancel := context.WithTimeout(context.Background(), c.dialTimeout)
-	var reqHeader http.Header
-	if c.tag != "" {
-		reqHeader = http.Header{}
-		reqHeader.Set(headerKeyTag, c.tag)
-	}
-	conn, _, err := websocket.DefaultDialer.DialContext(ctx, c.addr, reqHeader)
+	conn, _, err := websocket.DefaultDialer.DialContext(ctx, c.addr, nil)
 	if err != nil {
 		cancel()
 		logger.Errorf("Cannot connect %s: %v", c.addr, err)
@@ -145,11 +137,11 @@ func (c *Client) run() {
 			return
 		}
 	}
-	if err = c.writeHeader(); err != nil {
-		logger.Errorf("Cannot write header: %v", err)
+	if err = c.writeMetadata(); err != nil {
+		logger.Errorf("Cannot write metadata: %v", err)
 		return
 	}
-	logger.Debugf("Wrote header: %v", c.header)
+	logger.Debugf("Wrote metadata: %v", c.metadata)
 	c.setState(Connected)
 	done := make(chan struct{}, 1)
 	go c.read(done)
@@ -221,6 +213,8 @@ func (c *Client) write(done <-chan struct{}) {
 			c.reconnBackoff = 0
 			return
 		case <-c.newCallC:
+
+			fmt.Println(c.calls.Len())
 			c.mu.Lock()
 		CallLoop:
 			for it := c.calls.Front(); it != nil; {
@@ -241,18 +235,19 @@ func (c *Client) write(done <-chan struct{}) {
 					}
 					break CallLoop
 				}
+				fmt.Println(ca.Id, ca.Name)
 			}
 			c.mu.Unlock()
 		}
 	}
 }
 
-func (c *Client) writeHeader() error {
-	if len(c.header) == 0 {
+func (c *Client) writeMetadata() error {
+	if len(c.metadata) == 0 {
 		return nil
 	}
 	h := &Header{
-		Entries: c.header,
+		Entries: c.metadata,
 	}
 	p := new(Packet)
 	p.V = &Packet_Header{
@@ -338,17 +333,17 @@ func (c *Client) CancelAll() {
 	c.mu.Unlock()
 }
 
-func (c *Client) SetHeader(h map[string]string) {
+func (c *Client) SetMetadata(h map[string]string) {
 	c.mu.Lock()
 	for k, v := range h {
-		c.header[k] = v
+		c.metadata[k] = v
 	}
 	c.mu.Unlock()
 	if c.state == Connected {
-		logger.Debugf("Writing header: %v", h)
-		go c.writeHeader()
+		logger.Debugf("Writing metadata: %v", h)
+		go c.writeMetadata()
 	} else {
-		logger.Debugf("Delay writing header: %v", h)
+		logger.Debugf("Delay writing metadata: %v", h)
 	}
 }
 

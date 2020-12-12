@@ -46,23 +46,30 @@ func (r *Request) bind(m interface{}) error {
 
 type serverConn struct {
 	*Conn
-	userID int64
-	tag    string // tag is useful to handle different applications within one server
-	header map[string]string
+	id       interface{} // connections from the same user can share the same id
+	userID   int64
+	header   http.Header
+	metadata map[string]string
 }
 
 func (c *serverConn) BuildContext(ctx context.Context) context.Context {
 	if c.userID > 0 {
 		ctx = wine.WithUserID(ctx, c.userID)
 	}
+	ctx = withServerConn(ctx, c)
 	return ctx
 }
 
-func makeConnKey(tag string, userID int64) interface{} {
-	if tag == "" {
-		return userID
-	}
-	return fmt.Sprintf("%s-%d", tag, userID)
+func (c *serverConn) GetID() interface{} {
+	return c.id
+}
+
+func (c *serverConn) GetHeader(key string) string {
+	return c.header.Get(key)
+}
+
+func (c *serverConn) GetMetadata(key string) string {
+	return c.metadata[key]
 }
 
 type Server struct {
@@ -71,7 +78,7 @@ type Server struct {
 	readTimeout time.Duration
 	timeout     time.Duration
 	PreHandler  Handler
-	userConns   sync.Map // uid:map[conn]bool
+	conns       sync.Map // id:map[conn]bool
 	Handshake   func(rw PacketReadWriter) error
 	CallLogger  func(req *Request, resultOrErr interface{}, cost time.Duration)
 	Recovery    bool
@@ -106,9 +113,8 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	conn := &serverConn{
-		Conn:   NewConn(wconn),
-		header: map[string]string{},
-		tag:    r.Header.Get(headerKeyTag),
+		Conn:     NewConn(wconn),
+		metadata: map[string]string{},
 	}
 	conn.readTimeout = s.readTimeout
 	logger.Debugf("New conn %s", wconn.RemoteAddr())
@@ -137,9 +143,9 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			go s.HandleRequest(conn, req)
 		case *Packet_Header:
 			for k, val := range v.Header.Entries {
-				conn.header[k] = val
+				conn.metadata[k] = val
 			}
-			logger.Debug("Header:", conn.header)
+			logger.Debug("Header:", conn.metadata)
 		case *Packet_Hello:
 			go conn.Hello()
 		default:
@@ -147,7 +153,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	conn.Close()
-	s.deleteUserConn(conn)
+	s.deleteConn(conn)
 	if conn.userID != 0 {
 		logger.Debugf("Close conn: %s, user=%d", wconn.RemoteAddr(), conn.userID)
 	} else {
@@ -155,34 +161,30 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (s *Server) deleteUserConn(conn *serverConn) {
-	if conn.userID == 0 {
-		return
-	}
-	key := makeConnKey(conn.tag, conn.userID)
-	conns, ok := s.userConns.Load(key)
+func (s *Server) deleteConn(conn *serverConn) {
+	conns, ok := s.conns.Load(conn.id)
 	if !ok {
 		return
 	}
 	m := conns.(*sync.Map)
 	m.Delete(conn)
 
-	// TODO: race condition with func saveUserConn
+	// TODO: race condition with func storeConn
 	empty := true
 	m.Range(func(key, value interface{}) bool {
 		empty = false
 		return false
 	})
 	if empty {
-		s.userConns.Delete(key)
+		s.conns.Delete(conn.id)
 	}
 }
 
-func (s *Server) saveUserConn(conn *serverConn) {
-	if conn.userID == 0 {
+func (s *Server) storeConn(conn *serverConn) {
+	if conn.id == nil {
 		return
 	}
-	m, _ := s.userConns.LoadOrStore(makeConnKey(conn.tag, conn.userID), &sync.Map{})
+	m, _ := s.conns.LoadOrStore(conn.id, &sync.Map{})
 	m.(*sync.Map).Store(conn, true)
 }
 
@@ -200,23 +202,25 @@ func (s *Server) HandleRequest(conn *serverConn, req *Request) {
 	defer cancel()
 	ctx = conn.BuildContext(ctx)
 	var resultOrErr interface{}
-	ctx = withPusher(ctx, s)
-	ctx = withHeader(ctx, conn.header)
-
 	result, err := s.Handle(ctx, req)
 	if err != nil {
 		resultOrErr = err
 	} else {
 		resultOrErr = result
-	}
-	if getUid, ok := resultOrErr.(GetAuthUserID); ok {
-		uid := getUid.GetAuthUserID()
-		if conn.userID != uid {
-			conn.userID = uid
-			s.deleteUserConn(conn)
-			s.saveUserConn(conn)
+		if getUid, ok := result.(GetAuthUserID); ok {
+			conn.userID = getUid.GetAuthUserID()
+		}
+		if getConnID, ok := result.(GetConnID); ok {
+			connID := getConnID.GetConnID()
+			if conn.id != connID {
+				// delete conn before assigning new id
+				s.deleteConn(conn)
+				conn.id = connID
+				s.storeConn(conn)
+			}
 		}
 	}
+
 	if err = conn.Reply(req.ID, resultOrErr); err != nil {
 		logger.Errorf("Cannot write reply: %v", err)
 		conn.Close()
@@ -242,10 +246,9 @@ func (s *Server) Handle(ctx context.Context, req *Request) (interface{}, error) 
 	}
 }
 
-func (s *Server) Push(ctx context.Context, userID int64, typ int32, data interface{}) error {
-	logger := log.FromContext(ctx).With("user_id", userID, "type", typ, "data", data)
-	key := makeConnKey(GetTag(ctx), userID)
-	conns, ok := s.userConns.Load(key)
+func (s *Server) Push(ctx context.Context, connID interface{}, typ int32, data interface{}) error {
+	logger := log.FromContext(ctx).With("conn", connID, "type", typ, "data", data)
+	conns, ok := s.conns.Load(connID)
 	if !ok {
 		return nil
 	}
