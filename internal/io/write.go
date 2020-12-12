@@ -36,6 +36,10 @@ func NewResponseWriter(rw http.ResponseWriter) *ResponseWriter {
 }
 
 func (w *ResponseWriter) WriteHeader(statusCode int) {
+	if statusCode < 100 || statusCode > 999 {
+		logger.Errorf("Cannot write invalid status code: %d", statusCode)
+		statusCode = http.StatusInternalServerError
+	}
 	if w.status > 0 {
 		logger.Warnf("Status code already written")
 		return
