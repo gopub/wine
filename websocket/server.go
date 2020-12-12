@@ -46,13 +46,13 @@ func (r *Request) bind(m interface{}) error {
 
 type serverConn struct {
 	*Conn
-	id       interface{} // connections from the same user can share the same id
+	id       string // connections from the same user can share the same id
 	userID   int64
 	header   http.Header
 	metadata map[string]string
 }
 
-func (c *serverConn) BuildContext(ctx context.Context) context.Context {
+func (c *serverConn) buildContext(ctx context.Context) context.Context {
 	if c.userID > 0 {
 		ctx = wine.WithUserID(ctx, c.userID)
 	}
@@ -60,7 +60,7 @@ func (c *serverConn) BuildContext(ctx context.Context) context.Context {
 	return ctx
 }
 
-func (c *serverConn) GetID() interface{} {
+func (c *serverConn) GetID() string {
 	return c.id
 }
 
@@ -181,7 +181,7 @@ func (s *Server) deleteConn(conn *serverConn) {
 }
 
 func (s *Server) storeConn(conn *serverConn) {
-	if conn.id == nil {
+	if conn.id == "" {
 		return
 	}
 	m, _ := s.conns.LoadOrStore(conn.id, &sync.Map{})
@@ -200,7 +200,7 @@ func (s *Server) HandleRequest(conn *serverConn, req *Request) {
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), s.timeout)
 	defer cancel()
-	ctx = conn.BuildContext(ctx)
+	ctx = conn.buildContext(ctx)
 	var resultOrErr interface{}
 	result, err := s.Handle(ctx, req)
 	if err != nil {
@@ -246,7 +246,7 @@ func (s *Server) Handle(ctx context.Context, req *Request) (interface{}, error) 
 	}
 }
 
-func (s *Server) Push(ctx context.Context, connID interface{}, typ int32, data interface{}) error {
+func (s *Server) Push(ctx context.Context, connID string, typ int32, data interface{}) error {
 	logger := log.FromContext(ctx).With("conn", connID, "type", typ, "data", data)
 	conns, ok := s.conns.Load(connID)
 	if !ok {

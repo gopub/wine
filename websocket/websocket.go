@@ -24,7 +24,7 @@ type GetAuthUserID interface {
 }
 
 type GetConnID interface {
-	GetConnID() interface{}
+	GetConnID() string
 }
 
 const (

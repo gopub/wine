@@ -88,8 +88,8 @@ func (a AuthUserID) GetAuthUserID() int64 {
 	return int64(a)
 }
 
-func (a AuthUserID) GetConnID() interface{} {
-	return int64(a)
+func (a AuthUserID) GetConnID() string {
+	return fmt.Sprint(a)
 }
 
 func TestServer_Push(t *testing.T) {
@@ -109,7 +109,7 @@ func TestServer_Push(t *testing.T) {
 	err := c.Call(ctx, "auth", nil, nil)
 	require.NoError(t, err)
 	data := types.NewID().Pretty()
-	err = s.Push(ctx, int64(uid), 10, data)
+	err = s.Push(ctx, fmt.Sprint(uid), 10, data)
 	require.NoError(t, err)
 	time.Sleep(time.Second) // Ensure client receive the data
 	select {
