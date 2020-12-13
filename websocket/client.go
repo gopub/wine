@@ -358,14 +358,13 @@ func (c *Client) Close() {
 }
 
 func (c *Client) setState(s ClientState) {
-	l := logger.With("state", s)
 	c.stateMu.Lock()
 	defer c.stateMu.Unlock()
 	if c.state == s {
 		return
 	}
 	if c.state == Closed {
-		l.Errorf("Cannot change state from %v to %v", c.state, s)
+		logger.Errorf("Cannot change state from %v to %v", c.state, s)
 		return
 	}
 	c.state = s
@@ -375,9 +374,9 @@ func (c *Client) setState(s ClientState) {
 
 	select {
 	case c.stateC <- s:
-		l.Debugf("State: %v", s)
+		logger.Debugf("State: %v", s)
 	default:
-		l.Warnf("State channel is overflow")
+		logger.Warnf("State: %v, cannot write to overflow chan", s)
 	}
 }
 
