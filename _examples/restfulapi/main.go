@@ -9,15 +9,11 @@ import (
 
 func main() {
 	s := wine.NewServer()
-	// Place NewBasicAuthHandler handler to do authenticating
 	r := s.Router
 	service := NewItemService()
 	r.Get("/items/{id}", service.Get).SetDescription("Get items by id")
 	r.Get("/items/list", service.List).SetDescription("List items")
-
-	//r = r.Use(wine.NewBasicAuthHandler(map[string]string{"user": "password"}, "wine"))
 	r.Post("/items", service.Create).SetModel(Item{})
-
 	s.Run(":8000")
 }
 
