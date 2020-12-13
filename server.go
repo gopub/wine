@@ -86,17 +86,17 @@ func NewServer() *Server {
 // Run starts server
 func (s *Server) Run(addr string) {
 	if s.server != nil {
-		logger.Panicf("Server is running")
+		logger.Panicf("HTTP Server is running")
 	}
 
-	logger.Infof("Running at %s ...", addr)
+	logger.Infof("HTTP server is running on %s", addr)
 	s.server = &http.Server{Addr: addr, Handler: s}
 	err := s.server.ListenAndServe()
 	if err != nil {
 		if errors.Is(err, http.ErrServerClosed) {
-			logger.Infof("Server closed")
+			logger.Infof("HTTP server was closed")
 		} else {
-			logger.Panicf("ListenAndServe: %v", err)
+			logger.Panicf("HTTP server was terminated: %v", err)
 		}
 	}
 }
@@ -104,22 +104,22 @@ func (s *Server) Run(addr string) {
 // RunTLS starts server with tls
 func (s *Server) RunTLS(addr, certFile, keyFile string) {
 	if s.server != nil {
-		logger.Panic("Server is running")
+		logger.Panic("HTTPS Server is running")
 	}
 
-	logger.Infof("Running at %s ...", addr)
+	logger.Infof("HTTPS server is running on %s", addr)
 	s.server = &http.Server{Addr: addr, Handler: s}
 	err := s.server.ListenAndServeTLS(certFile, keyFile)
 	if err != nil {
 		if errors.Is(err, http.ErrServerClosed) {
-			logger.Infof("Server closed")
+			logger.Infof("HTTPS server was closed")
 		} else {
-			logger.Panicf("ListenAndServe: %v", err)
+			logger.Panicf("HTTPS server was terminated: %v", err)
 		}
 	}
 }
 
-// Shutdown stops server
+// Shutdown shutdown server
 func (s *Server) Shutdown() error {
 	return s.server.Shutdown(context.Background())
 }
@@ -288,7 +288,6 @@ func (s *Server) closeWriter(w http.ResponseWriter) {
 
 func (s *Server) handleOptions(_ context.Context, req *Request) Responder {
 	// TODO: how to handle preflight correctly?
-
 	methods := s.MatchScopes(req.NormalizedPath())
 	if len(methods) > 0 {
 		methods = append(methods, http.MethodOptions)

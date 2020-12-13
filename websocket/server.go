@@ -72,6 +72,7 @@ func (c *serverConn) GetMetadata(key string) string {
 	return c.metadata[key]
 }
 
+// Server implements websocket server
 type Server struct {
 	websocket.Upgrader
 	*Router
@@ -84,6 +85,7 @@ type Server struct {
 	Recovery    bool
 }
 
+// Server implements http.Handler in order to take over http conn and upgrade to websocket conn
 var _ http.Handler = (*Server)(nil)
 
 func NewServer() *Server {
