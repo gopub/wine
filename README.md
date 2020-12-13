@@ -57,7 +57,7 @@ Support parameters in json
                -d '{"text":"crash", "email":"wine@wine.com"}' 
                http://localhost:8000/feedback
 #### Parameters in URL Path
-Path parameters are also supported in order to provide elegant RESTful apis.  
+Path parameters are also supported in order to provide elegant RESTFul API.  
 Single parameter in one segment:
 <pre>
     s := wine.NewServer() 
@@ -66,6 +66,37 @@ Single parameter in one segment:
         return wine.Text("item id: " + id)
     }) 
     s.Run(":8000")
+</pre>
+
+## Model Binding
+If an endpoint is bound with a model, request's parameters will be unmarshalled into an instance of the same model type. <br>
+If the model implements interface wine.Validator, then it will be validated before passed to handler.
+<pre>
+type Item struct {
+    ID      string      `json:"id"`
+    Price   float32     `json:"price"`
+}
+func (i *Item) Validate() error {
+    if i.ID == "" {
+        return errors.BadRequest("missing id")
+    }
+    if i.Price <= 0 {
+        return errors.BadRequest("missing or invalid price")
+    }
+    return nil 
+}
+
+func main() {
+    s := wine.NewServer() 
+    s.Post("/items", CreateItem).Bind(&Item{}) 
+    s.Run(":8000")
+}
+func CreateItem(ctx context.Context, req *wine.Request) wine.Responder {
+    // It's safe to get *Item, and item has been validated
+    item := req.Model.(*Item)
+    // TODO: save item into database
+    return item
+}
 </pre>
        
 ## Use Interceptor
