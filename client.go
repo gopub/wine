@@ -33,7 +33,7 @@ type Client struct {
 	RequestLogging bool
 	Decoder        func(resp *http.Response, result interface{}) error
 
-	getServerTime *clientEndpoint
+	getServerTime *ClientEndpoint
 }
 
 var DefaultClient = NewClient(http.DefaultClient)
@@ -51,7 +51,7 @@ func (c *Client) HTTPClient() *http.Client {
 	return c.client
 }
 
-func (c *Client) Endpoint(method, url string) (*clientEndpoint, error) {
+func (c *Client) Endpoint(method, url string) (*ClientEndpoint, error) {
 	return newClientEndpoint(c, method, url)
 }
 
@@ -162,14 +162,14 @@ func (c *Client) GetServerTime(ctx context.Context, serverURL string) (int64, er
 	return res.Timestamp, errors.Wrapf(err, "")
 }
 
-type clientEndpoint struct {
+type ClientEndpoint struct {
 	c      *Client
 	method string
 	url    *url.URL
 	header http.Header
 }
 
-func newClientEndpoint(c *Client, method string, urlStr string) (*clientEndpoint, error) {
+func newClientEndpoint(c *Client, method string, urlStr string) (*ClientEndpoint, error) {
 	u, err := url.Parse(urlStr)
 	if err != nil {
 		return nil, fmt.Errorf("parse url: %w", err)
@@ -179,7 +179,7 @@ func newClientEndpoint(c *Client, method string, urlStr string) (*clientEndpoint
 	if method == "" {
 		return nil, errors.New("method cannot be empty")
 	}
-	return &clientEndpoint{
+	return &ClientEndpoint{
 		c:      c,
 		method: method,
 		url:    u,
@@ -187,11 +187,11 @@ func newClientEndpoint(c *Client, method string, urlStr string) (*clientEndpoint
 	}, nil
 }
 
-func (c *clientEndpoint) Header() http.Header {
+func (c *ClientEndpoint) Header() http.Header {
 	return c.header
 }
 
-func (c *clientEndpoint) Call(ctx context.Context, input interface{}, output interface{}) error {
+func (c *ClientEndpoint) Call(ctx context.Context, input interface{}, output interface{}) error {
 	input = conv.Indirect(input)
 	var body io.Reader
 	contentType := mime.FormURLEncoded
@@ -231,3 +231,4 @@ func (c *clientEndpoint) Call(ctx context.Context, input interface{}, output int
 	}
 	return nil
 }
+
