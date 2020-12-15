@@ -39,11 +39,13 @@ type Client struct {
 var DefaultClient = NewClient(http.DefaultClient)
 
 func NewClient(client *http.Client) *Client {
-	return &Client{
+	c := &Client{
 		client:  client,
 		header:  make(http.Header),
 		Decoder: iopkg.DecodeResponse,
 	}
+	c.header.Set("User-Agent", "wine-client")
+	return c
 }
 
 // HTTPClient returns raw http client
@@ -179,12 +181,13 @@ func newClientEndpoint(c *Client, method string, urlStr string) (*ClientEndpoint
 	if method == "" {
 		return nil, errors.New("method cannot be empty")
 	}
-	return &ClientEndpoint{
+	e := &ClientEndpoint{
 		c:      c,
 		method: method,
 		url:    u,
 		header: http.Header{},
-	}, nil
+	}
+	return e, nil
 }
 
 func (c *ClientEndpoint) Header() http.Header {
@@ -220,7 +223,6 @@ func (c *ClientEndpoint) Call(ctx context.Context, input interface{}, output int
 	if err != nil {
 		return fmt.Errorf("create request %s %v: %w", c.method, c.url, err)
 	}
-	c.c.injectHeader(req)
 	for k, v := range c.header {
 		req.Header[k] = v
 	}
