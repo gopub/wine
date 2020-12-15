@@ -143,7 +143,7 @@ func (c *Client) dumpRequest(req *http.Request) {
 		logger.Errorf("DumpRequestOut: %v", err)
 		return
 	}
-	logger.Debugf(string(data))
+	logger.Debug(string(data))
 }
 
 // GetServerTime only works if server is powered by wine
@@ -231,4 +231,3 @@ func (c *ClientEndpoint) Call(ctx context.Context, input interface{}, output int
 	}
 	return nil
 }
-
