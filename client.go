@@ -9,7 +9,9 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"strings"
 
+	"github.com/gopub/conv"
 	"github.com/gopub/errors"
 	"github.com/gopub/log"
 	iopkg "github.com/gopub/wine/internal/io"
@@ -30,6 +32,8 @@ type Client struct {
 	HeaderBuilder  HeaderBuilder
 	RequestLogging bool
 	Decoder        func(resp *http.Response, result interface{}) error
+
+	getServerTime *clientEndpoint
 }
 
 var DefaultClient = NewClient(http.DefaultClient)
@@ -45,6 +49,10 @@ func NewClient(client *http.Client) *Client {
 // HTTPClient returns raw http client
 func (c *Client) HTTPClient() *http.Client {
 	return c.client
+}
+
+func (c *Client) Endpoint(method, url string) (*clientEndpoint, error) {
+	return newClientEndpoint(c, method, url)
 }
 
 // Header returns shared http header
@@ -64,79 +72,44 @@ func (c *Client) injectHeader(req *http.Request) {
 }
 
 // Get executes http get request created with endpoint and query
-func (c *Client) Get(ctx context.Context, endpoint string, query url.Values, result interface{}) error {
-	if query == nil {
-		return c.call(ctx, http.MethodGet, endpoint, nil, result)
-	}
-
-	u, err := url.Parse(endpoint)
+func (c *Client) Get(ctx context.Context, endpoint string, params, result interface{}) error {
+	e, err := c.Endpoint(http.MethodGet, endpoint)
 	if err != nil {
-		return fmt.Errorf("parse url: %w", err)
+		return fmt.Errorf("invalid endpoint: %w", err)
 	}
-	q := u.Query()
-	for k, vs := range query {
-		for _, v := range vs {
-			q.Add(k, v)
-		}
-	}
-	u.RawQuery = q.Encode()
-	return c.call(ctx, http.MethodGet, u.String(), nil, result)
-}
-
-// GetWithBody executes http get request created with endpoint and bodyParams which will be marshaled into json data
-func (c *Client) GetWithBody(ctx context.Context, endpoint string, bodyParams interface{}, result interface{}) error {
-	return c.call(ctx, http.MethodGet, endpoint, bodyParams, result)
+	return e.Call(ctx, params, result)
 }
 
 func (c *Client) Post(ctx context.Context, endpoint string, params interface{}, result interface{}) error {
-	return c.call(ctx, http.MethodPost, endpoint, params, result)
+	e, err := c.Endpoint(http.MethodPost, endpoint)
+	if err != nil {
+		return fmt.Errorf("invalid endpoint: %w", err)
+	}
+	return e.Call(ctx, params, result)
 }
 
 func (c *Client) Put(ctx context.Context, endpoint string, params interface{}, result interface{}) error {
-	return c.call(ctx, http.MethodPut, endpoint, params, result)
+	e, err := c.Endpoint(http.MethodPut, endpoint)
+	if err != nil {
+		return fmt.Errorf("invalid endpoint: %w", err)
+	}
+	return e.Call(ctx, params, result)
 }
 
 func (c *Client) Patch(ctx context.Context, endpoint string, params interface{}, result interface{}) error {
-	return c.call(ctx, http.MethodPatch, endpoint, params, result)
+	e, err := c.Endpoint(http.MethodPatch, endpoint)
+	if err != nil {
+		return fmt.Errorf("invalid endpoint: %w", err)
+	}
+	return e.Call(ctx, params, result)
 }
 
 func (c *Client) Delete(ctx context.Context, endpoint string, query url.Values, result interface{}) error {
-	if query == nil {
-		return c.call(ctx, http.MethodDelete, endpoint, nil, result)
-	}
-
-	u, err := url.Parse(endpoint)
+	e, err := c.Endpoint(http.MethodDelete, endpoint)
 	if err != nil {
-		return fmt.Errorf("cannot parse url %s: %w", endpoint, err)
+		return fmt.Errorf("invalid endpoint: %w", err)
 	}
-	q := u.Query()
-	for k, vs := range query {
-		for _, v := range vs {
-			q.Add(k, v)
-		}
-	}
-	u.RawQuery = q.Encode()
-	return c.call(ctx, http.MethodDelete, u.String(), nil, result)
-}
-
-func (c *Client) call(ctx context.Context, method string, endpoint string, params interface{}, result interface{}) error {
-	var body io.Reader
-	if params != nil {
-		data, err := json.Marshal(params)
-		if err != nil {
-			return fmt.Errorf("cannot marshal: %w", err)
-		}
-		body = bytes.NewBuffer(data)
-	}
-	req, err := http.NewRequest(method, endpoint, body)
-	if err != nil {
-		return fmt.Errorf("cannot create request: %s, %s, %w", method, endpoint, err)
-	}
-	if params != nil {
-		req.Header.Set(mime.ContentType, mime.JSON)
-	}
-	req = req.WithContext(ctx)
-	return c.Do(req, result)
+	return e.Call(ctx, query, result)
 }
 
 // Do send http request 'req' and store response data into 'result'
@@ -178,6 +151,83 @@ func (c *Client) GetServerTime(ctx context.Context, serverURL string) (int64, er
 	var res struct {
 		Timestamp int64 `json:"timestamp"`
 	}
-	err := c.Get(ctx, JoinURL(serverURL, datePath), nil, &res)
+	var err error
+	if c.getServerTime == nil {
+		c.getServerTime, err = c.Endpoint(http.MethodGet, JoinURL(serverURL, datePath))
+		if err != nil {
+			return 0, fmt.Errorf("create endpoint: %w", err)
+		}
+	}
+	err = c.getServerTime.Call(ctx, nil, &res)
 	return res.Timestamp, errors.Wrapf(err, "")
+}
+
+type clientEndpoint struct {
+	c      *Client
+	method string
+	url    *url.URL
+	header http.Header
+}
+
+func newClientEndpoint(c *Client, method string, urlStr string) (*clientEndpoint, error) {
+	u, err := url.Parse(urlStr)
+	if err != nil {
+		return nil, fmt.Errorf("parse url: %w", err)
+	}
+	method = strings.TrimSpace(method)
+	method = strings.ToUpper(method)
+	if method == "" {
+		return nil, errors.New("method cannot be empty")
+	}
+	return &clientEndpoint{
+		c:      c,
+		method: method,
+		url:    u,
+		header: http.Header{},
+	}, nil
+}
+
+func (c *clientEndpoint) Header() http.Header {
+	return c.header
+}
+
+func (c *clientEndpoint) Call(ctx context.Context, input interface{}, output interface{}) error {
+	input = conv.Indirect(input)
+	var body io.Reader
+	contentType := mime.FormURLEncoded
+	switch iv := input.(type) {
+	case url.Values:
+		if c.method == http.MethodGet || c.method == http.MethodDelete {
+			for k, vl := range iv {
+				for _, v := range vl {
+					c.url.Query().Add(k, v)
+				}
+			}
+		} else {
+			body = strings.NewReader(iv.Encode())
+		}
+	case nil:
+		break
+	default:
+		contentType = mime.JsonUTF8
+		data, err := json.Marshal(input)
+		if err != nil {
+			return fmt.Errorf("cannot marshal: %w", err)
+		}
+		body = bytes.NewBuffer(data)
+	}
+	req, err := http.NewRequestWithContext(ctx, c.method, c.url.String(), body)
+	if err != nil {
+		return fmt.Errorf("create request %s %v: %w", c.method, c.url, err)
+	}
+	c.c.injectHeader(req)
+	for k, v := range c.header {
+		req.Header[k] = v
+	}
+	req.Header.Set(mime.ContentType, contentType)
+	err = c.c.Do(req, output)
+	if err != nil {
+		return fmt.Errorf("do request %s %v: %w", c.method, c.url, err)
+	}
+	return nil
 }
