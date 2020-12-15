@@ -197,7 +197,7 @@ func (c *ClientEndpoint) Header() http.Header {
 func (c *ClientEndpoint) Call(ctx context.Context, input interface{}, output interface{}) error {
 	input = conv.Indirect(input)
 	var body io.Reader
-	contentType := mime.FormURLEncoded
+	var contentType string
 	switch iv := input.(type) {
 	case url.Values:
 		if c.method == http.MethodGet || c.method == http.MethodDelete {
@@ -206,8 +206,9 @@ func (c *ClientEndpoint) Call(ctx context.Context, input interface{}, output int
 					c.url.Query().Add(k, v)
 				}
 			}
-		} else {
+		} else if len(iv) > 0 {
 			body = strings.NewReader(iv.Encode())
+			contentType = mime.FormURLEncoded
 		}
 	case nil:
 		break
@@ -226,7 +227,9 @@ func (c *ClientEndpoint) Call(ctx context.Context, input interface{}, output int
 	for k, v := range c.header {
 		req.Header[k] = v
 	}
-	req.Header.Set(mime.ContentType, contentType)
+	if contentType != "" {
+		req.Header.Set(mime.ContentType, contentType)
+	}
 	err = c.c.Do(req, output)
 	if err != nil {
 		return fmt.Errorf("do request %s %v: %w", c.method, c.url, err)
