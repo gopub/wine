@@ -1,8 +1,4 @@
-package mime
-
-import (
-	"net/http"
-)
+package httpvalue
 
 const (
 	Plain    = "text/plain"
@@ -32,9 +28,7 @@ const (
 )
 
 const (
-	ContentType        = "Content-Type"
-	ContentDisposition = "Content-Disposition"
-	CharsetUTF8        = "charset=utf-8"
+	CharsetUTF8 = "charset=utf-8"
 
 	charsetSuffix = "; " + CharsetUTF8
 
@@ -45,14 +39,3 @@ const (
 	JsonUTF8 = JSON + charsetSuffix
 	XmlUTF8  = XML + charsetSuffix
 )
-
-func GetContentType(h http.Header) string {
-	t := h.Get(ContentType)
-	for i, ch := range t {
-		if ch == ' ' || ch == ';' {
-			t = t[:i]
-			break
-		}
-	}
-	return t
-}

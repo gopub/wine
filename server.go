@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/gopub/wine/httpvalue"
 	"math/rand"
 	"mime"
 	"net"
@@ -199,7 +200,7 @@ func (s *Server) serve(ctx context.Context, req *Request, rw http.ResponseWriter
 
 func (s *Server) wrapResponseWriter(rw http.ResponseWriter, req *http.Request) http.ResponseWriter {
 	if t := mime.TypeByExtension(path.Ext(req.URL.Path)); t != "" {
-		rw.Header().Set("Content-Type", t)
+		rw.Header().Set(httpvalue.ContentType, t)
 	}
 
 	s.Router.md.Header.WriteTo(rw)
@@ -209,7 +210,7 @@ func (s *Server) wrapResponseWriter(rw http.ResponseWriter, req *http.Request) h
 		return w
 	}
 
-	encodings := strings.Split(req.Header.Get("Accept-Encoding"), ",")
+	encodings := strings.Split(req.Header.Get(httpvalue.AcceptEncoding), ",")
 	var unsupported []string
 	for _, enc := range encodings {
 		enc = strings.TrimSpace(enc)
@@ -293,7 +294,7 @@ func (s *Server) handleOptions(_ context.Context, req *Request) Responder {
 		methods = append(methods, http.MethodOptions)
 	}
 	return respond.Func(func(ctx context.Context, rw http.ResponseWriter) {
-		rw.Header().Set("Access-Control-Allow-Methods", strings.Join(methods, ","))
+		rw.Header().Set(httpvalue.ACLAllowMethods, strings.Join(methods, ","))
 		rw.WriteHeader(http.StatusNoContent)
 	})
 }

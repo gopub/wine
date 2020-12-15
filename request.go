@@ -13,8 +13,8 @@ import (
 
 	"github.com/gopub/conv"
 	"github.com/gopub/types"
+	"github.com/gopub/wine/httpvalue"
 	iopkg "github.com/gopub/wine/internal/io"
-	"github.com/gopub/wine/mime"
 	"github.com/gopub/wine/router"
 )
 
@@ -160,6 +160,6 @@ func parseRequest(r *http.Request, maxMem types.ByteUnit) (*Request, error) {
 		request:     r,
 		params:      params,
 		body:        body,
-		contentType: mime.GetContentType(r.Header),
+		contentType: httpvalue.GetContentType(r.Header),
 	}, nil
 }

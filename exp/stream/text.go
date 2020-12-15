@@ -9,7 +9,7 @@ import (
 
 	"github.com/gopub/log"
 	"github.com/gopub/wine"
-	"github.com/gopub/wine/mime"
+	"github.com/gopub/wine/httpvalue"
 )
 
 const textPacketDelimiter = 0x01
@@ -138,7 +138,7 @@ func NewTextHandler(serve func(context.Context, TextWriteCloser)) wine.Handler {
 		logger := log.FromContext(ctx)
 		logger.Debugf("Start")
 		defer logger.Debugf("Closed")
-		w.Header().Set(mime.ContentType, mime.HtmlUTF8)
+		w.Header().Set(httpvalue.ContentType, httpvalue.HtmlUTF8)
 		done := make(chan interface{})
 		tw := newTextWriteCloser(w, done)
 		err := tw.Write(Greeting)

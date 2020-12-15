@@ -3,13 +3,13 @@ package respond
 import (
 	"net/http"
 
-	"github.com/gopub/wine/mime"
+	"github.com/gopub/wine/httpvalue"
 )
 
 func Redirect(location string, permanent bool) *Response {
 	header := make(http.Header)
 	header.Set("Location", location)
-	header.Set(mime.ContentType, mime.Plain)
+	header.Set(httpvalue.ContentType, httpvalue.Plain)
 	var status int
 	if permanent {
 		status = http.StatusMovedPermanently

@@ -10,7 +10,7 @@ import (
 
 	"github.com/gopub/log"
 	"github.com/gopub/wine"
-	"github.com/gopub/wine/mime"
+	"github.com/gopub/wine/httpvalue"
 )
 
 const packetHeadLen = 4
@@ -142,7 +142,7 @@ func NewByteHandler(serve func(context.Context, ByteWriteCloser)) wine.Handler {
 		logger := log.FromContext(ctx)
 		logger.Debugf("Start")
 		defer logger.Debugf("Closed")
-		w.Header().Set(mime.ContentType, mime.OctetStream)
+		w.Header().Set(httpvalue.ContentType, httpvalue.OctetStream)
 		done := make(chan interface{})
 		bw := newByteWriteCloser(w, done)
 		err := bw.Write([]byte(Greeting))

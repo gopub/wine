@@ -10,7 +10,7 @@ import (
 	"github.com/gopub/log"
 	"github.com/gopub/types"
 	"github.com/gopub/wine"
-	"github.com/gopub/wine/mime"
+	"github.com/gopub/wine/httpvalue"
 )
 
 type logResponseWriter struct {
@@ -44,7 +44,7 @@ func (w *logResponseWriter) Write(data []byte) (int, error) {
 
 func Log(ctx context.Context, req *wine.Request) wine.Responder {
 	return wine.ResponderFunc(func(ctx context.Context, w http.ResponseWriter) {
-		w.Header().Set(mime.ContentType, mime.JsonUTF8)
+		w.Header().Set(httpvalue.ContentType, httpvalue.JsonUTF8)
 		o := &logResponseWriter{
 			w:    w,
 			done: make(chan types.Void),

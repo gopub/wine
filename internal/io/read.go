@@ -10,7 +10,7 @@ import (
 	"strings"
 
 	"github.com/gopub/types"
-	"github.com/gopub/wine/mime"
+	"github.com/gopub/wine/httpvalue"
 )
 
 func ReadRequest(req *http.Request, maxMemory types.ByteUnit) (types.M, []byte, error) {
@@ -75,16 +75,16 @@ func ReadValues(values url.Values) types.M {
 }
 
 func ReadBody(req *http.Request, maxMemory types.ByteUnit) (types.M, []byte, error) {
-	typ := mime.GetContentType(req.Header)
+	typ := httpvalue.GetContentType(req.Header)
 	params := types.M{}
 	switch typ {
-	case mime.HTML, mime.Plain:
+	case httpvalue.HTML, httpvalue.Plain:
 		body, err := ioutil.ReadAll(req.Body)
 		if err != nil {
 			return params, nil, fmt.Errorf("read html or plain body: %w", err)
 		}
 		return params, body, nil
-	case mime.JSON:
+	case httpvalue.JSON:
 		body, err := ioutil.ReadAll(req.Body)
 		req.Body.Close()
 		if err != nil {
@@ -104,7 +104,7 @@ func ReadBody(req *http.Request, maxMemory types.ByteUnit) (types.M, []byte, err
 			}
 		}
 		return params, body, nil
-	case mime.FormURLEncoded:
+	case httpvalue.FormURLEncoded:
 		// TODO: will crash
 		//body, err := req.GetBody()
 		//if err != nil {
@@ -119,7 +119,7 @@ func ReadBody(req *http.Request, maxMemory types.ByteUnit) (types.M, []byte, err
 			return params, nil, fmt.Errorf("parse form: %w", err)
 		}
 		return ReadValues(req.Form), nil, nil
-	case mime.FormData:
+	case httpvalue.FormData:
 		err := req.ParseMultipartForm(int64(maxMemory))
 		if err != nil {
 			return nil, nil, fmt.Errorf("parse multipart form: %w", err)

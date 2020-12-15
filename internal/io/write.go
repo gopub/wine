@@ -3,6 +3,7 @@ package io
 import (
 	"bufio"
 	"errors"
+	"github.com/gopub/wine/httpvalue"
 	"net"
 	"net/http"
 )
@@ -36,7 +37,7 @@ func NewResponseWriter(rw http.ResponseWriter) *ResponseWriter {
 }
 
 func (w *ResponseWriter) WriteHeader(statusCode int) {
-	if statusCode < 100 || statusCode > 999 {
+	if !httpvalue.IsValidStatus(statusCode) {
 		logger.Errorf("Cannot write invalid status code: %d", statusCode)
 		statusCode = http.StatusInternalServerError
 	}

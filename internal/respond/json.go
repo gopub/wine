@@ -3,13 +3,13 @@ package respond
 import (
 	"net/http"
 
-	"github.com/gopub/wine/mime"
+	"github.com/gopub/wine/httpvalue"
 )
 
 // JSON creates a application/json response
 func JSON(status int, value interface{}) *Response {
 	header := make(http.Header)
-	header.Set(mime.ContentType, mime.JsonUTF8)
+	header.Set(httpvalue.ContentType, httpvalue.JsonUTF8)
 	return &Response{
 		status: status,
 		header: header,

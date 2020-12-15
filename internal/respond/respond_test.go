@@ -13,8 +13,8 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/uuid"
+	"github.com/gopub/wine/httpvalue"
 	"github.com/gopub/wine/internal/respond"
-	"github.com/gopub/wine/mime"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -28,7 +28,7 @@ func TestHTML(t *testing.T) {
 	h.Respond(context.Background(), recorder)
 	resp := recorder.Result()
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
-	assert.Equal(t, mime.HTML+charsetSuffix, resp.Header.Get(mime.ContentType))
+	assert.Equal(t, httpvalue.HTML+charsetSuffix, resp.Header.Get(httpvalue.ContentType))
 	result, err := ioutil.ReadAll(resp.Body)
 	resp.Body.Close()
 	require.NoError(t, err)
@@ -51,7 +51,7 @@ func TestJSON(t *testing.T) {
 		j.Respond(ctx, recorder)
 		resp := recorder.Result()
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
-		assert.Equal(t, mime.JSON+charsetSuffix, resp.Header.Get(mime.ContentType))
+		assert.Equal(t, httpvalue.JSON+charsetSuffix, resp.Header.Get(httpvalue.ContentType))
 		var result int
 		err := json.NewDecoder(resp.Body).Decode(&result)
 		resp.Body.Close()
@@ -66,7 +66,7 @@ func TestJSON(t *testing.T) {
 		j.Respond(ctx, recorder)
 		resp := recorder.Result()
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
-		assert.Equal(t, mime.JSON+charsetSuffix, resp.Header.Get(mime.ContentType))
+		assert.Equal(t, httpvalue.JSON+charsetSuffix, resp.Header.Get(httpvalue.ContentType))
 		var result string
 		err := json.NewDecoder(resp.Body).Decode(&result)
 		resp.Body.Close()
@@ -87,7 +87,7 @@ func TestJSON(t *testing.T) {
 		j.Respond(ctx, recorder)
 		resp := recorder.Result()
 		assert.Equal(t, http.StatusCreated, resp.StatusCode)
-		assert.Equal(t, mime.JSON+charsetSuffix, resp.Header.Get(mime.ContentType))
+		assert.Equal(t, httpvalue.JSON+charsetSuffix, resp.Header.Get(httpvalue.ContentType))
 		var result *Item
 		err := json.NewDecoder(resp.Body).Decode(&result)
 		resp.Body.Close()

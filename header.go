@@ -1,6 +1,7 @@
 package wine
 
 import (
+	"github.com/gopub/wine/httpvalue"
 	"net/http"
 	"strings"
 
@@ -34,22 +35,22 @@ func (h *Header) Clone() *Header {
 }
 
 func (h *Header) AllowOrigins(origins ...string) {
-	h.Header["Access-Control-Allow-Origin"] = origins
+	h.Header[httpvalue.ACLAllowOrigin] = origins
 }
 
 func (h *Header) AllowMethods(methods ...string) {
 	// Combine multiple values separated by comma. Multiple lines style is also fine.
-	h.Header.Set("Access-Control-Allow-Methods", strings.Join(methods, ","))
+	h.Header.Set(httpvalue.ACLAllowMethods, strings.Join(methods, ","))
 }
 
 func (h *Header) AllowCredentials(b bool) {
-	h.Header.Set("Access-Control-Allow-Credentials", conv.MustString(b))
+	h.Header.Set(httpvalue.ACLAllowCredentials, conv.MustString(b))
 }
 
 func (h *Header) AllowHeaders(headers ...string) {
-	h.Header.Set("Access-Control-Allow-Headers", strings.Join(headers, ","))
+	h.Header.Set(httpvalue.ACLAllowHeaders, strings.Join(headers, ","))
 }
 
 func (h *Header) ExposeHeaders(headers ...string) {
-	h.Header.Set("Access-Control-Expose-Headers", strings.Join(headers, ","))
+	h.Header.Set(httpvalue.ACLExposeHeaders, strings.Join(headers, ","))
 }

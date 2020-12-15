@@ -2,21 +2,20 @@ package respond
 
 import (
 	"context"
-	"fmt"
 	"io"
 	"net/http"
 
 	"github.com/gopub/log"
-	"github.com/gopub/wine/mime"
+	"github.com/gopub/wine/httpvalue"
 )
 
 // StreamFile creates a application/octet-stream response
 func StreamFile(r io.Reader, name string) Func {
 	return Func(func(ctx context.Context, w http.ResponseWriter) {
 		logger := log.FromContext(ctx)
-		w.Header().Set(mime.ContentType, mime.OctetStream)
+		w.Header().Set(httpvalue.ContentType, httpvalue.OctetStream)
 		if name != "" {
-			w.Header().Set(mime.ContentDisposition, fmt.Sprintf(`attachment; filename="%s"`, name))
+			w.Header().Set(httpvalue.ContentDisposition, httpvalue.FileAttachment(name))
 		}
 		const size = 1024
 		buf := make([]byte, size)
@@ -40,9 +39,9 @@ func StreamFile(r io.Reader, name string) Func {
 // File creates a application/octet-stream response
 func File(b []byte, name string) Func {
 	return func(ctx context.Context, w http.ResponseWriter) {
-		w.Header().Set(mime.ContentType, mime.OctetStream)
+		w.Header().Set(httpvalue.ContentType, httpvalue.OctetStream)
 		if name != "" {
-			w.Header().Set(mime.ContentDisposition, fmt.Sprintf(`attachment; filename="%s"`, name))
+			w.Header().Set(httpvalue.ContentDisposition, httpvalue.FileAttachment(name))
 		}
 		if _, err := w.Write(b); err != nil {
 			log.FromContext(ctx).Errorf("write: %v", err)
@@ -63,7 +62,7 @@ func Image(contentType string, content []byte) Func {
 		contentType = http.DetectContentType(content)
 	}
 	return func(ctx context.Context, w http.ResponseWriter) {
-		w.Header().Set(mime.ContentType, contentType)
+		w.Header().Set(httpvalue.ContentType, contentType)
 		if _, err := w.Write(content); err != nil {
 			log.FromContext(ctx).Errorf("write: %v", err)
 			w.WriteHeader(http.StatusInternalServerError)

@@ -3,6 +3,7 @@ package wine
 import (
 	"context"
 	"fmt"
+	"github.com/gopub/wine/httpvalue"
 	"io"
 	"net/http"
 
@@ -119,7 +120,7 @@ func Error(err error) Responder {
 	if err == nil {
 		return OK
 	}
-	if s := errors.GetCode(err); s >= 100 && s <= 999 {
+	if s := errors.GetCode(err); httpvalue.IsValidStatus(s) {
 		return Text(s, err.Error())
 	}
 	return Text(http.StatusInternalServerError, err.Error())

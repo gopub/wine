@@ -9,7 +9,7 @@ import (
 
 	"github.com/gopub/log"
 	"github.com/gopub/wine"
-	"github.com/gopub/wine/mime"
+	"github.com/gopub/wine/httpvalue"
 )
 
 type JSONReadCloser interface {
@@ -92,7 +92,7 @@ func NewJSONHandler(serve func(context.Context, JSONWriteCloser)) wine.Handler {
 		logger := log.FromContext(ctx)
 		logger.Debugf("Start")
 		defer logger.Debugf("Closed")
-		w.Header().Set(mime.ContentType, mime.JsonUTF8)
+		w.Header().Set(httpvalue.ContentType, httpvalue.JsonUTF8)
 		done := make(chan interface{})
 		jw := newJSONWriteCloser(w, done)
 		err := jw.Write(Greeting)

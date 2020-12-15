@@ -10,7 +10,7 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/gopub/conv"
 	"github.com/gopub/log"
-	"github.com/gopub/wine/mime"
+	"github.com/gopub/wine/httpvalue"
 )
 
 var logger = log.Default()
@@ -50,17 +50,17 @@ func (r *Response) marshalBody() ([]byte, error) {
 	if r.value == nil {
 		return nil, nil
 	}
-	ct := r.header.Get(mime.ContentType)
+	ct := r.header.Get(httpvalue.ContentType)
 	switch {
-	case strings.Contains(ct, mime.JSON):
+	case strings.Contains(ct, httpvalue.JSON):
 		return json.Marshal(r.value)
-	case strings.Contains(ct, mime.Protobuf):
+	case strings.Contains(ct, httpvalue.Protobuf):
 		if m, ok := r.value.(proto.Message); ok {
 			return proto.Marshal(m)
 		}
 		return nil, fmt.Errorf("value is %T instead of proto.message", r.value)
-	case strings.Contains(ct, mime.Plain) || strings.Contains(ct, mime.HTML) ||
-		strings.Contains(ct, mime.XML) || strings.Contains(ct, mime.XML2) || strings.Contains(ct, mime.CSS):
+	case strings.Contains(ct, httpvalue.Plain) || strings.Contains(ct, httpvalue.HTML) ||
+		strings.Contains(ct, httpvalue.XML) || strings.Contains(ct, httpvalue.XML2) || strings.Contains(ct, httpvalue.CSS):
 		s, err := conv.ToString(r.value)
 		if err != nil {
 			return nil, err

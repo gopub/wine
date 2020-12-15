@@ -3,7 +3,7 @@ package respond
 import (
 	"net/http"
 
-	"github.com/gopub/wine/mime"
+	"github.com/gopub/wine/httpvalue"
 )
 
 // Status returns a response only with a status code
@@ -14,7 +14,7 @@ func Status(status int) *Response {
 // PlainText sends a text/plain response
 func PlainText(status int, text string) *Response {
 	header := make(http.Header)
-	header.Set(mime.ContentType, mime.PlainUTF8)
+	header.Set(httpvalue.ContentType, httpvalue.PlainUTF8)
 	if text == "" {
 		text = http.StatusText(status)
 	}
@@ -28,7 +28,7 @@ func PlainText(status int, text string) *Response {
 // CSS sends a text/css response
 func CSS(status int, css string) *Response {
 	header := make(http.Header)
-	header.Set(mime.ContentType, mime.CSS)
+	header.Set(httpvalue.ContentType, httpvalue.CSS)
 	if css == "" {
 		css = http.StatusText(status)
 	}

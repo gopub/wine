@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	"github.com/gopub/wine"
-	"github.com/gopub/wine/mime"
+	"github.com/gopub/wine/httpvalue"
 	"github.com/stretchr/testify/require"
 )
 
@@ -66,7 +66,7 @@ func TestServerMethod(t *testing.T) {
 	})
 
 	t.Run("POST", func(t *testing.T) {
-		resp, err := http.DefaultClient.Post(url, mime.Plain, nil)
+		resp, err := http.DefaultClient.Post(url, httpvalue.Plain, nil)
 		require.NoError(t, err)
 		require.Equal(t, http.StatusOK, resp.StatusCode)
 		body, err := ioutil.ReadAll(resp.Body)

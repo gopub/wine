@@ -3,6 +3,7 @@ package wine
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -14,12 +15,8 @@ import (
 	"github.com/gopub/conv"
 	"github.com/gopub/errors"
 	"github.com/gopub/log"
+	"github.com/gopub/wine/httpvalue"
 	iopkg "github.com/gopub/wine/internal/io"
-	"github.com/gopub/wine/mime"
-)
-
-const (
-	StatusTransportFailed = 600
 )
 
 type HeaderBuilder interface {
@@ -60,6 +57,15 @@ func (c *Client) Endpoint(method, url string) (*ClientEndpoint, error) {
 // Header returns shared http header
 func (c *Client) Header() http.Header {
 	return c.header
+}
+
+func (c *Client) SetAuthorization(credential string) {
+	c.header.Set(httpvalue.Authorization, credential)
+}
+
+func (c *Client) SetBasicAuthorization(account, password string) {
+	credential := []byte(account + ":" + password)
+	c.header.Set(httpvalue.Authorization, "Basic "+base64.StdEncoding.EncodeToString(credential))
 }
 
 func (c *Client) injectHeader(req *http.Request) {
@@ -130,7 +136,7 @@ func (c *Client) Do(req *http.Request, result interface{}) error {
 			if tr, ok := err.(interface{ Timeout() bool }); ok && tr.Timeout() {
 				err = errors.RequestTimeout(err.Error())
 			} else {
-				err = errors.Format(StatusTransportFailed, err.Error())
+				err = errors.Format(httpvalue.StatusTransportFailed, err.Error())
 			}
 		}
 		return fmt.Errorf("cannot send request: %w", err)
@@ -208,12 +214,12 @@ func (c *ClientEndpoint) Call(ctx context.Context, input interface{}, output int
 			}
 		} else if len(iv) > 0 {
 			body = strings.NewReader(iv.Encode())
-			contentType = mime.FormURLEncoded
+			contentType = httpvalue.FormURLEncoded
 		}
 	case nil:
 		break
 	default:
-		contentType = mime.JsonUTF8
+		contentType = httpvalue.JsonUTF8
 		data, err := json.Marshal(input)
 		if err != nil {
 			return fmt.Errorf("cannot marshal: %w", err)
@@ -228,7 +234,7 @@ func (c *ClientEndpoint) Call(ctx context.Context, input interface{}, output int
 		req.Header[k] = v
 	}
 	if contentType != "" {
-		req.Header.Set(mime.ContentType, contentType)
+		req.Header.Set(httpvalue.ContentType, contentType)
 	}
 	err = c.c.Do(req, output)
 	if err != nil {
