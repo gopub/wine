@@ -200,6 +200,15 @@ func (c *ClientEndpoint) Header() http.Header {
 	return c.header
 }
 
+func (c *ClientEndpoint) SetAuthorization(credential string) {
+	c.header.Set(httpvalue.Authorization, credential)
+}
+
+func (c *ClientEndpoint) SetBasicAuthorization(account, password string) {
+	credential := []byte(account + ":" + password)
+	c.header.Set(httpvalue.Authorization, "Basic "+base64.StdEncoding.EncodeToString(credential))
+}
+
 func (c *ClientEndpoint) Call(ctx context.Context, input interface{}, output interface{}) error {
 	input = conv.Indirect(input)
 	var body io.Reader
