@@ -56,6 +56,7 @@ type Server struct {
 	CompressionEnabled bool
 	Recovery           bool
 	ResultLogger       func(req *Request, result *Result, cost time.Duration)
+	NotFoundHandler    Handler
 }
 
 // NewServer returns a server
@@ -184,7 +185,11 @@ func (s *Server) serve(ctx context.Context, req *Request, rw http.ResponseWriter
 	case np == faviconPath:
 		h = HandleResponder(respond.Bytes(http.StatusOK, resource.Favicon))
 	default:
-		h = HandleResponder(Status(http.StatusNotFound))
+		if s.NotFoundHandler != nil {
+			h = s.NotFoundHandler
+		} else {
+			h = HandleResponder(Status(http.StatusNotFound))
+		}
 	}
 	var resp Responder
 	if s.PreHandler != nil && !reservedPaths[np] {
