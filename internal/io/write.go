@@ -3,9 +3,10 @@ package io
 import (
 	"bufio"
 	"errors"
-	"github.com/gopub/wine/httpvalue"
 	"net"
 	"net/http"
+
+	"github.com/gopub/wine/httpvalue"
 )
 
 type statusGetter interface {
