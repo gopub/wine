@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+
+	"github.com/gopub/wine/httpvalue"
 )
 
 var (
@@ -19,6 +21,7 @@ type CompressResponseWriter struct {
 	*ResponseWriter
 	compressWriter io.Writer
 	err            error
+	hasBody        bool
 }
 
 func NewCompressResponseWriter(w *ResponseWriter, encoding string) (*CompressResponseWriter, error) {
@@ -27,7 +30,7 @@ func NewCompressResponseWriter(w *ResponseWriter, encoding string) (*CompressRes
 		cw := &CompressResponseWriter{}
 		cw.ResponseWriter = w
 		cw.compressWriter = gzip.NewWriter(w)
-		w.Header().Set("Content-Encoding", encoding)
+		w.Header().Set(httpvalue.ContentEncoding, encoding)
 		return cw, nil
 	case "deflate":
 		fw, err := flate.NewWriter(w, flate.DefaultCompression)
@@ -37,7 +40,7 @@ func NewCompressResponseWriter(w *ResponseWriter, encoding string) (*CompressRes
 		cw := &CompressResponseWriter{}
 		cw.compressWriter = fw
 		cw.ResponseWriter = w
-		w.Header().Set("Content-Encoding", encoding)
+		w.Header().Set(httpvalue.ContentEncoding, encoding)
 		return cw, nil
 	default:
 		return nil, errors.New("unsupported encoding")
@@ -45,6 +48,9 @@ func NewCompressResponseWriter(w *ResponseWriter, encoding string) (*CompressRes
 }
 
 func (w *CompressResponseWriter) Write(data []byte) (int, error) {
+	if !w.hasBody {
+		w.hasBody = len(data) > 0
+	}
 	return w.compressWriter.Write(data)
 }
 
@@ -64,7 +70,12 @@ func (w *CompressResponseWriter) Error() error {
 }
 
 func (w *CompressResponseWriter) Close() error {
+	if !w.hasBody {
+		w.ResponseWriter.Flush()
+		return nil
+	}
 	if closer, ok := w.compressWriter.(io.Closer); ok {
+		// Closing a writer without no written data will cause an error if response status is 204 NoContent
 		return closer.Close()
 	}
 	return nil
