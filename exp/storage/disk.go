@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 )
 
+//DiskBucket implements reader/writer based on local file system
 type DiskBucket struct {
 	dir string
 }
@@ -21,7 +22,7 @@ func NewDiskBucket(dir string) *DiskBucket {
 	}
 }
 
-func (b *DiskBucket) Write(ctx context.Context, o *Object) error {
+func (b *DiskBucket) Write(ctx context.Context, o *Object) (string, error) {
 	name := filepath.Join(b.dir, o.Name)
 	errC := make(chan error, 1)
 	go func() {
@@ -30,9 +31,12 @@ func (b *DiskBucket) Write(ctx context.Context, o *Object) error {
 	}()
 	select {
 	case <-ctx.Done():
-		return ctx.Err()
+		return "", ctx.Err()
 	case err := <-errC:
-		return err
+		if err == nil {
+			return name, nil
+		}
+		return "", err
 	}
 }
 
