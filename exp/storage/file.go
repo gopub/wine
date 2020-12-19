@@ -8,13 +8,14 @@ import (
 	"strings"
 
 	"github.com/gopub/errors"
-
 	"github.com/gopub/wine"
 )
 
 type FileReader struct {
 	r Reader
 }
+
+var _ wine.Handler = (*FileReader)(nil)
 
 func NewFileReader(r Reader) *FileReader {
 	return &FileReader{
@@ -41,6 +42,8 @@ func (r *FileReader) HandleRequest(ctx context.Context, req *wine.Request) wine.
 type FileWriter struct {
 	w Writer
 }
+
+var _ wine.Handler = (*FileWriter)(nil)
 
 func NewFileWriter(w Writer) *FileWriter {
 	return &FileWriter{
