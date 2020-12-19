@@ -145,7 +145,7 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, httpReq *http.Request) {
 	rw = s.wrapResponseWriter(rw, httpReq)
 	defer s.closeWriter(rw)
 	sid := s.initSession(rw, httpReq)
-	ctx, cancel := s.setupContext(httpReq.Context())
+	ctx, cancel := s.setupContext(httpReq)
 	defer cancel()
 
 	req, err := parseRequest(httpReq, s.maxReqMem)
@@ -277,9 +277,10 @@ func (s *Server) initSession(rw http.ResponseWriter, req *http.Request) string {
 	return sid
 }
 
-func (s *Server) setupContext(ctx context.Context) (context.Context, context.CancelFunc) {
-	ctx, cancel := context.WithTimeout(ctx, s.Timeout)
+func (s *Server) setupContext(req *http.Request) (context.Context, context.CancelFunc) {
+	ctx, cancel := context.WithTimeout(req.Context(), s.Timeout)
 	ctx = withTemplateManager(ctx, s.Manager)
+	ctx = withRequestHeader(ctx, req.Header)
 	return ctx, cancel
 }
 

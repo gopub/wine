@@ -2,6 +2,7 @@ package wine
 
 import (
 	"context"
+	"net/http"
 
 	"github.com/gopub/log"
 	"github.com/gopub/wine/internal/template"
@@ -12,13 +13,12 @@ type contextKey int
 // Context keys
 const (
 	ckNextHandler contextKey = iota + 1
-	ckBasicAuthUser
 	ckTemplateManager
-	ckAccessToken
 	ckUserID
 	ckTraceID
 	ckUser
 	ckSudo
+	ckRequestHeader
 )
 
 func Next(ctx context.Context, req *Request) Responder {
@@ -31,15 +31,6 @@ func Next(ctx context.Context, req *Request) Responder {
 
 func withNextHandler(ctx context.Context, h Handler) context.Context {
 	return context.WithValue(ctx, ckNextHandler, h)
-}
-
-func GetBasicAuthUser(ctx context.Context) string {
-	user, _ := ctx.Value(ckBasicAuthUser).(string)
-	return user
-}
-
-func withBasicAuthUser(ctx context.Context, user string) context.Context {
-	return context.WithValue(ctx, ckBasicAuthUser, user)
 }
 
 func getTemplateManager(ctx context.Context) *template.Manager {
@@ -71,16 +62,13 @@ func WithUser(ctx context.Context, u interface{}) context.Context {
 	return context.WithValue(ctx, ckUser, u)
 }
 
-func GetAccessToken(ctx context.Context) string {
-	token, _ := ctx.Value(ckAccessToken).(string)
-	return token
+func GetRequestHeader(ctx context.Context) http.Header {
+	h, _ := ctx.Value(ckRequestHeader).(http.Header)
+	return h
 }
 
-func WithAccessToken(ctx context.Context, token string) context.Context {
-	if token == "" {
-		return ctx
-	}
-	return context.WithValue(ctx, ckAccessToken, token)
+func withRequestHeader(ctx context.Context, h http.Header) context.Context {
+	return context.WithValue(ctx, ckRequestHeader, h)
 }
 
 func GetTraceID(ctx context.Context) string {
@@ -112,11 +100,8 @@ func DetachContext(ctx context.Context) context.Context {
 	if m := getTemplateManager(ctx); m != nil {
 		newCtx = withTemplateManager(ctx, m)
 	}
-	if u := GetBasicAuthUser(ctx); u != "" {
-		newCtx = withBasicAuthUser(ctx, u)
-	}
-	if token := GetAccessToken(ctx); token != "" {
-		newCtx = WithAccessToken(newCtx, token)
+	if h := GetRequestHeader(ctx); h != nil {
+		newCtx = withRequestHeader(newCtx, h)
 	}
 	if traceID := GetTraceID(ctx); traceID != "" {
 		newCtx = WithTraceID(newCtx, traceID)
