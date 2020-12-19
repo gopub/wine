@@ -239,10 +239,8 @@ func (r *Router) toEndpoint(e *router.Endpoint) *Endpoint {
 
 	new := r.md.clone()
 	if md, ok := e.Metadata().(*metadata); ok && md.Header != nil {
-		for k, vl := range md.Header.Header {
-			for _, v := range vl {
-				new.Header.Add(k, v)
-			}
+		for k, v := range md.Header.Header {
+			new.Header.Header[k] = v
 		}
 	}
 	e.SetMetadata(new)
