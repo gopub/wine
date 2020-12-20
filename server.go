@@ -258,8 +258,8 @@ func (s *Server) initSession(rw http.ResponseWriter, req *http.Request) string {
 	}
 
 	// Read url query
-	if sid == "" {
-		sid = req.URL.Query().Get(s.sessionName)
+	if querySid := req.URL.Query().Get(s.sessionName); querySid != "" {
+		sid = querySid
 	}
 
 	if sid == "" {
