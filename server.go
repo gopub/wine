@@ -85,6 +85,10 @@ func NewServer() *Server {
 	return s
 }
 
+func (s *Server) SessionName() string {
+	return s.sessionName
+}
+
 // Run starts server
 func (s *Server) Run(addr string) {
 	if s.server != nil {
