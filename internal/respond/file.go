@@ -10,8 +10,9 @@ import (
 )
 
 // StreamFile creates a application/octet-stream response
-func StreamFile(r io.Reader, name string) Func {
+func StreamFile(r io.ReadCloser, name string) Func {
 	return Func(func(ctx context.Context, w http.ResponseWriter) {
+		defer r.Close()
 		logger := log.FromContext(ctx)
 		w.Header().Set(httpvalue.ContentType, httpvalue.OctetStream)
 		if name != "" {

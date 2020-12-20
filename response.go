@@ -80,7 +80,7 @@ func ProtobufError(message proto.Message, err error) Responder {
 }
 
 // StreamFile creates a application/octet-stream response
-func StreamFile(r io.Reader, name string) Responder {
+func StreamFile(r io.ReadCloser, name string) Responder {
 	return respond.StreamFile(r, name)
 }
 
