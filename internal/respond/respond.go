@@ -53,21 +53,36 @@ func (r *Response) marshalBody() ([]byte, error) {
 	ct := r.header.Get(httpvalue.ContentType)
 	switch {
 	case strings.Contains(ct, httpvalue.JSON):
-		return json.Marshal(r.value)
+		b, err := json.Marshal(r.value)
+		if err != nil {
+			return nil, fmt.Errorf("marshal json: %w", err)
+		}
+		return b, nil
 	case strings.Contains(ct, httpvalue.Protobuf):
 		if m, ok := r.value.(proto.Message); ok {
-			return proto.Marshal(m)
+			b, err := proto.Marshal(m)
+			if err != nil {
+				return nil, fmt.Errorf("marshal protobuf: %w", err)
+			}
+			return b, nil
 		}
 		return nil, fmt.Errorf("value is %T instead of proto.message", r.value)
-	case strings.Contains(ct, httpvalue.Plain) || strings.Contains(ct, httpvalue.HTML) ||
-		strings.Contains(ct, httpvalue.XML) || strings.Contains(ct, httpvalue.XML2) || strings.Contains(ct, httpvalue.CSS):
+	case strings.Contains(ct, httpvalue.Plain) ||
+		strings.Contains(ct, httpvalue.HTML) ||
+		strings.Contains(ct, httpvalue.XML) ||
+		strings.Contains(ct, httpvalue.XML2) ||
+		strings.Contains(ct, httpvalue.CSS):
 		s, err := conv.ToString(r.value)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("convert to string: %w", err)
 		}
 		return []byte(s), nil
 	default:
-		return nil, fmt.Errorf("%s is not supported", ct)
+		b, err := conv.ToBytes(r.value)
+		if err != nil {
+			return nil, fmt.Errorf("convert to []byte: %w", err)
+		}
+		return b, nil
 	}
 }
 
