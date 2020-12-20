@@ -16,6 +16,7 @@ const (
 	ContentType         = "Content-Type"
 	ContentDisposition  = "Content-Disposition"
 	ContentEncoding     = "Content-Encoding"
+	Location            = "Location"
 )
 
 func GetContentType(h http.Header) string {

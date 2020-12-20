@@ -8,7 +8,7 @@ import (
 
 func Redirect(location string, permanent bool) *Response {
 	header := make(http.Header)
-	header.Set("Location", location)
+	header.Set(httpvalue.Location, location)
 	header.Set(httpvalue.ContentType, httpvalue.Plain)
 	var status int
 	if permanent {

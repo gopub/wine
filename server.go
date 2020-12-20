@@ -168,6 +168,7 @@ func (s *Server) serve(ctx context.Context, req *Request, rw http.ResponseWriter
 	for k, v := range params {
 		req.params[k] = v
 	}
+	s.Header().WriteTo(rw)
 	var h Handler
 	switch {
 	case r != nil:
