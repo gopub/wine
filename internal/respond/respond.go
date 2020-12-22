@@ -31,9 +31,8 @@ type Response struct {
 func (r *Response) Respond(ctx context.Context, w http.ResponseWriter) {
 	body, err := r.marshalBody()
 	if err != nil {
-		logger.Errorf("Cannot marshal body: %v", err)
-		errResp := PlainText(http.StatusInternalServerError, err.Error())
-		errResp.Respond(ctx, w)
+		resp := PlainText(http.StatusInternalServerError, err.Error())
+		resp.Respond(ctx, w)
 		return
 	}
 
@@ -42,7 +41,7 @@ func (r *Response) Respond(ctx context.Context, w http.ResponseWriter) {
 	}
 	w.WriteHeader(r.status)
 	if _, err = w.Write(body); err != nil {
-		logger.Errorf("Cannot write body: %v", err)
+		logger.Errorf("Cannot write: %v", err)
 	}
 }
 
