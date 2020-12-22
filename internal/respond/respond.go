@@ -25,27 +25,32 @@ type Response struct {
 	status int
 	header http.Header
 	value  interface{}
+
+	serializedValue []byte
 }
 
 // Respond writes header and body to response writer w
 func (r *Response) Respond(ctx context.Context, w http.ResponseWriter) {
-	body, err := r.marshalBody()
-	if err != nil {
-		resp := PlainText(http.StatusInternalServerError, err.Error())
-		resp.Respond(ctx, w)
-		return
+	if r.serializedValue == nil {
+		data, err := r.serializeValue()
+		if err != nil {
+			resp := PlainText(http.StatusInternalServerError, err.Error())
+			resp.Respond(ctx, w)
+			return
+		}
+		r.serializedValue = data
 	}
 
 	for k, v := range r.header {
 		w.Header()[k] = v
 	}
 	w.WriteHeader(r.status)
-	if _, err = w.Write(body); err != nil {
+	if _, err := w.Write(r.serializedValue); err != nil {
 		logger.Errorf("Cannot write: %v", err)
 	}
 }
 
-func (r *Response) marshalBody() ([]byte, error) {
+func (r *Response) serializeValue() ([]byte, error) {
 	if r.value == nil {
 		return nil, nil
 	}
@@ -95,6 +100,16 @@ func (r *Response) Header() http.Header {
 
 func (r *Response) Value() interface{} {
 	return r.value
+}
+
+func (r *Response) ContentLength() int {
+	if r.value == nil {
+		return 0
+	}
+	if r.serializedValue == nil {
+		r.serializedValue, _ = r.serializeValue()
+	}
+	return len(r.serializedValue)
 }
 
 func (r *Response) SetValue(v interface{}) {

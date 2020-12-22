@@ -3,13 +3,13 @@ package wine
 import (
 	"context"
 	"fmt"
-	contextpkg "github.com/gopub/wine/internal/context"
 	"io"
 	"net/http"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/gopub/errors"
 	"github.com/gopub/wine/httpvalue"
+	contextpkg "github.com/gopub/wine/internal/context"
 	iopkg "github.com/gopub/wine/internal/io"
 	"github.com/gopub/wine/internal/respond"
 )

@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	contextpkg "github.com/gopub/wine/internal/context"
 	"math/rand"
 	"mime"
 	"net"
@@ -19,6 +18,7 @@ import (
 	"github.com/gopub/log"
 	"github.com/gopub/types"
 	"github.com/gopub/wine/httpvalue"
+	contextpkg "github.com/gopub/wine/internal/context"
 	"github.com/gopub/wine/internal/io"
 	"github.com/gopub/wine/internal/resource"
 	"github.com/gopub/wine/internal/respond"
@@ -32,6 +32,8 @@ const (
 	defaultSessionTTL = 30 * time.Minute
 	minSessionTTL     = 5 * time.Minute
 	defaultTimeout    = 10 * time.Second
+
+	minAutoCompressionSize = 2048
 )
 
 var reservedPaths = map[string]bool{
@@ -57,6 +59,7 @@ type Server struct {
 	Recovery        bool
 	ResultLogger    func(req *Request, result *Result, cost time.Duration)
 	NotFoundHandler Handler
+	AutoCompression bool
 }
 
 // NewServer returns a server
@@ -67,14 +70,15 @@ func NewServer() *Server {
 	header.Set("Server", "Wine")
 
 	s := &Server{
-		sessionName:  environ.String("wine.session.name", "wsessionid"),
-		sessionTTL:   environ.Duration("wine.session.ttl", defaultSessionTTL),
-		maxReqMem:    types.ByteUnit(environ.SizeInBytes("wine.max_memory", defaultReqMaxMem)),
-		Router:       NewRouter(),
-		Manager:      template.NewManager(),
-		Timeout:      environ.Duration("wine.timeout", defaultTimeout),
-		Recovery:     environ.Bool("wine.recovery", true),
-		ResultLogger: logResult,
+		sessionName:     environ.String("wine.session.name", "wsessionid"),
+		sessionTTL:      environ.Duration("wine.session.ttl", defaultSessionTTL),
+		maxReqMem:       types.ByteUnit(environ.SizeInBytes("wine.max_memory", defaultReqMaxMem)),
+		Router:          NewRouter(),
+		Manager:         template.NewManager(),
+		Timeout:         environ.Duration("wine.timeout", defaultTimeout),
+		Recovery:        environ.Bool("wine.recovery", true),
+		AutoCompression: environ.Bool("wine.compression.auto", true),
+		ResultLogger:    logResult,
 	}
 
 	if s.sessionTTL < minSessionTTL {
@@ -204,7 +208,34 @@ func (s *Server) serve(ctx context.Context, req *Request, rw http.ResponseWriter
 	if resp == nil {
 		resp = Status(http.StatusNotImplemented)
 	}
+	rw = s.compressWriter(rw, req, resp)
 	resp.Respond(ctx, rw)
+}
+
+func (s *Server) compressWriter(w http.ResponseWriter, req *Request, responder Responder) http.ResponseWriter {
+	if !s.AutoCompression {
+		return w
+	}
+
+	respObj, ok := responder.(*respond.Response)
+	if !ok {
+		return w
+	}
+
+	if !httpvalue.IsMIMETextType(httpvalue.GetContentType(respObj.Header())) {
+		return w
+	}
+
+	if respObj.ContentLength() < minAutoCompressionSize {
+		return w
+	}
+
+	cw, err := CompressWriter(w, httpvalue.GetAcceptEncodings(req.request.Header)...)
+	if err != nil {
+		logger.Errorf("Cannot create compress writer: %w", err)
+		return w
+	}
+	return cw
 }
 
 func (s *Server) wrapResponseWriter(rw http.ResponseWriter, req *http.Request) http.ResponseWriter {
