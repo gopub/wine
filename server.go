@@ -50,13 +50,12 @@ type Server struct {
 	sessionTTL  time.Duration
 	sessionName string
 
-	maxReqMem          types.ByteUnit
-	Timeout            time.Duration
-	PreHandler         Handler
-	CompressionEnabled bool
-	Recovery           bool
-	ResultLogger       func(req *Request, result *Result, cost time.Duration)
-	NotFoundHandler    Handler
+	maxReqMem       types.ByteUnit
+	Timeout         time.Duration
+	PreHandler      Handler
+	Recovery        bool
+	ResultLogger    func(req *Request, result *Result, cost time.Duration)
+	NotFoundHandler Handler
 }
 
 // NewServer returns a server
@@ -67,15 +66,14 @@ func NewServer() *Server {
 	header.Set("Server", "Wine")
 
 	s := &Server{
-		sessionName:        environ.String("wine.session.name", "wsessionid"),
-		sessionTTL:         environ.Duration("wine.session.ttl", defaultSessionTTL),
-		maxReqMem:          types.ByteUnit(environ.SizeInBytes("wine.max_memory", defaultReqMaxMem)),
-		Router:             NewRouter(),
-		Manager:            template.NewManager(),
-		Timeout:            environ.Duration("wine.timeout", defaultTimeout),
-		CompressionEnabled: environ.Bool("wine.compression", true),
-		Recovery:           environ.Bool("wine.recovery", true),
-		ResultLogger:       logResult,
+		sessionName:  environ.String("wine.session.name", "wsessionid"),
+		sessionTTL:   environ.Duration("wine.session.ttl", defaultSessionTTL),
+		maxReqMem:    types.ByteUnit(environ.SizeInBytes("wine.max_memory", defaultReqMaxMem)),
+		Router:       NewRouter(),
+		Manager:      template.NewManager(),
+		Timeout:      environ.Duration("wine.timeout", defaultTimeout),
+		Recovery:     environ.Bool("wine.recovery", true),
+		ResultLogger: logResult,
 	}
 
 	if s.sessionTTL < minSessionTTL {
@@ -167,24 +165,24 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, httpReq *http.Request) {
 
 func (s *Server) serve(ctx context.Context, req *Request, rw http.ResponseWriter) {
 	np := req.NormalizedPath()
-	method := strings.ToUpper(req.Request().Method)
-	r, params := s.Match(method, np)
+	method := req.Request().Method
+	endpoint, params := s.Match(method, np)
 	for k, v := range params {
 		req.params[k] = v
 	}
 	s.Header().WriteTo(rw)
 	var h Handler
 	switch {
-	case r != nil:
-		r.Header().WriteTo(rw)
-		if m := r.Model(); m != nil {
+	case endpoint != nil:
+		endpoint.Header().WriteTo(rw)
+		if m := endpoint.Model(); m != nil {
 			if err := req.bind(m); err != nil {
 				Error(err).Respond(ctx, rw)
 				return
 			}
 			ctx = log.BuildContext(ctx, log.FromContext(ctx).With("model", conv.MustJSONString(m)))
 		}
-		h = (*handlerElem)(r.FirstHandler())
+		h = (*handlerElem)(endpoint.FirstHandler())
 	case method == http.MethodOptions:
 		h = HandlerFunc(s.handleOptions)
 	case np == faviconPath:
@@ -209,32 +207,13 @@ func (s *Server) serve(ctx context.Context, req *Request, rw http.ResponseWriter
 }
 
 func (s *Server) wrapResponseWriter(rw http.ResponseWriter, req *http.Request) http.ResponseWriter {
-	if t := mime.TypeByExtension(path.Ext(req.URL.Path)); t != "" {
-		rw.Header().Set(httpvalue.ContentType, t)
+	// contentType may be the final correct value. It can be overwritten
+	contentType := mime.TypeByExtension(path.Ext(req.URL.Path))
+	if contentType != "" && rw.Header().Get(httpvalue.ContentType) == "" {
+		rw.Header().Set(httpvalue.ContentType, contentType)
 	}
-
 	s.Router.md.Header.WriteTo(rw)
-
 	w := io.NewResponseWriter(rw)
-	if !s.CompressionEnabled {
-		return w
-	}
-
-	encodings := strings.Split(req.Header.Get(httpvalue.AcceptEncoding), ",")
-	var unsupported []string
-	for _, enc := range encodings {
-		enc = strings.TrimSpace(enc)
-		cw, err := io.NewCompressResponseWriter(w, enc)
-		if err == nil {
-			return cw
-		}
-		if enc != "" {
-			unsupported = append(unsupported, enc)
-		}
-	}
-	if len(unsupported) > 0 {
-		log.Warnf("Unsupported encodings: %v", unsupported)
-	}
 	return w
 }
 

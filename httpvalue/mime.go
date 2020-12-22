@@ -39,3 +39,12 @@ const (
 	JsonUTF8 = JSON + charsetSuffix
 	XmlUTF8  = XML + charsetSuffix
 )
+
+func IsMIMETextType(typ string) bool {
+	switch typ {
+	case Plain, HTML, CSS, XML, XML2, XHTML, JSON, PlainUTF8, HtmlUTF8, JsonUTF8, XmlUTF8:
+		return true
+	default:
+		return false
+	}
+}

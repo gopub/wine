@@ -3,6 +3,7 @@ package httpvalue
 import (
 	"fmt"
 	"net/http"
+	"strings"
 )
 
 const (
@@ -34,4 +35,19 @@ func GetContentType(h http.Header) string {
 // e.g. Content-Disposition: attachment; filename=test.txt
 func FileAttachment(filename string) string {
 	return fmt.Sprintf(`attachment; filename="%s"`, filename)
+}
+
+func GetAcceptEncodings(h http.Header) []string {
+	a := strings.Split(h.Get(AcceptEncoding), ",")
+	for i, s := range a {
+		a[i] = strings.TrimSpace(s)
+	}
+
+	// Remove empty strings
+	for i := len(a) - 1; i >= 0; i-- {
+		if a[i] == "" {
+			a = append(a[:i], a[i+1:]...)
+		}
+	}
+	return a
 }

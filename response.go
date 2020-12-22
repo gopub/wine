@@ -2,6 +2,7 @@ package wine
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -9,6 +10,7 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/gopub/errors"
 	"github.com/gopub/wine/httpvalue"
+	iopkg "github.com/gopub/wine/internal/io"
 	"github.com/gopub/wine/internal/respond"
 )
 
@@ -129,4 +131,26 @@ func Error(err error) Responder {
 type Result struct {
 	Status int
 	Body   []byte
+}
+
+func CompressWriter(w http.ResponseWriter, encodings ...string) (http.ResponseWriter, error) {
+	if _, ok := w.(*iopkg.CompressResponseWriter); ok {
+		return nil, errors.New("cannot compress writer twice")
+	}
+	rw, _ := w.(*iopkg.ResponseWriter)
+	if rw == nil {
+		return nil, errors.New("invalid response writer")
+	}
+	if len(encodings) == 0 {
+		return nil, errors.New("missing encodings")
+	}
+	var err error
+	for _, encoding := range encodings {
+		cw, er := iopkg.NewCompressResponseWriter(rw, encoding)
+		if er == nil {
+			return cw, nil
+		}
+		err = errors.Append(err, er)
+	}
+	return nil, err
 }
