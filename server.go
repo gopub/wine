@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	contextpkg "github.com/gopub/wine/internal/context"
 	"math/rand"
 	"mime"
 	"net"
@@ -263,8 +264,8 @@ func (s *Server) initSession(rw http.ResponseWriter, req *http.Request) string {
 
 func (s *Server) setupContext(req *http.Request) (context.Context, context.CancelFunc) {
 	ctx, cancel := context.WithTimeout(req.Context(), s.Timeout)
-	ctx = withTemplateManager(ctx, s.Manager)
-	ctx = withRequestHeader(ctx, req.Header)
+	ctx = contextpkg.WithTemplateManager(ctx, s.Manager)
+	ctx = contextpkg.WithRequestHeader(ctx, req.Header)
 	return ctx, cancel
 }
 

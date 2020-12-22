@@ -3,6 +3,7 @@ package wine
 import (
 	"context"
 	"fmt"
+	contextpkg "github.com/gopub/wine/internal/context"
 	"io"
 	"net/http"
 
@@ -106,7 +107,7 @@ func HTML(status int, html string) Responder {
 
 func TemplateHTML(name string, params interface{}) Responder {
 	return respond.Func(func(ctx context.Context, w http.ResponseWriter) {
-		getTemplateManager(ctx).Execute(w, name, params)
+		contextpkg.GetTemplateManager(ctx).Execute(w, name, params)
 	})
 }
 
