@@ -2,7 +2,6 @@ package wine
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"io"
 	"net/http"
