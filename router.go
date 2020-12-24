@@ -3,8 +3,9 @@ package wine
 import (
 	"context"
 	"fmt"
-	"github.com/gopub/wine/internal/httpvfs"
+	"github.com/gopub/wine/exp/vfs"
 	"net/http"
+	"path/filepath"
 	"strings"
 
 	"github.com/gopub/conv"
@@ -123,10 +124,30 @@ func (r *Router) StaticFile(path, filePath string) {
 
 // StaticFileData binds path to data
 func (r *Router) StaticFileData(path string, data []byte) {
+	if path == "" || path == "/" {
+		logger.Panic("invalid path")
+	}
+	fs, err := vfs.NewFileSystem(vfs.NewMemoryStorage())
+	if err != nil {
+		logger.Panic(err)
+	}
+	baseName := filepath.Base(filepath.Join(r.BasePath(), path))
+	if baseName == "/" || baseName == "." {
+		logger.Panic("invalid base name: " + baseName)
+	}
+	f, err := fs.CreateFile(nil, baseName)
+	if err != nil {
+		logger.Panic(err)
+	}
+	_, err = f.Write(data)
+	if err != nil {
+		logger.Panic(err)
+	}
+	f.Close()
 	r.Get(path, func(ctx context.Context, req *Request) Responder {
 		// http.FileServer can handle content range
 		// sometimes it's not allowed to write all data to client in one time. e.g. play video
-		return Handle(req.request, http.FileServer(httpvfs.NewFileSystem(data)))
+		return Handle(req.request, http.FileServer(fs))
 	})
 }
 

@@ -7,7 +7,7 @@ require (
 	github.com/golang/protobuf v1.4.3
 	github.com/google/go-cmp v0.5.0
 	github.com/google/uuid v1.1.2
-	github.com/gopub/conv v0.3.25
+	github.com/gopub/conv v0.3.27
 	github.com/gopub/environ v0.3.1
 	github.com/gopub/errors v0.1.5
 	github.com/gopub/log v1.2.3
