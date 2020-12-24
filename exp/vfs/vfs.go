@@ -1,11 +1,11 @@
 package vfs
 
 import (
-	"github.com/gopub/types"
 	"path/filepath"
 	"strings"
 
 	"github.com/gopub/errors"
+	"github.com/gopub/types"
 )
 
 const (

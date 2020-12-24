@@ -4,9 +4,10 @@ import (
 	"bytes"
 	"encoding/gob"
 	"fmt"
-	"github.com/gopub/log"
 	"net/http"
 	"os"
+
+	"github.com/gopub/log"
 
 	"github.com/google/uuid"
 	"github.com/gopub/conv"

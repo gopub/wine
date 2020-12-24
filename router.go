@@ -3,10 +3,11 @@ package wine
 import (
 	"context"
 	"fmt"
-	"github.com/gopub/wine/exp/vfs"
 	"net/http"
 	"path/filepath"
 	"strings"
+
+	"github.com/gopub/wine/exp/vfs"
 
 	"github.com/gopub/conv"
 	"github.com/gopub/wine/router"
