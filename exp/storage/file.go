@@ -36,7 +36,7 @@ func (r *FileReader) HandleRequest(ctx context.Context, req *wine.Request) wine.
 	if err != nil {
 		return wine.Error(err)
 	}
-	return wine.File(data, name)
+	return wine.BytesFile(data, name)
 }
 
 type FileWriter struct {

@@ -86,9 +86,9 @@ func StreamFile(r io.ReadCloser, name string) Responder {
 	return respond.StreamFile(r, name)
 }
 
-// File creates a application/octet-stream response
-func File(b []byte, name string) Responder {
-	return respond.File(b, name)
+// BytesFile creates a application/octet-stream response
+func BytesFile(b []byte, name string) Responder {
+	return respond.BytesFile(b, name)
 }
 
 // StaticFile serves static files

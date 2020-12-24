@@ -37,8 +37,8 @@ func StreamFile(r io.ReadCloser, name string) Func {
 	})
 }
 
-// File creates a application/octet-stream response
-func File(b []byte, name string) Func {
+// BytesFile creates a application/octet-stream response
+func BytesFile(b []byte, name string) Func {
 	return func(ctx context.Context, w http.ResponseWriter) {
 		w.Header().Set(httpvalue.ContentType, httpvalue.OctetStream)
 		if name != "" {
@@ -53,9 +53,9 @@ func File(b []byte, name string) Func {
 
 // StaticFile serves static files
 func StaticFile(req *http.Request, filePath string) Func {
-	return Func(func(ctx context.Context, w http.ResponseWriter) {
+	return func(ctx context.Context, w http.ResponseWriter) {
 		http.ServeFile(w, req, filePath)
-	})
+	}
 }
 
 func Image(contentType string, content []byte) Func {

@@ -13,6 +13,6 @@ func main() {
 	flag.Parse()
 	s := wine.NewServer()
 	s.StaticDir("/", *pDir)
-	log.Infof("File directory: %s", *pDir)
+	log.Infof("BytesFile directory: %s", *pDir)
 	s.Run(*pAddr)
 }
