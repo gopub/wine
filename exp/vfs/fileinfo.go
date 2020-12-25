@@ -30,7 +30,7 @@ type fileMetadata struct {
 	ModifiedAt int64        `json:"modified_at"`
 	Location   *types.Point `json:"location,omitempty"`
 	Permission int          `json:"permission,omitempty"`
-	Ext        types.M      `json:"ext,omitempty"`
+	Extra      types.M      `json:"extra,omitempty"`
 }
 
 type FileInfo struct {
