@@ -3,6 +3,7 @@ package vfs
 import (
 	"bytes"
 	"encoding/gob"
+	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -16,12 +17,14 @@ import (
 	"github.com/gopub/conv"
 	"github.com/gopub/errors"
 	"github.com/gopub/log"
+	"github.com/gopub/types"
 )
 
 type FileSystem struct {
 	storage KVStorage
 	home    *FileInfo
 	key     []byte
+	configs types.M
 }
 
 var _ http.FileSystem = (*FileSystem)(nil)
@@ -39,6 +42,10 @@ func NewEncryptedFileSystem(storage KVStorage, password string) (*FileSystem, er
 	fs := &FileSystem{
 		storage: storage,
 		key:     key,
+	}
+
+	if err = fs.loadConfigs(); err != nil {
+		return nil, fmt.Errorf("load configurations: %w", err)
 	}
 
 	if err = fs.mountHome(storage); err != nil {
@@ -325,4 +332,41 @@ func (fs *FileSystem) ReadAll(uuid string) ([]byte, error) {
 		return nil, fmt.Errorf("read all: %w", err)
 	}
 	return data, nil
+}
+
+func (fs *FileSystem) loadConfig() error {
+	data, err := fs.storage.Get(keyFSConfig)
+	if err != nil {
+		return fmt.Errorf("get %s: %w", keyFSConfig, err)
+	}
+
+	if err = fs.DecryptPage(data); err != nil {
+		return fmt.Errorf("decrypt: %w", err)
+	}
+
+	err = json.Unmarshal(data, &fs.configs)
+	if err != nil {
+		return fmt.Errorf("unmarshal %s: %w", data, err)
+	}
+	return nil
+}
+
+func (fs *FileSystem) Config() types.M {
+	return fs.configs
+}
+
+func (fs *FileSystem) SaveConfig() error {
+	data, err := json.Marshal(fs.configs)
+	if err != nil {
+		return fmt.Errorf("marshal: %w", err)
+	}
+
+	if err = fs.EncryptPage(data); err != nil {
+		return fmt.Errorf("encrypt: %w", err)
+	}
+
+	if err = fs.storage.Put(keyFSConfig, data); err != nil {
+		return fmt.Errorf("write: %w", err)
+	}
+	return nil
 }

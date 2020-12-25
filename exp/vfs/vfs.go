@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	"github.com/gopub/conv"
-
 	"github.com/gopub/types"
 )
 
@@ -17,6 +16,7 @@ const (
 var (
 	keyFSHome        = conv.SHA256("filesystem.home")
 	keyFSCredentials = conv.SHA256("filesystem.credentials")
+	keyFSConfig      = conv.SHA256("filesystem.config")
 )
 
 type KVStorage interface {
