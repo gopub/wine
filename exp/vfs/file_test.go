@@ -13,7 +13,7 @@ import (
 func TestFile_Write(t *testing.T) {
 	fs := setupFS(t)
 	t.Run("WriteLargeAmount", func(t *testing.T) {
-		f, err := fs.CreateFile(nil, uuid.New().String())
+		f, err := fs.Create("", false, uuid.New().String())
 		data := []byte(strings.Repeat(uuid.New().String(), 12345))
 		n, err := f.Write(data)
 		require.Equal(t, len(data), n)
@@ -21,7 +21,7 @@ func TestFile_Write(t *testing.T) {
 		err = f.Close()
 		require.NoError(t, err)
 
-		rf, err := fs.OpenFile(f.Info().Name(), false)
+		rf, err := fs.OpenByPath(f.Info().Name(), false)
 		require.NoError(t, err)
 		require.NotEmpty(t, rf)
 		buf := bytes.NewBuffer(nil)
@@ -39,7 +39,7 @@ func TestFile_Write(t *testing.T) {
 	})
 
 	t.Run("WriteSmallAmount", func(t *testing.T) {
-		f, err := fs.CreateFile(nil, uuid.New().String())
+		f, err := fs.Create("", false, uuid.New().String())
 		data := []byte(strings.Repeat(uuid.New().String(), 2))
 		n, err := f.Write(data)
 		require.Equal(t, len(data), n)
@@ -47,7 +47,7 @@ func TestFile_Write(t *testing.T) {
 		err = f.Close()
 		require.NoError(t, err)
 
-		rf, err := fs.OpenFile(f.Info().Name(), false)
+		rf, err := fs.OpenByPath(f.Info().Name(), false)
 		require.NoError(t, err)
 		require.NotEmpty(t, rf)
 		buf := bytes.NewBuffer(nil)

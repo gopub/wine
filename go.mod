@@ -4,6 +4,7 @@ go 1.13
 
 require (
 	github.com/disintegration/imaging v1.6.2
+	github.com/gabriel-vasile/mimetype v1.1.2
 	github.com/golang/protobuf v1.4.3
 	github.com/google/go-cmp v0.5.0
 	github.com/google/uuid v1.1.2

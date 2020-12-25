@@ -159,6 +159,9 @@ func (f *File) flush(all bool) error {
 		n, err := f.buf.Read(b[:])
 		// even err is io.EOF, n may be > 0
 		if n > 0 {
+			if f.offset == 0 {
+				f.info.truncate()
+			}
 			f.offset += int64(n)
 			page := uuid.New().String()
 			data := b[:n]
@@ -182,7 +185,7 @@ func (f *File) flush(all bool) error {
 
 	if all {
 		f.info.setSize(f.offset)
-		if err := f.vo.Save(); err != nil {
+		if err := f.vo.SaveFileTree(); err != nil {
 			return fmt.Errorf("save file info list: %w", err)
 		}
 	}

@@ -44,24 +44,12 @@ var _ encoding.BinaryUnmarshaler = (*FileInfo)(nil)
 var _ encoding.TextMarshaler = (*FileInfo)(nil)
 var _ encoding.TextUnmarshaler = (*FileInfo)(nil)
 
-func newDirInfo(name string) *FileInfo {
+func newFileInfo(isDir bool, name string) *FileInfo {
 	return &FileInfo{
 		fileInfoType: fileInfoType{
 			UUID:       uuid.New().String(),
 			Name:       name,
-			IsDir:      true,
-			CreatedAt:  time.Now().Unix(),
-			ModifiedAt: time.Now().Unix(),
-		},
-	}
-}
-
-func newFileInfo(name string) *FileInfo {
-	return &FileInfo{
-		fileInfoType: fileInfoType{
-			UUID:       uuid.New().String(),
-			Name:       name,
-			IsDir:      false,
+			IsDir:      isDir,
 			CreatedAt:  time.Now().Unix(),
 			ModifiedAt: time.Now().Unix(),
 		},
@@ -116,6 +104,11 @@ func (f *FileInfo) MarshalText() (data []byte, err error) {
 func (f *FileInfo) addPage(p string) {
 	f.Pages = append(f.Pages, p)
 	f.fileInfoType.ModifiedAt = time.Now().Unix()
+}
+
+func (f *FileInfo) truncate() {
+	f.fileInfoType.Pages = f.fileInfoType.Pages[:]
+	f.setSize(0)
 }
 
 func (f *FileInfo) setSize(size int64) {
@@ -277,6 +270,13 @@ func (f *FileInfo) UUID() string {
 // SetUUID is for migrating use only
 func (f *FileInfo) SetUUID(id string) {
 	f.fileInfoType.UUID = id
+}
+
+func (f *FileInfo) ParentUUID() string {
+	if f.parent != nil {
+		return f.parent.UUID()
+	}
+	return ""
 }
 
 func (f *FileInfo) Duration() int {
