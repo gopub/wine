@@ -3,6 +3,7 @@ package vfs
 import (
 	"bytes"
 	"encoding/gob"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"os"
@@ -104,12 +105,10 @@ func (fs *FileSystem) mountHome(storage KVStorage) error {
 
 		// initialize
 		fs.home = newDirInfo("")
-		buf := bytes.NewBuffer(nil)
-		if err = gob.NewEncoder(buf).Encode(fs.home); err != nil {
-			return fmt.Errorf("encode: %w", err)
+		data, err := json.Marshal(fs.home)
+		if err != nil {
+			return fmt.Errorf("marshal: %w", err)
 		}
-
-		data = buf.Bytes()
 		if err = fs.EncryptPage(data); err != nil {
 			return fmt.Errorf("encrypt: %w", err)
 		}
@@ -122,9 +121,8 @@ func (fs *FileSystem) mountHome(storage KVStorage) error {
 	if err = fs.DecryptPage(data); err != nil {
 		return fmt.Errorf("decrypt: %w", err)
 	}
-	buf := bytes.NewBuffer(data)
-	if err = gob.NewDecoder(buf).Decode(&fs.home); err != nil {
-		return fmt.Errorf("decode: %w", err)
+	if err = json.Unmarshal(data, &fs.home); err != nil {
+		return fmt.Errorf("unmarshal: %w", err)
 	}
 	return nil
 }
