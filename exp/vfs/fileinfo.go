@@ -116,12 +116,12 @@ func (f *FileInfo) MarshalText() (data []byte, err error) {
 
 func (f *FileInfo) addPage(p string) {
 	f.Pages = append(f.Pages, p)
-	f.ModifiedAt = time.Now().Unix()
+	f.fileInfoType.ModifiedAt = time.Now().Unix()
 }
 
 func (f *FileInfo) setSize(size int64) {
 	f.fileInfoType.Size = size
-	f.ModifiedAt = time.Now().Unix()
+	f.fileInfoType.ModifiedAt = time.Now().Unix()
 }
 
 func (f *FileInfo) GetByPath(path string) *FileInfo {
@@ -174,7 +174,7 @@ func (f *FileInfo) AddSub(sub *FileInfo) {
 	}
 	sub.parent = f
 	f.fileInfoType.Files = append(f.fileInfoType.Files, sub)
-	f.ModifiedAt = time.Now().Unix()
+	f.fileInfoType.ModifiedAt = time.Now().Unix()
 	f.dirContent = nil
 	f.DirContent()
 }
@@ -186,7 +186,7 @@ func (f *FileInfo) RemoveSub(sub *FileInfo) {
 			break
 		}
 	}
-	f.ModifiedAt = time.Now().Unix()
+	f.fileInfoType.ModifiedAt = time.Now().Unix()
 	f.dirContent = nil
 	f.DirContent()
 }
@@ -225,6 +225,36 @@ func (f *FileInfo) DirContent() []byte {
 		f.dirContent = b
 	}
 	return f.dirContent
+}
+
+func (f *FileInfo) MIMEType() string {
+	return f.fileInfoType.MIMEType
+}
+
+func (f *FileInfo) SetMIMEType(t string) {
+	f.fileInfoType.MIMEType = t
+}
+
+func (f *FileInfo) Location() *types.Point {
+	return f.fileInfoType.Location
+}
+
+func (f *FileInfo) SetLocation(p *types.Point) {
+	f.fileInfoType.Location = p
+}
+
+func (f *FileInfo) CreatedAt() int64 {
+	return f.fileInfoType.CreatedAt
+}
+
+// SetCreatedAt is for migrating use
+func (f *FileInfo) SetCreatedAt(t int64) {
+	f.fileInfoType.CreatedAt = t
+	f.fileInfoType.ModifiedAt = t
+}
+
+func (f *FileInfo) ModifiedAt() int64 {
+	return f.fileInfoType.ModifiedAt
 }
 
 func (f *FileInfo) Sort(order int) {
@@ -266,13 +296,13 @@ func (l *fileInfoList) Swap(i, j int) {
 func (l *fileInfoList) Less(i, j int) bool {
 	switch l.order {
 	case OrderByCreatedTimeAsc:
-		return l.files[i].CreatedAt <= l.files[j].CreatedAt
+		return l.files[i].CreatedAt() <= l.files[j].CreatedAt()
 	case OrderByCreatedTimeDesc:
-		return l.files[i].CreatedAt >= l.files[j].CreatedAt
+		return l.files[i].CreatedAt() >= l.files[j].CreatedAt()
 	case OrderByModTimeAsc:
-		return l.files[i].ModifiedAt <= l.files[j].ModifiedAt
+		return l.files[i].ModifiedAt() <= l.files[j].ModifiedAt()
 	case OrderByModTimeDesc:
-		return l.files[i].ModifiedAt >= l.files[j].ModifiedAt
+		return l.files[i].ModifiedAt() >= l.files[j].ModifiedAt()
 	case OrderBySizeAsc:
 		return l.files[i].Size() <= l.files[j].Size()
 	case OrderBySizeDesc:
@@ -280,7 +310,7 @@ func (l *fileInfoList) Less(i, j int) bool {
 	case OrderByName:
 		return l.files[i].Name() <= l.files[j].Name()
 	case OrderByMIMEType:
-		return l.files[i].MIMEType <= l.files[j].MIMEType
+		return l.files[i].MIMEType() <= l.files[j].MIMEType()
 	default:
 		return true
 	}
