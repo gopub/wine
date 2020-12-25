@@ -136,15 +136,7 @@ func (r *Router) StaticFileData(path string, data []byte) {
 	if baseName == "/" || baseName == "." {
 		logger.Panic("invalid base name: " + baseName)
 	}
-	f, err := fs.CreateFile(nil, baseName)
-	if err != nil {
-		logger.Panic(err)
-	}
-	_, err = f.Write(data)
-	if err != nil {
-		logger.Panic(err)
-	}
-	f.Close()
+	_, err = fs.CreateAndWrite("", baseName, data)
 	r.Get(path, func(ctx context.Context, req *Request) Responder {
 		// http.FileServer can handle content range
 		// sometimes it's not allowed to write all data to client in one time. e.g. play video

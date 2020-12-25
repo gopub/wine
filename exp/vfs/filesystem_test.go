@@ -84,7 +84,7 @@ func TestFileSystem_CreateFile(t *testing.T) {
 	})
 
 	t.Run("CreateFileInDir", func(t *testing.T) {
-		dir, err := fs.Create("", false, uuid.New().String())
+		dir, err := fs.Create("", true, uuid.New().String())
 		require.NoError(t, err)
 		fileName := uuid.New().String()
 		f, err := fs.Create(dir.Info().UUID(), false, fileName)
