@@ -178,6 +178,9 @@ func (fs *FileSystem) CreateDir(dir *FileInfo, name string) (*File, error) {
 }
 
 func (fs *FileSystem) OpenByUUID(id string, write bool) (*File, error) {
+	if id == "" {
+		return newFile(fs, fs.home, write), nil
+	}
 	fi := fs.home.GetByUUID(id)
 	if fi == nil {
 		return nil, os.ErrNotExist

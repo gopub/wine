@@ -1,9 +1,7 @@
 package vfs
 
 import (
-	"bytes"
 	"encoding"
-	"encoding/gob"
 	"encoding/json"
 	"fmt"
 	"github.com/google/uuid"
@@ -96,18 +94,12 @@ func (f *FileInfo) Sys() interface{} {
 }
 
 func (f *FileInfo) UnmarshalBinary(data []byte) error {
-	dec := gob.NewDecoder(bytes.NewReader(data))
-	return dec.Decode(&f.fileInfoType)
+	return json.Unmarshal(data, &f.fileInfoType)
 }
 
 func (f *FileInfo) MarshalBinary() (data []byte, err error) {
-	buf := bytes.NewBuffer(nil)
-	enc := gob.NewEncoder(buf)
-	err = enc.Encode(f.fileInfoType)
-	if err != nil {
-		return nil, err
-	}
-	return buf.Bytes(), nil
+	// json is more readable than gob
+	return json.Marshal(f.fileInfoType)
 }
 
 func (f *FileInfo) UnmarshalText(data []byte) error {
