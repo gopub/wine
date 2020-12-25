@@ -152,3 +152,19 @@ func TestFileSystem_Move(t *testing.T) {
 	_, err = fs.OpenFile(dir.Info().Name()+"/"+f.Info().Name(), false)
 	require.NoError(t, err)
 }
+
+func TestFileSystem_Mount(t *testing.T) {
+	ms := vfs.NewMemoryStorage()
+	password := uuid.New().String()
+	fs, err := vfs.NewEncryptedFileSystem(ms, password)
+	require.NoError(t, err)
+	f, err := fs.CreateFile(nil, uuid.New().String())
+	require.NoError(t, err)
+	f.Close()
+
+	fs2, err := vfs.NewEncryptedFileSystem(ms, password)
+	require.NoError(t, err)
+	f2, err := fs2.OpenFile(f.Info().Name(), false)
+	require.NoError(t, err)
+	f2.Close()
+}

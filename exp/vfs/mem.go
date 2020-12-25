@@ -1,6 +1,8 @@
 package vfs
 
-import "os"
+import (
+	"os"
+)
 
 type MemoryStorage struct {
 	m map[string][]byte
