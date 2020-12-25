@@ -6,9 +6,7 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
-	"github.com/gopub/types"
 	"github.com/gopub/wine/exp/vfs"
-	"github.com/gopub/wine/httpvalue"
 	"github.com/stretchr/testify/require"
 )
 
@@ -53,10 +51,12 @@ func TestFileSystem_CreateDir(t *testing.T) {
 	subDir, err := fs.CreateDir(dir.Info(), subDirName)
 	require.NoError(t, err)
 	require.NotEmpty(t, subDir)
+	subDir.Close()
 
 	f, err := fs.OpenFile(filepath.Join(dirName, subDirName), true)
 	require.NoError(t, err)
 	require.NotEmpty(t, f)
+	f.Close()
 
 	f, err = fs.OpenFile(filepath.Join(dirName, uuid.New().String()), true)
 	require.Error(t, err)
@@ -75,24 +75,7 @@ func TestFileSystem_CreateFile(t *testing.T) {
 		require.Empty(t, f.Info().Size())
 		require.NotEmpty(t, f.Info().CreatedAt)
 		require.NotEmpty(t, f.Info().ModifiedAt)
-
-		of, err := fs.OpenFile(fileName, false)
-		require.NoError(t, err)
-		require.NotEmpty(t, of)
-		require.Equal(t, f.Info(), of.Info())
-	})
-
-	t.Run("CreateMIMEFile", func(t *testing.T) {
-		fileName := uuid.New().String()
-		f, err := fs.CreateMIMEFile(nil, fileName, httpvalue.MPEG, types.NewPoint(23.1, 90.2))
-		require.NoError(t, err)
-		require.NotEmpty(t, f)
-		require.Equal(t, fileName, f.Info().Name())
-		require.Equal(t, httpvalue.MPEG, f.Info().MIMEType)
-		require.NotEmpty(t, f.Info().Location)
-		require.Empty(t, f.Info().Size())
-		require.NotEmpty(t, f.Info().CreatedAt)
-		require.NotEmpty(t, f.Info().ModifiedAt)
+		f.Close()
 
 		of, err := fs.OpenFile(fileName, false)
 		require.NoError(t, err)
@@ -111,6 +94,7 @@ func TestFileSystem_CreateFile(t *testing.T) {
 		require.Empty(t, f.Info().Size())
 		require.NotEmpty(t, f.Info().CreatedAt)
 		require.NotEmpty(t, f.Info().ModifiedAt)
+		f.Close()
 
 		of, err := fs.OpenFile(fileName, false)
 		require.Error(t, err)
@@ -157,6 +141,7 @@ func TestFileSystem_Move(t *testing.T) {
 	fileName := uuid.New().String()
 	f, err := fs.CreateFile(nil, fileName)
 	require.NoError(t, err)
+	f.Close()
 
 	dir, err := fs.CreateDir(nil, uuid.New().String())
 	require.NoError(t, err)

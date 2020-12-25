@@ -13,7 +13,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/gopub/conv"
 	"github.com/gopub/errors"
-	"github.com/gopub/types"
 )
 
 type FileSystem struct {
@@ -131,10 +130,6 @@ func (fs *FileSystem) mountHome(storage KVStorage) error {
 }
 
 func (fs *FileSystem) CreateFile(dir *FileInfo, name string) (*File, error) {
-	return fs.CreateMIMEFile(dir, name, "", nil)
-}
-
-func (fs *FileSystem) CreateMIMEFile(dir *FileInfo, name, mimeType string, location *types.Point) (*File, error) {
 	name = strings.TrimSpace(name)
 	if !validateFileName(name) {
 		return nil, errors.New("invalid file name")
@@ -149,7 +144,7 @@ func (fs *FileSystem) CreateMIMEFile(dir *FileInfo, name, mimeType string, locat
 		return nil, errors.New("unknown dir")
 	}
 	name = dir.DistinctName(name)
-	f := newFileInfo(name, mimeType, location)
+	f := newFileInfo(name)
 	dir.AddSub(f)
 	err := fs.Save()
 	if err != nil {
@@ -192,6 +187,7 @@ func (fs *FileSystem) OpenFile(path string, write bool) (*File, error) {
 		return nil, os.ErrNotExist
 	}
 	if fi.busy {
+		log.Debug(fi.Name())
 		return nil, errors.New("busy")
 	}
 	return newFile(fs, fi, write), nil

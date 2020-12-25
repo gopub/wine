@@ -146,10 +146,10 @@ func (f *File) Write(p []byte) (int, error) {
 }
 
 func (f *File) Close() error {
+	f.info.busy = false
 	if f.write {
 		return f.flush(true)
 	}
-	f.info.busy = false
 	return nil
 }
 

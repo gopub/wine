@@ -51,13 +51,11 @@ func newDirInfo(name string) *FileInfo {
 	}
 }
 
-func newFileInfo(name, mimeType string, location *types.Point) *FileInfo {
+func newFileInfo(name string) *FileInfo {
 	return &FileInfo{
 		fileInfoType: fileInfoType{
 			Name:       name,
 			IsDir:      false,
-			MIMEType:   mimeType,
-			Location:   location,
 			CreatedAt:  time.Now().Unix(),
 			ModifiedAt: time.Now().Unix(),
 		},
@@ -251,6 +249,8 @@ func (f *FileInfo) CreatedAt() int64 {
 func (f *FileInfo) SetCreatedAt(t int64) {
 	f.fileInfoType.CreatedAt = t
 	f.fileInfoType.ModifiedAt = t
+	f.dirContent = nil
+	f.DirContent()
 }
 
 func (f *FileInfo) ModifiedAt() int64 {
