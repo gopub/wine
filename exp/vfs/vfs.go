@@ -1,6 +1,7 @@
 package vfs
 
 import (
+	"github.com/gopub/conv"
 	"path/filepath"
 	"strings"
 
@@ -12,9 +13,9 @@ const (
 	pageSize = int64(32 * types.KB)
 )
 
-const (
-	keyFSHome        = "filesystem.home"
-	keyFSCredentials = "filesystem.credentials"
+var (
+	keyFSHome        = conv.SHA256("filesystem.home")
+	keyFSCredentials = conv.SHA256("filesystem.credentials")
 )
 
 type KVStorage interface {
