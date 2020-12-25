@@ -6,6 +6,7 @@ import (
 	"encoding/gob"
 	"encoding/json"
 	"fmt"
+	"github.com/google/uuid"
 	"os"
 	"path/filepath"
 	"sort"
@@ -17,6 +18,7 @@ import (
 )
 
 type fileInfoType struct {
+	UUID       string       `json:"uuid"`
 	Name       string       `json:"name"`
 	IsDir      bool         `json:"is_dir,omitempty"`
 	MIMEType   string       `json:"mime_type,omitempty"`
@@ -44,6 +46,7 @@ var _ encoding.TextUnmarshaler = (*FileInfo)(nil)
 func newDirInfo(name string) *FileInfo {
 	return &FileInfo{
 		fileInfoType: fileInfoType{
+			UUID:       uuid.New().String(),
 			Name:       name,
 			IsDir:      true,
 			CreatedAt:  time.Now().Unix(),
@@ -55,6 +58,7 @@ func newDirInfo(name string) *FileInfo {
 func newFileInfo(name string) *FileInfo {
 	return &FileInfo{
 		fileInfoType: fileInfoType{
+			UUID:       uuid.New().String(),
 			Name:       name,
 			IsDir:      false,
 			CreatedAt:  time.Now().Unix(),
@@ -143,6 +147,18 @@ func (f *FileInfo) Get(name string) *FileInfo {
 	for _, fi := range f.Files {
 		if fi.Name() == name {
 			return fi
+		}
+	}
+	return nil
+}
+
+func (f *FileInfo) GetByUUID(id string) *FileInfo {
+	for _, fi := range f.Files {
+		if fi.fileInfoType.UUID == id {
+			return fi
+		}
+		if found := fi.GetByUUID(id); found != nil {
+			return found
 		}
 	}
 	return nil
@@ -256,6 +272,10 @@ func (f *FileInfo) SetCreatedAt(t int64) {
 
 func (f *FileInfo) ModifiedAt() int64 {
 	return f.fileInfoType.ModifiedAt
+}
+
+func (f *FileInfo) UUID() string {
+	return f.fileInfoType.UUID
 }
 
 func (f *FileInfo) Sort(order int) {
