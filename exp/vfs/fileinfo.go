@@ -278,6 +278,11 @@ func (f *FileInfo) UUID() string {
 	return f.fileInfoType.UUID
 }
 
+// SetUUID is for migrating use only
+func (f *FileInfo) SetUUID(id string) {
+	f.fileInfoType.UUID = id
+}
+
 func (f *FileInfo) Sort(order int) {
 	l := &fileInfoList{
 		files: f.Files,
