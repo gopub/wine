@@ -24,6 +24,7 @@ type fileInfoType struct {
 	MIMEType   string       `json:"mime_type,omitempty"`
 	Pages      []string     `json:"pages,omitempty"`
 	Size       int64        `json:"size,omitempty"`
+	Duration   int          `json:"duration,omitempty"`
 	Files      []*FileInfo  `json:"files,omitempty"`
 	CreatedAt  int64        `json:"created_at"`
 	ModifiedAt int64        `json:"modified_at"`
@@ -281,6 +282,15 @@ func (f *FileInfo) UUID() string {
 // SetUUID is for migrating use only
 func (f *FileInfo) SetUUID(id string) {
 	f.fileInfoType.UUID = id
+}
+
+func (f *FileInfo) Duration() int {
+	return f.fileInfoType.Duration
+}
+
+// SetUUID is for migrating use only
+func (f *FileInfo) SetDuration(seconds int) {
+	f.fileInfoType.Duration = seconds
 }
 
 func (f *FileInfo) Sort(order int) {
