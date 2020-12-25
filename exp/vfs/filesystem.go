@@ -44,7 +44,7 @@ func NewEncryptedFileSystem(storage KVStorage, password string) (*FileSystem, er
 		key:     key,
 	}
 
-	if err = fs.loadConfigs(); err != nil {
+	if err = fs.loadConfig(); err != nil {
 		return nil, fmt.Errorf("load configurations: %w", err)
 	}
 
