@@ -4,10 +4,10 @@ import (
 	"bytes"
 	"encoding/gob"
 	"fmt"
+	"github.com/gopub/log"
 	"net/http"
 	"os"
-
-	"github.com/gopub/log"
+	"strings"
 
 	"github.com/google/uuid"
 	"github.com/gopub/conv"
@@ -39,15 +39,15 @@ func NewEncryptedFileSystem(storage KVStorage, password string) (*FileSystem, er
 	}
 
 	if err = fs.mountHome(storage); err != nil {
-		return nil, fmt.Errorf("load home: %w", err)
+		return nil, fmt.Errorf("mount home: %w", err)
 	}
 	return fs, nil
 }
 
 func loadKey(storage KVStorage, password string) ([]byte, error) {
-	key, err := storage.Get(keyFSKey)
+	credentials, err := storage.Get(keyFSCredentials)
 	if err != nil {
-		if !errors.Is(err, ErrNotExist) {
+		if !errors.Is(err, os.ErrNotExist) {
 			return nil, fmt.Errorf("get key: %w", err)
 		}
 
@@ -57,28 +57,39 @@ func loadKey(storage KVStorage, password string) ([]byte, error) {
 
 		// this is a new file system, initialize key if password is provided
 		passHash := conv.Hash32([]byte(password))
-		rawKey := conv.Hash32([]byte(uuid.New().String()))
-		key := append(passHash[:], rawKey[:]...)
-		if err = storage.Put(keyFSKey, key); err != nil {
+		key := conv.Hash32([]byte(uuid.New().String()))
+
+		credentials = make([]byte, 64)
+		copy(credentials, key[:])
+		copy(credentials[32:], passHash[:])
+
+		// encrypt
+		if err = conv.AES(credentials, passHash[:], passHash[:16]); err != nil {
+			return nil, fmt.Errorf("encrypt: %w", err)
+		}
+
+		if err = storage.Put(keyFSCredentials, credentials); err != nil {
 			return nil, fmt.Errorf("put: %w", err)
 		}
-		return key, nil
+		return key[:], nil
 	}
 
 	if password == "" {
 		return nil, errors.New("missing password")
 	}
-	if len(key) != keySize {
+	if len(credentials) != keySize {
 		return nil, errors.New("corrupted file system")
 	}
+
 	passHash := conv.Hash32([]byte(password))
-	if err = conv.AES(key, passHash[:], passHash[:16]); err != nil {
-		return nil, fmt.Errorf("aes: %w", err)
+	if err = conv.AES(credentials, passHash[:], passHash[:16]); err != nil {
+		return nil, fmt.Errorf("decript: %w", err)
 	}
-	if !bytes.Equal(key[:32], passHash[:]) {
+
+	if !bytes.Equal(credentials[32:], passHash[:]) {
 		return nil, errors.New("invalid password")
 	}
-	return key, nil
+	return credentials[:32], nil
 }
 
 func (fs *FileSystem) mountHome(storage KVStorage) error {
@@ -87,7 +98,7 @@ func (fs *FileSystem) mountHome(storage KVStorage) error {
 	}
 	data, err := storage.Get(keyFSHome)
 	if err != nil {
-		if !errors.Is(err, ErrNotExist) {
+		if !errors.Is(err, os.ErrNotExist) {
 			return fmt.Errorf("get %s: %w", keyFSHome, err)
 		}
 
@@ -123,6 +134,10 @@ func (fs *FileSystem) CreateFile(dir *FileInfo, name string) (*File, error) {
 }
 
 func (fs *FileSystem) CreateMIMEFile(dir *FileInfo, name, mimeType string, location *types.Point) (*File, error) {
+	name = strings.TrimSpace(name)
+	if !validateFileName(name) {
+		return nil, errors.New("invalid file name")
+	}
 	if dir == nil {
 		dir = fs.home
 	}
@@ -143,6 +158,10 @@ func (fs *FileSystem) CreateMIMEFile(dir *FileInfo, name, mimeType string, locat
 }
 
 func (fs *FileSystem) CreateDir(dir *FileInfo, name string) (*File, error) {
+	name = strings.TrimSpace(name)
+	if !validateFileName(name) {
+		return nil, errors.New("invalid file name")
+	}
 	if dir == nil {
 		dir = fs.home
 	}
@@ -162,19 +181,20 @@ func (fs *FileSystem) CreateDir(dir *FileInfo, name string) (*File, error) {
 	return newFile(fs, f, true), nil
 }
 
-func (fs *FileSystem) OpenFile(f *FileInfo, write bool) (*File, error) {
-	if f.parent == nil {
-		return nil, errors.New("unknown file")
+func (fs *FileSystem) OpenFile(path string, write bool) (*File, error) {
+	path = strings.TrimSpace(path)
+	if path == "" || path == "/" {
+		return newFile(fs, fs.home, write), nil
 	}
-	return newFile(fs, f, write), nil
+	fi := fs.home.GetByPath(path)
+	if fi == nil {
+		return nil, os.ErrNotExist
+	}
+	return newFile(fs, fi, write), nil
 }
 
-func (fs *FileSystem) Open(name string) (http.File, error) {
-	fi := fs.home.GetByPath(name)
-	if fi != nil {
-		return fs.OpenFile(fi, false)
-	}
-	return nil, os.ErrNotExist
+func (fs *FileSystem) Open(path string) (http.File, error) {
+	return fs.OpenFile(path, false)
 }
 
 func (fs *FileSystem) Delete(f *FileInfo) error {
@@ -205,6 +225,18 @@ func (fs *FileSystem) Delete(f *FileInfo) error {
 	return err
 }
 
+func (fs *FileSystem) Move(f *FileInfo, dir *FileInfo) error {
+	if !dir.IsDir() {
+		return errors.New("dst is not dir")
+	}
+	if f.parent == dir {
+		return nil
+	}
+	dir.AddSub(f)
+	err := fs.Save()
+	return errors.Wrapf(err, "cannot save")
+}
+
 func (fs *FileSystem) Save() error {
 	buf := bytes.NewBuffer(nil)
 	enc := gob.NewEncoder(buf)
@@ -220,9 +252,6 @@ func (fs *FileSystem) Save() error {
 }
 
 func (fs *FileSystem) EncryptPage(data []byte) error {
-	//if int64(len(data)) > pageSize {
-	//	return fmt.Errorf("page size must be less than %d", pageSize)
-	//}
 	if len(fs.key) == 0 {
 		return nil
 	}
@@ -230,9 +259,6 @@ func (fs *FileSystem) EncryptPage(data []byte) error {
 }
 
 func (fs *FileSystem) DecryptPage(data []byte) error {
-	//if int64(len(data)) > pageSize {
-	//	return fmt.Errorf("page size must be less than %d", pageSize)
-	//}
 	if len(fs.key) == 0 {
 		return nil
 	}

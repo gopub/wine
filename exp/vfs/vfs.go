@@ -4,7 +4,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/gopub/errors"
 	"github.com/gopub/types"
 )
 
@@ -14,14 +13,12 @@ const (
 )
 
 const (
-	keyFSHome = "filesystem.home"
-	keyFSKey  = "filesystem.key"
+	keyFSHome        = "filesystem.home"
+	keyFSCredentials = "filesystem.credentials"
 )
 
-const ErrNotExist = errors.String("not exist")
-
 type KVStorage interface {
-	// Get returns ErrNotExist if key doesn't exist
+	// Get returns os.ErrNotExist if key doesn't exist
 	Get(key string) ([]byte, error)
 	Put(key string, val []byte) error
 	Delete(key string) error
@@ -33,4 +30,16 @@ func splitPath(path string) []string {
 	path = strings.TrimSuffix(path, "/")
 	paths := strings.Split(path, "/")
 	return paths
+}
+
+func validateFileName(name string) bool {
+	if name == "" {
+		return false
+	}
+
+	if strings.Contains(name, "/") {
+		return false
+	}
+
+	return true
 }

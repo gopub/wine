@@ -6,6 +6,7 @@ import (
 	"encoding/gob"
 	"fmt"
 	"os"
+	"sort"
 	"time"
 
 	"github.com/gopub/types"
@@ -168,23 +169,61 @@ func (f *FileInfo) RemoveSub(sub *FileInfo) {
 	f.ModifiedAt = time.Now().Unix()
 }
 
-// FileInfoList is defined for gomobile
-type FileInfoList struct {
-	files []*FileInfo
+func (f *FileInfo) Sort(order int) {
+	l := &fileInfoList{
+		files: f.Files,
+		order: order,
+	}
+	sort.Sort(l)
 }
 
-func (l *FileInfoList) Len() int {
+const (
+	OrderByCreatedTimeAsc = iota
+	OrderByCreatedTimeDesc
+	OrderByModTimeAsc
+	OrderByModTimeDesc
+	OrderBySizeAsc
+	OrderBySizeDesc
+	OrderByName
+	OrderByMIMEType
+)
+
+type fileInfoList struct {
+	files []*FileInfo
+	order int
+}
+
+func (l *fileInfoList) Len() int {
 	return len(l.files)
 }
 
-func (l *FileInfoList) Get(i int) *FileInfo {
+func (l *fileInfoList) Get(i int) *FileInfo {
 	return l.files[i]
 }
 
-func (l *FileInfoList) Swap(i, j int) {
+func (l *fileInfoList) Swap(i, j int) {
 	l.files[i], l.files[j] = l.files[j], l.files[i]
 }
 
-func (l *FileInfoList) Less(i, j int) bool {
-	return l.files[i].CreatedAt >= l.files[j].CreatedAt
+func (l *fileInfoList) Less(i, j int) bool {
+	switch l.order {
+	case OrderByCreatedTimeAsc:
+		return l.files[i].CreatedAt <= l.files[j].CreatedAt
+	case OrderByCreatedTimeDesc:
+		return l.files[i].CreatedAt >= l.files[j].CreatedAt
+	case OrderByModTimeAsc:
+		return l.files[i].ModifiedAt <= l.files[j].ModifiedAt
+	case OrderByModTimeDesc:
+		return l.files[i].ModifiedAt >= l.files[j].ModifiedAt
+	case OrderBySizeAsc:
+		return l.files[i].Size() <= l.files[j].Size()
+	case OrderBySizeDesc:
+		return l.files[i].Size() >= l.files[j].Size()
+	case OrderByName:
+		return l.files[i].Name() <= l.files[j].Name()
+	case OrderByMIMEType:
+		return l.files[i].MIMEType <= l.files[j].MIMEType
+	default:
+		return true
+	}
 }

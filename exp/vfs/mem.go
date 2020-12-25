@@ -1,5 +1,7 @@
 package vfs
 
+import "os"
+
 type MemoryStorage struct {
 	m map[string][]byte
 }
@@ -14,13 +16,17 @@ func NewMemoryStorage() *MemoryStorage {
 func (s *MemoryStorage) Get(key string) ([]byte, error) {
 	v, ok := s.m[key]
 	if ok {
-		return v, nil
+		b := make([]byte, len(v))
+		copy(b, v)
+		return b, nil
 	}
-	return nil, ErrNotExist
+	return nil, os.ErrNotExist
 }
 
 func (s *MemoryStorage) Put(key string, v []byte) error {
-	s.m[key] = v
+	b := make([]byte, len(v))
+	copy(b, v)
+	s.m[key] = b
 	return nil
 }
 
