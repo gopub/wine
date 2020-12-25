@@ -191,6 +191,9 @@ func (fs *FileSystem) OpenFile(path string, write bool) (*File, error) {
 	if fi == nil {
 		return nil, os.ErrNotExist
 	}
+	if fi.busy {
+		return nil, errors.New("busy")
+	}
 	return newFile(fs, fi, write), nil
 }
 

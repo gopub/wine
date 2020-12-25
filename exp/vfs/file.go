@@ -23,6 +23,9 @@ type File struct {
 var _ http.File = (*File)(nil)
 
 func newFile(vo *FileSystem, info *FileInfo, write bool) *File {
+	if info.busy {
+		return nil
+	}
 	f := &File{
 		vo:    vo,
 		info:  info,
@@ -31,6 +34,7 @@ func newFile(vo *FileSystem, info *FileInfo, write bool) *File {
 	if write {
 		f.buf = bytes.NewBuffer(nil)
 	}
+	info.busy = true
 	return f
 }
 
@@ -78,6 +82,19 @@ func (f *File) Read(p []byte) (int, error) {
 	if f.write {
 		return 0, errors.New("file is write-only")
 	}
+
+	if f.info.IsDir() {
+		var nr int
+		if f.offset < f.info.Size() {
+			nr = copy(p, f.info.DirContent()[f.offset:])
+		}
+		f.offset += int64(nr)
+		if f.offset >= f.info.Size() {
+			return nr, io.EOF
+		}
+		return nr, nil
+	}
+
 	nExpected := len(p)
 	nRead := 0
 	for nRead < nExpected {
@@ -132,6 +149,7 @@ func (f *File) Close() error {
 	if f.write {
 		return f.flush(true)
 	}
+	f.info.busy = false
 	return nil
 }
 

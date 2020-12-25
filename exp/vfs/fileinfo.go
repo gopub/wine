@@ -4,38 +4,45 @@ import (
 	"bytes"
 	"encoding"
 	"encoding/gob"
+	"encoding/json"
 	"fmt"
+	"github.com/gopub/log"
 	"os"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/gopub/types"
 )
 
-type gobFileInfo struct {
-	Name       string
-	IsDir      bool
-	MIMEType   string
-	Pages      []string
-	Size       int64
-	Files      []*FileInfo
-	CreatedAt  int64
-	ModifiedAt int64
-	Location   *types.Point
+type fileInfoType struct {
+	Name       string       `json:"name"`
+	IsDir      bool         `json:"is_dir,omitempty"`
+	MIMEType   string       `json:"mime_type,omitempty"`
+	Pages      []string     `json:"pages,omitempty"`
+	Size       int64        `json:"size,omitempty"`
+	Files      []*FileInfo  `json:"files,omitempty"`
+	CreatedAt  int64        `json:"created_at"`
+	ModifiedAt int64        `json:"modified_at"`
+	Location   *types.Point `json:"location,omitempty"`
 }
 
 type FileInfo struct {
-	gobFileInfo
-	parent *FileInfo
+	fileInfoType
+	parent     *FileInfo
+	busy       bool
+	dirContent []byte
 }
 
 var _ os.FileInfo = (*FileInfo)(nil)
 var _ encoding.BinaryMarshaler = (*FileInfo)(nil)
 var _ encoding.BinaryUnmarshaler = (*FileInfo)(nil)
+var _ encoding.TextMarshaler = (*FileInfo)(nil)
+var _ encoding.TextUnmarshaler = (*FileInfo)(nil)
 
 func newDirInfo(name string) *FileInfo {
 	return &FileInfo{
-		gobFileInfo: gobFileInfo{
+		fileInfoType: fileInfoType{
 			Name:       name,
 			IsDir:      true,
 			CreatedAt:  time.Now().Unix(),
@@ -46,7 +53,7 @@ func newDirInfo(name string) *FileInfo {
 
 func newFileInfo(name, mimeType string, location *types.Point) *FileInfo {
 	return &FileInfo{
-		gobFileInfo: gobFileInfo{
+		fileInfoType: fileInfoType{
 			Name:       name,
 			IsDir:      false,
 			MIMEType:   mimeType,
@@ -58,11 +65,14 @@ func newFileInfo(name, mimeType string, location *types.Point) *FileInfo {
 }
 
 func (f *FileInfo) Name() string {
-	return f.gobFileInfo.Name
+	return f.fileInfoType.Name
 }
 
 func (f *FileInfo) Size() int64 {
-	return f.gobFileInfo.Size
+	if f.IsDir() {
+		return int64(len(f.dirContent))
+	}
+	return f.fileInfoType.Size
 }
 
 func (f *FileInfo) Mode() os.FileMode {
@@ -70,11 +80,11 @@ func (f *FileInfo) Mode() os.FileMode {
 }
 
 func (f *FileInfo) ModTime() time.Time {
-	return time.Unix(f.gobFileInfo.ModifiedAt, 0)
+	return time.Unix(f.fileInfoType.ModifiedAt, 0)
 }
 
 func (f *FileInfo) IsDir() bool {
-	return f.gobFileInfo.IsDir
+	return f.fileInfoType.IsDir
 }
 
 func (f *FileInfo) Sys() interface{} {
@@ -83,17 +93,25 @@ func (f *FileInfo) Sys() interface{} {
 
 func (f *FileInfo) UnmarshalBinary(data []byte) error {
 	dec := gob.NewDecoder(bytes.NewReader(data))
-	return dec.Decode(&f.gobFileInfo)
+	return dec.Decode(&f.fileInfoType)
 }
 
 func (f *FileInfo) MarshalBinary() (data []byte, err error) {
 	buf := bytes.NewBuffer(nil)
 	enc := gob.NewEncoder(buf)
-	err = enc.Encode(f.gobFileInfo)
+	err = enc.Encode(f.fileInfoType)
 	if err != nil {
 		return nil, err
 	}
 	return buf.Bytes(), nil
+}
+
+func (f *FileInfo) UnmarshalText(data []byte) error {
+	return json.Unmarshal(data, &f.fileInfoType)
+}
+
+func (f *FileInfo) MarshalText() (data []byte, err error) {
+	return json.Marshal(f.fileInfoType)
 }
 
 func (f *FileInfo) addPage(p string) {
@@ -102,7 +120,7 @@ func (f *FileInfo) addPage(p string) {
 }
 
 func (f *FileInfo) setSize(size int64) {
-	f.gobFileInfo.Size = size
+	f.fileInfoType.Size = size
 	f.ModifiedAt = time.Now().Unix()
 }
 
@@ -155,8 +173,10 @@ func (f *FileInfo) AddSub(sub *FileInfo) {
 		sub.parent.RemoveSub(sub)
 	}
 	sub.parent = f
-	f.gobFileInfo.Files = append(f.gobFileInfo.Files, sub)
+	f.fileInfoType.Files = append(f.fileInfoType.Files, sub)
 	f.ModifiedAt = time.Now().Unix()
+	f.dirContent = nil
+	f.DirContent()
 }
 
 func (f *FileInfo) RemoveSub(sub *FileInfo) {
@@ -167,6 +187,44 @@ func (f *FileInfo) RemoveSub(sub *FileInfo) {
 		}
 	}
 	f.ModifiedAt = time.Now().Unix()
+	f.dirContent = nil
+	f.DirContent()
+}
+
+func (f *FileInfo) Rename(name string) bool {
+	name = strings.TrimSpace(name)
+	if !validateFileName(name) {
+		return false
+	}
+	if f.Name() == name {
+		return true
+	}
+	// This is home dir
+	if f.parent == nil {
+		return false
+	}
+	if f.parent.Exists(name) {
+		return false
+	}
+	f.fileInfoType.Name = name
+	f.dirContent = nil
+	f.DirContent()
+	return true
+}
+
+func (f *FileInfo) DirContent() []byte {
+	if !f.IsDir() {
+		return nil
+	}
+
+	if f.dirContent == nil {
+		b, err := json.Marshal(f.fileInfoType)
+		if err != nil {
+			log.Errorf("Marshal: %v", err)
+		}
+		f.dirContent = b
+	}
+	return f.dirContent
 }
 
 func (f *FileInfo) Sort(order int) {
