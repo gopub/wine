@@ -306,6 +306,18 @@ func (f *FileInfo) Path() string {
 	return filepath.Join(path, f.Name())
 }
 
+func (f *FileInfo) ListByPermission(p int) []*FileInfo {
+	var l []*FileInfo
+	for _, fi := range f.Files {
+		if fi.Permission&p != 0 {
+			l = append(l, fi)
+		} else {
+			l = append(l, fi.ListByPermission(p)...)
+		}
+	}
+	return l
+}
+
 const (
 	OrderByCreatedTimeAsc = iota
 	OrderByCreatedTimeDesc
