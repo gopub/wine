@@ -2,11 +2,12 @@ package vfs_test
 
 import (
 	"bytes"
-	"github.com/google/uuid"
-	"github.com/stretchr/testify/require"
 	"io"
 	"strings"
 	"testing"
+
+	"github.com/google/uuid"
+	"github.com/stretchr/testify/require"
 )
 
 func TestFile_Write(t *testing.T) {

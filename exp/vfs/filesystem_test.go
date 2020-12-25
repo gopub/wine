@@ -1,14 +1,15 @@
 package vfs_test
 
 import (
+	"os"
+	"path/filepath"
+	"testing"
+
 	"github.com/google/uuid"
 	"github.com/gopub/types"
 	"github.com/gopub/wine/exp/vfs"
 	"github.com/gopub/wine/httpvalue"
 	"github.com/stretchr/testify/require"
-	"os"
-	"path/filepath"
-	"testing"
 )
 
 func setupFS(t *testing.T) *vfs.FileSystem {
