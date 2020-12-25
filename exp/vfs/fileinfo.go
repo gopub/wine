@@ -17,7 +17,7 @@ import (
 	"github.com/gopub/types"
 )
 
-type fileInfoType struct {
+type fileMetadata struct {
 	UUID       string       `json:"uuid"`
 	Name       string       `json:"name"`
 	IsDir      bool         `json:"is_dir,omitempty"`
@@ -29,10 +29,12 @@ type fileInfoType struct {
 	CreatedAt  int64        `json:"created_at"`
 	ModifiedAt int64        `json:"modified_at"`
 	Location   *types.Point `json:"location,omitempty"`
+	Permission int          `json:"permission,omitempty"`
+	Ext        types.M      `json:"ext,omitempty"`
 }
 
 type FileInfo struct {
-	fileInfoType
+	fileMetadata
 	parent     *FileInfo
 	busy       bool
 	dirContent []byte
@@ -46,7 +48,7 @@ var _ encoding.TextUnmarshaler = (*FileInfo)(nil)
 
 func newFileInfo(isDir bool, name string) *FileInfo {
 	return &FileInfo{
-		fileInfoType: fileInfoType{
+		fileMetadata: fileMetadata{
 			UUID:       uuid.New().String(),
 			Name:       name,
 			IsDir:      isDir,
@@ -57,14 +59,14 @@ func newFileInfo(isDir bool, name string) *FileInfo {
 }
 
 func (f *FileInfo) Name() string {
-	return f.fileInfoType.Name
+	return f.fileMetadata.Name
 }
 
 func (f *FileInfo) Size() int64 {
 	if f.IsDir() {
 		return int64(len(f.dirContent))
 	}
-	return f.fileInfoType.Size
+	return f.fileMetadata.Size
 }
 
 func (f *FileInfo) Mode() os.FileMode {
@@ -72,11 +74,11 @@ func (f *FileInfo) Mode() os.FileMode {
 }
 
 func (f *FileInfo) ModTime() time.Time {
-	return time.Unix(f.fileInfoType.ModifiedAt, 0)
+	return time.Unix(f.fileMetadata.ModifiedAt, 0)
 }
 
 func (f *FileInfo) IsDir() bool {
-	return f.fileInfoType.IsDir
+	return f.fileMetadata.IsDir
 }
 
 func (f *FileInfo) Sys() interface{} {
@@ -84,36 +86,36 @@ func (f *FileInfo) Sys() interface{} {
 }
 
 func (f *FileInfo) UnmarshalBinary(data []byte) error {
-	return gob.NewDecoder(bytes.NewReader(data)).Decode(&f.fileInfoType)
+	return gob.NewDecoder(bytes.NewReader(data)).Decode(&f.fileMetadata)
 }
 
 func (f *FileInfo) MarshalBinary() (data []byte, err error) {
 	buf := bytes.NewBuffer(nil)
-	err = gob.NewEncoder(buf).Encode(f.fileInfoType)
+	err = gob.NewEncoder(buf).Encode(f.fileMetadata)
 	return buf.Bytes(), err
 }
 
 func (f *FileInfo) UnmarshalText(data []byte) error {
-	return json.Unmarshal(data, &f.fileInfoType)
+	return json.Unmarshal(data, &f.fileMetadata)
 }
 
 func (f *FileInfo) MarshalText() (data []byte, err error) {
-	return json.Marshal(f.fileInfoType)
+	return json.Marshal(f.fileMetadata)
 }
 
 func (f *FileInfo) addPage(p string) {
 	f.Pages = append(f.Pages, p)
-	f.fileInfoType.ModifiedAt = time.Now().Unix()
+	f.fileMetadata.ModifiedAt = time.Now().Unix()
 }
 
 func (f *FileInfo) truncate() {
-	f.fileInfoType.Pages = f.fileInfoType.Pages[:]
+	f.fileMetadata.Pages = f.fileMetadata.Pages[:]
 	f.setSize(0)
 }
 
 func (f *FileInfo) setSize(size int64) {
-	f.fileInfoType.Size = size
-	f.fileInfoType.ModifiedAt = time.Now().Unix()
+	f.fileMetadata.Size = size
+	f.fileMetadata.ModifiedAt = time.Now().Unix()
 }
 
 func (f *FileInfo) GetByPath(path string) *FileInfo {
@@ -143,7 +145,7 @@ func (f *FileInfo) Get(name string) *FileInfo {
 
 func (f *FileInfo) GetByUUID(id string) *FileInfo {
 	for _, fi := range f.Files {
-		if fi.fileInfoType.UUID == id {
+		if fi.fileMetadata.UUID == id {
 			return fi
 		}
 		if found := fi.GetByUUID(id); found != nil {
@@ -177,8 +179,8 @@ func (f *FileInfo) AddSub(sub *FileInfo) {
 		sub.parent.RemoveSub(sub)
 	}
 	sub.parent = f
-	f.fileInfoType.Files = append(f.fileInfoType.Files, sub)
-	f.fileInfoType.ModifiedAt = time.Now().Unix()
+	f.fileMetadata.Files = append(f.fileMetadata.Files, sub)
+	f.fileMetadata.ModifiedAt = time.Now().Unix()
 	f.dirContent = nil
 	f.DirContent()
 }
@@ -190,7 +192,7 @@ func (f *FileInfo) RemoveSub(sub *FileInfo) {
 			break
 		}
 	}
-	f.fileInfoType.ModifiedAt = time.Now().Unix()
+	f.fileMetadata.ModifiedAt = time.Now().Unix()
 	f.dirContent = nil
 	f.DirContent()
 }
@@ -210,7 +212,7 @@ func (f *FileInfo) Rename(name string) bool {
 	if f.parent.Exists(name) {
 		return false
 	}
-	f.fileInfoType.Name = name
+	f.fileMetadata.Name = name
 	f.dirContent = nil
 	f.DirContent()
 	return true
@@ -222,7 +224,7 @@ func (f *FileInfo) DirContent() []byte {
 	}
 
 	if f.dirContent == nil {
-		b, err := json.Marshal(f.fileInfoType)
+		b, err := json.Marshal(f.fileMetadata)
 		if err != nil {
 			log.Errorf("Marshal: %v", err)
 		}
@@ -232,44 +234,44 @@ func (f *FileInfo) DirContent() []byte {
 }
 
 func (f *FileInfo) MIMEType() string {
-	return f.fileInfoType.MIMEType
+	return f.fileMetadata.MIMEType
 }
 
 func (f *FileInfo) SetMIMEType(t string) {
-	f.fileInfoType.MIMEType = t
+	f.fileMetadata.MIMEType = t
 }
 
 func (f *FileInfo) Location() *types.Point {
-	return f.fileInfoType.Location
+	return f.fileMetadata.Location
 }
 
 func (f *FileInfo) SetLocation(p *types.Point) {
-	f.fileInfoType.Location = p
+	f.fileMetadata.Location = p
 }
 
 func (f *FileInfo) CreatedAt() int64 {
-	return f.fileInfoType.CreatedAt
+	return f.fileMetadata.CreatedAt
 }
 
 // SetCreatedAt is for migrating use
 func (f *FileInfo) SetCreatedAt(t int64) {
-	f.fileInfoType.CreatedAt = t
-	f.fileInfoType.ModifiedAt = t
+	f.fileMetadata.CreatedAt = t
+	f.fileMetadata.ModifiedAt = t
 	f.dirContent = nil
 	f.DirContent()
 }
 
 func (f *FileInfo) ModifiedAt() int64 {
-	return f.fileInfoType.ModifiedAt
+	return f.fileMetadata.ModifiedAt
 }
 
 func (f *FileInfo) UUID() string {
-	return f.fileInfoType.UUID
+	return f.fileMetadata.UUID
 }
 
 // SetUUID is for migrating use only
 func (f *FileInfo) SetUUID(id string) {
-	f.fileInfoType.UUID = id
+	f.fileMetadata.UUID = id
 }
 
 func (f *FileInfo) ParentUUID() string {
@@ -280,12 +282,12 @@ func (f *FileInfo) ParentUUID() string {
 }
 
 func (f *FileInfo) Duration() int {
-	return f.fileInfoType.Duration
+	return f.fileMetadata.Duration
 }
 
 // SetUUID is for migrating use only
 func (f *FileInfo) SetDuration(seconds int) {
-	f.fileInfoType.Duration = seconds
+	f.fileMetadata.Duration = seconds
 }
 
 func (f *FileInfo) Sort(order int) {
