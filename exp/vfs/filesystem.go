@@ -5,6 +5,7 @@ import (
 	"encoding/gob"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -311,4 +312,17 @@ func (fs *FileSystem) CreateAndCopy(parentUUID, srcFilePath string) (*FileInfo, 
 		return nil, fmt.Errorf("save file tree: %w", err)
 	}
 	return f.info, nil
+}
+
+func (fs *FileSystem) ReadAll(uuid string) ([]byte, error) {
+	f, err := fs.OpenByUUID(uuid, false)
+	if err != nil {
+		return nil, fmt.Errorf("open by uuid: %w", err)
+	}
+	defer f.Close()
+	data, err := ioutil.ReadAll(f)
+	if err != nil {
+		return nil, fmt.Errorf("read all: %w", err)
+	}
+	return data, nil
 }
