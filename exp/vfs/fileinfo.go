@@ -6,12 +6,13 @@ import (
 	"encoding/gob"
 	"encoding/json"
 	"fmt"
-	"github.com/gopub/log"
 	"os"
+	"path/filepath"
 	"sort"
 	"strings"
 	"time"
 
+	"github.com/gopub/log"
 	"github.com/gopub/types"
 )
 
@@ -263,6 +264,14 @@ func (f *FileInfo) Sort(order int) {
 		order: order,
 	}
 	sort.Sort(l)
+}
+
+func (f *FileInfo) Path() string {
+	path := "/"
+	if f.parent != nil {
+		path = f.parent.Path()
+	}
+	return filepath.Join(path, f.Name())
 }
 
 const (

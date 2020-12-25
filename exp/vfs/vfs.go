@@ -1,9 +1,10 @@
 package vfs
 
 import (
-	"github.com/gopub/conv"
 	"path/filepath"
 	"strings"
+
+	"github.com/gopub/conv"
 
 	"github.com/gopub/types"
 )
