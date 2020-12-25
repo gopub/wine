@@ -177,6 +177,17 @@ func (fs *FileSystem) CreateDir(dir *FileInfo, name string) (*File, error) {
 	return newFile(fs, f, true), nil
 }
 
+func (fs *FileSystem) OpenByUUID(id string, write bool) (*File, error) {
+	fi := fs.home.GetByUUID(id)
+	if fi == nil {
+		return nil, os.ErrNotExist
+	}
+	if fi.busy {
+		return nil, errors.New("busy")
+	}
+	return newFile(fs, fi, write), nil
+}
+
 func (fs *FileSystem) OpenFile(path string, write bool) (*File, error) {
 	path = strings.TrimSpace(path)
 	if path == "" || path == "/" {
@@ -187,7 +198,6 @@ func (fs *FileSystem) OpenFile(path string, write bool) (*File, error) {
 		return nil, os.ErrNotExist
 	}
 	if fi.busy {
-		log.Debug(fi.Name())
 		return nil, errors.New("busy")
 	}
 	return newFile(fs, fi, write), nil
