@@ -18,7 +18,7 @@ import (
 
 type FileSystem struct {
 	storage KVStorage
-	home    *FileInfo
+	root    *FileInfo
 	key     []byte
 	configs types.M
 }
@@ -59,24 +59,24 @@ func NewFileSystem(storage KVStorage, password string) (*FileSystem, error) {
 		}
 	}
 
-	if err = fs.mountHome(storage); err != nil {
-		return nil, fmt.Errorf("mount home: %w", err)
+	if err = fs.mount(storage); err != nil {
+		return nil, fmt.Errorf("mount root: %w", err)
 	}
 	return fs, nil
 }
 
-func (fs *FileSystem) mountHome(storage KVStorage) error {
-	if fs.home != nil {
-		log.Panic("Cannot mount home twice")
+func (fs *FileSystem) mount(storage KVStorage) error {
+	if fs.root != nil {
+		log.Panic("Mounted")
 	}
-	data, err := storage.Get(keyFSHome)
+	data, err := storage.Get(keyFSRootDir)
 	if err != nil {
 		if !errors.Is(err, os.ErrNotExist) {
-			return fmt.Errorf("get %s: %w", keyFSHome, err)
+			return fmt.Errorf("get %s: %w", keyFSRootDir, err)
 		}
 
 		// initialize
-		fs.home = newFileInfo(true, "")
+		fs.root = newFileInfo(true, "")
 		if err = fs.SaveFileTree(); err != nil {
 			return fmt.Errorf("save: %w", err)
 		}
@@ -86,7 +86,7 @@ func (fs *FileSystem) mountHome(storage KVStorage) error {
 	if err = fs.DecryptPage(data); err != nil {
 		return fmt.Errorf("decrypt: %w", err)
 	}
-	if err = gob.NewDecoder(bytes.NewBuffer(data)).Decode(&fs.home); err != nil {
+	if err = gob.NewDecoder(bytes.NewBuffer(data)).Decode(&fs.root); err != nil {
 		return fmt.Errorf("unmarshal: %w", err)
 	}
 	return nil
@@ -96,7 +96,7 @@ func (fs *FileSystem) Mkdir(name string) (*FileInfo, error) {
 	if name == "" {
 		return nil, os.ErrInvalid
 	}
-	f := fs.home.GetByPath(name)
+	f := fs.root.GetByPath(name)
 	if f != nil {
 		if f.IsDir() {
 			return f, nil
@@ -105,13 +105,13 @@ func (fs *FileSystem) Mkdir(name string) (*FileInfo, error) {
 	}
 	paths := splitPath(name)
 	if len(paths) == 1 {
-		f = newFileInfo(true, fs.home.DistinctName(name))
-		fs.home.AddSub(f)
+		f = newFileInfo(true, fs.root.DistinctName(name))
+		fs.root.AddSub(f)
 		return f, fs.SaveFileTree()
 	}
 
 	dirPaths := paths[:len(paths)-1]
-	dir := fs.home.getByPathList(dirPaths)
+	dir := fs.root.getByPathList(dirPaths)
 	if dir == nil {
 		return nil, fmt.Errorf("dir %s does not exist", filepath.Join(dirPaths...))
 	}
@@ -150,7 +150,7 @@ func (fs *FileSystem) OpenFile(name string, flag Flag) (*File, error) {
 
 	var dir *FileInfo
 	if len(paths) == 1 {
-		dir = fs.home
+		dir = fs.root
 	} else {
 		var err error
 		dirPath := filepath.Join(paths[:len(paths)-1]...)
@@ -184,7 +184,7 @@ func (fs *FileSystem) Remove(name string) error {
 	if err != nil {
 		return fmt.Errorf("stat: %w", err)
 	}
-	if (fi.IsDir() && len(fi.Files) > 0) || fi == fs.home {
+	if (fi.IsDir() && len(fi.Files) > 0) || fi == fs.root {
 		return os.ErrPermission
 	}
 	return fs.Wrapper().Remove(fi.UUID())
@@ -195,7 +195,7 @@ func (fs *FileSystem) RemoveAll(path string) error {
 	if err != nil {
 		return fmt.Errorf("stat: %w", err)
 	}
-	if fi == fs.home {
+	if fi == fs.root {
 		return os.ErrPermission
 	}
 	return fs.Wrapper().Remove(fi.UUID())
@@ -203,9 +203,9 @@ func (fs *FileSystem) RemoveAll(path string) error {
 
 func (fs *FileSystem) Stat(name string) (*FileInfo, error) {
 	if name == "" || name == "/" {
-		return fs.home, nil
+		return fs.root, nil
 	}
-	fi := fs.home.GetByPath(name)
+	fi := fs.root.GetByPath(name)
 	if fi == nil {
 		return nil, fmt.Errorf("%s: %w", name, os.ErrNotExist)
 	}
@@ -216,7 +216,7 @@ func (fs *FileSystem) SaveFileTree() error {
 	buf := bytes.NewBuffer(nil)
 	enc := gob.NewEncoder(buf)
 
-	if err := enc.Encode(fs.home); err != nil {
+	if err := enc.Encode(fs.root); err != nil {
 		return fmt.Errorf("encode: %w", err)
 	}
 
@@ -225,7 +225,7 @@ func (fs *FileSystem) SaveFileTree() error {
 		return fmt.Errorf("encrypt: %w", err)
 	}
 
-	if err := fs.storage.Put(keyFSHome, data); err != nil {
+	if err := fs.storage.Put(keyFSRootDir, data); err != nil {
 		return fmt.Errorf("put: %w", err)
 	}
 	return nil
@@ -293,7 +293,7 @@ func (fs *FileSystem) SaveConfig() error {
 }
 
 func (fs *FileSystem) ListByPermission(p int) []*FileInfo {
-	return fs.home.ListByPermission(p)
+	return fs.root.ListByPermission(p)
 }
 
 func (fs *FileSystem) VerifyPassword(password string) bool {
@@ -306,7 +306,7 @@ func (fs *FileSystem) Wrapper() *FileSystemWrapper {
 }
 
 func isEmptyStorage(storage KVStorage) (bool, error) {
-	_, err := storage.Get(keyFSHome)
+	_, err := storage.Get(keyFSRootDir)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
 			return true, nil

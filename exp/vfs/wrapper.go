@@ -21,9 +21,9 @@ func (w *FileSystemWrapper) Mkdir(parentUUID, dirName string) (*FileInfo, error)
 	}
 	var parent *FileInfo
 	if parentUUID == "" {
-		parent = fs.home
+		parent = fs.root
 	} else {
-		parent = fs.home.GetByUUID(parentUUID)
+		parent = fs.root.GetByUUID(parentUUID)
 		if parent == nil {
 			return nil, fmt.Errorf("parent %s does not exist", parentUUID)
 		}
@@ -31,16 +31,16 @@ func (w *FileSystemWrapper) Mkdir(parentUUID, dirName string) (*FileInfo, error)
 	return fs.Mkdir(filepath.Join(parent.Path(), dirName))
 }
 
-func (w *FileSystemWrapper) Create(dirUUID string, name string) (*File, error) {
+func (w *FileSystemWrapper) Create(dirUUID, name string) (*File, error) {
 	fs := (*FileSystem)(w)
 	if name == "" {
 		return nil, os.ErrInvalid
 	}
 	var dir *FileInfo
 	if dirUUID == "" {
-		dir = fs.home
+		dir = fs.root
 	} else {
-		dir = fs.home.GetByUUID(dirUUID)
+		dir = fs.root.GetByUUID(dirUUID)
 		if dir == nil {
 			return nil, fmt.Errorf("dir %s does not exist", dirUUID)
 		}
@@ -51,9 +51,9 @@ func (w *FileSystemWrapper) Create(dirUUID string, name string) (*File, error) {
 func (w *FileSystemWrapper) Open(uuid string, flag Flag) (*File, error) {
 	fs := (*FileSystem)(w)
 	if uuid == "" {
-		return newFile(fs, fs.home, flag), nil
+		return newFile(fs, fs.root, flag), nil
 	}
-	fi := fs.home.GetByUUID(uuid)
+	fi := fs.root.GetByUUID(uuid)
 	if fi == nil {
 		return nil, os.ErrNotExist
 	}
@@ -65,12 +65,12 @@ func (w *FileSystemWrapper) Open(uuid string, flag Flag) (*File, error) {
 
 func (w *FileSystemWrapper) Remove(uuid string) error {
 	fs := (*FileSystem)(w)
-	f := fs.home.GetByUUID(uuid)
+	f := fs.root.GetByUUID(uuid)
 	if f == nil {
 		return nil
 	}
-	if f == fs.home {
-		return errors.New("cannot delete home")
+	if f == fs.root {
+		return errors.New("cannot delete root")
 	}
 	if f.parent == nil {
 		return nil
@@ -120,9 +120,9 @@ func (w *FileSystemWrapper) Move(uuid, dirUUID string) error {
 func (w *FileSystemWrapper) Stat(uuid string) (*FileInfo, error) {
 	fs := (*FileSystem)(w)
 	if uuid == "" {
-		return fs.home, nil
+		return fs.root, nil
 	}
-	f := fs.home.GetByUUID(uuid)
+	f := fs.root.GetByUUID(uuid)
 	if f == nil {
 		return nil, os.ErrNotExist
 	}
@@ -153,6 +153,19 @@ func (w *FileSystemWrapper) Write(uuid string, data []byte) (*FileInfo, error) {
 		return nil, fmt.Errorf("flag data: %w", err)
 	}
 	f.info.SetMIMEType(http.DetectContentType(data))
+	return f.info, nil
+}
+
+func (w *FileSystemWrapper) CreateAndWrite(dirUUID, name string, data []byte) (*FileInfo, error) {
+	f, err := w.Create(dirUUID, name)
+	if err != nil {
+		return nil, fmt.Errorf("create: %w", err)
+	}
+	defer f.Close()
+	_, err = f.Write(data)
+	if err != nil {
+		return nil, fmt.Errorf("write: %w", err)
+	}
 	return f.info, nil
 }
 

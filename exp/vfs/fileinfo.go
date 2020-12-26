@@ -205,7 +205,7 @@ func (f *FileInfo) Rename(name string) bool {
 	if f.Name() == name {
 		return true
 	}
-	// This is home dir
+	// This is root dir
 	if f.parent == nil {
 		return false
 	}

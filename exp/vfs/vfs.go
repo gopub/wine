@@ -21,7 +21,7 @@ const (
 )
 
 var (
-	keyFSHome       = conv.SHA256("filesystem.home")
+	keyFSRootDir    = conv.SHA256("filesystem.root")
 	keyFSCredential = conv.SHA256("filesystem.credential")
 	keyFSConfig     = conv.SHA256("filesystem.config")
 )
