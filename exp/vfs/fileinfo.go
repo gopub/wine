@@ -301,6 +301,13 @@ func (f *FileInfo) Path() string {
 	return filepath.Join(path, f.Name())
 }
 
+func (f *FileInfo) Route() []*FileInfo {
+	if f.parent == nil {
+		return []*FileInfo{f}
+	}
+	return append(f.parent.Route(), f)
+}
+
 func (f *FileInfo) ListByPermission(p int) []*FileInfo {
 	var l []*FileInfo
 	for _, fi := range f.Files {
