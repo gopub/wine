@@ -53,6 +53,9 @@ type Server struct {
 	sessionTTL  time.Duration
 	sessionName string
 
+	addr string
+	url  string
+
 	maxReqMem       types.ByteUnit
 	Timeout         time.Duration
 	PreHandler      Handler
@@ -92,6 +95,33 @@ func (s *Server) SessionName() string {
 	return s.sessionName
 }
 
+func (s *Server) Addr() string {
+	return s.addr
+}
+
+func (s *Server) URL() string {
+	return s.url
+}
+
+func (s *Server) assignAddr(addr string, tls bool) {
+	s.addr = addr
+	if strings.HasPrefix(addr, ":") {
+		s.addr = "0.0.0.0" + addr
+	} else {
+		s.addr = addr
+	}
+
+	if addr == "" {
+		s.url = ""
+	} else {
+		if tls {
+			s.url = "https://" + s.addr
+		} else {
+			s.url = "http://" + s.addr
+		}
+	}
+}
+
 // Run starts server
 func (s *Server) Run(addr string) {
 	if s.server != nil {
@@ -100,7 +130,9 @@ func (s *Server) Run(addr string) {
 
 	logger.Infof("HTTP server is running on %s", addr)
 	s.server = &http.Server{Addr: addr, Handler: s}
+	s.assignAddr(s.server.Addr, false)
 	err := s.server.ListenAndServe()
+	s.assignAddr("", false)
 	if err != nil {
 		if errors.Is(err, http.ErrServerClosed) {
 			logger.Infof("HTTP server was closed")
@@ -118,7 +150,9 @@ func (s *Server) RunTLS(addr, certFile, keyFile string) {
 
 	logger.Infof("HTTPS server is running on %s", addr)
 	s.server = &http.Server{Addr: addr, Handler: s}
+	s.assignAddr(s.server.Addr, true)
 	err := s.server.ListenAndServeTLS(certFile, keyFile)
+	s.assignAddr("", false)
 	if err != nil {
 		if errors.Is(err, http.ErrServerClosed) {
 			logger.Infof("HTTPS server was closed")
