@@ -1,6 +1,7 @@
 package vfs
 
 import (
+	"github.com/gopub/errors"
 	"path/filepath"
 	"strings"
 
@@ -9,14 +10,18 @@ import (
 )
 
 const (
-	keySize  = 64
+	keySize  = 32
 	pageSize = int64(32 * types.KB)
 )
 
+const (
+	ErrAuth errors.String = "invalid password"
+)
+
 var (
-	keyFSHome        = conv.SHA256("filesystem.home")
-	keyFSCredentials = conv.SHA256("filesystem.credentials")
-	keyFSConfig      = conv.SHA256("filesystem.config")
+	keyFSHome       = conv.SHA256("filesystem.home")
+	keyFSCredential = conv.SHA256("filesystem.credential")
+	keyFSConfig     = conv.SHA256("filesystem.config")
 )
 
 type KVStorage interface {

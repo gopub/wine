@@ -29,77 +29,44 @@ type FileSystem struct {
 
 var _ http.FileSystem = (*FileSystem)(nil)
 
-func NewFileSystem(storage KVStorage) (*FileSystem, error) {
-	return NewEncryptedFileSystem(storage, "")
-}
-
-func NewEncryptedFileSystem(storage KVStorage, password string) (*FileSystem, error) {
-	key, err := loadKey(storage, password)
+func NewFileSystem(storage KVStorage, password string) (*FileSystem, error) {
+	empty, err := isEmptyStorage(storage)
 	if err != nil {
-		return nil, fmt.Errorf("load key: %w", err)
+		return nil, fmt.Errorf("detect empty storage: %w", err)
 	}
 
 	fs := &FileSystem{
 		storage: storage,
-		key:     key,
 	}
 
-	if err = fs.loadConfig(); err != nil {
-		return nil, fmt.Errorf("load configurations: %w", err)
+	if empty {
+		if password != "" {
+			fs.key, err = setupCredential(storage, password)
+			if err != nil {
+				return nil, fmt.Errorf("setup credential: %w", err)
+			}
+		}
+	} else {
+		encrypted, err := isEncryptedStorage(storage)
+		if err != nil {
+			return nil, fmt.Errorf("detech encryption: %w", err)
+		}
+		if encrypted {
+			fs.key, err = loadCredential(storage, password)
+			if err != nil {
+				return nil, fmt.Errorf("load credential: %w", err)
+			}
+		} else {
+			if password != "" {
+				return nil, fmt.Errorf("password is not required for unencrypted storage")
+			}
+		}
 	}
 
 	if err = fs.mountHome(storage); err != nil {
 		return nil, fmt.Errorf("mount home: %w", err)
 	}
 	return fs, nil
-}
-
-func loadKey(storage KVStorage, password string) ([]byte, error) {
-	credentials, err := storage.Get(keyFSCredentials)
-	if err != nil {
-		if !errors.Is(err, os.ErrNotExist) {
-			return nil, fmt.Errorf("get key: %w", err)
-		}
-
-		if password == "" {
-			return nil, nil
-		}
-
-		// this is a new file system, initialize key if password is provided
-		passHash := conv.Hash32([]byte(password))
-		key := conv.Hash32([]byte(uuid.New().String()))
-
-		credentials = make([]byte, 64)
-		copy(credentials, key[:])
-		copy(credentials[32:], passHash[:])
-
-		// encrypt
-		if err = conv.AES(credentials, passHash[:], passHash[:16]); err != nil {
-			return nil, fmt.Errorf("encrypt: %w", err)
-		}
-
-		if err = storage.Put(keyFSCredentials, credentials); err != nil {
-			return nil, fmt.Errorf("put: %w", err)
-		}
-		return key[:], nil
-	}
-
-	if password == "" {
-		return nil, errors.New("missing password")
-	}
-	if len(credentials) != keySize {
-		return nil, errors.New("corrupted file system")
-	}
-
-	passHash := conv.Hash32([]byte(password))
-	if err = conv.AES(credentials, passHash[:], passHash[:16]); err != nil {
-		return nil, fmt.Errorf("decript: %w", err)
-	}
-
-	if !bytes.Equal(credentials[32:], passHash[:]) {
-		return nil, errors.New("invalid password")
-	}
-	return credentials[:32], nil
 }
 
 func (fs *FileSystem) mountHome(storage KVStorage) error {
@@ -373,4 +340,87 @@ func (fs *FileSystem) SaveConfig() error {
 
 func (fs *FileSystem) ListByPermission(p int) []*FileInfo {
 	return fs.home.ListByPermission(p)
+}
+
+func (fs *FileSystem) VerifyPassword(password string) bool {
+	_, err := loadCredential(fs.storage, password)
+	return err == nil
+}
+
+func isEmptyStorage(storage KVStorage) (bool, error) {
+	_, err := storage.Get(keyFSHome)
+	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return true, nil
+		}
+		return true, fmt.Errorf("read: %w", err)
+	}
+	return false, nil
+}
+
+func isEncryptedStorage(storage KVStorage) (bool, error) {
+	credential, err := storage.Get(keyFSCredential)
+	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return false, nil
+		}
+		return false, err
+	}
+	return len(credential) > 0, nil
+}
+
+func setupCredential(storage KVStorage, password string) ([]byte, error) {
+	if password == "" {
+		log.Panic("Missing password")
+	}
+
+	credential, err := storage.Get(keyFSCredential)
+	if err == nil {
+		return nil, errors.New("credential exists")
+	}
+	if !errors.Is(err, os.ErrNotExist) {
+		return nil, fmt.Errorf("read credential: %w", err)
+	}
+
+	if password == "" {
+		return nil, errors.New("missing password")
+	}
+
+	// this is a new file system, initialize key if password is provided
+	passwordHash := conv.Hash32([]byte(password))
+	key := conv.Hash32([]byte(uuid.New().String()))
+
+	credential = make([]byte, 2*keySize)
+	copy(credential, key[:])
+	copy(credential[keySize:], passwordHash[:])
+
+	// encrypt
+	if err = conv.AES(credential, passwordHash[:], passwordHash[:16]); err != nil {
+		return nil, fmt.Errorf("encrypt: %w", err)
+	}
+
+	if err = storage.Put(keyFSCredential, credential); err != nil {
+		return nil, fmt.Errorf("write credential: %w", err)
+	}
+	return key[:], nil
+}
+
+func loadCredential(storage KVStorage, password string) ([]byte, error) {
+	if password == "" {
+		return nil, ErrAuth
+	}
+	credential, err := storage.Get(keyFSCredential)
+	if err != nil {
+		return nil, fmt.Errorf("read credential: %w", err)
+	}
+
+	passwordHash := conv.Hash32([]byte(password))
+	if err = conv.AES(credential, passwordHash[:], passwordHash[:16]); err != nil {
+		return nil, fmt.Errorf("decrypt: %w", err)
+	}
+
+	if !bytes.Equal(credential[keySize:], passwordHash[:]) {
+		return nil, ErrAuth
+	}
+	return credential[:keySize], nil
 }
