@@ -142,10 +142,10 @@ func (w *FileSystemWrapper) ReadAll(uuid string) ([]byte, error) {
 	return data, nil
 }
 
-func (w *FileSystemWrapper) Write(dirUUID, name string, data []byte) (*FileInfo, error) {
-	f, err := w.Create(dirUUID, name)
+func (w *FileSystemWrapper) Write(uuid string, data []byte) (*FileInfo, error) {
+	f, err := w.Open(uuid, WriteOnly)
 	if err != nil {
-		return nil, fmt.Errorf("create file: %w", err)
+		return nil, fmt.Errorf("open file: %w", err)
 	}
 	defer f.Close()
 	_, err = f.Write(data)
