@@ -118,58 +118,53 @@ func (f *FileInfo) setSize(size int64) {
 	f.fileMetadata.ModifiedAt = time.Now().Unix()
 }
 
-func (f *FileInfo) GetByPath(path string) *FileInfo {
-	return f.getByPathList(splitPath(path))
+func (f *FileInfo) FindByPath(path string) *FileInfo {
+	return f.find(splitPath(path)...)
 }
 
-func (f *FileInfo) getByPathList(pathList []string) *FileInfo {
-	if len(pathList) == 0 {
+func (f *FileInfo) find(segments ...string) *FileInfo {
+	if len(segments) == 0 {
 		return f
 	}
 	for _, fi := range f.Files {
-		if fi.Name() == pathList[0] {
-			return fi.getByPathList(pathList[1:])
+		if fi.Name() == segments[0] {
+			return fi.find(segments[1:]...)
 		}
 	}
 	return nil
 }
 
-func (f *FileInfo) GetByName(name string) *FileInfo {
-	for _, fi := range f.Files {
-		if fi.Name() == name {
-			return fi
-		}
-	}
-	return nil
+func (f *FileInfo) Find(baseName string) *FileInfo {
+	return f.find(baseName)
 }
 
-func (f *FileInfo) GetByUUID(id string) *FileInfo {
+func (f *FileInfo) FindByUUID(id string) *FileInfo {
 	for _, fi := range f.Files {
 		if fi.fileMetadata.UUID == id {
 			return fi
 		}
-		if found := fi.GetByUUID(id); found != nil {
+		if found := fi.FindByUUID(id); found != nil {
 			return found
 		}
 	}
 	return nil
 }
 
-func (f *FileInfo) Exists(name string) bool {
+func (f *FileInfo) Exists(baseName string) bool {
 	for _, fi := range f.Files {
-		if fi.Name() == name {
+		if fi.Name() == baseName {
 			return true
 		}
 	}
 	return false
 }
 
-func (f *FileInfo) DistinctName(name string) string {
+func (f *FileInfo) DistinctName(baseName string) string {
 	i := 0
-	s := name
-	for f.Exists(name) {
+	s := baseName
+	for f.Exists(baseName) {
 		i++
-		s = fmt.Sprintf("%s-%d", name, i)
+		s = fmt.Sprintf("%s-%d", baseName, i)
 	}
 	return s
 }
@@ -316,6 +311,28 @@ func (f *FileInfo) ListByPermission(p int) []*FileInfo {
 		}
 	}
 	return l
+}
+
+func (f *FileInfo) SubFilter(fn func(info *FileInfo) bool) []*FileInfo {
+	var l []*FileInfo
+	for _, fi := range f.Files {
+		if fn(fi) {
+			l = append(l, fi)
+		}
+	}
+	return l
+}
+
+func (f *FileInfo) GetSubDirs() []*FileInfo {
+	return f.SubFilter(func(info *FileInfo) bool {
+		return info.IsDir()
+	})
+}
+
+func (f *FileInfo) GetSubFiles() []*FileInfo {
+	return f.SubFilter(func(info *FileInfo) bool {
+		return !info.IsDir()
+	})
 }
 
 const (

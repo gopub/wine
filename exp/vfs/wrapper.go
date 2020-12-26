@@ -23,7 +23,7 @@ func (w *FileSystemWrapper) Mkdir(parentUUID, dirName string) (*FileInfo, error)
 	if parentUUID == "" {
 		parent = fs.root
 	} else {
-		parent = fs.root.GetByUUID(parentUUID)
+		parent = fs.root.FindByUUID(parentUUID)
 		if parent == nil {
 			return nil, fmt.Errorf("parent %s does not exist", parentUUID)
 		}
@@ -40,7 +40,7 @@ func (w *FileSystemWrapper) Create(dirUUID, name string) (*File, error) {
 	if dirUUID == "" {
 		dir = fs.root
 	} else {
-		dir = fs.root.GetByUUID(dirUUID)
+		dir = fs.root.FindByUUID(dirUUID)
 		if dir == nil {
 			return nil, fmt.Errorf("dir %s does not exist", dirUUID)
 		}
@@ -53,7 +53,7 @@ func (w *FileSystemWrapper) Open(uuid string, flag Flag) (*File, error) {
 	if uuid == "" {
 		return newFile(fs, fs.root, flag), nil
 	}
-	fi := fs.root.GetByUUID(uuid)
+	fi := fs.root.FindByUUID(uuid)
 	if fi == nil {
 		return nil, os.ErrNotExist
 	}
@@ -65,7 +65,7 @@ func (w *FileSystemWrapper) Open(uuid string, flag Flag) (*File, error) {
 
 func (w *FileSystemWrapper) Remove(uuid string) error {
 	fs := (*FileSystem)(w)
-	f := fs.root.GetByUUID(uuid)
+	f := fs.root.FindByUUID(uuid)
 	if f == nil {
 		return nil
 	}
@@ -122,7 +122,7 @@ func (w *FileSystemWrapper) Stat(uuid string) (*FileInfo, error) {
 	if uuid == "" {
 		return fs.root, nil
 	}
-	f := fs.root.GetByUUID(uuid)
+	f := fs.root.FindByUUID(uuid)
 	if f == nil {
 		return nil, os.ErrNotExist
 	}

@@ -96,27 +96,27 @@ func (fs *FileSystem) Mkdir(name string) (*FileInfo, error) {
 	if name == "" {
 		return nil, os.ErrInvalid
 	}
-	f := fs.root.GetByPath(name)
+	f := fs.root.FindByPath(name)
 	if f != nil {
 		if f.IsDir() {
 			return f, nil
 		}
 		return nil, fmt.Errorf("%s is not directory", name)
 	}
-	paths := splitPath(name)
-	if len(paths) == 1 {
+	segments := splitPath(name)
+	if len(segments) == 1 {
 		f = newFileInfo(true, fs.root.DistinctName(name))
 		fs.root.AddSub(f)
 		return f, fs.SaveFileTree()
 	}
 
-	dirPaths := paths[:len(paths)-1]
-	dir := fs.root.getByPathList(dirPaths)
+	dirSegments := segments[:len(segments)-1]
+	dir := fs.root.find(dirSegments...)
 	if dir == nil {
-		return nil, fmt.Errorf("dir %s does not exist", filepath.Join(dirPaths...))
+		return nil, fmt.Errorf("dir %s does not exist", filepath.Join(dirSegments...))
 	}
 	if !dir.IsDir() {
-		return nil, fmt.Errorf("%s is not directory", filepath.Join(dirPaths...))
+		return nil, fmt.Errorf("%s is not directory", filepath.Join(dirSegments...))
 	}
 
 	f = newFileInfo(true, dir.DistinctName(name))
@@ -161,7 +161,7 @@ func (fs *FileSystem) OpenFile(name string, flag Flag) (*File, error) {
 	}
 
 	base := paths[len(paths)-1]
-	f := dir.GetByName(base)
+	f := dir.Find(base)
 	if f == nil {
 		if (flag & Create) == 0 {
 			return nil, os.ErrNotExist
@@ -205,7 +205,7 @@ func (fs *FileSystem) Stat(name string) (*FileInfo, error) {
 	if name == "" || name == "/" {
 		return fs.root, nil
 	}
-	fi := fs.root.GetByPath(name)
+	fi := fs.root.FindByPath(name)
 	if fi == nil {
 		return nil, fmt.Errorf("%s: %w", name, os.ErrNotExist)
 	}
@@ -303,6 +303,10 @@ func (fs *FileSystem) VerifyPassword(password string) bool {
 
 func (fs *FileSystem) Wrapper() *FileSystemWrapper {
 	return (*FileSystemWrapper)(fs)
+}
+
+func (fs *FileSystem) Root() *FileInfo {
+	return fs.root
 }
 
 func isEmptyStorage(storage KVStorage) (bool, error) {
