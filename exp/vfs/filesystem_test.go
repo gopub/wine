@@ -41,24 +41,23 @@ func TestNewEncryptedFileSystem(t *testing.T) {
 func TestFileSystem_CreateDir(t *testing.T) {
 	fs := setupFS(t)
 	dirName := uuid.New().String()
-	dir, err := fs.Create("", true, dirName)
+	dir, err := fs.Mkdir(dirName)
 	require.NoError(t, err)
 	require.NotEmpty(t, dir)
-	require.Equal(t, dirName, dir.Info().Name())
-	require.Equal(t, true, dir.Info().IsDir())
+	require.Equal(t, dirName, dir.Name())
+	require.Equal(t, true, dir.IsDir())
 
 	subDirName := uuid.New().String()
-	subDir, err := fs.Create(dir.Info().UUID(), true, subDirName)
+	subDir, err := fs.Wrapper().Create(dir.UUID(), subDirName)
 	require.NoError(t, err)
 	require.NotEmpty(t, subDir)
 	subDir.Close()
 
-	f, err := fs.OpenByPath(filepath.Join(dirName, subDirName), true)
+	f, err := fs.Stat(filepath.Join(dirName, subDirName))
 	require.NoError(t, err)
 	require.NotEmpty(t, f)
-	f.Close()
 
-	f, err = fs.OpenByPath(filepath.Join(dirName, uuid.New().String()), true)
+	f, err = fs.Stat(filepath.Join(dirName, uuid.New().String()))
 	require.Error(t, err)
 	require.Empty(t, f)
 }
@@ -68,7 +67,7 @@ func TestFileSystem_CreateFile(t *testing.T) {
 
 	t.Run("CreateFileInHome", func(t *testing.T) {
 		fileName := uuid.New().String()
-		f, err := fs.Create("", false, fileName)
+		f, err := fs.Create(fileName)
 		require.NoError(t, err)
 		require.NotEmpty(t, f)
 		require.Equal(t, fileName, f.Info().Name())
@@ -77,17 +76,17 @@ func TestFileSystem_CreateFile(t *testing.T) {
 		require.NotEmpty(t, f.Info().ModifiedAt)
 		f.Close()
 
-		of, err := fs.OpenByPath(fileName, false)
+		of, err := fs.OpenFile(fileName, vfs.ReadOnly)
 		require.NoError(t, err)
 		require.NotEmpty(t, of)
 		require.Equal(t, f.Info(), of.Info())
 	})
 
 	t.Run("CreateFileInDir", func(t *testing.T) {
-		dir, err := fs.Create("", true, uuid.New().String())
+		dir, err := fs.Mkdir(uuid.New().String())
 		require.NoError(t, err)
 		fileName := uuid.New().String()
-		f, err := fs.Create(dir.Info().UUID(), false, fileName)
+		f, err := fs.Wrapper().Create(dir.UUID(), fileName)
 		require.NoError(t, err)
 		require.NotEmpty(t, f)
 		require.Equal(t, fileName, f.Info().Name())
@@ -96,11 +95,11 @@ func TestFileSystem_CreateFile(t *testing.T) {
 		require.NotEmpty(t, f.Info().ModifiedAt)
 		f.Close()
 
-		of, err := fs.OpenByPath(fileName, false)
+		of, err := fs.OpenFile(fileName, vfs.ReadOnly)
 		require.Error(t, err)
 		require.Empty(t, of)
 
-		of, err = fs.OpenByPath(dir.Info().Name()+"/"+fileName, false)
+		of, err = fs.OpenFile(dir.Name()+"/"+fileName, vfs.ReadOnly)
 		require.NoError(t, err)
 		require.NotEmpty(t, of)
 		require.Equal(t, f.Info(), of.Info())
@@ -112,25 +111,25 @@ func TestFileSystem_Delete(t *testing.T) {
 
 	t.Run("DeleteExisted", func(t *testing.T) {
 		fileName := uuid.New().String()
-		f, err := fs.Create("", false, fileName)
+		f, err := fs.Create(fileName)
 		require.NoError(t, err)
 
-		err = fs.Delete(f.Info().UUID())
+		err = fs.Wrapper().Remove(f.Info().UUID())
 		require.NoError(t, err)
 
-		_, err = fs.OpenByPath(fileName, false)
+		_, err = fs.OpenFile(fileName, vfs.ReadOnly)
 		require.Error(t, os.ErrNotExist)
 	})
 
 	t.Run("DeleteNotExisted", func(t *testing.T) {
 		fileName := uuid.New().String()
-		f, err := fs.Create("", false, fileName)
+		f, err := fs.Create(fileName)
 		require.NoError(t, err)
 
-		err = fs.Delete(f.Info().UUID())
+		err = fs.Wrapper().Remove(f.Info().UUID())
 		require.NoError(t, err)
 
-		err = fs.Delete(f.Info().UUID())
+		err = fs.Wrapper().Remove(f.Info().UUID())
 		require.NoError(t, err)
 	})
 }
@@ -139,17 +138,17 @@ func TestFileSystem_Move(t *testing.T) {
 	fs := setupFS(t)
 
 	fileName := uuid.New().String()
-	f, err := fs.Create("", false, fileName)
+	f, err := fs.Create(fileName)
 	require.NoError(t, err)
 	f.Close()
 
-	dir, err := fs.Create("", true, uuid.New().String())
+	dir, err := fs.Mkdir(uuid.New().String())
 	require.NoError(t, err)
 
-	err = fs.Move(f.Info().UUID(), dir.Info().UUID())
+	err = fs.Wrapper().Move(f.Info().UUID(), dir.UUID())
 	require.NoError(t, err)
 
-	_, err = fs.OpenByPath(dir.Info().Name()+"/"+f.Info().Name(), false)
+	_, err = fs.OpenFile(dir.Name()+"/"+f.Info().Name(), vfs.ReadOnly)
 	require.NoError(t, err)
 }
 
@@ -158,13 +157,13 @@ func TestFileSystem_Mount(t *testing.T) {
 	password := uuid.New().String()
 	fs, err := vfs.NewFileSystem(ms, password)
 	require.NoError(t, err)
-	f, err := fs.Create("", false, uuid.New().String())
+	f, err := fs.Create(uuid.New().String())
 	require.NoError(t, err)
 	f.Close()
 
 	fs2, err := vfs.NewFileSystem(ms, password)
 	require.NoError(t, err)
-	f2, err := fs2.OpenByPath(f.Info().Name(), false)
+	f2, err := fs2.OpenFile(f.Info().Name(), vfs.ReadOnly)
 	require.NoError(t, err)
 	f2.Close()
 }

@@ -1,9 +1,11 @@
 package vfs
 
 import (
-	"github.com/gopub/errors"
+	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/gopub/errors"
 
 	"github.com/gopub/conv"
 	"github.com/gopub/types"
@@ -50,3 +52,12 @@ func validateFileName(name string) bool {
 
 	return true
 }
+
+type Flag int
+
+const (
+	ReadOnly  = Flag(os.O_RDONLY)
+	WriteOnly = Flag(os.O_WRONLY)
+	Truncate  = Flag(os.O_TRUNC)
+	Create    = Flag(os.O_CREATE)
+)

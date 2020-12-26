@@ -5,14 +5,10 @@ import (
 	"encoding/gob"
 	"encoding/json"
 	"fmt"
-	"io"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
-	"strings"
 
-	"github.com/gabriel-vasile/mimetype"
 	"github.com/google/uuid"
 	"github.com/gopub/conv"
 	"github.com/gopub/errors"
@@ -96,113 +92,124 @@ func (fs *FileSystem) mountHome(storage KVStorage) error {
 	return nil
 }
 
-func (fs *FileSystem) Create(parentUUID string, isDir bool, name string) (*File, error) {
-	name = strings.TrimSpace(name)
-	if !validateFileName(name) {
-		return nil, errors.New("invalid file name")
+func (fs *FileSystem) Mkdir(name string) (*FileInfo, error) {
+	if name == "" {
+		return nil, os.ErrInvalid
 	}
-	var dir *FileInfo
-	if parentUUID == "" {
-		dir = fs.home
-	} else {
-		dir = fs.home.GetByUUID(parentUUID)
-		if dir == nil || !dir.IsDir() {
-			return nil, errors.New("cannot find parent directory")
+	f := fs.home.GetByPath(name)
+	if f != nil {
+		if f.IsDir() {
+			return f, nil
 		}
+		return nil, fmt.Errorf("%s is not directory", name)
 	}
-	name = dir.DistinctName(name)
-	f := newFileInfo(isDir, name)
-	dir.AddSub(f)
-	err := fs.SaveFileTree()
-	if err != nil {
-		return nil, fmt.Errorf("save: %w", err)
+	paths := splitPath(name)
+	if len(paths) == 1 {
+		f = newFileInfo(true, fs.home.DistinctName(name))
+		fs.home.AddSub(f)
+		return f, fs.SaveFileTree()
 	}
-	return newFile(fs, f, true), nil
-}
 
-func (fs *FileSystem) OpenByUUID(id string, write bool) (*File, error) {
-	if id == "" {
-		return newFile(fs, fs.home, write), nil
-	}
-	fi := fs.home.GetByUUID(id)
-	if fi == nil {
-		return nil, os.ErrNotExist
-	}
-	if fi.busy {
-		return nil, errors.New("busy")
-	}
-	return newFile(fs, fi, write), nil
-}
-
-func (fs *FileSystem) OpenByPath(path string, write bool) (*File, error) {
-	path = strings.TrimSpace(path)
-	if path == "" || path == "/" {
-		return newFile(fs, fs.home, write), nil
-	}
-	fi := fs.home.GetByPath(path)
-	if fi == nil {
-		return nil, os.ErrNotExist
-	}
-	if fi.busy {
-		return nil, errors.New("busy")
-	}
-	return newFile(fs, fi, write), nil
-}
-
-func (fs *FileSystem) Open(path string) (http.File, error) {
-	return fs.OpenByPath(path, false)
-}
-
-func (fs *FileSystem) Delete(uuid string) error {
-	f := fs.home.GetByUUID(uuid)
-	if f == nil {
-		return nil
-	}
-	if f == fs.home {
-		return errors.New("cannot delete home")
-	}
-	if f.parent == nil {
-		return nil
-	}
-	f.parent.RemoveSub(f)
-	if err := fs.SaveFileTree(); err != nil {
-		return fmt.Errorf("save: %w", err)
-	}
-	fileNodes := []*FileInfo{f}
-	pages := f.Pages
-	for i := 0; i < len(fileNodes); i++ {
-		nod := fileNodes[i]
-		fileNodes = append(fileNodes, nod.Files...)
-		pages = append(pages, nod.Pages...)
-	}
-	var err error
-	for _, page := range pages {
-		er := fs.storage.Delete(page)
-		if er != nil {
-			err = errors.Append(err, er)
-		}
-	}
-	return err
-}
-
-func (fs *FileSystem) Move(uuid, parentUUID string) error {
-	dir, err := fs.StatByUUID(parentUUID)
-	if err != nil {
-		return fmt.Errorf("stat by parentUUID %s: %w", parentUUID, err)
+	dirPaths := paths[:len(paths)-1]
+	dir := fs.home.getByPathList(dirPaths)
+	if dir == nil {
+		return nil, fmt.Errorf("dir %s does not exist", filepath.Join(dirPaths...))
 	}
 	if !dir.IsDir() {
-		return errors.New("dst is not dir")
+		return nil, fmt.Errorf("%s is not directory", filepath.Join(dirPaths...))
 	}
-	f, err := fs.StatByUUID(uuid)
-	if err != nil {
-		return fmt.Errorf("stat by uuid %s: %w", uuid, err)
+
+	f = newFileInfo(true, dir.DistinctName(name))
+	dir.AddSub(f)
+	return f, fs.SaveFileTree()
+}
+
+func (fs *FileSystem) MkdirAll(path string) (*FileInfo, error) {
+	paths := splitPath(path)
+	for i := range paths {
+		f, err := fs.Mkdir(filepath.Join(paths[:i+1]...))
+		if err != nil {
+			return nil, err
+		}
+		if i == len(paths)-1 {
+			return f, nil
+		}
 	}
-	if f.parent == dir {
-		return nil
+	return nil, os.ErrInvalid
+}
+
+func (fs *FileSystem) Create(name string) (*File, error) {
+	return fs.OpenFile(name, WriteOnly|Create)
+}
+
+func (fs *FileSystem) OpenFile(name string, flag Flag) (*File, error) {
+	paths := splitPath(name)
+	if len(paths) == 0 {
+		return nil, os.ErrInvalid
+	}
+
+	var dir *FileInfo
+	if len(paths) == 1 {
+		dir = fs.home
+	} else {
+		var err error
+		dirPath := filepath.Join(paths[:len(paths)-1]...)
+		dir, err = fs.MkdirAll(dirPath)
+		if err != nil {
+			return nil, fmt.Errorf("cannot make dir %s: %w", dirPath, err)
+		}
+	}
+
+	base := paths[len(paths)-1]
+	f := dir.GetByName(base)
+	if f == nil {
+		if (flag & Create) == 0 {
+			return nil, os.ErrNotExist
+		}
+		f = newFileInfo(false, dir.DistinctName(base))
 	}
 	dir.AddSub(f)
-	err = fs.SaveFileTree()
-	return errors.Wrapf(err, "cannot save")
+	if err := fs.SaveFileTree(); err != nil {
+		return nil, fmt.Errorf("save file tree: %w", err)
+	}
+	return newFile(fs, f, flag), nil
+}
+
+func (fs *FileSystem) Open(name string) (http.File, error) {
+	return fs.OpenFile(name, ReadOnly)
+}
+
+func (fs *FileSystem) Remove(name string) error {
+	fi, err := fs.Stat(name)
+	if err != nil {
+		return fmt.Errorf("stat: %w", err)
+	}
+	if (fi.IsDir() && len(fi.Files) > 0) || fi == fs.home {
+		return os.ErrPermission
+	}
+	return fs.Wrapper().Remove(fi.UUID())
+}
+
+func (fs *FileSystem) RemoveAll(path string) error {
+	fi, err := fs.Stat(path)
+	if err != nil {
+		return fmt.Errorf("stat: %w", err)
+	}
+	if fi == fs.home {
+		return os.ErrPermission
+	}
+	return fs.Wrapper().Remove(fi.UUID())
+}
+
+func (fs *FileSystem) Stat(name string) (*FileInfo, error) {
+	if name == "" || name == "/" {
+		return fs.home, nil
+	}
+	fi := fs.home.GetByPath(name)
+	if fi == nil {
+		return nil, fmt.Errorf("%s: %w", name, os.ErrNotExist)
+	}
+	return fi, nil
 }
 
 func (fs *FileSystem) SaveFileTree() error {
@@ -238,67 +245,14 @@ func (fs *FileSystem) DecryptPage(data []byte) error {
 	return conv.AES(data, fs.key, fs.key[:16])
 }
 
-func (fs *FileSystem) StatByUUID(uuid string) (*FileInfo, error) {
-	if uuid == "" {
-		return fs.home, nil
-	}
-	f := fs.home.GetByUUID(uuid)
-	if f == nil {
-		return nil, os.ErrNotExist
-	}
-	return f, nil
-}
-
-func (fs *FileSystem) CreateAndWrite(parentUUID, name string, data []byte) (*FileInfo, error) {
-	f, err := fs.Create(parentUUID, false, name)
+func (fs *FileSystem) Write(name string, data []byte) (*FileInfo, error) {
+	f, err := fs.OpenFile(name, WriteOnly|Create)
 	if err != nil {
-		return nil, fmt.Errorf("create file: %w", err)
+		return nil, err
 	}
 	defer f.Close()
 	_, err = f.Write(data)
-	if err != nil {
-		return nil, fmt.Errorf("write data: %w", err)
-	}
-	f.info.SetMIMEType(http.DetectContentType(data))
-	return f.info, nil
-}
-
-func (fs *FileSystem) CreateAndCopy(parentUUID, srcFilePath string) (*FileInfo, error) {
-	name := filepath.Base(srcFilePath)
-	f, err := fs.Create(parentUUID, false, name)
-	if err != nil {
-		return nil, fmt.Errorf("create file: %w", err)
-	}
-	defer f.Close()
-	srcFile, err := os.Open(srcFilePath)
-	if err != nil {
-		return nil, fmt.Errorf("open %s: %w", srcFilePath, err)
-	}
-	if _, err = io.Copy(f, srcFile); err != nil {
-		return nil, fmt.Errorf("copy file: %w", err)
-	}
-	me, err := mimetype.DetectFile(srcFilePath)
-	if err != nil {
-		return nil, fmt.Errorf("detet file: %w", err)
-	}
-	f.info.SetMIMEType(me.String())
-	if err = fs.SaveFileTree(); err != nil {
-		return nil, fmt.Errorf("save file tree: %w", err)
-	}
-	return f.info, nil
-}
-
-func (fs *FileSystem) ReadAll(uuid string) ([]byte, error) {
-	f, err := fs.OpenByUUID(uuid, false)
-	if err != nil {
-		return nil, fmt.Errorf("open by uuid: %w", err)
-	}
-	defer f.Close()
-	data, err := ioutil.ReadAll(f)
-	if err != nil {
-		return nil, fmt.Errorf("read all: %w", err)
-	}
-	return data, nil
+	return f.info, err
 }
 
 func (fs *FileSystem) loadConfig() error {
@@ -333,7 +287,7 @@ func (fs *FileSystem) SaveConfig() error {
 	}
 
 	if err = fs.storage.Put(keyFSConfig, data); err != nil {
-		return fmt.Errorf("write: %w", err)
+		return fmt.Errorf("flag: %w", err)
 	}
 	return nil
 }
@@ -345,6 +299,10 @@ func (fs *FileSystem) ListByPermission(p int) []*FileInfo {
 func (fs *FileSystem) VerifyPassword(password string) bool {
 	_, err := loadCredential(fs.storage, password)
 	return err == nil
+}
+
+func (fs *FileSystem) Wrapper() *FileSystemWrapper {
+	return (*FileSystemWrapper)(fs)
 }
 
 func isEmptyStorage(storage KVStorage) (bool, error) {
@@ -400,7 +358,7 @@ func setupCredential(storage KVStorage, password string) ([]byte, error) {
 	}
 
 	if err = storage.Put(keyFSCredential, credential); err != nil {
-		return nil, fmt.Errorf("write credential: %w", err)
+		return nil, fmt.Errorf("flag credential: %w", err)
 	}
 	return key[:], nil
 }

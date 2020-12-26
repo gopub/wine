@@ -15,23 +15,23 @@ type File struct {
 	buf    *bytes.Buffer
 	offset int64
 
-	info  *FileInfo
-	vo    *FileSystem
-	write bool
+	info *FileInfo
+	vo   *FileSystem
+	flag Flag
 }
 
 var _ http.File = (*File)(nil)
 
-func newFile(vo *FileSystem, info *FileInfo, write bool) *File {
+func newFile(vo *FileSystem, info *FileInfo, flag Flag) *File {
 	if info.busy {
 		return nil
 	}
 	f := &File{
-		vo:    vo,
-		info:  info,
-		write: write,
+		vo:   vo,
+		info: info,
+		flag: flag,
 	}
-	if write {
+	if flag&WriteOnly > 0 {
 		f.buf = bytes.NewBuffer(nil)
 	}
 	info.busy = true
@@ -42,7 +42,7 @@ func (f *File) Seek(offset int64, whence int) (int64, error) {
 	if f.info.IsDir() {
 		return 0, errors.New("cannot seek dir")
 	}
-	if f.write {
+	if f.flag&WriteOnly != 0 {
 		return 0, errors.New("cannot seek in write mode")
 	}
 	if offset >= f.info.Size() {
@@ -79,8 +79,8 @@ func (f *File) Stat() (os.FileInfo, error) {
 }
 
 func (f *File) Read(p []byte) (int, error) {
-	if f.write {
-		return 0, errors.New("file is write-only")
+	if f.flag&WriteOnly != 0 {
+		return 0, os.ErrPermission
 	}
 
 	if f.info.IsDir() {
@@ -127,8 +127,8 @@ func (f *File) read(p []byte) (int, error) {
 }
 
 func (f *File) Write(p []byte) (int, error) {
-	if !f.write {
-		return 0, errors.New("file is read-only")
+	if f.flag&WriteOnly == 0 {
+		return 0, os.ErrPermission
 	}
 	_, err := f.buf.Write(p)
 	if err != nil {
@@ -147,7 +147,7 @@ func (f *File) Write(p []byte) (int, error) {
 
 func (f *File) Close() error {
 	f.info.busy = false
-	if f.write {
+	if f.flag&WriteOnly != 0 {
 		return f.flush(true)
 	}
 	return nil

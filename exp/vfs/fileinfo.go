@@ -134,7 +134,7 @@ func (f *FileInfo) getByPathList(pathList []string) *FileInfo {
 	return nil
 }
 
-func (f *FileInfo) Get(name string) *FileInfo {
+func (f *FileInfo) GetByName(name string) *FileInfo {
 	for _, fi := range f.Files {
 		if fi.Name() == name {
 			return fi

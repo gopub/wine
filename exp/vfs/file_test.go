@@ -2,6 +2,7 @@ package vfs_test
 
 import (
 	"bytes"
+	"github.com/gopub/wine/exp/vfs"
 	"io"
 	"strings"
 	"testing"
@@ -13,7 +14,7 @@ import (
 func TestFile_Write(t *testing.T) {
 	fs := setupFS(t)
 	t.Run("WriteLargeAmount", func(t *testing.T) {
-		f, err := fs.Create("", false, uuid.New().String())
+		f, err := fs.Create(uuid.New().String())
 		data := []byte(strings.Repeat(uuid.New().String(), 12345))
 		n, err := f.Write(data)
 		require.Equal(t, len(data), n)
@@ -21,17 +22,17 @@ func TestFile_Write(t *testing.T) {
 		err = f.Close()
 		require.NoError(t, err)
 
-		rf, err := fs.OpenByPath(f.Info().Name(), false)
+		rf, err := fs.OpenFile(f.Info().Name(), vfs.ReadOnly)
 		require.NoError(t, err)
 		require.NotEmpty(t, rf)
 		buf := bytes.NewBuffer(nil)
 		var b [1000]byte
 		nr, err := rf.Read(b[:])
-		require.Equal(t, true, err == nil || err == io.EOF)
+		require.Equal(t, true, err == nil || err == io.EOF, err)
 		buf.Write(b[:nr])
 		for err == nil {
 			nr, err = rf.Read(b[:])
-			require.Equal(t, true, err == nil || err == io.EOF)
+			require.Equal(t, true, err == nil || err == io.EOF, err)
 			buf.Write(b[:nr])
 		}
 		require.Equal(t, len(data), buf.Len())
@@ -39,7 +40,7 @@ func TestFile_Write(t *testing.T) {
 	})
 
 	t.Run("WriteSmallAmount", func(t *testing.T) {
-		f, err := fs.Create("", false, uuid.New().String())
+		f, err := fs.Create(uuid.New().String())
 		data := []byte(strings.Repeat(uuid.New().String(), 2))
 		n, err := f.Write(data)
 		require.Equal(t, len(data), n)
@@ -47,7 +48,7 @@ func TestFile_Write(t *testing.T) {
 		err = f.Close()
 		require.NoError(t, err)
 
-		rf, err := fs.OpenByPath(f.Info().Name(), false)
+		rf, err := fs.OpenFile(f.Info().Name(), vfs.ReadOnly)
 		require.NoError(t, err)
 		require.NotEmpty(t, rf)
 		buf := bytes.NewBuffer(nil)
