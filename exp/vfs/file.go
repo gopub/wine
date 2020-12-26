@@ -111,7 +111,7 @@ func (f *File) read(p []byte) (int, error) {
 	if f.offset >= f.info.Size() {
 		return 0, io.EOF
 	}
-	pageIndex := f.offset / pageSize
+	pageIndex := f.offset / f.vo.pageSize
 	page := f.info.Pages[pageIndex]
 	data, err := f.vo.storage.Get(page)
 	if err != nil {
@@ -120,7 +120,7 @@ func (f *File) read(p []byte) (int, error) {
 	if err := f.vo.DecryptPage(data); err != nil {
 		return 0, fmt.Errorf("decrypt: %w", err)
 	}
-	start := f.offset - pageSize*pageIndex
+	start := f.offset - f.vo.pageSize*pageIndex
 	nr := copy(p, data[start:])
 	f.offset += int64(nr)
 	return nr, nil
@@ -154,9 +154,9 @@ func (f *File) Close() error {
 }
 
 func (f *File) flush(all bool) error {
-	for all || int64(f.buf.Len()) >= pageSize {
-		var b [pageSize]byte
-		n, err := f.buf.Read(b[:])
+	for all || int64(f.buf.Len()) >= f.vo.pageSize {
+		b := make([]byte, f.vo.pageSize)
+		n, err := f.buf.Read(b)
 		// even err is io.EOF, n may be > 0
 		if n > 0 {
 			if f.offset == 0 {

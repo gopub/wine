@@ -342,6 +342,16 @@ func (f *FileInfo) GetSubFiles() []*FileInfo {
 	})
 }
 
+func (f *FileInfo) totalSize() int64 {
+	n := f.Size()
+	if f.IsDir() {
+		for _, sub := range f.Files {
+			n += sub.totalSize()
+		}
+	}
+	return n
+}
+
 const (
 	OrderByCreatedTimeAsc = iota
 	OrderByCreatedTimeDesc

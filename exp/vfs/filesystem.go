@@ -17,25 +17,37 @@ import (
 )
 
 type FileSystem struct {
-	storage KVStorage
-	root    *FileInfo
-	key     []byte
-	configs types.M
+	storage  KVStorage
+	root     *FileInfo
+	key      []byte
+	configs  types.M
+	pageSize int64
 }
 
 var _ http.FileSystem = (*FileSystem)(nil)
 
-func NewFileSystem(storage KVStorage, password string) (*FileSystem, error) {
+func NewFileSystem(storage KVStorage, pageSize int64, password string) (*FileSystem, error) {
+	if pageSize <= 0 {
+		pageSize = DefaultPageSize
+	}
+	if pageSize < MinPageSize {
+		return nil, fmt.Errorf("min page size is %d", MinPageSize)
+	}
 	empty, err := isEmptyStorage(storage)
 	if err != nil {
 		return nil, fmt.Errorf("detect empty storage: %w", err)
 	}
 
 	fs := &FileSystem{
-		storage: storage,
+		storage:  storage,
+		pageSize: pageSize,
+		configs:  types.M{},
 	}
 
 	if empty {
+		if err = savePageSize(storage, pageSize); err != nil {
+			return nil, fmt.Errorf("save page size: %w", err)
+		}
 		if password != "" {
 			fs.key, err = setupCredential(storage, password)
 			if err != nil {
@@ -43,6 +55,13 @@ func NewFileSystem(storage KVStorage, password string) (*FileSystem, error) {
 			}
 		}
 	} else {
+		expectedSize, err := loadPageSize(storage)
+		if err != nil {
+			return nil, fmt.Errorf("load page size: %w", err)
+		}
+		if expectedSize != pageSize {
+			return nil, fmt.Errorf("mismatch page size %d != %d", pageSize, expectedSize)
+		}
 		encrypted, err := isEncryptedStorage(storage)
 		if err != nil {
 			return nil, fmt.Errorf("detech encryption: %w", err)
@@ -58,7 +77,9 @@ func NewFileSystem(storage KVStorage, password string) (*FileSystem, error) {
 			}
 		}
 	}
-
+	if err = fs.loadConfig(); err != nil {
+		return nil, fmt.Errorf("load config: %w", err)
+	}
 	if err = fs.mount(storage); err != nil {
 		return nil, fmt.Errorf("mount root: %w", err)
 	}
@@ -90,6 +111,14 @@ func (fs *FileSystem) mount(storage KVStorage) error {
 		return fmt.Errorf("unmarshal: %w", err)
 	}
 	return nil
+}
+
+func (fs *FileSystem) PageSize() int64 {
+	return fs.pageSize
+}
+
+func (fs *FileSystem) Size() int64 {
+	return fs.root.totalSize()
 }
 
 func (fs *FileSystem) Mkdir(name string) (*FileInfo, error) {
@@ -258,6 +287,9 @@ func (fs *FileSystem) Write(name string, data []byte) (*FileInfo, error) {
 func (fs *FileSystem) loadConfig() error {
 	data, err := fs.storage.Get(keyFSConfig)
 	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return nil
+		}
 		return fmt.Errorf("get %s: %w", keyFSConfig, err)
 	}
 
@@ -307,6 +339,30 @@ func (fs *FileSystem) Wrapper() *FileSystemWrapper {
 
 func (fs *FileSystem) Root() *FileInfo {
 	return fs.root
+}
+
+func loadPageSize(storage KVStorage) (size int64, err error) {
+	data, err := storage.Get(keyFSPageSize)
+	if err != nil {
+		return size, fmt.Errorf("cannot read page size: %w", err)
+	}
+	err = json.Unmarshal(data, &size)
+	if err != nil {
+		return size, fmt.Errorf("cannot unmarshal page size: %w", err)
+	}
+	return size, nil
+}
+
+func savePageSize(storage KVStorage, size int64) error {
+	data, err := json.Marshal(size)
+	if err != nil {
+		return fmt.Errorf("cannot marshal page size %d: %v", size, err)
+	}
+	err = storage.Put(keyFSPageSize, data)
+	if err != nil {
+		return fmt.Errorf("cannot save page size %d: %v", size, err)
+	}
+	return nil
 }
 
 func isEmptyStorage(storage KVStorage) (bool, error) {

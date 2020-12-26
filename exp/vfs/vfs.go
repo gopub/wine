@@ -12,8 +12,9 @@ import (
 )
 
 const (
-	keySize  = 32
-	pageSize = int64(32 * types.KB)
+	keySize         = 32
+	DefaultPageSize = int64(32 * types.KB)
+	MinPageSize     = int64(4 * types.KB)
 )
 
 const (
@@ -24,6 +25,7 @@ var (
 	keyFSRootDir    = conv.SHA256("filesystem.root")
 	keyFSCredential = conv.SHA256("filesystem.credential")
 	keyFSConfig     = conv.SHA256("filesystem.config")
+	keyFSPageSize   = conv.SHA256("filesystem.page_size")
 )
 
 type KVStorage interface {

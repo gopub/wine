@@ -13,7 +13,7 @@ import (
 func setupFS(t *testing.T) *vfs.FileSystem {
 	ms := vfs.NewMemoryStorage()
 	password := uuid.New().String()
-	fs, err := vfs.NewFileSystem(ms, password)
+	fs, err := vfs.NewFileSystem(ms, 0, password)
 	require.NoError(t, err)
 	require.NotEmpty(t, fs)
 	return fs
@@ -22,17 +22,17 @@ func setupFS(t *testing.T) *vfs.FileSystem {
 func TestNewEncryptedFileSystem(t *testing.T) {
 	ms := vfs.NewMemoryStorage()
 	password := uuid.New().String()
-	fs, err := vfs.NewFileSystem(ms, password)
+	fs, err := vfs.NewFileSystem(ms, 0, password)
 	require.NoError(t, err)
 	require.NotEmpty(t, fs)
 
-	_, err = vfs.NewFileSystem(ms, "")
+	_, err = vfs.NewFileSystem(ms, 0, "")
 	require.Error(t, err)
 
-	_, err = vfs.NewFileSystem(ms, "incorrectpassword")
+	_, err = vfs.NewFileSystem(ms, 0, "incorrectpassword")
 	require.Error(t, err)
 
-	fs2, err := vfs.NewFileSystem(ms, password)
+	fs2, err := vfs.NewFileSystem(ms, 0, password)
 	require.NoError(t, err)
 	require.NotEmpty(t, fs2)
 
@@ -155,13 +155,13 @@ func TestFileSystem_Move(t *testing.T) {
 func TestFileSystem_Mount(t *testing.T) {
 	ms := vfs.NewMemoryStorage()
 	password := uuid.New().String()
-	fs, err := vfs.NewFileSystem(ms, password)
+	fs, err := vfs.NewFileSystem(ms, 0, password)
 	require.NoError(t, err)
 	f, err := fs.Create(uuid.New().String())
 	require.NoError(t, err)
 	f.Close()
 
-	fs2, err := vfs.NewFileSystem(ms, password)
+	fs2, err := vfs.NewFileSystem(ms, 0, password)
 	require.NoError(t, err)
 	f2, err := fs2.OpenFile(f.Info().Name(), vfs.ReadOnly)
 	require.NoError(t, err)
