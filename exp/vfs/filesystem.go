@@ -370,3 +370,7 @@ func (fs *FileSystem) SaveConfig() error {
 	}
 	return nil
 }
+
+func (fs *FileSystem) ListByPermission(p int) []*FileInfo {
+	return fs.home.ListByPermission(p)
+}
