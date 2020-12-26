@@ -14,6 +14,23 @@ import (
 
 type FileSystemWrapper FileSystem
 
+func (w *FileSystemWrapper) Mkdir(parentUUID, dirName string) (*FileInfo, error) {
+	fs := (*FileSystem)(w)
+	if dirName == "" {
+		return nil, os.ErrInvalid
+	}
+	var parent *FileInfo
+	if parentUUID == "" {
+		parent = fs.home
+	} else {
+		parent = fs.home.GetByUUID(parentUUID)
+		if parent == nil {
+			return nil, fmt.Errorf("parent %s does not exist", parentUUID)
+		}
+	}
+	return fs.Mkdir(filepath.Join(parent.Path(), dirName))
+}
+
 func (w *FileSystemWrapper) Create(dirUUID string, name string) (*File, error) {
 	fs := (*FileSystem)(w)
 	if name == "" {
