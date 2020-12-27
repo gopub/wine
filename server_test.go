@@ -2,9 +2,11 @@ package wine_test
 
 import (
 	"context"
+	"github.com/google/uuid"
 	"io/ioutil"
 	"net/http"
 	"runtime"
+	"strings"
 	"testing"
 
 	"github.com/gopub/wine"
@@ -44,8 +46,9 @@ func TestServerStatus(t *testing.T) {
 func TestServerMethod(t *testing.T) {
 	server := wine.NewTestServer()
 	r := server.Router
+	getStr := strings.Repeat(uuid.New().String(), 1024)
 	r.Get("/", func(ctx context.Context, req *wine.Request) wine.Responder {
-		return wine.Text(http.StatusOK, "GET")
+		return wine.Text(http.StatusOK, getStr)
 	})
 	r.Post("/", func(ctx context.Context, req *wine.Request) wine.Responder {
 		return wine.Text(http.StatusOK, "POST")
@@ -62,7 +65,7 @@ func TestServerMethod(t *testing.T) {
 		body, err := ioutil.ReadAll(resp.Body)
 		require.NoError(t, resp.Body.Close())
 		require.NoError(t, err)
-		require.Equal(t, "GET", string(body))
+		require.Equal(t, getStr, string(body))
 	})
 
 	t.Run("POST", func(t *testing.T) {

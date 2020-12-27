@@ -184,13 +184,13 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, httpReq *http.Request) {
 		}()
 	}
 	rw = s.wrapResponseWriter(rw, httpReq)
-	defer s.closeWriter(rw)
 	sid := s.initSession(rw, httpReq)
 	ctx, cancel := s.setupContext(httpReq)
 	defer cancel()
 
 	req, err := parseRequest(httpReq, s.maxReqMem)
 	if err != nil {
+		defer s.closeWriter(rw)
 		resp := Text(http.StatusBadRequest, fmt.Sprintf("Parse request: %v", err))
 		resp.Respond(ctx, rw)
 		s.logResult(&Request{request: httpReq}, rw, startAt)
@@ -242,8 +242,8 @@ func (s *Server) serve(ctx context.Context, req *Request, rw http.ResponseWriter
 	if resp == nil {
 		resp = Status(http.StatusNotImplemented)
 	}
-	// Fix: compress writer doens't work
-	//rw = s.compressWriter(rw, req, resp)
+	rw = s.compressWriter(rw, req, resp)
+	defer s.closeWriter(rw)
 	resp.Respond(ctx, rw)
 }
 

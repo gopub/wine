@@ -75,7 +75,7 @@ func (w *CompressResponseWriter) Close() error {
 		return nil
 	}
 	if closer, ok := w.compressWriter.(io.Closer); ok {
-		// Closing a writer without no written data will cause an error if response status is 204 NoContent
+		// Closing a writer without written data will cause an error if response status is 204 NoContent
 		return closer.Close()
 	}
 	return nil
