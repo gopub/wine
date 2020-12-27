@@ -79,7 +79,7 @@ func TestFile_Write(t *testing.T) {
 		n, err = f.Write(data)
 		require.Equal(t, len(data), n)
 		f.Close()
-		require.Equal(t, 1, len(f.Info().Pages))
+		require.Equal(t, (int64(len(data))+fs.PageSize()-1)/fs.PageSize(), int64(len(f.Info().Pages)))
 
 		rf, err := fs.OpenFile(f.Info().Name(), vfs.ReadOnly)
 		require.NoError(t, err)

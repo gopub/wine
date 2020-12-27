@@ -12,8 +12,8 @@ import (
 
 const (
 	keySize         = 32
-	DefaultPageSize = int64(32 * types.KB)
-	MinPageSize     = int64(4 * types.KB)
+	DefaultPageSize = int64(types.MB)
+	MinPageSize     = int64(32 * types.KB)
 )
 
 const (
@@ -66,6 +66,5 @@ type Flag int
 const (
 	ReadOnly  = Flag(os.O_RDONLY)
 	WriteOnly = Flag(os.O_WRONLY)
-	Truncate  = Flag(os.O_TRUNC)
 	Create    = Flag(os.O_CREATE)
 )

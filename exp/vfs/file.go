@@ -26,13 +26,14 @@ func newFile(vo *FileSystem, info *FileInfo, flag Flag) *File {
 	if info.busy {
 		return nil
 	}
+	if (flag&ReadOnly) != 0 && (flag&WriteOnly) != 0 {
+		panic("invalid flag")
+	}
 	f := &File{
 		vo:   vo,
 		info: info,
 		flag: flag,
-	}
-	if flag&WriteOnly > 0 {
-		f.buf = bytes.NewBuffer(nil)
+		buf:  bytes.NewBuffer(nil),
 	}
 	info.busy = true
 	return f
@@ -60,6 +61,7 @@ func (f *File) Seek(offset int64, whence int) (int64, error) {
 	case io.SeekEnd:
 		f.offset = f.info.Size() - offset - 1
 	}
+	f.buf.Reset()
 	return f.offset, nil
 }
 
@@ -111,19 +113,34 @@ func (f *File) read(p []byte) (int, error) {
 	if f.offset >= f.info.Size() {
 		return 0, io.EOF
 	}
-	pageIndex := f.offset / f.vo.pageSize
-	page := f.info.Pages[pageIndex]
-	data, err := f.vo.storage.Get(page)
-	if err != nil {
-		return 0, fmt.Errorf("get page %s: %w", page, err)
+
+	if f.buf.Len() == 0 {
+		// load one page to buf
+		pageIndex := f.offset / f.vo.pageSize
+		page := f.info.Pages[pageIndex]
+		data, err := f.vo.storage.Get(page)
+		if err != nil {
+			if errors.Is(err, os.ErrNotExist) {
+				return 0, io.EOF
+			}
+			return 0, fmt.Errorf("get page %s: %w", page, err)
+		}
+		if err := f.vo.DecryptPage(data); err != nil {
+			return 0, fmt.Errorf("decrypt: %w", err)
+		}
+		nw, err := f.buf.Write(data)
+		if err != nil {
+			return 0, fmt.Errorf("write to buf: %w", err)
+		}
+		if nw != len(data) {
+			return 0, errors.New("cannot write to buf")
+		}
+		f.buf.Grow(int(f.offset % f.vo.pageSize))
 	}
-	if err := f.vo.DecryptPage(data); err != nil {
-		return 0, fmt.Errorf("decrypt: %w", err)
-	}
-	start := f.offset - f.vo.pageSize*pageIndex
-	nr := copy(p, data[start:])
+
+	nr, err := f.buf.Read(p)
 	f.offset += int64(nr)
-	return nr, nil
+	return nr, err
 }
 
 func (f *File) Write(p []byte) (int, error) {
