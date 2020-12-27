@@ -26,9 +26,16 @@ func Logger() *log.Logger {
 }
 
 func JoinURL(segments ...string) string {
+	if len(segments) == 0 {
+		return ""
+	}
 	escapes := make([]string, len(segments))
 	for i, v := range segments {
-		escapes[i] = url.PathEscape(v)
+		if i == 0 {
+			escapes[i] = v
+		} else {
+			escapes[i] = url.PathEscape(v)
+		}
 	}
 	p := path.Join(escapes...)
 	p = strings.Replace(p, ":/", "://", 1)
