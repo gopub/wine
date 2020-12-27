@@ -60,7 +60,7 @@ func StaticFile(req *http.Request, filePath string) Func {
 
 func Image(contentType string, content []byte) Func {
 	if contentType == "" {
-		contentType = http.DetectContentType(content)
+		contentType = httpvalue.DetectContentType(content)
 	}
 	return func(ctx context.Context, w http.ResponseWriter) {
 		w.Header().Set(httpvalue.ContentType, contentType)

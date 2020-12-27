@@ -7,7 +7,7 @@ import (
 )
 
 func Bytes(status int, b []byte) *Response {
-	typ := http.DetectContentType(b)
+	typ := httpvalue.DetectContentType(b)
 	header := make(http.Header)
 	header.Set(httpvalue.ContentType, typ)
 	return &Response{

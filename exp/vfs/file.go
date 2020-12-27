@@ -3,6 +3,7 @@ package vfs
 import (
 	"bytes"
 	"fmt"
+	"github.com/gopub/wine/httpvalue"
 	"io"
 	"net/http"
 	"os"
@@ -23,9 +24,6 @@ type File struct {
 var _ http.File = (*File)(nil)
 
 func newFile(vo *FileSystem, info *FileInfo, flag Flag) *File {
-	if info.busy {
-		return nil
-	}
 	if (flag&ReadOnly) != 0 && (flag&WriteOnly) != 0 {
 		panic("invalid flag")
 	}
@@ -35,7 +33,9 @@ func newFile(vo *FileSystem, info *FileInfo, flag Flag) *File {
 		flag: flag,
 		buf:  bytes.NewBuffer(nil),
 	}
-	info.busy = true
+	if flag&WriteOnly != 0 {
+		info.busy = true
+	}
 	return f
 }
 
@@ -123,8 +123,9 @@ func (f *File) read(p []byte) (int, error) {
 			if errors.Is(err, os.ErrNotExist) {
 				return 0, io.EOF
 			}
-			return 0, fmt.Errorf("get page %s: %w", page, err)
+			return 0, fmt.Errorf("load page %s: %w", page, err)
 		}
+
 		if err := f.vo.DecryptPage(data); err != nil {
 			return 0, fmt.Errorf("decrypt: %w", err)
 		}
@@ -132,14 +133,20 @@ func (f *File) read(p []byte) (int, error) {
 		if err != nil {
 			return 0, fmt.Errorf("write to buf: %w", err)
 		}
+
 		if nw != len(data) {
 			return 0, errors.New("cannot write to buf")
 		}
+
 		f.buf.Grow(int(f.offset % f.vo.pageSize))
 	}
 
 	nr, err := f.buf.Read(p)
 	f.offset += int64(nr)
+	// EOF of reading buf is not an error
+	if errors.Is(err, io.EOF) {
+		err = nil
+	}
 	return nr, err
 }
 
@@ -167,10 +174,14 @@ func (f *File) Close() error {
 	if f.flag&WriteOnly != 0 {
 		return f.flush(true)
 	}
+	f.offset = 0
 	return nil
 }
 
 func (f *File) flush(all bool) error {
+	if f.buf.Len() > 0 {
+		f.info.SetMIMEType(httpvalue.DetectContentType(f.buf.Bytes()))
+	}
 	for all || int64(f.buf.Len()) >= f.vo.pageSize {
 		b := make([]byte, f.vo.pageSize)
 		n, err := f.buf.Read(b)

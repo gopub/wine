@@ -1,10 +1,9 @@
 package storage
 
 import (
-	"net/http"
-
 	"github.com/gopub/errors"
 	"github.com/gopub/wine"
+	"github.com/gopub/wine/httpvalue"
 )
 
 type Object struct {
@@ -19,7 +18,7 @@ func (o *Object) Validate() error {
 	}
 
 	if o.Type == "" {
-		o.Type = http.DetectContentType(o.Content)
+		o.Type = httpvalue.DetectContentType(o.Content)
 	}
 
 	if o.Name == "" {

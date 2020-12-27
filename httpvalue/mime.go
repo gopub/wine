@@ -1,5 +1,11 @@
 package httpvalue
 
+import (
+	"net/http"
+
+	"github.com/gabriel-vasile/mimetype"
+)
+
 const (
 	Plain    = "text/plain"
 	HTML     = "text/html"
@@ -47,4 +53,21 @@ func IsMIMETextType(typ string) bool {
 	default:
 		return false
 	}
+}
+
+func DetectContentType(b []byte) string {
+	t := http.DetectContentType(b)
+	if t == "" {
+		return mimetype.Detect(b).String()
+	}
+
+	if t != OctetStream {
+		return t
+	}
+
+	if mt := mimetype.Detect(b).String(); mt != OctetStream {
+		return mt
+	}
+
+	return t
 }

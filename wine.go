@@ -32,16 +32,18 @@ func JoinURL(segments ...string) string {
 	if len(segments) == 0 {
 		return ""
 	}
-	escapes := make([]string, len(segments))
-	for i, v := range segments {
-		if i == 0 {
-			escapes[i] = v
-		} else {
-			escapes[i] = url.PathEscape(v)
-		}
-	}
-	p := path.Join(escapes...)
+	p := path.Join(segments...)
 	p = strings.Replace(p, ":/", "://", 1)
+	i := strings.Index(p, "://")
+	s := p
+	if i >= 0 {
+		s = p[i:]
+		l := strings.Split(s, "/")
+		for i, v := range l {
+			l[i] = url.PathEscape(v)
+		}
+		p = p[:i] + path.Join(l...)
+	}
 	return p
 }
 

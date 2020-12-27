@@ -2,12 +2,13 @@ package wine_test
 
 import (
 	"context"
-	"github.com/google/uuid"
 	"io/ioutil"
 	"net/http"
 	"runtime"
 	"strings"
 	"testing"
+
+	"github.com/google/uuid"
 
 	"github.com/gopub/wine"
 	"github.com/gopub/wine/httpvalue"

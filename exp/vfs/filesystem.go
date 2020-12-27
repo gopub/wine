@@ -287,11 +287,19 @@ func (fs *FileSystem) OpenFile(name string, flag Flag) (*File, error) {
 	if err := fs.SaveFileTree(); err != nil {
 		return nil, fmt.Errorf("save file tree: %w", err)
 	}
+	if f.busy {
+		return nil, errors.New("file is busy")
+	}
 	return newFile(fs, f, flag), nil
 }
 
+// Open is for http.FileSystem interface
 func (fs *FileSystem) Open(name string) (http.File, error) {
-	return fs.OpenFile(name, ReadOnly)
+	f, err := fs.OpenFile(name, ReadOnly)
+	if err != nil {
+		logger.Errorf("Cannot open file %s: %v", name, err)
+	}
+	return f, err
 }
 
 func (fs *FileSystem) Remove(name string) error {
@@ -460,6 +468,19 @@ func (fs *FileSystem) Touch(name string) (*FileInfo, error) {
 	}
 	f.Close()
 	return f.info, nil
+}
+
+func (fs *FileSystem) RemoveAllFiles() error {
+	if !fs.AuthPassed() {
+		return os.ErrPermission
+	}
+	var e error
+	for _, f := range fs.root.Files {
+		if err := fs.Wrapper().Remove(f.UUID()); err != nil {
+			e = errors.Append(e, err)
+		}
+	}
+	return e
 }
 
 func (fs *FileSystem) loadConfig() error {

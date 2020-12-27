@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"net/http"
 	"os"
 	"path/filepath"
 
 	"github.com/gabriel-vasile/mimetype"
 	"github.com/gopub/errors"
+	"github.com/gopub/wine/httpvalue"
 )
 
 type FileSystemWrapper FileSystem
@@ -164,7 +164,7 @@ func (w *FileSystemWrapper) Write(uuid string, data []byte) (*FileInfo, error) {
 	if err != nil {
 		return nil, fmt.Errorf("flag data: %w", err)
 	}
-	f.info.SetMIMEType(http.DetectContentType(data))
+	f.info.SetMIMEType(httpvalue.DetectContentType(data))
 	return f.info, nil
 }
 
