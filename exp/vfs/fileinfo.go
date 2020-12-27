@@ -42,6 +42,24 @@ var _ os.FileInfo = (*FileInfo)(nil)
 var _ encoding.BinaryMarshaler = (*FileInfo)(nil)
 var _ encoding.BinaryUnmarshaler = (*FileInfo)(nil)
 
+type rootFileInfo struct {
+	*FileInfo
+}
+
+func newRootFile() *rootFileInfo {
+	r := new(rootFileInfo)
+	r.FileInfo = &FileInfo{
+		fileMetadata: fileMetadata{
+			UUID:       "",
+			Name:       "",
+			IsDir:      true,
+			CreatedAt:  time.Now().Unix(),
+			ModifiedAt: time.Now().Unix(),
+		},
+	}
+	return r
+}
+
 func newFileInfo(isDir bool, name string) *FileInfo {
 	return &FileInfo{
 		fileMetadata: fileMetadata{
@@ -339,6 +357,13 @@ func (f *FileInfo) totalSize() int64 {
 		}
 	}
 	return n
+}
+
+func (f *FileInfo) makeDoubleLinked() {
+	for _, sub := range f.Files {
+		sub.parent = f
+		sub.makeDoubleLinked()
+	}
 }
 
 const (

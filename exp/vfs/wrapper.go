@@ -24,7 +24,7 @@ func (w *FileSystemWrapper) Mkdir(parentUUID, dirName string) (*FileInfo, error)
 	}
 	var parent *FileInfo
 	if parentUUID == "" {
-		parent = fs.root
+		parent = fs.root.FileInfo
 	} else {
 		parent = fs.root.FindByUUID(parentUUID)
 		if parent == nil {
@@ -41,7 +41,7 @@ func (w *FileSystemWrapper) Create(dirUUID, name string) (*File, error) {
 	}
 	var dir *FileInfo
 	if dirUUID == "" {
-		dir = fs.root
+		dir = fs.root.FileInfo
 	} else {
 		dir = fs.root.FindByUUID(dirUUID)
 		if dir == nil {
@@ -57,7 +57,7 @@ func (w *FileSystemWrapper) Open(uuid string, flag Flag) (*File, error) {
 		return nil, os.ErrPermission
 	}
 	if uuid == "" {
-		return newFile(fs, fs.root, flag), nil
+		return newFile(fs, fs.root.FileInfo, flag), nil
 	}
 	fi := fs.root.FindByUUID(uuid)
 	if fi == nil {
@@ -78,7 +78,7 @@ func (w *FileSystemWrapper) Remove(uuid string) error {
 	if f == nil {
 		return nil
 	}
-	if f == fs.root {
+	if f == fs.root.FileInfo {
 		return errors.New("cannot delete root")
 	}
 	if f.parent == nil {
@@ -132,7 +132,7 @@ func (w *FileSystemWrapper) Move(uuid, dirUUID string) error {
 func (w *FileSystemWrapper) Stat(uuid string) (*FileInfo, error) {
 	fs := (*FileSystem)(w)
 	if uuid == "" {
-		return fs.root, nil
+		return fs.root.FileInfo, nil
 	}
 	f := fs.root.FindByUUID(uuid)
 	if f == nil {

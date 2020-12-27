@@ -16,7 +16,7 @@ import (
 
 type FileSystem struct {
 	storage    KVStorage
-	root       *FileInfo
+	root       *rootFileInfo
 	credential []byte
 	key        []byte
 	configs    types.M
@@ -30,17 +30,19 @@ func NewFileSystem(storage KVStorage) (*FileSystem, error) {
 		storage:  storage,
 		pageSize: DefaultPageSize,
 		configs:  types.M{},
-		root:     newFileInfo(true, ""),
+		root:     newRootFile(),
 	}
 
 	var err error
 	if fs.pageSize, err = loadPageSize(storage); err != nil {
 		return nil, fmt.Errorf("load page size: %w", err)
 	}
+	logger.Debugf("VFS page size is %v", types.ByteUnit(fs.pageSize).HumanReadable())
 
-	if fs.credential, err = storage.Get(keyFSCredential); err != nil && !errors.Is(err, os.ErrNotExist) {
+	if fs.credential, err = storage.Get(keyFSCredential); err != nil && errors.Not(err, os.ErrNotExist) {
 		return nil, fmt.Errorf("read credential: %w", err)
 	}
+	logger.Debugf("Loaded vfs credential %d", len(fs.credential))
 
 	if fs.IsEncrypted() {
 		return fs, nil
@@ -99,6 +101,7 @@ func (fs *FileSystem) SetPassword(password string) error {
 	if err := fs.SaveFileTree(); err != nil {
 		return fmt.Errorf("saveFileTree: %w", err)
 	}
+	logger.Debug("Set vfs password")
 	return nil
 }
 
@@ -143,7 +146,7 @@ func (fs *FileSystem) Auth(password string) bool {
 	}
 
 	if !bytes.Equal(credential[keySize:], passwordHash[:]) {
-		logger.Error("VFS Auth failed")
+		logger.Error("VFS Auth failed: incorrect password")
 		return false
 	}
 	fs.key = credential[:keySize]
@@ -167,9 +170,8 @@ func (fs *FileSystem) loadRoot() error {
 		if !errors.Is(err, os.ErrNotExist) {
 			return fmt.Errorf("get %s: %w", keyFSRootDir, err)
 		}
-
-		// initialize
-		fs.root = newFileInfo(true, "")
+		fs.root = newRootFile()
+		logger.Debugf("Initialized vfs root %d", len(fs.root.Files))
 		return nil
 	}
 
@@ -180,6 +182,9 @@ func (fs *FileSystem) loadRoot() error {
 	if err = json.Unmarshal(data, &fs.root); err != nil {
 		return fmt.Errorf("unmarshal: %w", err)
 	}
+
+	fs.root.makeDoubleLinked()
+	logger.Debugf("Loaded vfs root %d", len(fs.root.Files))
 	return nil
 }
 
@@ -225,6 +230,7 @@ func (fs *FileSystem) Mkdir(name string) (*FileInfo, error) {
 
 	f = newFileInfo(true, dir.DistinctName(name))
 	dir.AddSub(f)
+	fs.root.makeDoubleLinked()
 	return f, fs.SaveFileTree()
 }
 
@@ -258,7 +264,7 @@ func (fs *FileSystem) OpenFile(name string, flag Flag) (*File, error) {
 
 	var dir *FileInfo
 	if len(paths) == 1 {
-		dir = fs.root
+		dir = fs.root.FileInfo
 	} else {
 		var err error
 		dirPath := filepath.Join(paths[:len(paths)-1]...)
@@ -292,12 +298,17 @@ func (fs *FileSystem) Remove(name string) error {
 	if !fs.AuthPassed() {
 		return os.ErrPermission
 	}
+	name = cleanName(name)
+	if name == fs.root.Name() {
+		return os.ErrPermission
+	}
 
 	fi, err := fs.Stat(name)
 	if err != nil {
 		return fmt.Errorf("stat: %w", err)
 	}
-	if (fi.IsDir() && len(fi.Files) > 0) || fi == fs.root {
+
+	if fi.IsDir() && len(fi.Files) > 0 {
 		return os.ErrPermission
 	}
 	return fs.Wrapper().Remove(fi.UUID())
@@ -312,7 +323,7 @@ func (fs *FileSystem) RemoveAll(path string) error {
 	if err != nil {
 		return fmt.Errorf("stat: %w", err)
 	}
-	if fi == fs.root {
+	if fi == fs.root.FileInfo {
 		return os.ErrPermission
 	}
 	return fs.Wrapper().Remove(fi.UUID())
@@ -323,7 +334,7 @@ func (fs *FileSystem) Stat(name string) (*FileInfo, error) {
 		return nil, os.ErrPermission
 	}
 	if name == "" || name == "/" {
-		return fs.root, nil
+		return fs.root.FileInfo, nil
 	}
 	fi := fs.root.FindByPath(name)
 	if fi == nil {
@@ -421,7 +432,10 @@ func (fs *FileSystem) ReadJSON(name string, v interface{}) error {
 
 	err = json.Unmarshal(data, v)
 	if err != nil {
-		return fmt.Errorf("unmarshal: %w", err)
+		if len(data) > 1024 {
+			data = data[:1024]
+		}
+		return fmt.Errorf("unmarshal %s: %w", data, err)
 	}
 	return nil
 }
@@ -439,13 +453,23 @@ func (fs *FileSystem) SetPermission(name string, permission int) error {
 	return nil
 }
 
+func (fs *FileSystem) Touch(name string) (*FileInfo, error) {
+	f, err := fs.Create(name)
+	if err != nil {
+		return nil, fmt.Errorf("create: %w", err)
+	}
+	f.Close()
+	return f.info, nil
+}
+
 func (fs *FileSystem) loadConfig() error {
 	data, err := fs.storage.Get(keyFSConfig)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
+			logger.Debugf("Loaded vfs config %d", len(fs.configs))
 			return nil
 		}
-		return fmt.Errorf("get %s: %w", keyFSConfig, err)
+		return fmt.Errorf("read %s: %w", keyFSConfig, err)
 	}
 
 	if err = fs.DecryptPage(data); err != nil {
@@ -456,6 +480,7 @@ func (fs *FileSystem) loadConfig() error {
 	if err != nil {
 		return fmt.Errorf("unmarshal %s: %w", data, err)
 	}
+	logger.Debugf("Loaded vfs config %d", len(fs.configs))
 	return nil
 }
 
@@ -492,7 +517,7 @@ func (fs *FileSystem) Wrapper() *FileSystemWrapper {
 }
 
 func (fs *FileSystem) Root() *FileInfo {
-	return fs.root
+	return fs.root.FileInfo
 }
 
 func loadPageSize(storage KVStorage) (size int64, err error) {
