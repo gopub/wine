@@ -366,6 +366,18 @@ func (f *FileInfo) makeDoubleLinked() {
 	}
 }
 
+func (f *FileInfo) HasInheritedPermission(p int) bool {
+	if f.Permission == p {
+		return true
+	}
+
+	if f.parent == nil {
+		return false
+	}
+
+	return f.parent.HasInheritedPermission(p)
+}
+
 const (
 	OrderByCreatedTimeAsc = iota
 	OrderByCreatedTimeDesc
