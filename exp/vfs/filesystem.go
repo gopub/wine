@@ -426,6 +426,19 @@ func (fs *FileSystem) ReadJSON(name string, v interface{}) error {
 	return nil
 }
 
+func (fs *FileSystem) SetPermission(name string, permission int) error {
+	f, err := fs.Stat(name)
+	if err != nil {
+		return fmt.Errorf("stat: %w", err)
+	}
+	f.Permission = permission
+	err = fs.SaveFileTree()
+	if err != nil {
+		return fmt.Errorf("save file tree: %w", err)
+	}
+	return nil
+}
+
 func (fs *FileSystem) loadConfig() error {
 	data, err := fs.storage.Get(keyFSConfig)
 	if err != nil {

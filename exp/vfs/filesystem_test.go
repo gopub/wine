@@ -66,6 +66,9 @@ func TestFileSystem_CreateDir(t *testing.T) {
 	f, err = fs.Stat(filepath.Join(dirName, uuid.New().String()))
 	require.Error(t, err)
 	require.Empty(t, f)
+
+	routes := dir.Route()
+	require.Equal(t, 2, len(routes))
 }
 
 func TestFileSystem_CreateFile(t *testing.T) {

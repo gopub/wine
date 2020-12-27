@@ -12,6 +12,11 @@ import (
 
 var logger *log.Logger
 
+func init() {
+	logger = log.Default().Derive("Wine")
+	logger.SetFlags(log.LstdFlags - log.Lfunction - log.Lshortfile)
+}
+
 func SetLogger(l *log.Logger) {
 	logger = l
 }
