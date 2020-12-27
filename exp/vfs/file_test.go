@@ -2,10 +2,11 @@ package vfs_test
 
 import (
 	"bytes"
-	"github.com/gopub/wine/exp/vfs"
 	"io"
 	"strings"
 	"testing"
+
+	"github.com/gopub/wine/exp/vfs"
 
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
@@ -15,6 +16,7 @@ func TestFile_Write(t *testing.T) {
 	fs := setupFS(t)
 	t.Run("WriteLargeAmount", func(t *testing.T) {
 		f, err := fs.Create(uuid.New().String())
+		require.NoError(t, err)
 		data := []byte(strings.Repeat(uuid.New().String(), 12345))
 		n, err := f.Write(data)
 		require.Equal(t, len(data), n)
@@ -41,6 +43,7 @@ func TestFile_Write(t *testing.T) {
 
 	t.Run("WriteSmallAmount", func(t *testing.T) {
 		f, err := fs.Create(uuid.New().String())
+		require.NoError(t, err)
 		data := []byte(strings.Repeat(uuid.New().String(), 2))
 		n, err := f.Write(data)
 		require.Equal(t, len(data), n)
@@ -67,6 +70,7 @@ func TestFile_Write(t *testing.T) {
 
 	t.Run("WriteTwice", func(t *testing.T) {
 		f, err := fs.Create(uuid.New().String())
+		require.NoError(t, err)
 		data := []byte(strings.Repeat(uuid.New().String(), 2))
 		n, err := f.Write(data)
 		require.Equal(t, len(data), n)

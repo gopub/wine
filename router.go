@@ -128,7 +128,7 @@ func (r *Router) StaticFileData(path string, data []byte) {
 	if path == "" || path == "/" {
 		logger.Panic("invalid path")
 	}
-	fs, err := vfs.NewFileSystem(vfs.NewMemoryStorage(), 0, "")
+	fs, err := vfs.NewFileSystem(vfs.NewMemoryStorage())
 	if err != nil {
 		logger.Panic(err)
 	}

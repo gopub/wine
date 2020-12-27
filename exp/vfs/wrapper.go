@@ -16,6 +16,9 @@ type FileSystemWrapper FileSystem
 
 func (w *FileSystemWrapper) Mkdir(parentUUID, dirName string) (*FileInfo, error) {
 	fs := (*FileSystem)(w)
+	if !fs.AuthPassed() {
+		return nil, os.ErrPermission
+	}
 	if dirName == "" {
 		return nil, os.ErrInvalid
 	}
@@ -50,6 +53,9 @@ func (w *FileSystemWrapper) Create(dirUUID, name string) (*File, error) {
 
 func (w *FileSystemWrapper) Open(uuid string, flag Flag) (*File, error) {
 	fs := (*FileSystem)(w)
+	if !fs.AuthPassed() {
+		return nil, os.ErrPermission
+	}
 	if uuid == "" {
 		return newFile(fs, fs.root, flag), nil
 	}
@@ -65,6 +71,9 @@ func (w *FileSystemWrapper) Open(uuid string, flag Flag) (*File, error) {
 
 func (w *FileSystemWrapper) Remove(uuid string) error {
 	fs := (*FileSystem)(w)
+	if !fs.AuthPassed() {
+		return os.ErrPermission
+	}
 	f := fs.root.FindByUUID(uuid)
 	if f == nil {
 		return nil
@@ -98,6 +107,9 @@ func (w *FileSystemWrapper) Remove(uuid string) error {
 
 func (w *FileSystemWrapper) Move(uuid, dirUUID string) error {
 	fs := (*FileSystem)(w)
+	if !fs.AuthPassed() {
+		return os.ErrPermission
+	}
 	dir, err := w.Stat(dirUUID)
 	if err != nil {
 		return fmt.Errorf("stat by dirUUID %s: %w", dirUUID, err)

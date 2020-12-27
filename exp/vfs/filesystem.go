@@ -2,94 +2,152 @@ package vfs
 
 import (
 	"bytes"
-	"encoding/gob"
 	"encoding/json"
 	"fmt"
+	"net/http"
+	"os"
+	"path/filepath"
+
 	"github.com/google/uuid"
 	"github.com/gopub/conv"
 	"github.com/gopub/errors"
 	"github.com/gopub/log"
 	"github.com/gopub/types"
-	"net/http"
-	"os"
-	"path/filepath"
 )
 
 type FileSystem struct {
-	storage  KVStorage
-	root     *FileInfo
-	key      []byte
-	configs  types.M
-	pageSize int64
+	storage    KVStorage
+	root       *FileInfo
+	credential []byte
+	key        []byte
+	configs    types.M
+	pageSize   int64
 }
 
 var _ http.FileSystem = (*FileSystem)(nil)
 
-func NewFileSystem(storage KVStorage, pageSize int64, password string) (*FileSystem, error) {
-	if pageSize <= 0 {
-		pageSize = DefaultPageSize
-	}
-	if pageSize < MinPageSize {
-		return nil, fmt.Errorf("min page size is %d", MinPageSize)
-	}
-	empty, err := isEmptyStorage(storage)
-	if err != nil {
-		return nil, fmt.Errorf("detect empty storage: %w", err)
-	}
-
+func NewFileSystem(storage KVStorage) (*FileSystem, error) {
 	fs := &FileSystem{
 		storage:  storage,
-		pageSize: pageSize,
+		pageSize: DefaultPageSize,
 		configs:  types.M{},
+		root:     newFileInfo(true, ""),
 	}
 
-	if empty {
-		if err = savePageSize(storage, pageSize); err != nil {
-			return nil, fmt.Errorf("save page size: %w", err)
-		}
-		if password != "" {
-			fs.key, err = setupCredential(storage, password)
-			if err != nil {
-				return nil, fmt.Errorf("setup credential: %w", err)
-			}
-		}
-	} else {
-		expectedSize, err := loadPageSize(storage)
-		if err != nil {
-			return nil, fmt.Errorf("load page size: %w", err)
-		}
-		if expectedSize != pageSize {
-			return nil, fmt.Errorf("mismatch page size %d != %d", pageSize, expectedSize)
-		}
-		encrypted, err := isEncryptedStorage(storage)
-		if err != nil {
-			return nil, fmt.Errorf("detech encryption: %w", err)
-		}
-		if encrypted {
-			fs.key, err = loadCredential(storage, password)
-			if err != nil {
-				return nil, fmt.Errorf("load credential: %w", err)
-			}
-		} else {
-			if password != "" {
-				return nil, fmt.Errorf("password is not required for unencrypted storage")
-			}
-		}
+	var err error
+	if fs.pageSize, err = loadPageSize(storage); err != nil {
+		return nil, fmt.Errorf("load page size: %w", err)
 	}
+
+	if fs.credential, err = storage.Get(keyFSCredential); err != nil && !errors.Is(err, os.ErrNotExist) {
+		return nil, fmt.Errorf("read credential: %w", err)
+	}
+
+	if fs.IsEncrypted() {
+		return fs, nil
+	}
+
 	if err = fs.loadConfig(); err != nil {
 		return nil, fmt.Errorf("load config: %w", err)
 	}
-	if err = fs.mount(storage); err != nil {
-		return nil, fmt.Errorf("mount root: %w", err)
+
+	if err = fs.loadRoot(); err != nil {
+		return nil, fmt.Errorf("loadRoot root: %w", err)
 	}
 	return fs, nil
 }
 
-func (fs *FileSystem) mount(storage KVStorage) error {
-	if fs.root != nil {
-		log.Panic("Mounted")
+func (fs *FileSystem) Format(pageSize int64) error {
+	if len(fs.root.Files) != 0 {
+		return os.ErrInvalid
 	}
-	data, err := storage.Get(keyFSRootDir)
+
+	if pageSize < MinPageSize {
+		return os.ErrInvalid
+	}
+	fs.pageSize = pageSize
+	return savePageSize(fs.storage, pageSize)
+}
+
+func (fs *FileSystem) IsEncrypted() bool {
+	return len(fs.credential) > 0
+}
+
+func (fs *FileSystem) SetPassword(password string) error {
+	if fs.IsEncrypted() {
+		if !fs.Auth(password) {
+			log.Errorf("Auth failed")
+			return os.ErrPermission
+		}
+	}
+	// this is a new file system, initialize key if password is provided
+	passwordHash := conv.Hash32([]byte(password))
+	key := conv.Hash32([]byte(uuid.New().String()))
+	fs.credential = make([]byte, 2*keySize)
+	copy(fs.credential, key[:])
+	copy(fs.credential[keySize:], passwordHash[:])
+
+	// encrypt
+	if err := conv.AES(fs.credential, passwordHash[:], passwordHash[:16]); err != nil {
+		return fmt.Errorf("encrypt: %w", err)
+	}
+	if err := fs.storage.Put(keyFSCredential, fs.credential); err != nil {
+		return fmt.Errorf("flag credential: %w", err)
+	}
+	fs.key = key[:]
+	return nil
+}
+
+func (fs *FileSystem) ChangePassword(old, new string) error {
+	if !fs.Auth(old) {
+		return os.ErrPermission
+	}
+	fs.credential = nil
+	return fs.SetPassword(new)
+}
+
+func (fs *FileSystem) AuthPassed() bool {
+	if !fs.IsEncrypted() {
+		return true
+	}
+	return len(fs.key) != 0
+}
+
+func (fs *FileSystem) Auth(password string) bool {
+	if password == "" {
+		return false
+	}
+	if len(fs.credential) == 0 {
+		log.Debug(1)
+		return false
+	}
+	passwordHash := conv.Hash32([]byte(password))
+	credential := make([]byte, len(fs.credential))
+	copy(credential, fs.credential)
+	// decrypt
+	if err := conv.AES(credential, passwordHash[:], passwordHash[:16]); err != nil {
+		return false
+	}
+
+	if !bytes.Equal(credential[keySize:], passwordHash[:]) {
+		return false
+	}
+	fs.key = credential[:keySize]
+
+	if err := fs.loadConfig(); err != nil {
+		log.Errorf("Cannot load config: %v", err)
+		return false
+	}
+
+	if err := fs.loadRoot(); err != nil {
+		log.Errorf("Cannot load root: %v", err)
+		return false
+	}
+	return true
+}
+
+func (fs *FileSystem) loadRoot() error {
+	data, err := fs.storage.Get(keyFSRootDir)
 	if err != nil {
 		if !errors.Is(err, os.ErrNotExist) {
 			return fmt.Errorf("get %s: %w", keyFSRootDir, err)
@@ -97,16 +155,15 @@ func (fs *FileSystem) mount(storage KVStorage) error {
 
 		// initialize
 		fs.root = newFileInfo(true, "")
-		if err = fs.SaveFileTree(); err != nil {
-			return fmt.Errorf("save: %w", err)
-		}
 		return nil
 	}
 
 	if err = fs.DecryptPage(data); err != nil {
 		return fmt.Errorf("decrypt: %w", err)
 	}
-	if err = gob.NewDecoder(bytes.NewBuffer(data)).Decode(&fs.root); err != nil {
+
+	log.Debug(string(data))
+	if err = json.Unmarshal(data, &fs.root); err != nil {
 		return fmt.Errorf("unmarshal: %w", err)
 	}
 	return nil
@@ -121,6 +178,10 @@ func (fs *FileSystem) Size() int64 {
 }
 
 func (fs *FileSystem) Mkdir(name string) (*FileInfo, error) {
+	if !fs.AuthPassed() {
+		return nil, os.ErrPermission
+	}
+
 	name = cleanName(name)
 	if name == "" {
 		return nil, os.ErrInvalid
@@ -172,6 +233,10 @@ func (fs *FileSystem) Create(name string) (*File, error) {
 }
 
 func (fs *FileSystem) OpenFile(name string, flag Flag) (*File, error) {
+	if !fs.AuthPassed() {
+		return nil, os.ErrPermission
+	}
+
 	paths := splitPath(name)
 	if len(paths) == 0 {
 		return nil, os.ErrInvalid
@@ -210,6 +275,10 @@ func (fs *FileSystem) Open(name string) (http.File, error) {
 }
 
 func (fs *FileSystem) Remove(name string) error {
+	if !fs.AuthPassed() {
+		return os.ErrPermission
+	}
+
 	fi, err := fs.Stat(name)
 	if err != nil {
 		return fmt.Errorf("stat: %w", err)
@@ -221,6 +290,10 @@ func (fs *FileSystem) Remove(name string) error {
 }
 
 func (fs *FileSystem) RemoveAll(path string) error {
+	if !fs.AuthPassed() {
+		return os.ErrPermission
+	}
+
 	fi, err := fs.Stat(path)
 	if err != nil {
 		return fmt.Errorf("stat: %w", err)
@@ -232,6 +305,9 @@ func (fs *FileSystem) RemoveAll(path string) error {
 }
 
 func (fs *FileSystem) Stat(name string) (*FileInfo, error) {
+	if !fs.AuthPassed() {
+		return nil, os.ErrPermission
+	}
 	if name == "" || name == "/" {
 		return fs.root, nil
 	}
@@ -243,14 +319,15 @@ func (fs *FileSystem) Stat(name string) (*FileInfo, error) {
 }
 
 func (fs *FileSystem) SaveFileTree() error {
-	buf := bytes.NewBuffer(nil)
-	enc := gob.NewEncoder(buf)
+	if !fs.AuthPassed() {
+		return os.ErrPermission
+	}
 
-	if err := enc.Encode(fs.root); err != nil {
+	data, err := json.Marshal(fs.root)
+	if err != nil {
 		return fmt.Errorf("encode: %w", err)
 	}
 
-	data := buf.Bytes()
 	if err := fs.EncryptPage(data); err != nil {
 		return fmt.Errorf("encrypt: %w", err)
 	}
@@ -262,20 +339,32 @@ func (fs *FileSystem) SaveFileTree() error {
 }
 
 func (fs *FileSystem) EncryptPage(data []byte) error {
-	if len(fs.key) == 0 {
-		return nil
+	if !fs.AuthPassed() {
+		return os.ErrPermission
 	}
-	return conv.AES(data, fs.key, fs.key[:16])
+
+	if fs.IsEncrypted() {
+		return conv.AES(data, fs.key, fs.key[:16])
+	}
+	return nil
 }
 
 func (fs *FileSystem) DecryptPage(data []byte) error {
-	if len(fs.key) == 0 {
-		return nil
+	if !fs.AuthPassed() {
+		return os.ErrPermission
 	}
-	return conv.AES(data, fs.key, fs.key[:16])
+
+	if fs.IsEncrypted() {
+		return conv.AES(data, fs.key, fs.key[:16])
+	}
+	return nil
 }
 
 func (fs *FileSystem) Write(name string, data []byte) (*FileInfo, error) {
+	if !fs.AuthPassed() {
+		return nil, os.ErrPermission
+	}
+
 	f, err := fs.OpenFile(name, WriteOnly|Create)
 	if err != nil {
 		return nil, err
@@ -286,6 +375,10 @@ func (fs *FileSystem) Write(name string, data []byte) (*FileInfo, error) {
 }
 
 func (fs *FileSystem) Read(name string) ([]byte, error) {
+	if !fs.AuthPassed() {
+		return nil, os.ErrPermission
+	}
+
 	f, err := fs.Stat(name)
 	if err != nil {
 		return nil, fmt.Errorf("stat: %w", err)
@@ -363,11 +456,6 @@ func (fs *FileSystem) ListByPermission(p int) []*FileInfo {
 	return fs.root.ListByPermission(p)
 }
 
-func (fs *FileSystem) VerifyPassword(password string) bool {
-	_, err := loadCredential(fs.storage, password)
-	return err == nil
-}
-
 func (fs *FileSystem) Wrapper() *FileSystemWrapper {
 	return (*FileSystemWrapper)(fs)
 }
@@ -379,6 +467,9 @@ func (fs *FileSystem) Root() *FileInfo {
 func loadPageSize(storage KVStorage) (size int64, err error) {
 	data, err := storage.Get(keyFSPageSize)
 	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return DefaultPageSize, nil
+		}
 		return size, fmt.Errorf("cannot read page size: %w", err)
 	}
 	err = json.Unmarshal(data, &size)
@@ -398,82 +489,4 @@ func savePageSize(storage KVStorage, size int64) error {
 		return fmt.Errorf("cannot save page size %d: %v", size, err)
 	}
 	return nil
-}
-
-func isEmptyStorage(storage KVStorage) (bool, error) {
-	_, err := storage.Get(keyFSRootDir)
-	if err != nil {
-		if errors.Is(err, os.ErrNotExist) {
-			return true, nil
-		}
-		return true, fmt.Errorf("read: %w", err)
-	}
-	return false, nil
-}
-
-func isEncryptedStorage(storage KVStorage) (bool, error) {
-	credential, err := storage.Get(keyFSCredential)
-	if err != nil {
-		if errors.Is(err, os.ErrNotExist) {
-			return false, nil
-		}
-		return false, err
-	}
-	return len(credential) > 0, nil
-}
-
-func setupCredential(storage KVStorage, password string) ([]byte, error) {
-	if password == "" {
-		log.Panic("Missing password")
-	}
-
-	credential, err := storage.Get(keyFSCredential)
-	if err == nil {
-		return nil, errors.New("credential exists")
-	}
-	if !errors.Is(err, os.ErrNotExist) {
-		return nil, fmt.Errorf("read credential: %w", err)
-	}
-
-	if password == "" {
-		return nil, errors.New("missing password")
-	}
-
-	// this is a new file system, initialize key if password is provided
-	passwordHash := conv.Hash32([]byte(password))
-	key := conv.Hash32([]byte(uuid.New().String()))
-
-	credential = make([]byte, 2*keySize)
-	copy(credential, key[:])
-	copy(credential[keySize:], passwordHash[:])
-
-	// encrypt
-	if err = conv.AES(credential, passwordHash[:], passwordHash[:16]); err != nil {
-		return nil, fmt.Errorf("encrypt: %w", err)
-	}
-
-	if err = storage.Put(keyFSCredential, credential); err != nil {
-		return nil, fmt.Errorf("flag credential: %w", err)
-	}
-	return key[:], nil
-}
-
-func loadCredential(storage KVStorage, password string) ([]byte, error) {
-	if password == "" {
-		return nil, ErrAuth
-	}
-	credential, err := storage.Get(keyFSCredential)
-	if err != nil {
-		return nil, fmt.Errorf("read credential: %w", err)
-	}
-
-	passwordHash := conv.Hash32([]byte(password))
-	if err = conv.AES(credential, passwordHash[:], passwordHash[:16]); err != nil {
-		return nil, fmt.Errorf("decrypt: %w", err)
-	}
-
-	if !bytes.Equal(credential[keySize:], passwordHash[:]) {
-		return nil, ErrAuth
-	}
-	return credential[:keySize], nil
 }

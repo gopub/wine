@@ -1,9 +1,7 @@
 package vfs
 
 import (
-	"bytes"
 	"encoding"
-	"encoding/gob"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -84,13 +82,11 @@ func (f *FileInfo) Sys() interface{} {
 }
 
 func (f *FileInfo) UnmarshalBinary(data []byte) error {
-	return gob.NewDecoder(bytes.NewReader(data)).Decode(&f.fileMetadata)
+	return json.Unmarshal(data, &f.fileMetadata)
 }
 
 func (f *FileInfo) MarshalBinary() (data []byte, err error) {
-	buf := bytes.NewBuffer(nil)
-	err = gob.NewEncoder(buf).Encode(f.fileMetadata)
-	return buf.Bytes(), err
+	return json.Marshal(f.fileMetadata)
 }
 
 func (f *FileInfo) addPage(p string) {

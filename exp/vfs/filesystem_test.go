@@ -1,7 +1,6 @@
 package vfs_test
 
 import (
-	"github.com/gopub/conv"
 	"os"
 	"path/filepath"
 	"testing"
@@ -14,31 +13,35 @@ import (
 func setupFS(t *testing.T) *vfs.FileSystem {
 	ms := vfs.NewMemoryStorage()
 	password := uuid.New().String()
-	fs, err := vfs.NewFileSystem(ms, 0, password)
+	fs, err := vfs.NewFileSystem(ms)
 	require.NoError(t, err)
 	require.NotEmpty(t, fs)
+	err = fs.SetPassword(password)
+	require.NoError(t, err)
 	return fs
 }
 
 func TestNewEncryptedFileSystem(t *testing.T) {
 	ms := vfs.NewMemoryStorage()
 	password := uuid.New().String()
-	fs, err := vfs.NewFileSystem(ms, 0, password)
+	fs, err := vfs.NewFileSystem(ms)
 	require.NoError(t, err)
 	require.NotEmpty(t, fs)
-
-	t.Log(conv.MustJSONString(fs.Root()))
-
-	_, err = vfs.NewFileSystem(ms, 0, "")
-	require.Error(t, err)
-
-	_, err = vfs.NewFileSystem(ms, 0, "incorrectpassword")
-	require.Error(t, err)
-
-	fs2, err := vfs.NewFileSystem(ms, 0, password)
+	err = fs.SetPassword(password)
 	require.NoError(t, err)
-	require.NotEmpty(t, fs2)
 
+	fs1, err := vfs.NewFileSystem(ms)
+	require.NoError(t, err)
+	require.False(t, fs1.Auth(""))
+
+	fs2, err := vfs.NewFileSystem(ms)
+	require.NoError(t, err)
+	require.False(t, fs2.Auth("123"))
+
+	fs3, err := vfs.NewFileSystem(ms)
+	require.NoError(t, err)
+	require.NotEmpty(t, fs3)
+	require.True(t, fs3.Auth(password))
 }
 
 func TestFileSystem_CreateDir(t *testing.T) {
@@ -158,14 +161,16 @@ func TestFileSystem_Move(t *testing.T) {
 func TestFileSystem_Mount(t *testing.T) {
 	ms := vfs.NewMemoryStorage()
 	password := uuid.New().String()
-	fs, err := vfs.NewFileSystem(ms, 0, password)
+	fs, err := vfs.NewFileSystem(ms)
 	require.NoError(t, err)
+	require.NoError(t, fs.SetPassword(password))
 	f, err := fs.Create(uuid.New().String())
 	require.NoError(t, err)
 	f.Close()
 
-	fs2, err := vfs.NewFileSystem(ms, 0, password)
+	fs2, err := vfs.NewFileSystem(ms)
 	require.NoError(t, err)
+	require.True(t, fs2.Auth(password))
 	f2, err := fs2.OpenFile(f.Info().Name(), vfs.ReadOnly)
 	require.NoError(t, err)
 	f2.Close()
