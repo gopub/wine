@@ -298,8 +298,9 @@ func (fs *FileSystem) Open(name string) (http.File, error) {
 	f, err := fs.OpenFile(name, ReadOnly)
 	if err != nil {
 		logger.Errorf("Cannot open file %s: %v", name, err)
+		return nil, err
 	}
-	return f, err
+	return f, nil
 }
 
 func (fs *FileSystem) Remove(name string) error {
