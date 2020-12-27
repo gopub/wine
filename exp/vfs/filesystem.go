@@ -293,6 +293,32 @@ func (fs *FileSystem) Read(name string) ([]byte, error) {
 	return fs.Wrapper().Read(f.UUID())
 }
 
+func (fs *FileSystem) WriteJSON(name string, v interface{}) error {
+	data, err := json.Marshal(v)
+	if err != nil {
+		return fmt.Errorf("marshal: %w", err)
+	}
+
+	_, err = fs.Write(name, data)
+	if err != nil {
+		return fmt.Errorf("write: %w", err)
+	}
+	return nil
+}
+
+func (fs *FileSystem) ReadJSON(name string, v interface{}) error {
+	data, err := fs.Read(name)
+	if err != nil {
+		return fmt.Errorf("read: %w", err)
+	}
+
+	err = json.Unmarshal(data, v)
+	if err != nil {
+		return fmt.Errorf("unmarshal: %w", err)
+	}
+	return nil
+}
+
 func (fs *FileSystem) loadConfig() error {
 	data, err := fs.storage.Get(keyFSConfig)
 	if err != nil {
