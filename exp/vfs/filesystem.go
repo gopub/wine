@@ -5,15 +5,14 @@ import (
 	"encoding/gob"
 	"encoding/json"
 	"fmt"
-	"net/http"
-	"os"
-	"path/filepath"
-
 	"github.com/google/uuid"
 	"github.com/gopub/conv"
 	"github.com/gopub/errors"
 	"github.com/gopub/log"
 	"github.com/gopub/types"
+	"net/http"
+	"os"
+	"path/filepath"
 )
 
 type FileSystem struct {
@@ -122,6 +121,7 @@ func (fs *FileSystem) Size() int64 {
 }
 
 func (fs *FileSystem) Mkdir(name string) (*FileInfo, error) {
+	name = cleanName(name)
 	if name == "" {
 		return nil, os.ErrInvalid
 	}
@@ -193,11 +193,12 @@ func (fs *FileSystem) OpenFile(name string, flag Flag) (*File, error) {
 	f := dir.Find(base)
 	if f == nil {
 		if (flag & Create) == 0 {
+			log.Error(name, base, paths)
 			return nil, os.ErrNotExist
 		}
 		f = newFileInfo(false, dir.DistinctName(base))
+		dir.AddSub(f)
 	}
-	dir.AddSub(f)
 	if err := fs.SaveFileTree(); err != nil {
 		return nil, fmt.Errorf("save file tree: %w", err)
 	}
@@ -282,6 +283,14 @@ func (fs *FileSystem) Write(name string, data []byte) (*FileInfo, error) {
 	defer f.Close()
 	_, err = f.Write(data)
 	return f.info, err
+}
+
+func (fs *FileSystem) Read(name string) ([]byte, error) {
+	f, err := fs.Stat(name)
+	if err != nil {
+		return nil, fmt.Errorf("stat: %w", err)
+	}
+	return fs.Wrapper().Read(f.UUID())
 }
 
 func (fs *FileSystem) loadConfig() error {

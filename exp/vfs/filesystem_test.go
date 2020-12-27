@@ -1,6 +1,7 @@
 package vfs_test
 
 import (
+	"github.com/gopub/conv"
 	"os"
 	"path/filepath"
 	"testing"
@@ -25,6 +26,8 @@ func TestNewEncryptedFileSystem(t *testing.T) {
 	fs, err := vfs.NewFileSystem(ms, 0, password)
 	require.NoError(t, err)
 	require.NotEmpty(t, fs)
+
+	t.Log(conv.MustJSONString(fs.Root()))
 
 	_, err = vfs.NewFileSystem(ms, 0, "")
 	require.Error(t, err)

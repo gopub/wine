@@ -7,7 +7,6 @@ import (
 
 	"github.com/gopub/errors"
 
-	"github.com/gopub/conv"
 	"github.com/gopub/types"
 )
 
@@ -21,11 +20,11 @@ const (
 	ErrAuth errors.String = "invalid password"
 )
 
-var (
-	keyFSRootDir    = conv.SHA256("filesystem.root")
-	keyFSCredential = conv.SHA256("filesystem.credential")
-	keyFSConfig     = conv.SHA256("filesystem.config")
-	keyFSPageSize   = conv.SHA256("filesystem.page_size")
+const (
+	keyFSRootDir    = "filesystem.root"
+	keyFSCredential = "filesystem.credential"
+	keyFSConfig     = "filesystem.config"
+	keyFSPageSize   = "filesystem.page_size"
 )
 
 type KVStorage interface {
@@ -33,6 +32,13 @@ type KVStorage interface {
 	Get(key string) ([]byte, error)
 	Put(key string, val []byte) error
 	Delete(key string) error
+}
+
+func cleanName(name string) string {
+	name = filepath.Clean(name)
+	name = strings.TrimPrefix(name, "/")
+	name = strings.TrimSuffix(name, "/")
+	return name
 }
 
 func splitPath(path string) []string {

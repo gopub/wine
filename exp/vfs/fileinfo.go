@@ -43,8 +43,6 @@ type FileInfo struct {
 var _ os.FileInfo = (*FileInfo)(nil)
 var _ encoding.BinaryMarshaler = (*FileInfo)(nil)
 var _ encoding.BinaryUnmarshaler = (*FileInfo)(nil)
-var _ encoding.TextMarshaler = (*FileInfo)(nil)
-var _ encoding.TextUnmarshaler = (*FileInfo)(nil)
 
 func newFileInfo(isDir bool, name string) *FileInfo {
 	return &FileInfo{
@@ -95,21 +93,13 @@ func (f *FileInfo) MarshalBinary() (data []byte, err error) {
 	return buf.Bytes(), err
 }
 
-func (f *FileInfo) UnmarshalText(data []byte) error {
-	return json.Unmarshal(data, &f.fileMetadata)
-}
-
-func (f *FileInfo) MarshalText() (data []byte, err error) {
-	return json.Marshal(f.fileMetadata)
-}
-
 func (f *FileInfo) addPage(p string) {
 	f.Pages = append(f.Pages, p)
 	f.fileMetadata.ModifiedAt = time.Now().Unix()
 }
 
 func (f *FileInfo) truncate() {
-	f.fileMetadata.Pages = f.fileMetadata.Pages[:]
+	f.fileMetadata.Pages = f.fileMetadata.Pages[:0]
 	f.setSize(0)
 }
 
@@ -170,7 +160,10 @@ func (f *FileInfo) DistinctName(baseName string) string {
 }
 
 func (f *FileInfo) AddSub(sub *FileInfo) {
-	if sub.parent != nil && sub.parent != f {
+	if sub.parent == f {
+		return
+	}
+	if sub.parent != nil {
 		sub.parent.RemoveSub(sub)
 	}
 	sub.parent = f

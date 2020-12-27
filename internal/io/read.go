@@ -110,7 +110,7 @@ func ReadBody(req *http.Request, maxMemory types.ByteUnit) (types.M, []byte, err
 		//if err != nil {
 		//	return params, nil, fmt.Errorf("get body: %w", err)
 		//}
-		//bodyData, err := ioutil.ReadAll(body)
+		//bodyData, err := ioutil.Read(body)
 		//body.Close()
 		//if err != nil {
 		//	return params, nil, fmt.Errorf("read form body: %w", err)

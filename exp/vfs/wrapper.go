@@ -129,7 +129,7 @@ func (w *FileSystemWrapper) Stat(uuid string) (*FileInfo, error) {
 	return f, nil
 }
 
-func (w *FileSystemWrapper) ReadAll(uuid string) ([]byte, error) {
+func (w *FileSystemWrapper) Read(uuid string) ([]byte, error) {
 	f, err := w.Open(uuid, ReadOnly)
 	if err != nil {
 		return nil, fmt.Errorf("open by uuid: %w", err)

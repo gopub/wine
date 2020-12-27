@@ -64,4 +64,37 @@ func TestFile_Write(t *testing.T) {
 		require.Equal(t, len(data), buf.Len())
 		require.Equal(t, data, buf.Bytes())
 	})
+
+	t.Run("WriteTwice", func(t *testing.T) {
+		f, err := fs.Create(uuid.New().String())
+		data := []byte(strings.Repeat(uuid.New().String(), 2))
+		n, err := f.Write(data)
+		require.Equal(t, len(data), n)
+		require.NoError(t, err)
+		err = f.Close()
+		require.NoError(t, err)
+
+		f, err = fs.Create(uuid.New().String())
+		data = []byte(strings.Repeat(uuid.New().String(), 10))
+		n, err = f.Write(data)
+		require.Equal(t, len(data), n)
+		f.Close()
+		require.Equal(t, 1, len(f.Info().Pages))
+
+		rf, err := fs.OpenFile(f.Info().Name(), vfs.ReadOnly)
+		require.NoError(t, err)
+		require.NotEmpty(t, rf)
+		buf := bytes.NewBuffer(nil)
+		var b [1000]byte
+		nr, err := rf.Read(b[:])
+		require.Equal(t, true, err == nil || err == io.EOF)
+		buf.Write(b[:nr])
+		for err == nil {
+			nr, err = rf.Read(b[:])
+			require.Equal(t, true, err == nil || err == io.EOF)
+			buf.Write(b[:nr])
+		}
+		require.Equal(t, len(data), buf.Len())
+		require.Equal(t, data, buf.Bytes())
+	})
 }
