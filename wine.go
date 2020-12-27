@@ -1,6 +1,7 @@
 package wine
 
 import (
+	"net/url"
 	"path"
 	"strings"
 
@@ -24,8 +25,12 @@ func Logger() *log.Logger {
 	return logger
 }
 
-func JoinURL(segment ...string) string {
-	p := path.Join(segment...)
+func JoinURL(segments ...string) string {
+	escapes := make([]string, len(segments))
+	for i, v := range segments {
+		escapes[i] = url.PathEscape(v)
+	}
+	p := path.Join(escapes...)
 	p = strings.Replace(p, ":/", "://", 1)
 	return p
 }
