@@ -242,7 +242,8 @@ func (s *Server) serve(ctx context.Context, req *Request, rw http.ResponseWriter
 	if resp == nil {
 		resp = Status(http.StatusNotImplemented)
 	}
-	rw = s.compressWriter(rw, req, resp)
+	// Fix: compress writer doens't work
+	//rw = s.compressWriter(rw, req, resp)
 	resp.Respond(ctx, rw)
 }
 
