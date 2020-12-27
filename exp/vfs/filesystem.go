@@ -11,7 +11,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/gopub/conv"
 	"github.com/gopub/errors"
-	"github.com/gopub/log"
 	"github.com/gopub/types"
 )
 
@@ -75,10 +74,7 @@ func (fs *FileSystem) IsEncrypted() bool {
 
 func (fs *FileSystem) SetPassword(password string) error {
 	if fs.IsEncrypted() {
-		if !fs.Auth(password) {
-			log.Errorf("Auth failed")
-			return os.ErrPermission
-		}
+		return errors.New("cannot set password to encrypted file system")
 	}
 	// this is a new file system, initialize key if password is provided
 	passwordHash := conv.Hash32([]byte(password))
@@ -95,15 +91,29 @@ func (fs *FileSystem) SetPassword(password string) error {
 		return fmt.Errorf("flag credential: %w", err)
 	}
 	fs.key = key[:]
+
+	if err := fs.SaveConfig(); err != nil {
+		return fmt.Errorf("saveConfig: %w", err)
+	}
+
+	if err := fs.SaveFileTree(); err != nil {
+		return fmt.Errorf("saveFileTree: %w", err)
+	}
 	return nil
 }
 
 func (fs *FileSystem) ChangePassword(old, new string) error {
 	if !fs.Auth(old) {
+		logger.Error("Cannot change vfs password")
 		return os.ErrPermission
 	}
 	fs.credential = nil
-	return fs.SetPassword(new)
+	fs.key = nil
+	if err := fs.SetPassword(new); err != nil {
+		return fmt.Errorf("set password: %w", err)
+	}
+	logger.Debug("Changed vfs password")
+	return nil
 }
 
 func (fs *FileSystem) AuthPassed() bool {
@@ -115,10 +125,12 @@ func (fs *FileSystem) AuthPassed() bool {
 
 func (fs *FileSystem) Auth(password string) bool {
 	if password == "" {
+		logger.Error("Missing vfs password")
 		return false
 	}
+
 	if len(fs.credential) == 0 {
-		log.Debug(1)
+		logger.Error("No vfs credential")
 		return false
 	}
 	passwordHash := conv.Hash32([]byte(password))
@@ -126,23 +138,26 @@ func (fs *FileSystem) Auth(password string) bool {
 	copy(credential, fs.credential)
 	// decrypt
 	if err := conv.AES(credential, passwordHash[:], passwordHash[:16]); err != nil {
+		logger.Errorf("Cannot decrypt: %v", err)
 		return false
 	}
 
 	if !bytes.Equal(credential[keySize:], passwordHash[:]) {
+		logger.Error("VFS Auth failed")
 		return false
 	}
 	fs.key = credential[:keySize]
 
 	if err := fs.loadConfig(); err != nil {
-		log.Errorf("Cannot load config: %v", err)
+		logger.Errorf("Cannot load vfs config: %v", err)
 		return false
 	}
 
 	if err := fs.loadRoot(); err != nil {
-		log.Errorf("Cannot load root: %v", err)
+		logger.Errorf("Cannot load vfs root: %v", err)
 		return false
 	}
+	logger.Info("VFS auth passed")
 	return true
 }
 
@@ -162,7 +177,6 @@ func (fs *FileSystem) loadRoot() error {
 		return fmt.Errorf("decrypt: %w", err)
 	}
 
-	log.Debug(string(data))
 	if err = json.Unmarshal(data, &fs.root); err != nil {
 		return fmt.Errorf("unmarshal: %w", err)
 	}
@@ -258,7 +272,7 @@ func (fs *FileSystem) OpenFile(name string, flag Flag) (*File, error) {
 	f := dir.Find(base)
 	if f == nil {
 		if (flag & Create) == 0 {
-			log.Error(name, base, paths)
+			logger.Error(name, base, paths)
 			return nil, os.ErrNotExist
 		}
 		f = newFileInfo(false, dir.DistinctName(base))
@@ -437,6 +451,10 @@ func (fs *FileSystem) Config() types.M {
 }
 
 func (fs *FileSystem) SaveConfig() error {
+	if !fs.AuthPassed() {
+		return os.ErrPermission
+	}
+
 	data, err := json.Marshal(fs.configs)
 	if err != nil {
 		return fmt.Errorf("marshal: %w", err)

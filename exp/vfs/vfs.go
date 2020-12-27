@@ -6,9 +6,15 @@ import (
 	"strings"
 
 	"github.com/gopub/errors"
-
+	"github.com/gopub/log"
 	"github.com/gopub/types"
 )
+
+var logger *log.Logger
+
+func SetLogger(l *log.Logger) {
+	logger = l
+}
 
 const (
 	keySize         = 32
