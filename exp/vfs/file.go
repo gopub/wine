@@ -3,6 +3,7 @@ package vfs
 import (
 	"bytes"
 	"fmt"
+	"github.com/gopub/wine/httpvalue"
 	"io"
 	"net/http"
 	"os"
@@ -188,7 +189,7 @@ func (f *File) Close() error {
 
 func (f *File) flush(all bool) error {
 	if f.buf.Len() > 0 {
-		f.info.SetMIMEType(DetectContentType(f.buf.Bytes()))
+		f.info.SetMIMEType(httpvalue.DetectContentType(f.buf.Bytes()))
 	}
 	for all || int64(f.buf.Len()) >= f.vo.pageSize {
 		b := make([]byte, f.vo.pageSize)

@@ -1,8 +1,6 @@
 package vfs
 
 import (
-	"github.com/gabriel-vasile/mimetype"
-	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
@@ -82,22 +80,3 @@ const (
 	WriteOnly = Flag(os.O_WRONLY)
 	Create    = Flag(os.O_CREATE)
 )
-
-const contentTypeOctetStream = "application/octet-stream"
-
-func DetectContentType(b []byte) string {
-	t := http.DetectContentType(b)
-	if t == "" {
-		return mimetype.Detect(b).String()
-	}
-
-	if t != contentTypeOctetStream {
-		return t
-	}
-
-	if mt := mimetype.Detect(b).String(); mt != contentTypeOctetStream {
-		return mt
-	}
-
-	return t
-}
