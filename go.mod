@@ -11,8 +11,8 @@ require (
 	github.com/gopub/errors v0.1.6
 	github.com/gopub/log v1.2.3
 	github.com/gopub/types v0.2.24
-	github.com/gopub/wine/httpvalue v0.0.0
-	github.com/gopub/wine/router v0.0.0
+	github.com/gopub/wine/httpvalue v0.1.0
+	github.com/gopub/wine/router v0.1.0
 	github.com/spf13/afero v1.5.1 // indirect
 	github.com/stretchr/testify v1.6.1
 	golang.org/x/sys v0.0.0-20201211090839-8ad439b19e0f // indirect

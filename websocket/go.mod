@@ -9,9 +9,14 @@ require (
 	github.com/gopub/errors v0.1.6
 	github.com/gopub/log v1.2.3
 	github.com/gopub/types v0.2.24
-	github.com/gopub/wine v1.36.0
+	github.com/gopub/wine v1.36.1
+	github.com/gopub/wine/router v0.1.0
 	github.com/gorilla/websocket v1.4.2
 	google.golang.org/protobuf v1.25.0
 )
 
-replace github.com/gopub/wine => ../
+replace (
+	github.com/gopub/wine => ../
+	github.com/gopub/wine/httpvalue => ../httpvalue
+	github.com/gopub/wine/router => ../router
+)
