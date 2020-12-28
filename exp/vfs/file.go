@@ -3,13 +3,12 @@ package vfs
 import (
 	"bytes"
 	"fmt"
-	"io"
-	"net/http"
-	"os"
-
 	"github.com/google/uuid"
 	"github.com/gopub/errors"
 	"github.com/gopub/wine/httpvalue"
+	"io"
+	"net/http"
+	"os"
 )
 
 type File struct {
@@ -49,19 +48,28 @@ func (f *File) Seek(offset int64, whence int) (int64, error) {
 	if offset >= f.info.Size() {
 		return f.offset, io.EOF
 	}
+	var abs int64
 	switch whence {
 	case io.SeekStart:
-		f.offset = offset
+		abs = offset
 	case io.SeekCurrent:
-		offset += f.offset
-		if offset >= f.info.Size() {
-			return f.offset, io.EOF
-		}
-		f.offset = offset
+		abs = f.offset + offset
 	case io.SeekEnd:
-		f.offset = f.info.Size() - offset - 1
+		// abs = f.info.Size() - 1 + offset ?
+		abs = f.info.Size() + offset
+	default:
+		return f.offset, fmt.Errorf("invalid whence: %d", whence)
+	}
+	if abs < 0 {
+		return f.offset, fmt.Errorf("negative position: %d", abs)
+	}
+
+	// abs >= f.info.Size() ?
+	if abs > f.info.Size() {
+		return f.offset, fmt.Errorf("overflow: %d", abs)
 	}
 	f.buf.Reset()
+	f.offset = abs
 	return f.offset, nil
 }
 
