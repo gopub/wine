@@ -349,6 +349,18 @@ func (f *FileInfo) GetSubFiles() []*FileInfo {
 	})
 }
 
+func (f *FileInfo) FindByName(name string) []*FileInfo {
+	var res []*FileInfo
+	name = strings.ToLower(name)
+	for _, file := range f.Files {
+		if strings.Index(strings.ToLower(file.Name()), name) >= 0 {
+			res = append(res, file)
+		}
+		res = append(res, file.FindByName(name)...)
+	}
+	return res
+}
+
 func (f *FileInfo) totalSize() int64 {
 	n := f.Size()
 	if f.IsDir() {

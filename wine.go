@@ -5,8 +5,6 @@ import (
 	"path"
 	"strings"
 
-	"github.com/gopub/wine/exp/vfs"
-
 	"github.com/google/uuid"
 	"github.com/gopub/conv"
 	"github.com/gopub/log"
@@ -21,7 +19,6 @@ func init() {
 	logger.SetFlags(log.LstdFlags - log.Lfunction - log.Lshortfile)
 	router.SetLogger(logger)
 	respond.SetLogger(logger)
-	vfs.SetLogger(logger)
 }
 
 func Logger() *log.Logger {

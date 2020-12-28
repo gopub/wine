@@ -15,7 +15,7 @@ import (
 )
 
 type FileSystem struct {
-	storage    KVStorage
+	storage    Storage
 	root       *rootFileInfo
 	credential []byte
 	key        []byte
@@ -25,7 +25,7 @@ type FileSystem struct {
 
 var _ http.FileSystem = (*FileSystem)(nil)
 
-func NewFileSystem(storage KVStorage) (*FileSystem, error) {
+func NewFileSystem(storage Storage) (*FileSystem, error) {
 	fs := &FileSystem{
 		storage:  storage,
 		pageSize: DefaultPageSize,
@@ -542,7 +542,11 @@ func (fs *FileSystem) Root() *FileInfo {
 	return fs.root.FileInfo
 }
 
-func loadPageSize(storage KVStorage) (size int64, err error) {
+func (fs *FileSystem) Close() error {
+	return fs.storage.Close()
+}
+
+func loadPageSize(storage Storage) (size int64, err error) {
 	data, err := storage.Get(keyFSPageSize)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
@@ -557,7 +561,7 @@ func loadPageSize(storage KVStorage) (size int64, err error) {
 	return size, nil
 }
 
-func savePageSize(storage KVStorage, size int64) error {
+func savePageSize(storage Storage, size int64) error {
 	data, err := json.Marshal(size)
 	if err != nil {
 		return fmt.Errorf("cannot marshal page size %d: %v", size, err)

@@ -4,10 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"path/filepath"
 	"strings"
-
-	"github.com/gopub/wine/exp/vfs"
 
 	"github.com/gopub/conv"
 	"github.com/gopub/wine/router"
@@ -124,25 +121,25 @@ func (r *Router) StaticFile(path, filePath string) {
 }
 
 // StaticFileData binds path to data
-func (r *Router) StaticFileData(path string, data []byte) {
-	if path == "" || path == "/" {
-		logger.Panic("invalid path")
-	}
-	fs, err := vfs.NewFileSystem(vfs.NewMemoryStorage())
-	if err != nil {
-		logger.Panic(err)
-	}
-	baseName := filepath.Base(filepath.Join(r.BasePath(), path))
-	if baseName == "/" || baseName == "." {
-		logger.Panic("invalid base name: " + baseName)
-	}
-	_, err = fs.Write(baseName, data)
-	r.Get(path, func(ctx context.Context, req *Request) Responder {
-		// http.FileServer can handle content range
-		// sometimes it's not allowed to write all data to client in one time. e.g. play video
-		return Handle(req.request, http.FileServer(fs))
-	})
-}
+//func (r *Router) StaticFileData(path string, data []byte) {
+//	if path == "" || path == "/" {
+//		logger.Panic("invalid path")
+//	}
+//	fs, err := vfs.NewFileSystem(vfs.NewMemoryStorage())
+//	if err != nil {
+//		logger.Panic(err)
+//	}
+//	baseName := filepath.Base(filepath.Join(r.BasePath(), path))
+//	if baseName == "/" || baseName == "." {
+//		logger.Panic("invalid base name: " + baseName)
+//	}
+//	_, err = fs.Write(baseName, data)
+//	r.Get(path, func(ctx context.Context, req *Request) Responder {
+//		// http.FileServer can handle content range
+//		// sometimes it's not allowed to write all data to client in one time. e.g. play video
+//		return Handle(req.request, http.FileServer(fs))
+//	})
+//}
 
 // StaticDir binds path to a directory
 func (r *Router) StaticDir(path, dirPath string) {

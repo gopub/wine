@@ -181,28 +181,59 @@ func (w *FileSystemWrapper) CreateAndWrite(dirUUID, name string, data []byte) (*
 	return f.info, nil
 }
 
-func (w *FileSystemWrapper) CopyDiskFile(dirUUID, srcFilePath string) (*FileInfo, error) {
+func (w *FileSystemWrapper) ImportDiskFile(dirUUID, diskFilePath string) (*FileInfo, error) {
 	fs := (*FileSystem)(w)
-	name := filepath.Base(srcFilePath)
-	f, err := w.Create(dirUUID, name)
+	cleanPath := filepath.Clean(diskFilePath)
+	info, err := os.Stat(cleanPath)
 	if err != nil {
-		return nil, fmt.Errorf("create file: %w", err)
+		return nil, fmt.Errorf("stat %s: %w", cleanPath, err)
 	}
-	defer f.Close()
-	srcFile, err := os.Open(srcFilePath)
+
+	src, err := os.Open(cleanPath)
 	if err != nil {
-		return nil, fmt.Errorf("open %s: %w", srcFilePath, err)
+		return nil, fmt.Errorf("open %s: %w", cleanPath, err)
 	}
-	if _, err = io.Copy(f, srcFile); err != nil {
-		return nil, fmt.Errorf("copy file: %w", err)
-	}
-	me, err := mimetype.DetectFile(srcFilePath)
+
+	abs, err := filepath.Abs(cleanPath)
 	if err != nil {
-		return nil, fmt.Errorf("detet file: %w", err)
+		return nil, fmt.Errorf("get absolute path %s: %w", cleanPath, err)
 	}
-	f.info.SetMIMEType(me.String())
-	if err = fs.SaveFileTree(); err != nil {
-		return nil, fmt.Errorf("save file tree: %w", err)
+	base := filepath.Base(abs)
+	if !info.IsDir() {
+		dst, err := w.Create(dirUUID, base)
+		if err != nil {
+			return nil, fmt.Errorf("create file: %w", err)
+		}
+		defer dst.Close()
+		if _, err = io.Copy(dst, src); err != nil {
+			return nil, fmt.Errorf("copy: %w", err)
+		}
+		me, err := mimetype.DetectFile(cleanPath)
+		if err != nil {
+			return nil, fmt.Errorf("detet file type: %w", err)
+		}
+		dst.info.SetMIMEType(me.String())
+		if err = fs.SaveFileTree(); err != nil {
+			return nil, fmt.Errorf("save file tree: %w", err)
+		}
+		return dst.info, nil
 	}
-	return f.info, nil
+
+	dir, err := w.Mkdir(dirUUID, base)
+	if err != nil {
+		return nil, fmt.Errorf("create dir %s: %w", base, err)
+	}
+
+	names, err := src.Readdirnames(-1)
+	if err != nil {
+		return nil, fmt.Errorf("read dir names: %w", err)
+	}
+
+	for _, name := range names {
+		_, er := w.ImportDiskFile(dir.UUID(), filepath.Join(cleanPath, name))
+		if er != nil {
+			err = errors.Append(err, er)
+		}
+	}
+	return dir, nil
 }

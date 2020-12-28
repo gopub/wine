@@ -1,6 +1,8 @@
 package vfs
 
 import (
+	"github.com/gabriel-vasile/mimetype"
+	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
@@ -13,7 +15,7 @@ import (
 var logger *log.Logger
 
 func init() {
-	logger = log.Default().Derive("Wine")
+	logger = log.Default().Derive("Wine.vfs")
 	logger.SetFlags(log.LstdFlags - log.Lfunction - log.Lshortfile)
 }
 
@@ -38,11 +40,12 @@ const (
 	keyFSPageSize   = "filesystem.page_size"
 )
 
-type KVStorage interface {
+type Storage interface {
 	// Get returns os.ErrNotExist if key doesn't exist
 	Get(key string) ([]byte, error)
 	Put(key string, val []byte) error
 	Delete(key string) error
+	Close() error
 }
 
 func cleanName(name string) string {
@@ -79,3 +82,22 @@ const (
 	WriteOnly = Flag(os.O_WRONLY)
 	Create    = Flag(os.O_CREATE)
 )
+
+const contentTypeOctetStream = "application/octet-stream"
+
+func DetectContentType(b []byte) string {
+	t := http.DetectContentType(b)
+	if t == "" {
+		return mimetype.Detect(b).String()
+	}
+
+	if t != contentTypeOctetStream {
+		return t
+	}
+
+	if mt := mimetype.Detect(b).String(); mt != contentTypeOctetStream {
+		return mt
+	}
+
+	return t
+}

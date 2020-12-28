@@ -15,7 +15,7 @@ require (
 	github.com/gopub/types v0.2.24
 	github.com/gorilla/websocket v1.4.2
 	github.com/spf13/afero v1.5.1 // indirect
-	github.com/stretchr/testify v1.5.1
+	github.com/stretchr/testify v1.6.1
 	golang.org/x/sys v0.0.0-20201211090839-8ad439b19e0f // indirect
 	google.golang.org/protobuf v1.25.0
 )

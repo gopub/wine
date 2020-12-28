@@ -36,3 +36,7 @@ func (s *MemoryStorage) Delete(key string) error {
 	delete(s.m, key)
 	return nil
 }
+
+func (s *MemoryStorage) Close(key string) error {
+	return nil
+}
