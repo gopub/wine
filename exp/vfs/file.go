@@ -3,12 +3,13 @@ package vfs
 import (
 	"bytes"
 	"fmt"
-	"github.com/google/uuid"
-	"github.com/gopub/errors"
-	"github.com/gopub/wine/httpvalue"
 	"io"
 	"net/http"
 	"os"
+
+	"github.com/google/uuid"
+	"github.com/gopub/errors"
+	"github.com/gopub/wine/httpvalue"
 )
 
 type File struct {
