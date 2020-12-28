@@ -2,8 +2,9 @@ package main
 
 import (
 	"flag"
-	"github.com/gopub/log"
 	"net/http"
+
+	"github.com/gopub/log"
 
 	"github.com/gopub/wine"
 	"github.com/gopub/wine/exp/storage"
