@@ -49,7 +49,7 @@ type serverConn struct {
 	id       string // connections from the same user can share the same id
 	userID   int64
 	header   http.Header
-	metadata map[string]string
+	metadata map[string]string // metadata
 }
 
 func (c *serverConn) buildContext(ctx context.Context) context.Context {
@@ -70,6 +70,14 @@ func (c *serverConn) GetHeader(key string) string {
 
 func (c *serverConn) GetMetadata(key string) string {
 	return c.metadata[key]
+}
+
+func (c *serverConn) GetValue(key string) string {
+	v := c.GetMetadata(key)
+	if v != "" {
+		return v
+	}
+	return c.GetHeader(key)
 }
 
 // Server implements websocket server
@@ -144,11 +152,11 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			req.Data = v.Call.Data
 			req.remoteAddr = wconn.RemoteAddr()
 			go s.HandleRequest(conn, req)
-		case *Packet_Header:
-			for k, val := range v.Header.Entries {
+		case *Packet_Metadata:
+			for k, val := range v.Metadata.Entries {
 				conn.metadata[k] = val
 			}
-			logger.Debug("Header:", conn.metadata)
+			logger.Debug("Metadata:", conn.metadata)
 		case *Packet_Hello:
 			go conn.Hello()
 		default:

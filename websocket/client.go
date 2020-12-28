@@ -250,12 +250,12 @@ func (c *Client) writeMetadata() error {
 	if len(c.metadata) == 0 {
 		return nil
 	}
-	h := &Header{
+	md := &Metadata{
 		Entries: c.metadata,
 	}
 	p := new(Packet)
-	p.V = &Packet_Header{
-		Header: h,
+	p.V = &Packet_Metadata{
+		Metadata: md,
 	}
 	return c.conn.Write(p)
 }

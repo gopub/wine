@@ -38,7 +38,7 @@ message Reply {
     }
 }
 
-message Header {
+message Metadata {
     map<string, string> entries = 1;
 }
 
@@ -50,7 +50,7 @@ message Packet {
     oneof v {
         Call call = 1;
         Data data = 2;
-        Header header = 3;
+        Metadata metadata = 3;
         Hello hello = 4;
         Push push = 5;
         Reply reply = 6;
