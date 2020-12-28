@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"github.com/gopub/log"
 	"net/http"
 
 	"github.com/gopub/wine"
@@ -15,7 +16,10 @@ func main() {
 	s := wine.NewServer()
 	s.Header().AllowOrigins("*")
 
-	bucket := storage.NewDiskBucket(*pDir)
+	bucket, err := storage.NewDiskBucket(*pDir)
+	if err != nil {
+		log.Fatal(err)
+	}
 	s.Bind(http.MethodPost, "/upload", storage.NewFileWriter(bucket))
 	s.Run(*pAddr)
 }

@@ -2,7 +2,6 @@ package storage
 
 import (
 	"context"
-	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -13,13 +12,13 @@ type DiskBucket struct {
 	dir string
 }
 
-func NewDiskBucket(dir string) *DiskBucket {
+func NewDiskBucket(dir string) (*DiskBucket, error) {
 	if err := os.MkdirAll(dir, 0755); err != nil {
-		panic(fmt.Sprintf("storage: create dir %s: %v", dir, err))
+		return nil, err
 	}
 	return &DiskBucket{
 		dir: dir,
-	}
+	}, nil
 }
 
 func (b *DiskBucket) Write(ctx context.Context, o *Object) (string, error) {
