@@ -20,15 +20,28 @@ import (
 	"github.com/gopub/wine/httpvalue"
 )
 
-type Thumbnail struct {
+type ThumbnailOption struct {
 	Width   int
 	Height  int
 	Quality int
 }
 
+func (t *ThumbnailOption) Validate() error {
+	if t.Width <= 0 {
+		return fmt.Errorf("negative width %d", t.Width)
+	}
+	if t.Height <= 0 {
+		return fmt.Errorf("negative height %d", t.Height)
+	}
+	if t.Quality <= 0 || t.Quality > 100 {
+		return fmt.Errorf("invalid quality %d, expected (0, 100]", t.Quality)
+	}
+	return nil
+}
+
 type ImageWriter struct {
 	w          Writer
-	thumbnails []*Thumbnail
+	thumbnails []*ThumbnailOption
 }
 
 var _ wine.Handler = (*ImageWriter)(nil)
@@ -39,22 +52,16 @@ func NewImageWriter(w Writer) *ImageWriter {
 	}
 }
 
-func (w *ImageWriter) AddThumbnails(thumbnails ...*Thumbnail) {
-	for i, t := range thumbnails {
-		if t.Width <= 0 {
-			panic(fmt.Sprintf("storage: thumbnails[%d].Width=%d", i, t.Width))
-		}
-		if t.Height <= 0 {
-			panic(fmt.Sprintf("storage: thumbnails[%d].Height=%d", i, t.Height))
-		}
-		if t.Quality <= 0 {
-			panic(fmt.Sprintf("storage: thumbnails[%d].Quality=%d, expect (0,100]", i, t.Quality))
-		}
-		if t.Quality > 100 {
-			t.Quality = 100
+func (w *ImageWriter) AddThumbnailOptions(thumbnails ...*ThumbnailOption) error {
+	var err error
+	for _, t := range thumbnails {
+		if er := t.Validate(); er != nil {
+			err = errors.Append(err, er)
+		} else {
+			w.thumbnails = append(w.thumbnails, t)
 		}
 	}
-	w.thumbnails = append(w.thumbnails, thumbnails...)
+	return err
 }
 
 func (w *ImageWriter) Write(ctx context.Context, name string, data []byte) (string, error) {
@@ -89,7 +96,7 @@ func (w *ImageWriter) Write(ctx context.Context, name string, data []byte) (stri
 	return url, nil
 }
 
-func (w *ImageWriter) thumbnail(ctx context.Context, img image.Image, name string, t *Thumbnail) (string, error) {
+func (w *ImageWriter) thumbnail(ctx context.Context, img image.Image, name string, t *ThumbnailOption) (string, error) {
 	dx := img.Bounds().Dx()
 	dy := img.Bounds().Dy()
 
