@@ -32,10 +32,11 @@ const (
 )
 
 const (
-	keyFSRootDir    = "filesystem.root"
-	keyFSCredential = "filesystem.credential"
-	keyFSConfig     = "filesystem.config"
-	keyFSPageSize   = "filesystem.page_size"
+	keyFSRootDir      = "filesystem.root"
+	keyFSThumbnailDir = "filesystem.thumbnails"
+	keyFSCredential   = "filesystem.credential"
+	keyFSConfig       = "filesystem.config"
+	keyFSPageSize     = "filesystem.page_size"
 )
 
 type Storage interface {

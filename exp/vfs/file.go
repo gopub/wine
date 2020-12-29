@@ -178,6 +178,26 @@ func (f *File) Write(p []byte) (int, error) {
 	return len(p), nil
 }
 
+func (f *File) WriteThumbnail(b []byte) error {
+	if f.flag&WriteOnly == 0 {
+		return os.ErrPermission
+	}
+	if f.info.Thumbnail == "" {
+		f.info.Thumbnail = uuid.New().String()
+	}
+	return f.vo.storage.Put(f.info.Thumbnail, b)
+}
+
+func (f *File) ReadThumbnail() ([]byte, error) {
+	if f.flag&WriteOnly != 0 {
+		return nil, os.ErrPermission
+	}
+	if f.info.Thumbnail == "" {
+		return nil, os.ErrNotExist
+	}
+	return f.vo.storage.Get(f.info.Thumbnail)
+}
+
 func (f *File) Close() error {
 	f.info.busy = false
 	if f.flag&WriteOnly != 0 {

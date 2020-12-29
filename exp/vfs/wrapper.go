@@ -102,6 +102,12 @@ func (w *fileSystemWrapper) Remove(uuid string) error {
 			err = errors.Append(err, er)
 		}
 	}
+
+	if f.Thumbnail != "" {
+		if er := fs.storage.Delete(f.Thumbnail); er != nil {
+			err = errors.Append(err, er)
+		}
+	}
 	return err
 }
 
@@ -236,4 +242,22 @@ func (w *fileSystemWrapper) ImportDiskFile(dirUUID, diskFilePath string) (*FileI
 		}
 	}
 	return dir, nil
+}
+
+func (w *fileSystemWrapper) WriteThumbnail(uuid string, data []byte) error {
+	f, err := w.Open(uuid, WriteOnly)
+	if err != nil {
+		return fmt.Errorf("open: %w", err)
+	}
+	defer f.Close()
+	return f.WriteThumbnail(data)
+}
+
+func (w *fileSystemWrapper) ReadThumbnail(uuid string) ([]byte, error) {
+	f, err := w.Open(uuid, ReadOnly)
+	if err != nil {
+		return nil, fmt.Errorf("open: %w", err)
+	}
+	defer f.Close()
+	return f.ReadThumbnail()
 }

@@ -15,22 +15,27 @@ import (
 )
 
 type FileSystem struct {
-	storage    Storage
-	root       *rootFileInfo
+	storage Storage
+	root    *rootFileInfo
+	// thumbnail dir
+	thumbDir   *FileInfo
 	credential []byte
 	key        []byte
 	configs    types.M
 	pageSize   int64
+
+	thumbnails map[string][]byte
 }
 
 var _ http.FileSystem = (*FileSystem)(nil)
 
 func NewFileSystem(storage Storage) (*FileSystem, error) {
 	fs := &FileSystem{
-		storage:  storage,
-		pageSize: DefaultPageSize,
-		configs:  types.M{},
-		root:     newRootFile(),
+		storage:    storage,
+		pageSize:   DefaultPageSize,
+		configs:    types.M{},
+		root:       newRootFile(),
+		thumbnails: map[string][]byte{},
 	}
 
 	var err error

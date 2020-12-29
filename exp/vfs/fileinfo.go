@@ -29,6 +29,7 @@ type fileMetadata struct {
 	Location   *types.Point `json:"location,omitempty"`
 	Permission int          `json:"permission,omitempty"`
 	Extra      types.M      `json:"extra,omitempty"`
+	Thumbnail  string       `json:"thumbnail,omitempty"`
 }
 
 type FileInfo struct {
