@@ -3,6 +3,7 @@ package wine
 import (
 	"container/list"
 	"context"
+	"net/http"
 	"reflect"
 	"runtime"
 )
@@ -32,4 +33,10 @@ func (h *handlerElem) Next() *handlerElem {
 
 func (h *handlerElem) HandleRequest(ctx context.Context, req *Request) Responder {
 	return h.Value.(Handler).HandleRequest(withNextHandler(ctx, h.Next()), req)
+}
+
+func HTTPHandler(h http.Handler) Handler {
+	return HandlerFunc(func(ctx context.Context, req *Request) Responder {
+		return Handle(req.request, h)
+	})
 }
