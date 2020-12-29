@@ -117,8 +117,12 @@ func (h *fileSystemHandler) Get(rw http.ResponseWriter, req *http.Request) {
 	uuid := req.URL.Query().Get("uuid")
 	f, err := fs.Wrapper().Stat(uuid)
 	if err != nil {
-		h.writeError(req, rw, err)
-		return
+		if uuid == "home" || uuid == "root" {
+			f = fs.Root()
+		} else {
+			h.writeError(req, rw, err)
+			return
+		}
 	}
 
 	if f.IsDir() {
