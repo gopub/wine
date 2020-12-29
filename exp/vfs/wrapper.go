@@ -137,6 +137,9 @@ func (w *fileSystemWrapper) Move(uuid, dirUUID string) error {
 
 func (w *fileSystemWrapper) Stat(uuid string) (*FileInfo, error) {
 	fs := (*FileSystem)(w)
+	if !fs.AuthPassed() {
+		return nil, os.ErrPermission
+	}
 	if uuid == "" {
 		return fs.root.FileInfo, nil
 	}

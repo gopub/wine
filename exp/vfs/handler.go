@@ -37,6 +37,11 @@ func (h *fileSystemHandler) writeError(req *http.Request, rw http.ResponseWriter
 
 func (h *fileSystemHandler) Upload(rw http.ResponseWriter, req *http.Request) {
 	fs := (*FileSystem)(h)
+	if !fs.AuthPassed() {
+		errors.Unauthorized("").Respond(req.Context(), rw)
+		return
+	}
+
 	if err := req.ParseMultipartForm(int64(20 * types.MB)); err != nil {
 		h.writeError(req, rw, err)
 		return
@@ -94,6 +99,11 @@ func (h *fileSystemHandler) Upload(rw http.ResponseWriter, req *http.Request) {
 
 func (h *fileSystemHandler) Get(rw http.ResponseWriter, req *http.Request) {
 	fs := (*FileSystem)(h)
+	if !fs.AuthPassed() {
+		errors.Unauthorized("").Respond(req.Context(), rw)
+		return
+	}
+
 	uuid := req.URL.Query().Get("uuid")
 	f, err := fs.Wrapper().Stat(uuid)
 	if err != nil {
@@ -115,6 +125,11 @@ func (h *fileSystemHandler) Get(rw http.ResponseWriter, req *http.Request) {
 
 func (h *fileSystemHandler) Stat(rw http.ResponseWriter, req *http.Request) {
 	fs := (*FileSystem)(h)
+	if !fs.AuthPassed() {
+		errors.Unauthorized("").Respond(req.Context(), rw)
+		return
+	}
+
 	uuid := req.URL.Query().Get("uuid")
 	f, err := fs.Wrapper().Stat(uuid)
 	if err != nil {
