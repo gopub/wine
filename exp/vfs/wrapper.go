@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/gabriel-vasile/mimetype"
 	"github.com/gopub/errors"
@@ -262,5 +263,17 @@ func (w *fileSystemWrapper) ReadThumbnail(uuid string) ([]byte, error) {
 		return nil, fmt.Errorf("open: %w", err)
 	}
 	defer f.Close()
-	return f.ReadThumbnail()
+	b, err := f.ReadThumbnail()
+	if err != nil {
+		for typ, data := range w.thumbnails {
+			if strings.HasPrefix(f.info.MIMEType(), typ) {
+				return data, nil
+			}
+		}
+	}
+	return b, err
+}
+
+func (w *fileSystemWrapper) SetDefaultThumbnail(typ string, b []byte) {
+	w.thumbnails[typ] = b
 }
