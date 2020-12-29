@@ -40,3 +40,9 @@ func HTTPHandler(h http.Handler) Handler {
 		return Handle(req.request, h)
 	})
 }
+
+func HTTPHandlerFunc(h http.Handler) HandlerFunc {
+	return func(ctx context.Context, req *Request) Responder {
+		return Handle(req.request, h)
+	}
+}
