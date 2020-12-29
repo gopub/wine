@@ -5,14 +5,17 @@ import (
 	"context"
 	"fmt"
 	"image"
+	_ "image/gif"
 	"image/jpeg"
-	"image/png"
+	_ "image/png"
 	"io/ioutil"
 	"mime"
 	"mime/multipart"
 	"net/http"
-	"path"
 	"strings"
+
+	_ "golang.org/x/image/bmp"
+	_ "golang.org/x/image/webp"
 
 	"github.com/disintegration/imaging"
 	"github.com/gopub/errors"
@@ -97,40 +100,14 @@ func (w *ImageWriter) Write(ctx context.Context, name string, data []byte) (stri
 }
 
 func (w *ImageWriter) thumbnail(ctx context.Context, img image.Image, name string, t *ThumbnailOption) (string, error) {
-	dx := img.Bounds().Dx()
-	dy := img.Bounds().Dy()
-
-	var tImg image.Image
-	if dx < t.Width || dy < t.Height {
-		tImg = img
-	} else {
-		if dx*t.Height > dy*t.Width {
-			tImg = imaging.Resize(img, 0, t.Height, imaging.Lanczos)
-		} else {
-			tImg = imaging.Resize(img, t.Width, 0, imaging.Lanczos)
-		}
+	data, err := getImageThumbnail(img, t)
+	if err != nil {
+		return "", fmt.Errorf("get image thumbnail: %w", err)
 	}
-
-	buf := bytes.NewBuffer(nil)
-	var obj *Object
-	if path.Ext(name) == ".png" {
-		if err := png.Encode(buf, tImg); err != nil {
-			return "", fmt.Errorf("encode image to jpeg: %w", err)
-		}
-		obj = &Object{
-			Name:    name,
-			Content: buf.Bytes(),
-			Type:    httpvalue.PNG,
-		}
-	} else {
-		if err := jpeg.Encode(buf, tImg, &jpeg.Options{Quality: t.Quality}); err != nil {
-			return "", fmt.Errorf("encode image to jpeg: %w", err)
-		}
-		obj = &Object{
-			Name:    name,
-			Content: buf.Bytes(),
-			Type:    httpvalue.JPEG,
-		}
+	obj := &Object{
+		Name:    name,
+		Content: data,
+		Type:    httpvalue.JPEG,
 	}
 	return w.w.Write(ctx, obj)
 }
@@ -178,4 +155,38 @@ func (w *ImageWriter) saveMultipart(ctx context.Context, form *multipart.Form) w
 		return wine.JSON(http.StatusOK, urls[0])
 	}
 	return wine.JSON(http.StatusOK, urls)
+}
+
+func getImageThumbnail(img image.Image, t *ThumbnailOption) ([]byte, error) {
+	dx := img.Bounds().Dx()
+	dy := img.Bounds().Dy()
+
+	var tImg image.Image
+	if dx < t.Width || dy < t.Height {
+		tImg = img
+	} else {
+		if dx*t.Height > dy*t.Width {
+			tImg = imaging.Resize(img, 0, t.Height, imaging.Lanczos)
+		} else {
+			tImg = imaging.Resize(img, t.Width, 0, imaging.Lanczos)
+		}
+	}
+
+	buf := bytes.NewBuffer(nil)
+	err := jpeg.Encode(buf, tImg, &jpeg.Options{Quality: t.Quality})
+	if err != nil {
+		return nil, fmt.Errorf("encode image to jpeg: %w", err)
+	}
+	return buf.Bytes(), nil
+}
+
+func GetImageThumbnail(origin []byte, w, h int) ([]byte, error) {
+	img, _, err := image.Decode(bytes.NewReader(origin))
+	if err != nil {
+		if errors.Is(err, image.ErrFormat) {
+			return nil, errors.BadRequest("decode: %v", err)
+		}
+		return nil, fmt.Errorf("decode: %w", err)
+	}
+	return getImageThumbnail(img, &ThumbnailOption{Width: w, Height: h, Quality: 100})
 }
