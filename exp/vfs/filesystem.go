@@ -538,6 +538,10 @@ func (fs *FileSystem) Wrapper() *fileSystemWrapper {
 	return (*fileSystemWrapper)(fs)
 }
 
+func (fs *FileSystem) Handler() *fileSystemHandler {
+	return (*fileSystemHandler)(fs)
+}
+
 func (fs *FileSystem) Root() *FileInfo {
 	return fs.root.FileInfo
 }
