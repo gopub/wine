@@ -4,6 +4,7 @@ import (
 	"encoding"
 	"encoding/json"
 	"fmt"
+	"github.com/gopub/wine/httpvalue"
 	"os"
 	"path/filepath"
 	"sort"
@@ -360,6 +361,22 @@ func (f *FileInfo) FindByName(name string) []*FileInfo {
 		res = append(res, file.FindByName(name)...)
 	}
 	return res
+}
+
+func (f *FileInfo) IsText() bool {
+	return httpvalue.IsMIMETextType(f.MIMEType())
+}
+
+func (f *FileInfo) IsImage() bool {
+	return strings.HasPrefix(f.MIMEType(), "image")
+}
+
+func (f *FileInfo) IsVideo() bool {
+	return strings.HasPrefix(f.MIMEType(), "video")
+}
+
+func (f *FileInfo) IsAudio() bool {
+	return strings.HasPrefix(f.MIMEType(), "audio")
 }
 
 func (f *FileInfo) totalSize() int64 {
