@@ -25,17 +25,20 @@ type FileSystem struct {
 	pageSize   int64
 
 	thumbnails map[string][]byte
+
+	uploadedFileC chan *FileInfo
 }
 
 var _ http.FileSystem = (*FileSystem)(nil)
 
 func NewFileSystem(storage Storage) (*FileSystem, error) {
 	fs := &FileSystem{
-		storage:    storage,
-		pageSize:   DefaultPageSize,
-		configs:    types.M{},
-		root:       newRootFile(),
-		thumbnails: map[string][]byte{},
+		storage:       storage,
+		pageSize:      DefaultPageSize,
+		configs:       types.M{},
+		root:          newRootFile(),
+		thumbnails:    map[string][]byte{},
+		uploadedFileC: make(chan *FileInfo, 32),
 	}
 
 	var err error
@@ -482,6 +485,22 @@ func (fs *FileSystem) RemoveAllFiles() error {
 	}
 	var e error
 	for _, f := range fs.root.Files {
+		if err := fs.Wrapper().Remove(f.UUID()); err != nil {
+			e = errors.Append(e, err)
+		}
+	}
+	return e
+}
+
+func (fs *FileSystem) RemoveByVersion(version int) error {
+	if !fs.AuthPassed() {
+		return os.ErrPermission
+	}
+	var e error
+	for _, f := range fs.root.Files {
+		if f.Version != version {
+			continue
+		}
 		if err := fs.Wrapper().Remove(f.UUID()); err != nil {
 			e = errors.Append(e, err)
 		}

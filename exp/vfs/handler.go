@@ -42,7 +42,8 @@ func (h *fileSystemHandler) Upload(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	if err := req.ParseMultipartForm(int64(20 * types.MB)); err != nil {
+	err := req.ParseMultipartForm(int64(20 * types.MB))
+	if err != nil {
 		h.writeError(req, rw, err)
 		return
 	}
@@ -54,17 +55,18 @@ func (h *fileSystemHandler) Upload(rw http.ResponseWriter, req *http.Request) {
 		errors.BadRequest("no file").Respond(req.Context(), rw)
 	}
 
+	var dir *FileInfo
 	dirID := req.URL.Query().Get("diruuid")
 	if dirID == "" {
 		dirName := req.URL.Query().Get("dir")
-		df, err := fs.Stat(dirName)
+		dir, err = fs.Stat(dirName)
 		if err != nil {
 			h.writeError(req, rw, err)
 			return
 		}
-		dirID = df.UUID()
+		dirID = dir.UUID()
 	} else {
-		_, err := fs.Wrapper().Stat(dirID)
+		dir, err = fs.Wrapper().Stat(dirID)
 		if err != nil {
 			h.writeError(req, rw, err)
 			return
@@ -83,6 +85,7 @@ func (h *fileSystemHandler) Upload(rw http.ResponseWriter, req *http.Request) {
 			if name == "" {
 				name = time.Now().Format(time.RFC3339)
 			}
+			name = dir.DistinctName(name)
 			df, err := fs.Wrapper().Create(dirID, name)
 			if err != nil {
 				h.writeError(req, rw, err)
@@ -93,6 +96,13 @@ func (h *fileSystemHandler) Upload(rw http.ResponseWriter, req *http.Request) {
 			df.Close()
 			f.Close()
 			fs.SaveFileTree()
+
+			select {
+			case h.uploadedFileC <- df.info:
+				break
+			default:
+				break
+			}
 		}
 	}
 }
@@ -181,4 +191,8 @@ func (h *fileSystemHandler) RunServer(addr string) {
 	} else {
 		log.Infof("HTTP server stopped")
 	}
+}
+
+func (h *fileSystemHandler) UploadedFileC() <-chan *FileInfo {
+	return h.uploadedFileC
 }

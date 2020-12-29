@@ -249,7 +249,7 @@ func (w *fileSystemWrapper) ImportDiskFile(dirUUID, diskFilePath string) (*FileI
 }
 
 func (w *fileSystemWrapper) WriteThumbnail(uuid string, data []byte) error {
-	f, err := w.Open(uuid, WriteOnly)
+	f, err := w.Open(uuid, ReadOnly)
 	if err != nil {
 		return fmt.Errorf("open: %w", err)
 	}

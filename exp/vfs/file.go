@@ -201,7 +201,7 @@ func (f *File) ReadThumbnail() ([]byte, error) {
 
 func (f *File) Close() error {
 	f.info.busy = false
-	if f.flag&WriteOnly != 0 {
+	if f.flag&WriteOnly != 0 && f.buf.Len() > 0 {
 		return f.flush(true)
 	}
 	f.offset = 0

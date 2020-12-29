@@ -19,11 +19,11 @@ import (
 type fileMetadata struct {
 	UUID       string       `json:"uuid"`
 	Name       string       `json:"name"`
-	IsDir      bool         `json:"is_dir,omitempty"`
+	IsDir      bool         `json:"is_dir"`
 	MIMEType   string       `json:"mime_type,omitempty"`
 	Pages      []string     `json:"pages,omitempty"`
-	Size       int64        `json:"size,omitempty"`
-	Duration   int          `json:"duration,omitempty"`
+	Size       int64        `json:"size"`
+	Duration   int          `json:"duration"`
 	Files      []*FileInfo  `json:"files,omitempty"`
 	CreatedAt  int64        `json:"created_at"`
 	ModifiedAt int64        `json:"modified_at"`
@@ -31,6 +31,7 @@ type fileMetadata struct {
 	Permission int          `json:"permission,omitempty"`
 	Extra      types.M      `json:"extra,omitempty"`
 	Thumbnail  string       `json:"thumbnail,omitempty"`
+	Version    int          `json:"version,omitempty"`
 }
 
 type FileInfo struct {
@@ -124,6 +125,13 @@ func (f *FileInfo) setSize(size int64) {
 	f.fileMetadata.ModifiedAt = time.Now().Unix()
 }
 
+func (f *FileInfo) SetPermission(p int) {
+	f.Permission = p
+	for _, sub := range f.Files {
+		sub.SetPermission(p)
+	}
+}
+
 func (f *FileInfo) FindByPath(path string) *FileInfo {
 	return f.find(splitPath(path)...)
 }
@@ -167,12 +175,14 @@ func (f *FileInfo) Exists(baseName string) bool {
 
 func (f *FileInfo) DistinctName(baseName string) string {
 	i := 0
-	s := baseName
-	for f.Exists(baseName) {
+	ext := filepath.Ext(baseName)
+	base := baseName[:len(baseName)-len(ext)]
+	distinct := baseName
+	for f.Exists(distinct) {
 		i++
-		s = fmt.Sprintf("%s-%d", baseName, i)
+		distinct = fmt.Sprintf("%s-%d%s", base, i, ext)
 	}
-	return s
+	return distinct
 }
 
 func (f *FileInfo) AddSub(sub *FileInfo) {
@@ -183,6 +193,7 @@ func (f *FileInfo) AddSub(sub *FileInfo) {
 		sub.parent.RemoveSub(sub)
 	}
 	sub.parent = f
+	sub.SetPermission(f.Permission)
 	f.fileMetadata.Files = append(f.fileMetadata.Files, sub)
 	f.fileMetadata.ModifiedAt = time.Now().Unix()
 	f.dirContent = nil
@@ -196,6 +207,7 @@ func (f *FileInfo) RemoveSub(sub *FileInfo) {
 			break
 		}
 	}
+	sub.Permission = 0
 	f.fileMetadata.ModifiedAt = time.Now().Unix()
 	f.dirContent = nil
 	f.DirContent()
