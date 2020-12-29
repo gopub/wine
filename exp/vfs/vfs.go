@@ -23,7 +23,7 @@ func SetLogger(l *log.Logger) {
 
 const (
 	keySize         = 32
-	DefaultPageSize = int64(types.MB)
+	DefaultPageSize = int64(4 * types.MB)
 	MinPageSize     = int64(32 * types.KB)
 )
 
