@@ -3,13 +3,13 @@ package vfs
 import (
 	"bytes"
 	"fmt"
-	"github.com/gopub/wine/httpvalue"
 	"io"
 	"net/http"
 	"os"
 
 	"github.com/google/uuid"
 	"github.com/gopub/errors"
+	"github.com/gopub/wine/httpvalue"
 )
 
 type File struct {
@@ -188,7 +188,9 @@ func (f *File) Close() error {
 }
 
 func (f *File) flush(all bool) error {
-	if f.buf.Len() > 0 {
+	if f.buf.Len() > 0 && (f.offset == 0 || f.info.MIMEType() == "") {
+		// detect at the beginning (offset==0)
+		// or if prior detection failed (f.info.MIMEType()=="")
 		f.info.SetMIMEType(httpvalue.DetectContentType(f.buf.Bytes()))
 	}
 	for all || int64(f.buf.Len()) >= f.vo.pageSize {

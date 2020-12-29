@@ -2,9 +2,10 @@ package vfs
 
 import (
 	"fmt"
-	"github.com/gopub/sql/sqlite"
 	"os"
 	"sync"
+
+	"github.com/gopub/sql/sqlite"
 
 	"github.com/gopub/sql"
 )

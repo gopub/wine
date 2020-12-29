@@ -534,8 +534,8 @@ func (fs *FileSystem) ListByPermission(p int) []*FileInfo {
 	return fs.root.ListByPermission(p)
 }
 
-func (fs *FileSystem) Wrapper() *FileSystemWrapper {
-	return (*FileSystemWrapper)(fs)
+func (fs *FileSystem) Wrapper() *fileSystemWrapper {
+	return (*fileSystemWrapper)(fs)
 }
 
 func (fs *FileSystem) Root() *FileInfo {

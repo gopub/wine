@@ -12,9 +12,9 @@ import (
 	"github.com/gopub/wine/httpvalue"
 )
 
-type FileSystemWrapper FileSystem
+type fileSystemWrapper FileSystem
 
-func (w *FileSystemWrapper) Mkdir(parentUUID, dirName string) (*FileInfo, error) {
+func (w *fileSystemWrapper) Mkdir(parentUUID, dirName string) (*FileInfo, error) {
 	fs := (*FileSystem)(w)
 	if !fs.AuthPassed() {
 		return nil, os.ErrPermission
@@ -34,7 +34,7 @@ func (w *FileSystemWrapper) Mkdir(parentUUID, dirName string) (*FileInfo, error)
 	return fs.Mkdir(filepath.Join(parent.Path(), dirName))
 }
 
-func (w *FileSystemWrapper) Create(dirUUID, name string) (*File, error) {
+func (w *fileSystemWrapper) Create(dirUUID, name string) (*File, error) {
 	fs := (*FileSystem)(w)
 	if name == "" {
 		return nil, os.ErrInvalid
@@ -51,7 +51,7 @@ func (w *FileSystemWrapper) Create(dirUUID, name string) (*File, error) {
 	return fs.Create(filepath.Join(dir.Path(), name))
 }
 
-func (w *FileSystemWrapper) Open(uuid string, flag Flag) (*File, error) {
+func (w *fileSystemWrapper) Open(uuid string, flag Flag) (*File, error) {
 	fs := (*FileSystem)(w)
 	if !fs.AuthPassed() {
 		return nil, os.ErrPermission
@@ -69,7 +69,7 @@ func (w *FileSystemWrapper) Open(uuid string, flag Flag) (*File, error) {
 	return newFile(fs, fi, flag), nil
 }
 
-func (w *FileSystemWrapper) Remove(uuid string) error {
+func (w *fileSystemWrapper) Remove(uuid string) error {
 	fs := (*FileSystem)(w)
 	if !fs.AuthPassed() {
 		return os.ErrPermission
@@ -105,7 +105,7 @@ func (w *FileSystemWrapper) Remove(uuid string) error {
 	return err
 }
 
-func (w *FileSystemWrapper) Move(uuid, dirUUID string) error {
+func (w *fileSystemWrapper) Move(uuid, dirUUID string) error {
 	fs := (*FileSystem)(w)
 	if !fs.AuthPassed() {
 		return os.ErrPermission
@@ -129,7 +129,7 @@ func (w *FileSystemWrapper) Move(uuid, dirUUID string) error {
 	return errors.Wrapf(err, "cannot save")
 }
 
-func (w *FileSystemWrapper) Stat(uuid string) (*FileInfo, error) {
+func (w *fileSystemWrapper) Stat(uuid string) (*FileInfo, error) {
 	fs := (*FileSystem)(w)
 	if uuid == "" {
 		return fs.root.FileInfo, nil
@@ -141,7 +141,7 @@ func (w *FileSystemWrapper) Stat(uuid string) (*FileInfo, error) {
 	return f, nil
 }
 
-func (w *FileSystemWrapper) Read(uuid string) ([]byte, error) {
+func (w *fileSystemWrapper) Read(uuid string) ([]byte, error) {
 	f, err := w.Open(uuid, ReadOnly)
 	if err != nil {
 		return nil, fmt.Errorf("open by uuid: %w", err)
@@ -154,7 +154,7 @@ func (w *FileSystemWrapper) Read(uuid string) ([]byte, error) {
 	return data, nil
 }
 
-func (w *FileSystemWrapper) Write(uuid string, data []byte) (*FileInfo, error) {
+func (w *fileSystemWrapper) Write(uuid string, data []byte) (*FileInfo, error) {
 	f, err := w.Open(uuid, WriteOnly)
 	if err != nil {
 		return nil, fmt.Errorf("open file: %w", err)
@@ -168,7 +168,7 @@ func (w *FileSystemWrapper) Write(uuid string, data []byte) (*FileInfo, error) {
 	return f.info, nil
 }
 
-func (w *FileSystemWrapper) CreateAndWrite(dirUUID, name string, data []byte) (*FileInfo, error) {
+func (w *fileSystemWrapper) CreateAndWrite(dirUUID, name string, data []byte) (*FileInfo, error) {
 	f, err := w.Create(dirUUID, name)
 	if err != nil {
 		return nil, fmt.Errorf("create: %w", err)
@@ -181,7 +181,7 @@ func (w *FileSystemWrapper) CreateAndWrite(dirUUID, name string, data []byte) (*
 	return f.info, nil
 }
 
-func (w *FileSystemWrapper) ImportDiskFile(dirUUID, diskFilePath string) (*FileInfo, error) {
+func (w *fileSystemWrapper) ImportDiskFile(dirUUID, diskFilePath string) (*FileInfo, error) {
 	fs := (*FileSystem)(w)
 	cleanPath := filepath.Clean(diskFilePath)
 	info, err := os.Stat(cleanPath)

@@ -10,9 +10,8 @@ require (
 	github.com/gopub/log v1.2.3
 	github.com/gopub/sql v1.4.15
 	github.com/gopub/types v0.2.24
-	github.com/gopub/wine/httpvalue v0.0.0-20201228214056-96ee5bb82550
+	github.com/gopub/wine v1.36.2
+	github.com/gopub/wine/httpvalue v0.1.0
 )
 
-replace (
-	github.com/gopub/wine/httpvalue => ../../httpvalue
-)
+replace github.com/gopub/wine/httpvalue => ../../httpvalue
