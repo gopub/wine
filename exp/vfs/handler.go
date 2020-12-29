@@ -2,6 +2,7 @@ package vfs
 
 import (
 	"encoding/json"
+	"github.com/gopub/types"
 	"io"
 	"net/http"
 	"path/filepath"
@@ -36,6 +37,10 @@ func (h *fileSystemHandler) writeError(req *http.Request, rw http.ResponseWriter
 
 func (h *fileSystemHandler) Upload(rw http.ResponseWriter, req *http.Request) {
 	fs := (*FileSystem)(h)
+	if err := req.ParseMultipartForm(int64(20 * types.MB)); err != nil {
+		h.writeError(req, rw, err)
+		return
+	}
 	if req.MultipartForm == nil {
 		errors.BadRequest("expect multipart form").Respond(req.Context(), rw)
 		return

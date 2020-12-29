@@ -8,6 +8,8 @@ type MemoryStorage struct {
 	m map[string][]byte
 }
 
+var _ Storage = (*MemoryStorage)(nil)
+
 func NewMemoryStorage() *MemoryStorage {
 	s := &MemoryStorage{
 		m: make(map[string][]byte),
@@ -37,6 +39,6 @@ func (s *MemoryStorage) Delete(key string) error {
 	return nil
 }
 
-func (s *MemoryStorage) Close(key string) error {
+func (s *MemoryStorage) Close() error {
 	return nil
 }
