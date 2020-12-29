@@ -179,19 +179,20 @@ func (f *File) Write(p []byte) (int, error) {
 }
 
 func (f *File) WriteThumbnail(b []byte) error {
-	if f.flag&WriteOnly == 0 {
-		return os.ErrPermission
+	tb := f.info.Thumbnail
+	if tb == "" {
+		tb = uuid.New().String()
 	}
-	if f.info.Thumbnail == "" {
-		f.info.Thumbnail = uuid.New().String()
+	err := f.vo.storage.Put(tb, b)
+	if err != nil {
+		return err
 	}
-	return f.vo.storage.Put(f.info.Thumbnail, b)
+	f.info.Thumbnail = tb
+	f.vo.SaveFileTree()
+	return nil
 }
 
 func (f *File) ReadThumbnail() ([]byte, error) {
-	if f.flag&WriteOnly != 0 {
-		return nil, os.ErrPermission
-	}
 	if f.info.Thumbnail == "" {
 		return nil, os.ErrNotExist
 	}
