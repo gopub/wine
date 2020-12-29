@@ -180,7 +180,7 @@ func getImageThumbnail(img image.Image, t *ThumbnailOption) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-func GetImageThumbnail(origin []byte, w, h int) ([]byte, error) {
+func GenerateThumbnail(origin []byte, w, h int) ([]byte, error) {
 	img, _, err := image.Decode(bytes.NewReader(origin))
 	if err != nil {
 		if errors.Is(err, image.ErrFormat) {
