@@ -130,6 +130,7 @@ func (h *fileSystemHandler) Get(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 	req.URL.Path = f.Path()
+	rw.Header().Set(httpvalue.ContentDisposition, httpvalue.FileAttachment(f.Name()))
 	http.FileServer(fs).ServeHTTP(rw, req)
 }
 
