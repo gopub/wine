@@ -68,8 +68,13 @@ func (h *fileSystemHandler) Upload(rw http.ResponseWriter, req *http.Request) {
 	} else {
 		dir, err = fs.Wrapper().Stat(dirID)
 		if err != nil {
-			h.writeError(req, rw, err)
-			return
+			if dirID == "home" || dirID == "root" {
+				dirID = ""
+				dir = fs.Root()
+			} else {
+				h.writeError(req, rw, err)
+				return
+			}
 		}
 	}
 
@@ -117,12 +122,8 @@ func (h *fileSystemHandler) Get(rw http.ResponseWriter, req *http.Request) {
 	uuid := req.URL.Query().Get("uuid")
 	f, err := fs.Wrapper().Stat(uuid)
 	if err != nil {
-		if uuid == "home" || uuid == "root" {
-			f = fs.Root()
-		} else {
-			h.writeError(req, rw, err)
-			return
-		}
+		h.writeError(req, rw, err)
+		return
 	}
 
 	if f.IsDir() {
