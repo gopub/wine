@@ -38,6 +38,7 @@ const (
 	keyFSCredential   = "filesystem.credential"
 	keyFSConfig       = "filesystem.config"
 	keyFSPageSize     = "filesystem.page_size"
+	keyFSKeyChain     = "filesystem.keychain"
 )
 
 type Storage interface {
