@@ -187,6 +187,7 @@ func (h *fileSystemHandler) RunServer(addr string) {
 	mux.HandleFunc("/upload", h.Upload)
 	mux.HandleFunc("/get", h.Get)
 	mux.HandleFunc("/stat", h.Stat)
+	mux.Handle("/files", http.StripPrefix("/files", http.FileServer((*FileSystem)(h))))
 	err := http.ListenAndServe(addr, mux)
 	if err != nil {
 		if errors.Is(err, http.ErrServerClosed) {
