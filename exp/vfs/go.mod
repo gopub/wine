@@ -12,6 +12,7 @@ require (
 	github.com/gopub/types v0.2.24
 	github.com/gopub/wine v1.36.2
 	github.com/gopub/wine/httpvalue v0.1.0
+	github.com/stretchr/testify v1.6.1
 )
 
 replace github.com/gopub/wine/httpvalue => ../../httpvalue

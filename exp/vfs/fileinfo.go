@@ -113,16 +113,19 @@ func (f *FileInfo) MarshalBinary() (data []byte, err error) {
 func (f *FileInfo) addPage(p string) {
 	f.Pages = append(f.Pages, p)
 	f.fileMetadata.ModifiedAt = time.Now().Unix()
+	f.invalidateDirContent()
 }
 
 func (f *FileInfo) truncate() {
 	f.fileMetadata.Pages = f.fileMetadata.Pages[:0]
 	f.setSize(0)
+	f.invalidateDirContent()
 }
 
 func (f *FileInfo) setSize(size int64) {
 	f.fileMetadata.Size = size
 	f.fileMetadata.ModifiedAt = time.Now().Unix()
+	f.invalidateDirContent()
 }
 
 func (f *FileInfo) SetPermission(p int) {
@@ -130,6 +133,7 @@ func (f *FileInfo) SetPermission(p int) {
 	for _, sub := range f.Files {
 		sub.SetPermission(p)
 	}
+	f.invalidateDirContent()
 }
 
 func (f *FileInfo) FindByPath(path string) *FileInfo {
@@ -196,8 +200,7 @@ func (f *FileInfo) AddSub(sub *FileInfo) {
 	sub.SetPermission(f.Permission)
 	f.fileMetadata.Files = append(f.fileMetadata.Files, sub)
 	f.fileMetadata.ModifiedAt = time.Now().Unix()
-	f.dirContent = nil
-	f.DirContent()
+	f.invalidateDirContent()
 }
 
 func (f *FileInfo) RemoveSub(sub *FileInfo) {
@@ -209,28 +212,34 @@ func (f *FileInfo) RemoveSub(sub *FileInfo) {
 	}
 	sub.Permission = 0
 	f.fileMetadata.ModifiedAt = time.Now().Unix()
-	f.dirContent = nil
-	f.DirContent()
+	f.invalidateDirContent()
 }
 
 func (f *FileInfo) Rename(name string) bool {
 	name = strings.TrimSpace(name)
-	if !validateFileName(name) {
+	if name == "" {
 		return false
 	}
+
+	if strings.Contains(name, "/") {
+		return false
+	}
+
 	if f.Name() == name {
 		return true
 	}
+
 	// This is root dir
 	if f.parent == nil {
 		return false
 	}
+
 	if f.parent.Exists(name) {
 		return false
 	}
+
 	f.fileMetadata.Name = name
-	f.dirContent = nil
-	f.DirContent()
+	f.invalidateDirContent()
 	return true
 }
 
@@ -249,12 +258,20 @@ func (f *FileInfo) DirContent() []byte {
 	return f.dirContent
 }
 
+func (f *FileInfo) invalidateDirContent() {
+	f.dirContent = nil
+	if f.parent != nil {
+		f.parent.invalidateDirContent()
+	}
+}
+
 func (f *FileInfo) MIMEType() string {
 	return f.fileMetadata.MIMEType
 }
 
 func (f *FileInfo) SetMIMEType(t string) {
 	f.fileMetadata.MIMEType = t
+	f.invalidateDirContent()
 }
 
 func (f *FileInfo) Location() *types.Point {
@@ -263,6 +280,7 @@ func (f *FileInfo) Location() *types.Point {
 
 func (f *FileInfo) SetLocation(p *types.Point) {
 	f.fileMetadata.Location = p
+	f.invalidateDirContent()
 }
 
 func (f *FileInfo) CreatedAt() int64 {
@@ -273,8 +291,7 @@ func (f *FileInfo) CreatedAt() int64 {
 func (f *FileInfo) SetCreatedAt(t int64) {
 	f.fileMetadata.CreatedAt = t
 	f.fileMetadata.ModifiedAt = t
-	f.dirContent = nil
-	f.DirContent()
+	f.invalidateDirContent()
 }
 
 func (f *FileInfo) ModifiedAt() int64 {
@@ -288,6 +305,7 @@ func (f *FileInfo) UUID() string {
 // SetUUID is for migrating use only
 func (f *FileInfo) SetUUID(id string) {
 	f.fileMetadata.UUID = id
+	f.invalidateDirContent()
 }
 
 func (f *FileInfo) ParentUUID() string {
@@ -304,6 +322,7 @@ func (f *FileInfo) Duration() int {
 // SetUUID is for migrating use only
 func (f *FileInfo) SetDuration(seconds int) {
 	f.fileMetadata.Duration = seconds
+	f.invalidateDirContent()
 }
 
 func (f *FileInfo) Sort(order int) {

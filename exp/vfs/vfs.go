@@ -63,18 +63,6 @@ func splitPath(path string) []string {
 	return paths
 }
 
-func validateFileName(name string) bool {
-	if name == "" {
-		return false
-	}
-
-	if strings.Contains(name, "/") {
-		return false
-	}
-
-	return true
-}
-
 type Flag int
 
 const (
