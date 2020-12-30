@@ -17,7 +17,7 @@ const (
 
 type S3ACL string
 
-// S3Bucket ACL
+// Bucket ACL
 const (
 	S3Private                S3ACL = "private"
 	S3PublicRead             S3ACL = "public-read"
@@ -28,17 +28,17 @@ const (
 	S3BucketOwnerFullControl S3ACL = "bucket-owner-full-control"
 )
 
-type S3Bucket struct {
+type Bucket struct {
 	name         string
 	uploader     *s3manager.Uploader
 	ACL          *string
 	CacheControl string
 }
 
-var _ storage.Writer = (*S3Bucket)(nil)
+var _ storage.Writer = (*Bucket)(nil)
 
-func NewS3(name string) *S3Bucket {
-	return &S3Bucket{
+func NewBucket(name string) *Bucket {
+	return &Bucket{
 		name:         name,
 		uploader:     s3manager.NewUploader(session.Must(session.NewSession())),
 		ACL:          aws.String(string(S3PublicRead)),
@@ -46,7 +46,7 @@ func NewS3(name string) *S3Bucket {
 	}
 }
 
-func (s *S3Bucket) Write(ctx context.Context, o *storage.Object) (string, error) {
+func (s *Bucket) Write(ctx context.Context, o *storage.Object) (string, error) {
 	input := &s3manager.UploadInput{
 		Bucket:       aws.String(s.name),
 		Key:          aws.String(o.Name),

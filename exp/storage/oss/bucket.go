@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"github.com/gopub/errors"
 	"net/url"
 
 	"github.com/aliyun/aliyun-oss-go-sdk/oss"
@@ -15,54 +16,61 @@ const (
 	cacheControl = "public, max-age=14400"
 )
 
-type OSSBucket struct {
+type Bucket struct {
 	bucket       *oss.Bucket
 	ACL          oss.ACLType
 	CacheControl string
 	baseURL      string
 }
 
-var _ storage.Writer = (*OSSBucket)(nil)
+var _ storage.Writer = (*Bucket)(nil)
 
-func NewOSSBucket(endpoint, keyID, keySecret, name string) *OSSBucket {
+func NewBucket(endpoint, keyID, keySecret, name string) (*Bucket, error) {
 	if endpoint == "" {
-		panic("storage: missing endpoint")
+		return nil, errors.BadRequest("missing endpoint")
 	}
+
 	if keyID == "" {
-		panic("storage: missing keyID")
+		return nil, errors.BadRequest("missing keyID")
 	}
+
 	if keySecret == "" {
-		panic("storage: missing keySecret")
+		return nil, errors.BadRequest("missing keySecret")
 	}
+
 	if name == "" {
-		panic("storage: missing name")
+		return nil, errors.BadRequest("missing name")
 	}
+
 	u, err := url.Parse(endpoint)
 	if err != nil {
-		panic("storage: invalid endpoint: " + endpoint)
+		return nil, errors.BadRequest("invalid endpoint: %w", err)
 	}
+
 	u.Host = fmt.Sprintf("%s.%s", name, u.Host)
 	client, err := oss.New(endpoint, keyID, keySecret)
 	if err != nil {
-		panic(fmt.Sprintf("Cannot create oss client: %v", err))
+		fmt.Errorf("create oss client: %w", err)
 	}
+
 	b, err := client.Bucket(name)
 	if err != nil {
-		panic("storage: cannot create bucket: " + err.Error())
+		fmt.Errorf("create oss bucket: %w", err)
 	}
-	return &OSSBucket{
+
+	return &Bucket{
 		bucket:       b,
 		ACL:          oss.ACLPublicRead,
 		CacheControl: cacheControl,
 		baseURL:      u.String(),
-	}
+	}, nil
 }
 
-func (b *OSSBucket) Name() string {
+func (b *Bucket) Name() string {
 	return b.bucket.BucketName
 }
 
-func (b *OSSBucket) Write(ctx context.Context, obj *storage.Object) (string, error) {
+func (b *Bucket) Write(ctx context.Context, obj *storage.Object) (string, error) {
 	options := []oss.Option{oss.ACL(b.ACL), oss.CacheControl(b.CacheControl)}
 	if obj.Type != "" {
 		options = append(options, oss.ContentType(obj.Type))
