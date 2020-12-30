@@ -21,6 +21,7 @@ func SetLogger(l *log.Logger) {
 	logger = l
 }
 
+// Important constants, do not change
 const (
 	keySize         = 32
 	DefaultPageSize = int64(4 * types.MB)
