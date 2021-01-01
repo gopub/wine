@@ -81,7 +81,8 @@ func (kc *fileSystemKeyChain) Save(item *SecKeyItem) error {
 	}
 	item.ModifiedAt = time.Now().Unix()
 	items[item.UUID] = item
-	return nil
+
+	return kc.save(items)
 }
 
 func (kc *fileSystemKeyChain) Delete(uuid string) error {
