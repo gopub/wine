@@ -209,6 +209,10 @@ func (fs *FileSystem) Mkdir(name string) (*FileInfo, error) {
 		return nil, os.ErrPermission
 	}
 
+	if name == "" || name == "." {
+		return nil, os.ErrInvalid
+	}
+
 	name = cleanName(name)
 	if name == "" {
 		return nil, os.ErrInvalid
@@ -236,16 +240,20 @@ func (fs *FileSystem) Mkdir(name string) (*FileInfo, error) {
 		return nil, fmt.Errorf("%s is not directory", filepath.Join(dirSegments...))
 	}
 
-	f = newFileInfo(true, dir.DistinctName(name))
+	f = newFileInfo(true, dir.DistinctName(segments[len(segments)-1]))
 	dir.AddSub(f)
 	fs.root.makeDoubleLinked()
 	return f, fs.SaveFileTree()
 }
 
 func (fs *FileSystem) MkdirAll(path string) (*FileInfo, error) {
+	if path == "" || path == "/" {
+		return nil, os.ErrInvalid
+	}
 	paths := splitPath(path)
 	for i := range paths {
-		f, err := fs.Mkdir(filepath.Join(paths[:i+1]...))
+		pre := filepath.Join(paths[:i+1]...)
+		f, err := fs.Mkdir(pre)
 		if err != nil {
 			return nil, err
 		}
