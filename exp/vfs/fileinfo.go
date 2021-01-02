@@ -440,6 +440,17 @@ func (f *FileInfo) HasInheritedPermission(p int) bool {
 	return f.parent.HasInheritedPermission(p)
 }
 
+func (f *FileInfo) ListAllPages() []string {
+	pages := make([]string, len(f.Pages))
+	copy(pages, f.Pages)
+	if f.IsDir() {
+		for _, sub := range f.Files {
+			pages = append(pages, sub.ListAllPages()...)
+		}
+	}
+	return pages
+}
+
 const (
 	OrderByCreatedTimeAsc = iota
 	OrderByCreatedTimeDesc
