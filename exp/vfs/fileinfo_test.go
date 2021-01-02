@@ -1,8 +1,9 @@
 package vfs
 
 import (
-	"github.com/google/uuid"
 	"testing"
+
+	"github.com/google/uuid"
 )
 
 func TestFileInfo_Path(t *testing.T) {

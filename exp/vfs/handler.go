@@ -2,11 +2,12 @@ package vfs
 
 import (
 	"encoding/json"
-	"github.com/gopub/types"
 	"io"
 	"net/http"
 	"path/filepath"
 	"time"
+
+	"github.com/gopub/types"
 
 	"github.com/gopub/errors"
 	"github.com/gopub/wine/httpvalue"

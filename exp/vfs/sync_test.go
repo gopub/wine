@@ -1,15 +1,16 @@
 package vfs_test
 
 import (
+	"path/filepath"
+	"strings"
+	"testing"
+
 	"github.com/google/uuid"
 	"github.com/gopub/conv"
 	"github.com/gopub/types"
 	"github.com/gopub/wine/exp/vfs"
 	"github.com/gopub/wine/httpvalue"
 	"github.com/stretchr/testify/require"
-	"path/filepath"
-	"strings"
-	"testing"
 )
 
 func TestFileSystemSync_Sync(t *testing.T) {

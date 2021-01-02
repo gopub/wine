@@ -2,9 +2,10 @@ package vfs
 
 import (
 	"fmt"
+	"os"
+
 	"github.com/gopub/errors"
 	"github.com/gopub/log"
-	"os"
 )
 
 type SyncAction string

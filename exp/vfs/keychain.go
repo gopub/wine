@@ -3,11 +3,12 @@ package vfs
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/google/uuid"
-	"github.com/gopub/errors"
 	"os"
 	"sort"
 	"time"
+
+	"github.com/google/uuid"
+	"github.com/gopub/errors"
 )
 
 type SecKeyItem struct {
