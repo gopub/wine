@@ -13,6 +13,42 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestFileSystemSync_CheckData(t *testing.T) {
+	password := uuid.New().String()
+	fs1, err := vfs.NewFileSystem(vfs.NewMemoryStorage())
+	require.NoError(t, err)
+	fs1.SetPassword(password)
+	fs2, err := vfs.NewFileSystem(vfs.NewMemoryStorage())
+	require.NoError(t, err)
+	fs2.SetPassword(password)
+
+	var foo = map[string]int64{"hello": 123}
+	name := uuid.New().String()
+	err = fs1.WriteJSON(name, foo)
+	require.NoError(t, err)
+	logC, doneC := fs2.Sync(fs1)
+LOOP:
+	for {
+		select {
+		case log := <-logC:
+			t.Log(log.Action, log.Source.Path())
+			if log.Destination != nil {
+				t.Log(log.Destination.Path())
+			}
+			break
+		case err := <-doneC:
+			require.NoError(t, err)
+			break LOOP
+		}
+	}
+
+	var v map[string]int64
+	err = fs2.ReadJSON(name, &v)
+	require.NoError(t, err)
+	require.Equal(t, foo, v)
+
+}
+
 func TestFileSystemSync_Sync(t *testing.T) {
 	fs1, err := vfs.NewFileSystem(vfs.NewMemoryStorage())
 	require.NoError(t, err)

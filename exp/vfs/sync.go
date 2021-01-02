@@ -5,7 +5,6 @@ import (
 	"os"
 
 	"github.com/gopub/errors"
-	"github.com/gopub/log"
 )
 
 type SyncAction string
@@ -25,7 +24,7 @@ type SyncLog struct {
 
 func (fs *FileSystem) Sync(source *FileSystem) (log <-chan *SyncLog, done <-chan error) {
 	logC := make(chan *SyncLog, 256)
-	doneC := make(chan error, 1)
+	doneC := make(chan error, 2)
 	go fs.startSync(source, logC, doneC)
 	return logC, doneC
 }
@@ -38,12 +37,14 @@ func (fs *FileSystem) startSync(source *FileSystem, logC chan<- *SyncLog, doneC 
 
 	root := (*FileSystem)(fs).Root()
 	for _, sub := range source.root.Files {
-		log.Debug(sub.Name())
+		logger.Debugf("Start %s", sub.Path())
 		if err := fs.syncFile(source, sub, root, logC); err != nil {
-			doneC <- err
-			return
+			logger.Errorf("Cannot sync %s: %v", sub.Name(), err)
+		} else {
+			logger.Debugf("Synced %s", sub.Path())
 		}
 	}
+	logger.Debug("Completed")
 	doneC <- nil
 }
 
@@ -99,7 +100,12 @@ func (fs *FileSystem) syncFile(source *FileSystem, f *FileInfo, toDir *FileInfo,
 		}
 		for _, sub := range f.Files {
 			if err = fs.syncFile(source, sub, fi, logC); err != nil {
-				return fmt.Errorf("sync file %s: %w", sub.Name(), err)
+				fileLog := &SyncLog{
+					Source: sub,
+					Action: SyncActionFailed,
+				}
+				logger.Errorf("Cannot sync file %s: %w", sub.Name(), err)
+				logC <- fileLog
 			}
 		}
 		logC <- log
@@ -134,10 +140,12 @@ func (fs *FileSystem) syncFile(source *FileSystem, f *FileInfo, toDir *FileInfo,
 	fi.SetDuration(f.Duration())
 	fi.SetLocation(f.Location())
 
-	for _, page := range fi.Pages {
+	logger.Debug("sync file", fi.Name())
+
+	for _, page := range f.Pages {
 		data, err := source.storage.Get(page)
 		if err != nil {
-			return fmt.Errorf("get page %s: %w", page, err)
+			return fmt.Errorf("get %s page %s: %w", fi.Path(), page, err)
 		}
 		err = source.DecryptPage(data)
 		if err != nil {

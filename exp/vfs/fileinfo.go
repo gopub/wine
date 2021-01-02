@@ -443,6 +443,9 @@ func (f *FileInfo) HasInheritedPermission(p int) bool {
 func (f *FileInfo) ListAllPages() []string {
 	pages := make([]string, len(f.Pages))
 	copy(pages, f.Pages)
+	if f.Thumbnail != "" {
+		pages = append(pages, f.Thumbnail)
+	}
 	if f.IsDir() {
 		for _, sub := range f.Files {
 			pages = append(pages, sub.ListAllPages()...)

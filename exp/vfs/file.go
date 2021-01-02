@@ -115,6 +115,7 @@ func (f *File) Read(p []byte) (int, error) {
 		}
 		nRead += n
 	}
+
 	return nRead, nil
 }
 
@@ -138,6 +139,7 @@ func (f *File) read(p []byte) (int, error) {
 		if err := f.vo.DecryptPage(data); err != nil {
 			return 0, fmt.Errorf("decrypt: %w", err)
 		}
+
 		nw, err := f.buf.Write(data)
 		if err != nil {
 			return 0, fmt.Errorf("write to buf: %w", err)
@@ -163,10 +165,12 @@ func (f *File) Write(p []byte) (int, error) {
 	if f.flag&WriteOnly == 0 {
 		return 0, os.ErrPermission
 	}
+
 	_, err := f.buf.Write(p)
 	if err != nil {
 		return 0, err
 	}
+
 	err = f.flush(false)
 	if err != nil {
 		n := len(p) - f.buf.Len()
@@ -183,9 +187,15 @@ func (f *File) WriteThumbnail(b []byte) error {
 	if tb == "" {
 		tb = uuid.New().String()
 	}
-	err := f.vo.storage.Put(tb, b)
+
+	err := f.vo.EncryptPage(b)
 	if err != nil {
-		return err
+		return fmt.Errorf("encrypt %s: %w", f.info.Thumbnail, err)
+	}
+
+	err = f.vo.storage.Put(tb, b)
+	if err != nil {
+		return fmt.Errorf("write %s: %w", f.info.Thumbnail, err)
 	}
 	f.info.Thumbnail = tb
 	f.vo.SaveFileTree()
@@ -196,7 +206,17 @@ func (f *File) ReadThumbnail() ([]byte, error) {
 	if f.info.Thumbnail == "" {
 		return nil, os.ErrNotExist
 	}
-	return f.vo.storage.Get(f.info.Thumbnail)
+
+	data, err := f.vo.storage.Get(f.info.Thumbnail)
+	if err != nil {
+		return nil, fmt.Errorf("read %s: %w", f.info.Thumbnail, err)
+	}
+
+	err = f.vo.DecryptPage(data)
+	if err != nil {
+		return nil, fmt.Errorf("decrypt %s: %w", f.info.Thumbnail, err)
+	}
+	return data, nil
 }
 
 func (f *File) Close() error {
