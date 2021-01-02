@@ -436,15 +436,3 @@ func (s *TestServer) RunTLS() string {
 	logger.Panic("Not implemented")
 	return s.URL
 }
-
-func SelectLocalPort(localIP string, minPort, maxPort int) int {
-	for port := minPort; port <= maxPort; port++ {
-		addr := fmt.Sprintf("%s:%d", localIP, port)
-		l, err := net.Listen("tcp", addr)
-		if err == nil {
-			l.Close()
-			return port
-		}
-	}
-	return 0
-}
