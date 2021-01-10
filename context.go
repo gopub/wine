@@ -60,6 +60,22 @@ func IsSudo(ctx context.Context) bool {
 	return b
 }
 
+func GetAppID(ctx context.Context) string {
+	return contextpkg.GetTraceID(ctx)
+}
+
+func WithAppID(ctx context.Context, appID string) context.Context {
+	return contextpkg.WithAppID(ctx, appID)
+}
+
+func GetDeviceID(ctx context.Context) string {
+	return contextpkg.GetDeviceID(ctx)
+}
+
+func WithDeviceID(ctx context.Context, deviceID string) context.Context {
+	return contextpkg.WithDeviceID(ctx, deviceID)
+}
+
 func DetachContext(ctx context.Context) context.Context {
 	return contextpkg.Detach(ctx)
 }

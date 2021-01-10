@@ -21,6 +21,8 @@ const (
 	KeyUser
 	KeySudo
 	KeyRequestHeader
+	KeyAppID
+	KeyDeviceID
 
 	keyEnd
 )
@@ -53,6 +55,24 @@ func GetTemplateManager(ctx context.Context) *template.Manager {
 
 func WithTemplateManager(ctx context.Context, m *template.Manager) context.Context {
 	return context.WithValue(ctx, KeyTemplateManager, m)
+}
+
+func GetAppID(ctx context.Context) string {
+	s, _ := ctx.Value(KeyAppID).(string)
+	return s
+}
+
+func WithAppID(ctx context.Context, appID string) context.Context {
+	return context.WithValue(ctx, KeyAppID, appID)
+}
+
+func GetDeviceID(ctx context.Context) string {
+	s, _ := ctx.Value(KeyDeviceID).(string)
+	return s
+}
+
+func WithDeviceID(ctx context.Context, deviceID string) context.Context {
+	return context.WithValue(ctx, KeyDeviceID, deviceID)
 }
 
 func Detach(ctx context.Context) context.Context {
