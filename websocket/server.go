@@ -16,6 +16,7 @@ import (
 	"github.com/gopub/wine"
 	"github.com/gopub/wine/router"
 	"github.com/gorilla/websocket"
+	contextpkg "github.com/gopub/wine/internal/context"
 )
 
 type Request struct {
@@ -57,6 +58,7 @@ func (c *serverConn) buildContext(ctx context.Context) context.Context {
 		ctx = wine.WithUserID(ctx, c.userID)
 	}
 	ctx = withServerConn(ctx, c)
+	ctx = contextpkg.WithRequestHeader(ctx, c.header)
 	return ctx
 }
 
