@@ -173,33 +173,33 @@ func (s *Server) Match(scope string, path string) (*Endpoint, map[string]string)
 }
 
 // ServeHTTP implements for http.Handler interface, which will handle each http request
-func (s *Server) ServeHTTP(rw http.ResponseWriter, httpReq *http.Request) {
+func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	startAt := time.Now()
 	if s.Recovery {
 		defer func() {
 			if e := recover(); e != nil {
-				logger.Errorf("%v: %+v\n", httpReq, e)
+				logger.Errorf("%v: %+v\n", req, e)
 				logger.Errorf("\n%s\n", string(debug.Stack()))
 			}
 		}()
 	}
-	rw = s.wrapResponseWriter(rw, httpReq)
-	sid := s.initSession(rw, httpReq)
-	ctx, cancel := s.initContext(httpReq)
+	rw = s.wrapResponseWriter(rw, req)
+	sid := s.initSession(rw, req)
+	ctx, cancel := s.initContext(req)
 	defer cancel()
 
-	req, err := parseRequest(httpReq, s.maxReqMem)
+	wReq, err := parseRequest(req, s.maxReqMem)
 	if err != nil {
 		defer s.closeWriter(rw)
 		resp := Text(http.StatusBadRequest, fmt.Sprintf("Parse request: %v", err))
 		resp.Respond(ctx, rw)
-		s.logResult(&Request{request: httpReq}, rw, startAt)
+		s.logResult(&Request{request: req}, rw, startAt)
 		return
 	}
-	req.sid = sid
-	req.params[s.sessionName] = sid
-	s.serve(ctx, req, rw)
-	s.logResult(&Request{request: httpReq}, rw, startAt)
+	wReq.sid = sid
+	wReq.params[s.sessionName] = sid
+	s.serve(ctx, wReq, rw)
+	s.logResult(&Request{request: req}, rw, startAt)
 }
 
 func (s *Server) serve(ctx context.Context, req *Request, rw http.ResponseWriter) {
