@@ -20,6 +20,8 @@ const (
 	Location            = "Location"
 	Cookies             = "Cookies"
 
+	RequestID = "X-Request-Id"
+
 	CustomDeviceID = "X-Wine-Device-Id"
 	CustomAppID    = "X-Wine-App-Id"
 	CustomTraceID  = "X-Wine-Trace-Id"

@@ -12,6 +12,7 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/google/uuid"
 	"github.com/gopub/conv"
 	"github.com/gopub/errors"
 	"github.com/gopub/log"
@@ -66,6 +67,26 @@ func (c *Client) SetAuthorization(credential string) {
 func (c *Client) SetBasicAuthorization(account, password string) {
 	credential := []byte(account + ":" + password)
 	c.header.Set(httpvalue.Authorization, "Basic "+base64.StdEncoding.EncodeToString(credential))
+}
+
+func (c *Client) Authorization() string {
+	return c.header.Get(httpvalue.Authorization)
+}
+
+func (c *Client) SetDeviceID(id string) {
+	c.header.Set(httpvalue.CustomDeviceID, id)
+}
+
+func (c *Client) DeviceID() string {
+	return c.header.Get(httpvalue.CustomDeviceID)
+}
+
+func (c *Client) SetAppID(id string) {
+	c.header.Set(httpvalue.CustomAppID, id)
+}
+
+func (c *Client) AppID() string {
+	return c.header.Get(httpvalue.CustomAppID)
 }
 
 func (c *Client) injectHeader(req *http.Request) {
@@ -245,9 +266,11 @@ func (c *ClientEndpoint) Call(ctx context.Context, input interface{}, output int
 	if contentType != "" {
 		req.Header.Set(httpvalue.ContentType, contentType)
 	}
+	reqID := uuid.New().String()
+	req.Header.Set(httpvalue.RequestID, reqID)
 	err = c.c.Do(req, output)
 	if err != nil {
-		return fmt.Errorf("do request %s %v: %w", c.method, c.url, err)
+		return fmt.Errorf("do request %s %s %v: %w", reqID, c.method, c.url, err)
 	}
 	return nil
 }
