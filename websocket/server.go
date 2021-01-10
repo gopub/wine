@@ -14,9 +14,9 @@ import (
 	"github.com/gopub/errors"
 	"github.com/gopub/log"
 	"github.com/gopub/wine"
+	contextpkg "github.com/gopub/wine/internal/context"
 	"github.com/gopub/wine/router"
 	"github.com/gorilla/websocket"
-	contextpkg "github.com/gopub/wine/internal/context"
 )
 
 type Request struct {
