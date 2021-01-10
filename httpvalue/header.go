@@ -19,6 +19,10 @@ const (
 	ContentEncoding     = "Content-Encoding"
 	Location            = "Location"
 	Cookies             = "Cookies"
+
+	CustomDeviceID = "X-Wine-Device-Id"
+	CustomAppID    = "X-Wine-App-Id"
+	CustomTraceID  = "X-Wine-Trace-Id"
 )
 
 func GetContentType(h http.Header) string {

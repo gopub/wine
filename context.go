@@ -4,6 +4,8 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/gopub/wine/httpvalue"
+
 	contextpkg "github.com/gopub/wine/internal/context"
 )
 
@@ -61,19 +63,11 @@ func IsSudo(ctx context.Context) bool {
 }
 
 func GetAppID(ctx context.Context) string {
-	return contextpkg.GetTraceID(ctx)
-}
-
-func WithAppID(ctx context.Context, appID string) context.Context {
-	return contextpkg.WithAppID(ctx, appID)
+	return GetRequestHeader(ctx).Get(httpvalue.CustomAppID)
 }
 
 func GetDeviceID(ctx context.Context) string {
-	return contextpkg.GetDeviceID(ctx)
-}
-
-func WithDeviceID(ctx context.Context, deviceID string) context.Context {
-	return contextpkg.WithDeviceID(ctx, deviceID)
+	return GetRequestHeader(ctx).Get(httpvalue.CustomDeviceID)
 }
 
 func DetachContext(ctx context.Context) context.Context {

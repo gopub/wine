@@ -1,11 +1,12 @@
 package vfs_test
 
 import (
+	"io/ioutil"
+	"testing"
+
 	"github.com/google/uuid"
 	"github.com/gopub/wine/exp/vfs"
 	"github.com/stretchr/testify/require"
-	"io/ioutil"
-	"testing"
 )
 
 func TestFileSystemWrapper_ImportDiskFile(t *testing.T) {

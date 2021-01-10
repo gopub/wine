@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/gopub/log"
+	"github.com/gopub/wine/httpvalue"
 	"github.com/gopub/wine/internal/template"
 )
 
@@ -21,8 +22,6 @@ const (
 	KeyUser
 	KeySudo
 	KeyRequestHeader
-	KeyAppID
-	KeyDeviceID
 
 	keyEnd
 )
@@ -37,8 +36,11 @@ func WithRequestHeader(ctx context.Context, h http.Header) context.Context {
 }
 
 func GetTraceID(ctx context.Context) string {
-	id, _ := ctx.Value(KeyTraceID).(string)
-	return id
+	id, ok := ctx.Value(KeyTraceID).(string)
+	if ok {
+		return id
+	}
+	return GetRequestHeader(ctx).Get(httpvalue.CustomTraceID)
 }
 
 func WithTraceID(ctx context.Context, traceID string) context.Context {
@@ -55,24 +57,6 @@ func GetTemplateManager(ctx context.Context) *template.Manager {
 
 func WithTemplateManager(ctx context.Context, m *template.Manager) context.Context {
 	return context.WithValue(ctx, KeyTemplateManager, m)
-}
-
-func GetAppID(ctx context.Context) string {
-	s, _ := ctx.Value(KeyAppID).(string)
-	return s
-}
-
-func WithAppID(ctx context.Context, appID string) context.Context {
-	return context.WithValue(ctx, KeyAppID, appID)
-}
-
-func GetDeviceID(ctx context.Context) string {
-	s, _ := ctx.Value(KeyDeviceID).(string)
-	return s
-}
-
-func WithDeviceID(ctx context.Context, deviceID string) context.Context {
-	return context.WithValue(ctx, KeyDeviceID, deviceID)
 }
 
 func Detach(ctx context.Context) context.Context {

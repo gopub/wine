@@ -4,8 +4,9 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"github.com/gopub/errors"
 	"net/url"
+
+	"github.com/gopub/errors"
 
 	"github.com/aliyun/aliyun-oss-go-sdk/oss"
 	"github.com/gopub/wine"

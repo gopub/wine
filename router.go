@@ -60,12 +60,10 @@ func (r *Router) bindSysHandlers() {
 	r.Handle(echoPath, handleEcho)
 }
 
-// SetAuthChecker check if the request is authenticated.
-// AuthChecker should not do authenticating which is supposed to be done ahead.
-// Authentication can be done in PreHandler, which can identify every incoming request.
+// SetAuthChecker set a checker function which will fail all non-authenticated requests
+// Authentication is supposed to be done ahead of auth checker, e.g. PreHandler.
 // Some endpoints are public no matter authenticated or not, however some may need to check authentication.
 // In PreHandler, authentication may succeed or fail, it doesn't matter.
-// AuthChecker will fail all non-authenticated requests
 // Regarding to authorization, it's related to business logic, so the router won't handle this.
 func (r *Router) SetAuthChecker(h Handler) {
 	r.authChecker = h

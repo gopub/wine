@@ -210,7 +210,6 @@ func (s *Server) serve(ctx context.Context, req *Request, rw http.ResponseWriter
 		req.params[k] = v
 	}
 	s.Header().WriteTo(rw)
-	ctx = s.prepareContext(ctx, req)
 	var h Handler
 	switch {
 	case endpoint != nil:
@@ -334,19 +333,6 @@ func (s *Server) initContext(req *http.Request) (context.Context, context.Cancel
 	ctx = contextpkg.WithTemplateManager(ctx, s.Manager)
 	ctx = contextpkg.WithRequestHeader(ctx, req.Header)
 	return ctx, cancel
-}
-
-func (s *Server) prepareContext(ctx context.Context, req *Request) context.Context {
-	if devID := req.Params().String(ParamNameDeviceID); devID != "" {
-		ctx = contextpkg.WithDeviceID(ctx, devID)
-	}
-	if traceID := req.Params().String(ParamNameTraceID); traceID != "" {
-		ctx = contextpkg.WithTraceID(ctx, traceID)
-	}
-	if appID := req.Params().String(ParamNameAppID); appID != "" {
-		ctx = contextpkg.WithAppID(ctx, appID)
-	}
-	return ctx
 }
 
 func (s *Server) closeWriter(w http.ResponseWriter) {
