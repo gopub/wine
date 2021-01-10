@@ -57,3 +57,12 @@ type Validator = conv.Validator
 func Validate(i interface{}) error {
 	return conv.Validate(i)
 }
+
+const (
+	ParamNameDeviceID   = "device_id"
+	ParamNameCoordinate = "coordinate"
+	ParamNameTraceID    = "trace_id"
+	ParamNameTimestamp  = "timestamp"
+	ParamNameSign       = "sign"
+	ParamNameAppID      = "app_id"
+)

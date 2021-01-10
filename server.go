@@ -185,7 +185,7 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, httpReq *http.Request) {
 	}
 	rw = s.wrapResponseWriter(rw, httpReq)
 	sid := s.initSession(rw, httpReq)
-	ctx, cancel := s.setupContext(httpReq)
+	ctx, cancel := s.initContext(httpReq)
 	defer cancel()
 
 	req, err := parseRequest(httpReq, s.maxReqMem)
@@ -210,6 +210,7 @@ func (s *Server) serve(ctx context.Context, req *Request, rw http.ResponseWriter
 		req.params[k] = v
 	}
 	s.Header().WriteTo(rw)
+	ctx = s.prepareContext(ctx, req)
 	var h Handler
 	switch {
 	case endpoint != nil:
@@ -328,11 +329,24 @@ func (s *Server) initSession(rw http.ResponseWriter, req *http.Request) string {
 	return sid
 }
 
-func (s *Server) setupContext(req *http.Request) (context.Context, context.CancelFunc) {
+func (s *Server) initContext(req *http.Request) (context.Context, context.CancelFunc) {
 	ctx, cancel := context.WithTimeout(req.Context(), s.Timeout)
 	ctx = contextpkg.WithTemplateManager(ctx, s.Manager)
 	ctx = contextpkg.WithRequestHeader(ctx, req.Header)
 	return ctx, cancel
+}
+
+func (s *Server) prepareContext(ctx context.Context, req *Request) context.Context {
+	if devID := req.Params().String(ParamNameDeviceID); devID != "" {
+		ctx = contextpkg.WithDeviceID(ctx, devID)
+	}
+	if traceID := req.Params().String(ParamNameTraceID); traceID != "" {
+		ctx = contextpkg.WithTraceID(ctx, traceID)
+	}
+	if appID := req.Params().String(ParamNameAppID); appID != "" {
+		ctx = contextpkg.WithAppID(ctx, appID)
+	}
+	return ctx
 }
 
 func (s *Server) closeWriter(w http.ResponseWriter) {
