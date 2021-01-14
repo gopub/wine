@@ -1,8 +1,8 @@
 package storage
 
 import (
+	"github.com/google/uuid"
 	"github.com/gopub/errors"
-	"github.com/gopub/wine"
 	"github.com/gopub/wine/httpvalue"
 )
 
@@ -22,7 +22,7 @@ func (o *Object) Validate() error {
 	}
 
 	if o.Name == "" {
-		o.Name = wine.NewUUID()
+		o.Name = uuid.New().String()
 	}
 	return nil
 }

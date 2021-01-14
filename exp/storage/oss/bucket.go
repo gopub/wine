@@ -6,10 +6,11 @@ import (
 	"fmt"
 	"net/url"
 
+	"github.com/gopub/conv"
+
 	"github.com/gopub/errors"
 
 	"github.com/aliyun/aliyun-oss-go-sdk/oss"
-	"github.com/gopub/wine"
 	"github.com/gopub/wine/exp/storage"
 )
 
@@ -101,6 +102,6 @@ func (b *Bucket) Write(ctx context.Context, obj *storage.Object) (string, error)
 		if err != nil {
 			return "", err
 		}
-		return wine.JoinURL(b.baseURL, obj.Name), nil
+		return conv.JoinURLPath(b.baseURL, obj.Name), nil
 	}
 }

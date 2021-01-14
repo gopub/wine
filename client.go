@@ -182,7 +182,7 @@ func (c *Client) GetServerTime(ctx context.Context, serverURL string) (int64, er
 	}
 	var err error
 	if c.getServerTime == nil {
-		c.getServerTime, err = c.Endpoint(http.MethodGet, JoinURL(serverURL, datePath))
+		c.getServerTime, err = c.Endpoint(http.MethodGet, conv.JoinURLPath(serverURL, datePath))
 		if err != nil {
 			return 0, fmt.Errorf("create endpoint: %w", err)
 		}

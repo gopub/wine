@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/google/uuid"
 	"math/rand"
 	"mime"
 	"net"
@@ -313,7 +314,7 @@ func (s *Server) initSession(rw http.ResponseWriter, req *http.Request) string {
 	}
 
 	if sid == "" {
-		sid = NewUUID()
+		sid = uuid.New().String()
 	}
 
 	cookie := &http.Cookie{
