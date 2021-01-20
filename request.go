@@ -3,6 +3,7 @@ package wine
 import (
 	"encoding/base64"
 	"fmt"
+	"github.com/gopub/errors"
 	"io"
 	"net/http"
 	"os"
@@ -21,6 +22,7 @@ import (
 // Request is a wrapper of http.Request, aims to provide more convenient interface
 type Request struct {
 	request     *http.Request
+	rawParams   *iopkg.RequestParams
 	params      types.M
 	body        []byte
 	contentType string
@@ -38,6 +40,14 @@ func (r *Request) Request() *http.Request {
 // Body returns request parameters
 func (r *Request) Params() types.M {
 	return r.params
+}
+
+func (r *Request) setPathParams(p map[string]string) {
+	r.rawParams.PathParams = types.M{}
+	for k, v := range p {
+		r.rawParams.PathParams[k] = v
+		r.params[k] = v
+	}
 }
 
 // Body returns request body
@@ -102,17 +112,44 @@ func (r *Request) bind(m interface{}) error {
 	if _, ok := m.(proto.Message); ok {
 		pv := reflect.New(reflect.TypeOf(m).Elem())
 		if err := proto.Unmarshal(r.body, pv.Interface().(proto.Message)); err != nil {
-			return fmt.Errorf("cannot unmarshal protobuf message: %w", err)
+			return errors.BadRequest("cannot unmarshal protobuf message: %v", err)
 		}
 		r.Model = pv.Interface()
-	} else {
-		pv := reflect.New(reflect.TypeOf(m))
-		if err := conv.Assign(pv.Interface(), r.params); err != nil {
-			return fmt.Errorf("cannot assign: %w", err)
-		}
-		r.Model = pv.Elem().Interface()
+		return Validate(r.Model)
 	}
-	return Validate(r.Model)
+
+	pv := reflect.New(reflect.TypeOf(m))
+	err := conv.Assign(pv.Interface(), r.params)
+	if err == nil {
+		r.Model = pv.Interface()
+		return Validate(r.Model)
+	}
+
+	err = errors.BadRequest("cannot assign: %v", err)
+	kind := reflect.ValueOf(conv.Indirect(pv.Interface())).Kind()
+	if kind == reflect.Struct || kind == reflect.Map || len(r.rawParams.BodyParams) != 0 {
+		return err
+	}
+
+	if p := getSingleParam(r); p != nil && conv.Assign(pv.Interface(), p) == nil {
+		r.Model = pv.Elem().Interface()
+		return Validate(r.Model)
+	}
+	return err
+}
+
+func getSingleParam(r *Request) interface{} {
+	var params = r.rawParams.PathParams
+	if len(params) != 1 {
+		params = r.rawParams.QueryParams
+	}
+
+	if len(params) == 1 {
+		for _, val := range params {
+			return val
+		}
+	}
+	return nil
 }
 
 func (r *Request) IsWebsocket() bool {
@@ -158,7 +195,8 @@ func parseRequest(r *http.Request, maxMem types.ByteUnit) (*Request, error) {
 	}
 	return &Request{
 		request:     r,
-		params:      params,
+		rawParams:   params,
+		params:      params.Combine(),
 		body:        body,
 		contentType: httpvalue.GetContentType(r.Header),
 	}, nil

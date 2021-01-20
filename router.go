@@ -223,7 +223,7 @@ func (r *Router) Connect(path string, funcs ...HandlerFunc) *Endpoint {
 func (r *Router) listEndpoints(ctx context.Context, req *Request) Responder {
 	var l []*router.Endpoint
 	maxLenOfPath := 0
-	all := req.params.Bool("all")
+	all := req.Params().Bool("all")
 	for _, node := range r.ListRoutes() {
 		if !all && reservedPaths[node.Path()] {
 			continue

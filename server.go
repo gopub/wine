@@ -198,7 +198,7 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 	wReq.sid = sid
-	wReq.params[s.sessionName] = sid
+	wReq.Params()[s.sessionName] = sid
 	s.serve(ctx, wReq, rw)
 	s.logResult(&Request{request: req}, rw, startAt)
 }
@@ -207,9 +207,7 @@ func (s *Server) serve(ctx context.Context, req *Request, rw http.ResponseWriter
 	np := req.NormalizedPath()
 	method := req.Request().Method
 	endpoint, params := s.Match(method, np)
-	for k, v := range params {
-		req.params[k] = v
-	}
+	req.setPathParams(params)
 	s.Header().WriteTo(rw)
 	var h Handler
 	switch {
@@ -383,8 +381,8 @@ func logResult(req *Request, res *Result, cost time.Duration) {
 		cost)
 	if res.Status >= http.StatusBadRequest {
 		ua := req.Header("User-Agent")
-		if len(req.params) > 0 {
-			info = fmt.Sprintf("%s | %s | %v", info, ua, conv.MustJSONString(req.params))
+		if len(req.Params()) > 0 {
+			info = fmt.Sprintf("%s | %s | %v", info, ua, conv.MustJSONString(req.rawParams))
 		} else if len(httpReq.PostForm) > 0 {
 			info = fmt.Sprintf("%s | %s | %v", info, ua, conv.MustJSONString(httpReq.PostForm))
 		} else {

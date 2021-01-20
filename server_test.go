@@ -2,7 +2,10 @@ package wine_test
 
 import (
 	"context"
+	"fmt"
+	"github.com/gopub/errors"
 	"io/ioutil"
+	"math/rand"
 	"net/http"
 	"runtime"
 	"strings"
@@ -120,5 +123,87 @@ func TestServer_Header(t *testing.T) {
 		resp, err := http.Get(url + "/hello")
 		require.NoError(t, err)
 		require.Equal(t, v, resp.Header.Get(key))
+	})
+}
+
+func TestServer_Bind(t *testing.T) {
+	server := wine.NewTestServer()
+	url := server.Run()
+	t.Run("PathParamInt64", func(t *testing.T) {
+		id := rand.Int63()
+		server.Get("int/{id}", func(ctx context.Context, req *wine.Request) wine.Responder {
+			if req.Model.(int64) == id {
+				return wine.OK
+			}
+			return errors.BadRequest("")
+		}).SetModel(int64(0))
+		resp, err := http.Get(url + "/int/" + fmt.Sprint(id))
+		require.NoError(t, err)
+		require.Equal(t, http.StatusOK, resp.StatusCode)
+	})
+
+	t.Run("PathParamInt64Error", func(t *testing.T) {
+		id := rand.Int63()
+		server.Get("interror/{id}", func(ctx context.Context, req *wine.Request) wine.Responder {
+			if req.Model.(int64) == id {
+				return wine.OK
+			}
+			return errors.BadRequest("")
+		}).SetModel(int64(0))
+		resp, err := http.Get(url + "/interror/" + uuid.New().String())
+		require.NoError(t, err)
+		require.Equal(t, http.StatusBadRequest, resp.StatusCode)
+	})
+
+	t.Run("PathParamString", func(t *testing.T) {
+		name := uuid.New().String()
+		server.Get("/string/{name}", func(ctx context.Context, req *wine.Request) wine.Responder {
+			if req.Model.(string) == name {
+				return wine.OK
+			}
+			return errors.BadRequest("")
+		}).SetModel("")
+		resp, err := http.Get(url + "/string/" + name)
+		require.NoError(t, err)
+		require.Equal(t, http.StatusOK, resp.StatusCode)
+	})
+
+	t.Run("MultiPathParamInt64Error", func(t *testing.T) {
+		id := rand.Int63()
+		server.Get("/multi/{name}/{id}", func(ctx context.Context, req *wine.Request) wine.Responder {
+			if req.Model.(int64) == id {
+				return wine.OK
+			}
+			return errors.BadRequest("")
+		}).SetModel(int64(0))
+		resp, err := http.Get(url + "/multi/haha/" + fmt.Sprint(id))
+		require.NoError(t, err)
+		require.Equal(t, http.StatusBadRequest, resp.StatusCode)
+	})
+
+	t.Run("QueryParamInt64", func(t *testing.T) {
+		id := rand.Int63()
+		server.Get("query/int", func(ctx context.Context, req *wine.Request) wine.Responder {
+			if req.Model.(int64) == id {
+				return wine.OK
+			}
+			return errors.BadRequest("")
+		}).SetModel(int64(0))
+		resp, err := http.Get(url + "/query/int?id=" + fmt.Sprint(id))
+		require.NoError(t, err)
+		require.Equal(t, http.StatusOK, resp.StatusCode)
+	})
+
+	t.Run("MultiQueryParamInt64Error", func(t *testing.T) {
+		id := rand.Int63()
+		server.Get("multiquery/int", func(ctx context.Context, req *wine.Request) wine.Responder {
+			if req.Model.(int64) == id {
+				return wine.OK
+			}
+			return errors.BadRequest("")
+		}).SetModel(int64(0))
+		resp, err := http.Get(url + "/multiquery/int?name=haha&id=" + fmt.Sprint(id))
+		require.NoError(t, err)
+		require.Equal(t, http.StatusBadRequest, resp.StatusCode)
 	})
 }

@@ -13,16 +13,35 @@ import (
 	"github.com/gopub/wine/httpvalue"
 )
 
-func ReadRequest(req *http.Request, maxMemory types.ByteUnit) (types.M, []byte, error) {
+type RequestParams struct {
+	CookieParams types.M
+	HeaderParams types.M
+	QueryParams  types.M
+	PathParams   types.M
+	BodyParams   types.M
+}
+
+func (p *RequestParams) Combine() types.M {
 	params := types.M{}
-	params.AddMap(ReadCookies(req.Cookies()))
-	params.AddMap(ReadHeader(req.Header))
-	params.AddMap(ReadValues(req.URL.Query()))
+	params.AddMap(p.CookieParams)
+	params.AddMap(p.HeaderParams)
+	params.AddMap(p.PathParams)
+	params.AddMap(p.QueryParams)
+	params.AddMap(p.BodyParams)
+	return params
+}
+
+func ReadRequest(req *http.Request, maxMemory types.ByteUnit) (*RequestParams, []byte, error) {
+	params := &RequestParams{
+		CookieParams: ReadCookies(req.Cookies()),
+		HeaderParams: ReadHeader(req.Header),
+		QueryParams:  ReadValues(req.URL.Query()),
+	}
 	bp, body, err := ReadBody(req, maxMemory)
 	if err != nil {
 		return params, body, fmt.Errorf("read request body: %w", err)
 	}
-	params.AddMap(bp)
+	params.BodyParams = bp
 	return params, body, nil
 }
 
