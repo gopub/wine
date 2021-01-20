@@ -3,13 +3,14 @@ package wine_test
 import (
 	"context"
 	"fmt"
-	"github.com/gopub/errors"
 	"io/ioutil"
 	"math/rand"
 	"net/http"
 	"runtime"
 	"strings"
 	"testing"
+
+	"github.com/gopub/errors"
 
 	"github.com/google/uuid"
 

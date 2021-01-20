@@ -3,7 +3,6 @@ package wine
 import (
 	"encoding/base64"
 	"fmt"
-	"github.com/gopub/errors"
 	"io"
 	"net/http"
 	"os"
@@ -11,8 +10,8 @@ import (
 	"strings"
 
 	"github.com/golang/protobuf/proto"
-
 	"github.com/gopub/conv"
+	"github.com/gopub/errors"
 	"github.com/gopub/types"
 	"github.com/gopub/wine/httpvalue"
 	iopkg "github.com/gopub/wine/internal/io"
