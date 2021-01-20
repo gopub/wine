@@ -20,7 +20,7 @@ import (
 )
 
 func TestServerStatus(t *testing.T) {
-	server := wine.NewTestServer()
+	server := wine.NewTestServer(t)
 	r := server.Router
 	r.Get("/ok", func(ctx context.Context, req *wine.Request) wine.Responder {
 		return wine.OK
@@ -49,7 +49,7 @@ func TestServerStatus(t *testing.T) {
 }
 
 func TestServerMethod(t *testing.T) {
-	server := wine.NewTestServer()
+	server := wine.NewTestServer(t)
 	r := server.Router
 	getStr := strings.Repeat(uuid.New().String(), 1024)
 	r.Get("/", func(ctx context.Context, req *wine.Request) wine.Responder {
@@ -105,7 +105,7 @@ func TestServerMethod(t *testing.T) {
 }
 
 func TestServer_Header(t *testing.T) {
-	server := wine.NewTestServer()
+	server := wine.NewTestServer(t)
 	url := server.Run()
 	t.Run("RootHeader", func(t *testing.T) {
 		v := uuid.New().String()
@@ -128,7 +128,7 @@ func TestServer_Header(t *testing.T) {
 }
 
 func TestServer_Bind(t *testing.T) {
-	server := wine.NewTestServer()
+	server := wine.NewTestServer(t)
 	url := server.Run()
 	t.Run("PathParamInt64", func(t *testing.T) {
 		id := rand.Int63()

@@ -11,6 +11,7 @@ import (
 	"path"
 	"runtime/debug"
 	"strings"
+	"testing"
 	"time"
 
 	"github.com/google/uuid"
@@ -410,9 +411,13 @@ type TestServer struct {
 	URL string
 }
 
-func NewTestServer() *TestServer {
+func NewTestServer(t *testing.T) *TestServer {
+	s := NewServer()
+	t.Cleanup(func() {
+		s.Shutdown()
+	})
 	return &TestServer{
-		Server: NewServer(),
+		Server: s,
 	}
 }
 
