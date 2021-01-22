@@ -392,18 +392,27 @@ func logResult(req *Request, res *Result, cost time.Duration) {
 		cost)
 	if res.Status >= http.StatusBadRequest {
 		ua := req.Header("User-Agent")
-		if len(req.Params()) > 0 {
-			info = fmt.Sprintf("%s | %s | %v", info, ua, conv.MustJSONString(req.Params()))
-		} else if len(httpReq.PostForm) > 0 {
-			info = fmt.Sprintf("%s | %s | %v", info, ua, conv.MustJSONString(httpReq.PostForm))
-		} else {
-			info = fmt.Sprintf("%s | %s", info, ua)
+		sessionAndTrace := req.sid
+		if traceID := req.Header(httpvalue.CustomTraceID); traceID != "" {
+			sessionAndTrace = fmt.Sprintf("%s,%s", sessionAndTrace, traceID)
 		}
+		info = fmt.Sprintf("%s | %s | %s", info, ua, sessionAndTrace)
+		if len(req.Params()) > 0 {
+			info = fmt.Sprintf("%s | %v", info, conv.MustJSONString(req.Params()))
+		} else if len(httpReq.PostForm) > 0 {
+			info = fmt.Sprintf("%s | %v", info, conv.MustJSONString(httpReq.PostForm))
+		}
+
 		if req.uid > 0 {
 			info = fmt.Sprintf("%s | user=%d", info, req.uid)
 		}
+
 		if len(res.Body) > 0 {
-			logger.Errorf("%s | %s", info, res.Body)
+			if len(res.Body) < 2048 {
+				logger.Errorf("%s | %s", info, res.Body)
+			} else {
+				logger.Errorf("%s | %d", info, len(res.Body))
+			}
 		} else {
 			logger.Errorf(info)
 		}
