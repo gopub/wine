@@ -120,7 +120,7 @@ func (r *Request) bind(m interface{}) error {
 	pv := reflect.New(reflect.TypeOf(m))
 	err := conv.Assign(pv.Interface(), r.params)
 	if err == nil {
-		r.Model = pv.Interface()
+		r.Model = pv.Elem().Interface()
 		return Validate(r.Model)
 	}
 

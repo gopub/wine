@@ -207,4 +207,34 @@ func TestServer_Bind(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, http.StatusBadRequest, resp.StatusCode)
 	})
+
+	type Params struct {
+		Title string  `json:"title"`
+		Price float32 `json:"price"`
+	}
+	t.Run("Struct", func(t *testing.T) {
+		server.Get("struct", func(ctx context.Context, req *wine.Request) wine.Responder {
+			if _, ok := req.Model.(Params); ok {
+				return wine.OK
+			} else {
+				t.Logf("%T", req.Model)
+				return errors.BadRequest("")
+			}
+		}).SetModel(Params{})
+		err := wine.DefaultClient.Get(context.Background(), url+"/struct", &Params{}, nil)
+		require.NoError(t, err)
+	})
+
+	t.Run("PointerToStruct", func(t *testing.T) {
+		server.Get("ptr-struct", func(ctx context.Context, req *wine.Request) wine.Responder {
+			if _, ok := req.Model.(*Params); ok {
+				return wine.OK
+			} else {
+				t.Logf("%T", req.Model)
+				return errors.BadRequest("")
+			}
+		}).SetModel(&Params{})
+		err := wine.DefaultClient.Get(context.Background(), url+"/ptr-struct", &Params{}, nil)
+		require.NoError(t, err)
+	})
 }
