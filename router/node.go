@@ -57,6 +57,7 @@ type node struct {
 
 	Model       interface{}
 	Description string
+	Sensitive   bool
 
 	Metadata interface{}
 }

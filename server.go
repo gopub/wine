@@ -65,6 +65,7 @@ type Server struct {
 	ResultLogger    func(req *Request, result *Result, cost time.Duration)
 	NotFoundHandler Handler
 	AutoCompression bool
+	LoggingReqModel bool
 }
 
 // NewServer returns a server
@@ -84,6 +85,7 @@ func NewServer() *Server {
 		Recovery:        environ.Bool("wine.recovery", true),
 		AutoCompression: environ.Bool("wine.compression.auto", true),
 		ResultLogger:    logResult,
+		LoggingReqModel: environ.Bool("wine.logging.request.model", true),
 	}
 
 	if s.sessionTTL < minSessionTTL {
@@ -219,7 +221,9 @@ func (s *Server) serve(ctx context.Context, req *Request, rw http.ResponseWriter
 				Error(err).Respond(ctx, rw)
 				return
 			}
-			ctx = log.BuildContext(ctx, log.FromContext(ctx).With("model", conv.MustJSONString(req.Model)))
+			if s.LoggingReqModel && !endpoint.Sensitive() {
+				ctx = log.BuildContext(ctx, log.FromContext(ctx).With("model", conv.MustJSONString(req.Model)))
+			}
 		}
 		h = (*handlerElem)(endpoint.FirstHandler())
 	case method == http.MethodOptions:

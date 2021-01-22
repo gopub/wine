@@ -40,6 +40,14 @@ func (e *Endpoint) SetModel(m interface{}) *Endpoint {
 	return e
 }
 
+func (e *Endpoint) Sensitive() bool {
+	return e.node.Sensitive
+}
+
+func (e *Endpoint) SetSensitive(b bool) {
+	e.node.Sensitive = b
+}
+
 func (e *Endpoint) Metadata() interface{} {
 	return e.node.Metadata
 }
