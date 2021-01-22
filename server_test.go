@@ -10,10 +10,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/gopub/errors"
-
 	"github.com/google/uuid"
-
+	"github.com/gopub/errors"
 	"github.com/gopub/wine"
 	"github.com/gopub/wine/httpvalue"
 	"github.com/stretchr/testify/require"
