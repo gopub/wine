@@ -219,7 +219,7 @@ func (s *Server) serve(ctx context.Context, req *Request, rw http.ResponseWriter
 				Error(err).Respond(ctx, rw)
 				return
 			}
-			ctx = log.BuildContext(ctx, log.FromContext(ctx).With("model", conv.MustJSONString(m)))
+			ctx = log.BuildContext(ctx, log.FromContext(ctx).With("model", conv.MustJSONString(req.Model)))
 		}
 		h = (*handlerElem)(endpoint.FirstHandler())
 	case method == http.MethodOptions:
