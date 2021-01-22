@@ -333,8 +333,6 @@ func (s *Server) initSession(rw http.ResponseWriter, req *http.Request) string {
 		Expires:  time.Now().Add(s.sessionTTL),
 		Path:     "/",
 		HttpOnly: true,
-		Secure:   true,
-		SameSite: http.SameSiteDefaultMode,
 	}
 	http.SetCookie(rw, cookie)
 	// Write to Header in case cookie is disabled by some browsers
