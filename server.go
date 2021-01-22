@@ -203,7 +203,7 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	wReq.sid = sid
 	wReq.Params()[s.sessionName] = sid
 	s.serve(ctx, wReq, rw)
-	s.logResult(&Request{request: req}, rw, startAt)
+	s.logResult(wReq, rw, startAt)
 }
 
 func (s *Server) serve(ctx context.Context, req *Request, rw http.ResponseWriter) {
@@ -222,7 +222,13 @@ func (s *Server) serve(ctx context.Context, req *Request, rw http.ResponseWriter
 				return
 			}
 			if s.LoggingReqModel && !endpoint.Sensitive() {
-				ctx = log.BuildContext(ctx, log.FromContext(ctx).With("model", conv.MustJSONString(req.Model)))
+				var logger *log.Logger
+				if ls, ok := req.Model.(LogStringer); ok {
+					logger = log.FromContext(ctx).With("model", ls.LogString())
+				} else {
+					logger = log.FromContext(ctx).With("model", conv.MustJSONString(req.Model))
+				}
+				ctx = log.BuildContext(ctx, logger)
 			}
 		}
 		h = (*handlerElem)(endpoint.FirstHandler())
@@ -387,7 +393,7 @@ func logResult(req *Request, res *Result, cost time.Duration) {
 	if res.Status >= http.StatusBadRequest {
 		ua := req.Header("User-Agent")
 		if len(req.Params()) > 0 {
-			info = fmt.Sprintf("%s | %s | %v", info, ua, conv.MustJSONString(req.rawParams))
+			info = fmt.Sprintf("%s | %s | %v", info, ua, conv.MustJSONString(req.Params()))
 		} else if len(httpReq.PostForm) > 0 {
 			info = fmt.Sprintf("%s | %s | %v", info, ua, conv.MustJSONString(httpReq.PostForm))
 		} else {
