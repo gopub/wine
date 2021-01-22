@@ -28,7 +28,8 @@ type Request struct {
 	sid         string
 	Model       interface{}
 
-	uid int64
+	uid       int64
+	sensitive bool
 }
 
 // Request returns original http request

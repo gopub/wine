@@ -216,6 +216,7 @@ func (s *Server) serve(ctx context.Context, req *Request, rw http.ResponseWriter
 	switch {
 	case endpoint != nil:
 		endpoint.Header().WriteTo(rw)
+		req.sensitive = endpoint.Sensitive()
 		if m := endpoint.Model(); m != nil {
 			if err := req.bind(m); err != nil {
 				Error(err).Respond(ctx, rw)
@@ -397,10 +398,12 @@ func logResult(req *Request, res *Result, cost time.Duration) {
 			sessionAndTrace = fmt.Sprintf("%s,%s", sessionAndTrace, traceID)
 		}
 		info = fmt.Sprintf("%s | %s | %s", info, ua, sessionAndTrace)
-		if len(req.Params()) > 0 {
-			info = fmt.Sprintf("%s | %v", info, conv.MustJSONString(req.Params()))
-		} else if len(httpReq.PostForm) > 0 {
-			info = fmt.Sprintf("%s | %v", info, conv.MustJSONString(httpReq.PostForm))
+		if !req.sensitive {
+			if len(req.Params()) > 0 {
+				info = fmt.Sprintf("%s | %v", info, conv.MustJSONString(req.Params()))
+			} else if len(httpReq.PostForm) > 0 {
+				info = fmt.Sprintf("%s | %v", info, conv.MustJSONString(httpReq.PostForm))
+			}
 		}
 
 		if req.uid > 0 {
