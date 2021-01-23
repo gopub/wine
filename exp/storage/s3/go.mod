@@ -7,9 +7,9 @@ require (
 	github.com/gopub/wine/exp/storage v0.1.3
 )
 
-replace (
-	github.com/gopub/wine => ../../../
-	github.com/gopub/wine/exp/storage => ../
-	github.com/gopub/wine/httpvalue => ../../../httpvalue
-	github.com/gopub/wine/router => ../../../router
-)
+//replace (
+//	github.com/gopub/wine => ../../../
+//	github.com/gopub/wine/exp/storage => ../
+//	github.com/gopub/wine/httpvalue => ../../../httpvalue
+//	github.com/gopub/wine/router => ../../../router
+//)

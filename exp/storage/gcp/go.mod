@@ -12,9 +12,9 @@ require (
 	google.golang.org/genproto v0.0.0-20201214200347-8c77b98c765d // indirect
 )
 
-replace (
-	github.com/gopub/wine => ../../../
-	github.com/gopub/wine/exp/storage => ../
-	github.com/gopub/wine/httpvalue => ../../../httpvalue
-	github.com/gopub/wine/router => ../../../router
-)
+//replace (
+//	github.com/gopub/wine => ../../../
+//	github.com/gopub/wine/exp/storage => ../
+//	github.com/gopub/wine/httpvalue => ../../../httpvalue
+//	github.com/gopub/wine/router => ../../../router
+//)

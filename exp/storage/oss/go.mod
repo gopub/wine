@@ -10,9 +10,9 @@ require (
 	golang.org/x/time v0.0.0-20201208040808-7e3f01d25324 // indirect
 )
 
-replace (
-	github.com/gopub/wine => ../../../
-	github.com/gopub/wine/exp/storage => ../
-	github.com/gopub/wine/httpvalue => ../../../httpvalue
-	github.com/gopub/wine/router => ../../../router
-)
+//replace (
+//	github.com/gopub/wine => ../../../
+//	github.com/gopub/wine/exp/storage => ../
+//	github.com/gopub/wine/httpvalue => ../../../httpvalue
+//	github.com/gopub/wine/router => ../../../router
+//)

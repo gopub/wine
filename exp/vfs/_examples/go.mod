@@ -9,9 +9,9 @@ require (
 	github.com/gopub/wine/exp/vfs v0.0.0
 )
 
-replace (
-	github.com/gopub/wine => ../../../
-	github.com/gopub/wine/exp/vfs => ../
-	github.com/gopub/wine/httpvalue => ../../../httpvalue
-	github.com/gopub/wine/router => ../../../router
-)
+//replace (
+//	github.com/gopub/wine => ../../../
+//	github.com/gopub/wine/exp/vfs => ../
+//	github.com/gopub/wine/httpvalue => ../../../httpvalue
+//	github.com/gopub/wine/router => ../../../router
+//)
