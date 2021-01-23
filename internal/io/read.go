@@ -99,7 +99,7 @@ func ReadValues(values url.Values) types.M {
 		err := json.Unmarshal([]byte(jsonStr), &j)
 		if err == nil {
 			j.AddMap(m)
-			return j
+			m = j
 		}
 	}
 	return m
