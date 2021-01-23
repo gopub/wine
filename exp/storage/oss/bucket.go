@@ -6,12 +6,10 @@ import (
 	"fmt"
 	"net/url"
 
-	"github.com/gopub/conv"
-
-	"github.com/gopub/errors"
-
 	"github.com/aliyun/aliyun-oss-go-sdk/oss"
+	"github.com/gopub/errors"
 	"github.com/gopub/wine/exp/storage"
+	"github.com/gopub/wine/urlutil"
 )
 
 const (
@@ -102,6 +100,6 @@ func (b *Bucket) Write(ctx context.Context, obj *storage.Object) (string, error)
 		if err != nil {
 			return "", err
 		}
-		return conv.JoinURLPath(b.baseURL, obj.Name), nil
+		return urlutil.Join(b.baseURL, obj.Name), nil
 	}
 }
