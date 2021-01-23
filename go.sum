@@ -97,6 +97,8 @@ github.com/gopub/conv v0.3.26/go.mod h1:EQFMMtB9WzqhWSmdLqKok+eXQSGTN7IZJUQ5BTcB
 github.com/gopub/conv v0.4.3/go.mod h1:EQFMMtB9WzqhWSmdLqKok+eXQSGTN7IZJUQ5BTcBqFE=
 github.com/gopub/conv v0.5.0 h1:EjckQjFQbu8WC3k6snoWdPZ5Dvmrp4gc6et2MsOkYfY=
 github.com/gopub/conv v0.5.0/go.mod h1:S2ij8M9Ry7WwzGTOZvVcR0sP/Ot1nBEaW9xZexHZhuo=
+github.com/gopub/conv v0.5.1 h1:/CtikqZbGBD0phzua5XIZSw2Jt2hiaM0IEG/iRMW6Ks=
+github.com/gopub/conv v0.5.1/go.mod h1:S2ij8M9Ry7WwzGTOZvVcR0sP/Ot1nBEaW9xZexHZhuo=
 github.com/gopub/environ v0.3.5 h1:/w/2Nrp/wVmWwDoHQ14GFS5n7h24reBSHc3vZs7HtnQ=
 github.com/gopub/environ v0.3.5/go.mod h1:r/LInGvgHU0vAOF7SfevNLabDjI8p643qQxGwsA9qRg=
 github.com/gopub/errors v0.1.7 h1:4eF083l3s7VgHSFrOdGpwywxzWK8jBJhRSIcwBgktcE=
@@ -114,6 +116,10 @@ github.com/gopub/wine/httpvalue v0.1.4 h1:ZqSNERrP2ocxr5IdOU9+9FG4KoAvgYTFGXOq7W
 github.com/gopub/wine/httpvalue v0.1.4/go.mod h1:6A0Udo4CKIP8TXeeD4/zZ+SZ7etHM4mKFbAEnBUehVE=
 github.com/gopub/wine/router v0.1.4 h1:8t5O/I7RGZ1C3CoIRv+Nm5YC8uRoppHwuF/LUCJpdlM=
 github.com/gopub/wine/router v0.1.4/go.mod h1:eSw0uEusW2ghSY+oMUNdxYcD9btabJUfetiSXZ2rTj4=
+github.com/gopub/wine/urlutil v0.0.0-20210123040533-9acd49d57396 h1:ZlX79jpJ2ssWE5i3kfFHAWdaJ3Tz0G07KuIoqvul9jc=
+github.com/gopub/wine/urlutil v0.0.0-20210123040533-9acd49d57396/go.mod h1:n2zAgO7gHxtB5WKaZjinukzIgYToPRMB3B6GfHCsCiA=
+github.com/gopub/wine/urlutil v0.1.0 h1:WXCGQ9dz2VrC0YuQL3z71lWr+hMe23uogmDP2Br9gFw=
+github.com/gopub/wine/urlutil v0.1.0/go.mod h1:n2zAgO7gHxtB5WKaZjinukzIgYToPRMB3B6GfHCsCiA=
 github.com/gorilla/websocket v1.4.2/go.mod h1:YR8l580nyteQvAITg2hZ9XVh4b55+EU/adAjf1fMHhE=
 github.com/grpc-ecosystem/go-grpc-middleware v1.0.0/go.mod h1:FiyG127CGDf3tlThmgyCl78X/SZQqEOJBCDaAfeWzPs=
 github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0/go.mod h1:8NvIoxWQoOIhqOTXgfV/d3M/q6VIi02HzZEHgUlZvzk=
