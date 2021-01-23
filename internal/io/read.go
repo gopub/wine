@@ -68,25 +68,37 @@ func ReadHeader(h http.Header) types.M {
 
 func ReadValues(values url.Values) types.M {
 	m := types.M{}
-	for k, v := range values {
+	for k, va := range values {
 		i := strings.Index(k, "[]")
-		if i >= 0 && i == len(k)-2 {
+		if i == 0 {
 			k = k[0 : len(k)-2]
-			if len(v) == 1 {
-				v = strings.Split(v[0], ",")
+			if k == "" {
+				continue
+			}
+
+			if len(va) == 1 {
+				va = strings.Split(va[0], ",")
 			}
 		}
+
+		if len(va) == 0 {
+			continue
+		}
+
 		k = strings.ToLower(k)
-		if len(v) > 1 || i >= 0 {
-			m[k] = v
-		} else if len(v) == 1 {
-			m[k] = v[0]
+		if len(va) > 1 || i == 0 {
+			// value is an array or expected to be an array
+			m[k] = va
+		} else {
+			m[k] = va[0]
 		}
 	}
-	if jsonBody := m.String("jsonbody"); jsonBody != "" {
+
+	if jsonStr := m.String("json"); jsonStr != "" {
 		var j types.M
-		err := json.Unmarshal([]byte(jsonBody), &j)
+		err := json.Unmarshal([]byte(jsonStr), &j)
 		if err == nil {
+			j.AddMap(m)
 			return j
 		}
 	}
