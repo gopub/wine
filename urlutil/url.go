@@ -49,7 +49,7 @@ func IsURL(s string) bool {
 	return u != ""
 }
 
-func VarargsToURLValues(keyAndValues ...interface{}) (url.Values, error) {
+func VarargsToValues(keyAndValues ...interface{}) (url.Values, error) {
 	uv := url.Values{}
 	keys, vals, err := conv.VarargsToSlice(keyAndValues)
 	if err != nil {
@@ -68,7 +68,7 @@ func VarargsToURLValues(keyAndValues ...interface{}) (url.Values, error) {
 }
 
 func MustVarargsToValues(keyAndValues ...interface{}) url.Values {
-	v, err := VarargsToURLValues(keyAndValues...)
+	v, err := VarargsToValues(keyAndValues...)
 	if err != nil {
 		panic(err)
 	}
