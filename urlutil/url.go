@@ -67,6 +67,14 @@ func VarargsToURLValues(keyAndValues ...interface{}) (url.Values, error) {
 	return uv, nil
 }
 
+func MustVarargsToURLValues(keyAndValues ...interface{}) url.Values {
+	v, err := VarargsToURLValues(keyAndValues...)
+	if err != nil {
+		panic(err)
+	}
+	return v
+}
+
 func ToValues(i interface{}) (url.Values, error) {
 	i = conv.IndirectToStringerOrError(i)
 	if i == nil {
