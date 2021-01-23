@@ -69,8 +69,8 @@ func ReadHeader(h http.Header) types.M {
 func ReadValues(values url.Values) types.M {
 	m := types.M{}
 	for k, va := range values {
-		i := strings.Index(k, "[]")
-		if i == 0 {
+		isArray := strings.HasSuffix(k, "[]")
+		if isArray {
 			k = k[0 : len(k)-2]
 			if k == "" {
 				continue
@@ -86,7 +86,7 @@ func ReadValues(values url.Values) types.M {
 		}
 
 		k = strings.ToLower(k)
-		if len(va) > 1 || i == 0 {
+		if isArray || len(va) > 1 {
 			// value is an array or expected to be an array
 			m[k] = va
 		} else {
