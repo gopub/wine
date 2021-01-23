@@ -3,13 +3,16 @@ module github.com/gopub/wine/exp/storage/gcp
 go 1.15
 
 require (
-	cloud.google.com/go v0.74.0 // indirect
+	cloud.google.com/go v0.75.0 // indirect
 	cloud.google.com/go/storage v1.12.0
-	github.com/gopub/log v1.2.3
-	github.com/gopub/wine/exp/storage v0.1.3
-	golang.org/x/net v0.0.0-20201224014010-6772e930b67b // indirect
-	golang.org/x/tools v0.0.0-20201230163300-2152f4ed8ce7 // indirect
-	google.golang.org/genproto v0.0.0-20201214200347-8c77b98c765d // indirect
+	github.com/gopub/wine v1.38.2 // indirect
+	github.com/gopub/wine/exp/storage v0.1.6
+	golang.org/x/mod v0.4.1 // indirect
+	golang.org/x/net v0.0.0-20210119194325-5f4716e94777 // indirect
+	golang.org/x/oauth2 v0.0.0-20210113205817-d3ed898aa8a3 // indirect
+	golang.org/x/tools v0.1.0 // indirect
+	google.golang.org/genproto v0.0.0-20210122163508-8081c04a3579 // indirect
+	google.golang.org/grpc v1.35.0 // indirect
 )
 
 //replace (
