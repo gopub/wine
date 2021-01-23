@@ -56,6 +56,14 @@ func (c *Client) Endpoint(method, url string) (*ClientEndpoint, error) {
 	return newClientEndpoint(c, method, url)
 }
 
+func (c *Client) MustEndpoint(method, url string) *ClientEndpoint {
+	e, err := newClientEndpoint(c, method, url)
+	if err != nil {
+		panic(fmt.Sprintf("cannot create endpoint: %s %s", method, url))
+	}
+	return e
+}
+
 // Header returns shared http header
 func (c *Client) Header() http.Header {
 	return c.header
