@@ -67,7 +67,7 @@ func VarargsToURLValues(keyAndValues ...interface{}) (url.Values, error) {
 	return uv, nil
 }
 
-func MustVarargsToURLValues(keyAndValues ...interface{}) url.Values {
+func MustVarargsToValues(keyAndValues ...interface{}) url.Values {
 	v, err := VarargsToURLValues(keyAndValues...)
 	if err != nil {
 		panic(err)
