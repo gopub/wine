@@ -56,12 +56,14 @@ func VarargsToValues(keyAndValues ...interface{}) (url.Values, error) {
 		return nil, err
 	}
 	for i, k := range keys {
-		vs, err := conv.ToString(vals[i])
+		a, err := conv.ToStringSlice(vals[i])
 		if err != nil {
 			return nil, err
 		}
-		if vs != "" {
-			uv.Add(k, vs)
+		for _, v := range a {
+			if v != "" {
+				uv.Add(k, v)
+			}
 		}
 	}
 	return uv, nil
