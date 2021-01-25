@@ -246,11 +246,13 @@ func (c *ClientEndpoint) Call(ctx context.Context, input interface{}, output int
 	switch iv := input.(type) {
 	case url.Values:
 		if c.method == http.MethodGet || c.method == http.MethodDelete {
+			query := c.url.Query()
 			for k, vl := range iv {
 				for _, v := range vl {
-					c.url.Query().Add(k, v)
+					query.Add(k, v)
 				}
 			}
+			c.url.RawQuery = query.Encode()
 		} else if len(iv) > 0 {
 			body = strings.NewReader(iv.Encode())
 			contentType = httpvalue.FormURLEncoded
