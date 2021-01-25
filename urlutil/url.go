@@ -15,11 +15,13 @@ func Join(a ...string) string {
 	if len(a) == 0 {
 		return ""
 	}
+	// path.Join will convert // to be /
 	p := path.Join(a...)
 	p = strings.Replace(p, ":/", "://", 1)
 	i := strings.Index(p, "://")
 	s := p
 	if i >= 0 {
+		i += 3
 		s = p[i:]
 		l := strings.Split(s, "/")
 		for i, v := range l {
