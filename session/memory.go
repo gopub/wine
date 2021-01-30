@@ -11,8 +11,9 @@ import (
 )
 
 type memorySession struct {
-	id   string
-	data sync.Map
+	id      string
+	data    sync.Map
+	options *Options
 
 	sharedCache *cache.Cache
 }
@@ -67,6 +68,10 @@ func (m *memorySession) Flush() error {
 	return nil
 }
 
+func (m *memorySession) Options() *Options {
+	return m.options
+}
+
 var _ Session = (*memorySession)(nil)
 
 type MemoryProvider struct {
@@ -93,6 +98,7 @@ func (m *MemoryProvider) Create(ctx context.Context, id string, options *Options
 	s := &memorySession{
 		id:          id,
 		sharedCache: m.cache,
+		options:     options,
 	}
 	m.cache.Set(id, s, options.TTL)
 	return s, nil

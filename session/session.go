@@ -51,6 +51,7 @@ type Session interface {
 	Delete(ctx context.Context, name string) error
 	Clear() error
 	Flush() error
+	Options() *Options
 }
 
 type contextKey int
