@@ -1,8 +1,10 @@
 package wine
 
 import (
+	"context"
 	"github.com/gopub/conv"
 	"github.com/gopub/log"
+	"github.com/gopub/wine/ctxutil"
 	"github.com/gopub/wine/internal/respond"
 	"github.com/gopub/wine/router"
 )
@@ -30,11 +32,14 @@ func Validate(i interface{}) error {
 	return conv.Validate(i)
 }
 
-const (
-	ParamNameDeviceID   = "device_id"
-	ParamNameCoordinate = "coordinate"
-	ParamNameTraceID    = "trace_id"
-	ParamNameTimestamp  = "timestamp"
-	ParamNameSign       = "sign"
-	ParamNameAppID      = "app_id"
-)
+func Next(ctx context.Context, req *Request) Responder {
+	i, _ := ctx.Value(ctxutil.KeyNextHandler).(Handler)
+	if i == nil {
+		return nil
+	}
+	return i.HandleRequest(ctx, req)
+}
+
+func withNextHandler(ctx context.Context, h Handler) context.Context {
+	return context.WithValue(ctx, ctxutil.KeyNextHandler, h)
+}
