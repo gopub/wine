@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/gopub/wine/ctxutil"
 	"math/rand"
 	"mime"
 	"net"
@@ -14,13 +15,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gopub/wine/httpvalue"
-
 	"github.com/gopub/conv"
 	"github.com/gopub/environ"
 	"github.com/gopub/log"
 	"github.com/gopub/types"
-	contextpkg "github.com/gopub/wine/internal/context"
+	"github.com/gopub/wine/httpvalue"
 	"github.com/gopub/wine/internal/io"
 	"github.com/gopub/wine/internal/resource"
 	"github.com/gopub/wine/internal/respond"
@@ -275,8 +274,8 @@ func (s *Server) wrapResponseWriter(rw http.ResponseWriter, req *http.Request) h
 
 func (s *Server) initContext(req *http.Request) (context.Context, context.CancelFunc) {
 	ctx, cancel := context.WithTimeout(req.Context(), s.Timeout)
-	ctx = contextpkg.WithTemplateManager(ctx, s.Manager)
-	ctx = contextpkg.WithRequestHeader(ctx, req.Header)
+	ctx = ctxutil.WithTemplateManager(ctx, s.Manager)
+	ctx = ctxutil.WithRequestHeader(ctx, req.Header)
 	return ctx, cancel
 }
 

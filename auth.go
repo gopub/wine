@@ -3,6 +3,7 @@ package wine
 import (
 	"context"
 	"encoding/base64"
+	"github.com/gopub/wine/ctxutil"
 	"net/http"
 	"strconv"
 
@@ -28,7 +29,7 @@ func NewBasicAuthHandler(userToPassword map[string]string, realm string) Handler
 		a := req.Authorization()
 		for user, auth := range userToAuthorization {
 			if auth == a {
-				ctx = WithUser(ctx, user)
+				ctx = ctxutil.WithUser(ctx, user)
 				return Next(ctx, req)
 			}
 		}

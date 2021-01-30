@@ -1,4 +1,4 @@
-package context
+package ctxutil
 
 import (
 	"context"
@@ -70,4 +70,41 @@ func Detach(ctx context.Context) context.Context {
 		}
 	}
 	return newCtx
+}
+
+func GetUserID(ctx context.Context) int64 {
+	id, _ := ctx.Value(KeyUserID).(int64)
+	return id
+}
+
+func WithUserID(ctx context.Context, id int64) context.Context {
+	if id == 0 {
+		return ctx
+	}
+	return context.WithValue(ctx, KeyUserID, id)
+}
+
+func GetUser(ctx context.Context) interface{} {
+	return ctx.Value(KeyUser)
+}
+
+func WithUser(ctx context.Context, u interface{}) context.Context {
+	return context.WithValue(ctx, KeyUser, u)
+}
+
+func WithSudo(ctx context.Context) context.Context {
+	return context.WithValue(ctx, KeySudo, true)
+}
+
+func IsSudo(ctx context.Context) bool {
+	b, _ := ctx.Value(KeySudo).(bool)
+	return b
+}
+
+func GetAppID(ctx context.Context) string {
+	return GetRequestHeader(ctx).Get(httpvalue.CustomAppID)
+}
+
+func GetDeviceID(ctx context.Context) string {
+	return GetRequestHeader(ctx).Get(httpvalue.CustomDeviceID)
 }

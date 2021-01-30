@@ -3,6 +3,7 @@ package websocket
 import (
 	"context"
 	"fmt"
+	"github.com/gopub/wine/ctxutil"
 	"net"
 	"net/http"
 	"reflect"
@@ -14,7 +15,6 @@ import (
 	"github.com/gopub/errors"
 	"github.com/gopub/log"
 	"github.com/gopub/wine"
-	contextpkg "github.com/gopub/wine/internal/context"
 	"github.com/gopub/wine/router"
 	"github.com/gorilla/websocket"
 )
@@ -55,10 +55,10 @@ type serverConn struct {
 
 func (c *serverConn) buildContext(ctx context.Context) context.Context {
 	if c.userID > 0 {
-		ctx = wine.WithUserID(ctx, c.userID)
+		ctx = ctxutil.WithUserID(ctx, c.userID)
 	}
 	ctx = withServerConn(ctx, c)
-	ctx = contextpkg.WithRequestHeader(ctx, c.header)
+	ctx = ctxutil.WithRequestHeader(ctx, c.header)
 	return ctx
 }
 

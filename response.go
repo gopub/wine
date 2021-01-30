@@ -3,13 +3,13 @@ package wine
 import (
 	"context"
 	"fmt"
+	"github.com/gopub/wine/ctxutil"
 	"io"
 	"net/http"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/gopub/errors"
 	"github.com/gopub/wine/httpvalue"
-	contextpkg "github.com/gopub/wine/internal/context"
 	iopkg "github.com/gopub/wine/internal/io"
 	"github.com/gopub/wine/internal/respond"
 )
@@ -107,7 +107,7 @@ func HTML(status int, html string) Responder {
 
 func TemplateHTML(name string, params interface{}) Responder {
 	return respond.Func(func(ctx context.Context, w http.ResponseWriter) {
-		contextpkg.GetTemplateManager(ctx).Execute(w, name, params)
+		ctxutil.GetTemplateManager(ctx).Execute(w, name, params)
 	})
 }
 

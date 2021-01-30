@@ -2,6 +2,7 @@ package wine
 
 import (
 	"context"
+	"github.com/gopub/wine/ctxutil"
 	"net/http"
 	"net/http/httputil"
 	"time"
@@ -40,7 +41,7 @@ func handleDate(_ context.Context, req *Request) Responder {
 }
 
 func checkAuth(ctx context.Context, req *Request) Responder {
-	if GetUserID(ctx) <= 0 {
+	if ctxutil.GetUserID(ctx) <= 0 {
 		return Text(http.StatusUnauthorized, "")
 	}
 	return Next(ctx, req)

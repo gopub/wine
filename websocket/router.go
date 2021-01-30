@@ -2,14 +2,14 @@ package websocket
 
 import (
 	"context"
+	"github.com/gopub/wine/ctxutil"
+	"github.com/gopub/wine/router"
 	"time"
 
 	"github.com/gopub/types"
 
 	"github.com/gopub/conv"
 	"github.com/gopub/errors"
-	"github.com/gopub/wine"
-	"github.com/gopub/wine/router"
 )
 
 type Router struct {
@@ -67,7 +67,7 @@ func (r *Router) Bind(path string, funcs ...HandlerFunc) *router.Endpoint {
 }
 
 func checkAuth(ctx context.Context, params interface{}) (interface{}, error) {
-	if wine.GetUserID(ctx) <= 0 {
+	if ctxutil.GetUserID(ctx) <= 0 {
 		return nil, errors.Unauthorized("")
 	}
 	return Next(ctx, params)
