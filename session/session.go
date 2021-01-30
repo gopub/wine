@@ -58,8 +58,8 @@ const (
 	keySession contextKey = iota + 1
 )
 
-func Get(ctx context.Context) *Session {
-	v, _ := ctx.Value(keySession).(*Session)
+func Get(ctx context.Context) Session {
+	v, _ := ctx.Value(keySession).(Session)
 	return v
 }
 

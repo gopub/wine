@@ -117,6 +117,7 @@ github.com/gopub/wine/router v0.1.4 h1:8t5O/I7RGZ1C3CoIRv+Nm5YC8uRoppHwuF/LUCJpd
 github.com/gopub/wine/router v0.1.4/go.mod h1:eSw0uEusW2ghSY+oMUNdxYcD9btabJUfetiSXZ2rTj4=
 github.com/gopub/wine/urlutil v0.1.0 h1:WXCGQ9dz2VrC0YuQL3z71lWr+hMe23uogmDP2Br9gFw=
 github.com/gopub/wine/urlutil v0.1.0/go.mod h1:n2zAgO7gHxtB5WKaZjinukzIgYToPRMB3B6GfHCsCiA=
+github.com/gorilla/websocket v1.4.2 h1:+/TMaTYc4QFitKJxsQ7Yye35DkWvkdLcvGKqM+x0Ufc=
 github.com/gorilla/websocket v1.4.2/go.mod h1:YR8l580nyteQvAITg2hZ9XVh4b55+EU/adAjf1fMHhE=
 github.com/grpc-ecosystem/go-grpc-middleware v1.0.0/go.mod h1:FiyG127CGDf3tlThmgyCl78X/SZQqEOJBCDaAfeWzPs=
 github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0/go.mod h1:8NvIoxWQoOIhqOTXgfV/d3M/q6VIi02HzZEHgUlZvzk=
