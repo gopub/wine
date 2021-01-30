@@ -277,7 +277,7 @@ func (c *ClientEndpoint) Call(ctx context.Context, input interface{}, output int
 	if contentType != "" {
 		req.Header.Set(httpvalue.ContentType, contentType)
 	}
-	reqID := uuid.New().String()
+	reqID := uuid.NewString()
 	req.Header.Set(httpvalue.RequestID, reqID)
 	err = c.c.Do(req, output)
 	if err != nil {

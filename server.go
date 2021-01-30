@@ -324,7 +324,7 @@ func (s *Server) initSession(rw http.ResponseWriter, req *http.Request) string {
 	}
 
 	if sid == "" {
-		sid = uuid.New().String()
+		sid = uuid.NewString()
 	}
 
 	cookie := &http.Cookie{

@@ -22,7 +22,7 @@ func (o *Object) Validate() error {
 	}
 
 	if o.Name == "" {
-		o.Name = uuid.New().String()
+		o.Name = uuid.NewString()
 	}
 	return nil
 }

@@ -14,7 +14,7 @@ import (
 )
 
 func TestFileSystemSync_CheckData(t *testing.T) {
-	password := uuid.New().String()
+	password := uuid.NewString()
 	fs1, err := vfs.NewFileSystem(vfs.NewMemoryStorage())
 	require.NoError(t, err)
 	fs1.SetPassword(password)
@@ -23,7 +23,7 @@ func TestFileSystemSync_CheckData(t *testing.T) {
 	fs2.SetPassword(password)
 
 	var foo = map[string]int64{"hello": 123}
-	name := uuid.New().String()
+	name := uuid.NewString()
 	err = fs1.WriteJSON(name, foo)
 	require.NoError(t, err)
 	logC, doneC := fs2.Sync(fs1)
@@ -56,35 +56,35 @@ func TestFileSystemSync_Sync(t *testing.T) {
 	require.NoError(t, err)
 
 	for i := 0; i < 10; i++ {
-		err = fs1.KeyChain().Save(&vfs.SecKeyItem{Name: uuid.New().String(), Account: uuid.New().String(), Password: uuid.New().String()})
+		err = fs1.KeyChain().Save(&vfs.SecKeyItem{Name: uuid.NewString(), Account: uuid.NewString(), Password: uuid.NewString()})
 		require.NoError(t, err)
 	}
 
 	for i := 0; i < 10; i++ {
-		var path = uuid.New().String()
+		var path = uuid.NewString()
 		for j := 0; j < i; j++ {
-			path = filepath.Join(path, uuid.New().String())
+			path = filepath.Join(path, uuid.NewString())
 		}
 
 		dir, err := fs1.MkdirAll(path)
 		require.NoError(t, err)
 		require.Equal(t, "/"+path, dir.Path(), i)
 		for k := 0; k < i; k++ {
-			name := uuid.New().String()
+			name := uuid.NewString()
 			f, err := fs1.Wrapper().Create(dir.UUID(), name)
 			require.NoError(t, err)
 			switch k % 3 {
 			case 0:
 				f.Info().SetMIMEType(httpvalue.Plain)
-				_, err = f.Write([]byte(strings.Repeat(uuid.New().String(), 1024*(k+1))))
+				_, err = f.Write([]byte(strings.Repeat(uuid.NewString(), 1024*(k+1))))
 				require.NoError(t, err)
 			case 1:
 				f.Info().SetMIMEType(httpvalue.JSON)
-				_, err = f.Write(conv.MustJSONBytes(types.M{uuid.New().String(): uuid.New().String()}))
+				_, err = f.Write(conv.MustJSONBytes(types.M{uuid.NewString(): uuid.NewString()}))
 				require.NoError(t, err)
 			default:
 				f.Info().SetMIMEType(httpvalue.OctetStream)
-				_, err = f.Write([]byte(strings.Repeat(uuid.New().String(), 10240*(k+1))))
+				_, err = f.Write([]byte(strings.Repeat(uuid.NewString(), 10240*(k+1))))
 				require.NoError(t, err)
 			}
 		}

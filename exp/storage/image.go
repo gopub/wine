@@ -69,7 +69,7 @@ func (w *ImageWriter) AddThumbnailOptions(thumbnails ...*ThumbnailOption) error 
 
 func (w *ImageWriter) Write(ctx context.Context, name string, data []byte) (string, error) {
 	if name = strings.TrimSpace(name); name == "" {
-		name = uuid.New().String()
+		name = uuid.NewString()
 	}
 	img, format, err := image.Decode(bytes.NewReader(data))
 	if err != nil {
@@ -120,7 +120,7 @@ func (w *ImageWriter) HandleRequest(ctx context.Context, req *wine.Request) wine
 }
 
 func (w *ImageWriter) saveBody(ctx context.Context, body []byte) wine.Responder {
-	url, err := w.Write(ctx, uuid.New().String(), body)
+	url, err := w.Write(ctx, uuid.NewString(), body)
 	if err != nil {
 		return wine.Error(err)
 	}
@@ -141,7 +141,7 @@ func (w *ImageWriter) saveMultipart(ctx context.Context, form *multipart.Form) w
 				return wine.Error(err)
 			}
 
-			url, err := w.Write(ctx, uuid.New().String(), b)
+			url, err := w.Write(ctx, uuid.NewString(), b)
 			if err != nil {
 				return wine.Error(err)
 			}

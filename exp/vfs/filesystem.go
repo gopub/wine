@@ -88,7 +88,7 @@ func (fs *FileSystem) SetPassword(password string) error {
 	}
 	// this is a new file system, initialize key if password is provided
 	passwordHash := conv.Hash32([]byte(password))
-	key := conv.Hash32([]byte(uuid.New().String()))
+	key := conv.Hash32([]byte(uuid.NewString()))
 	fs.credential = make([]byte, 2*keySize)
 	copy(fs.credential, key[:])
 	copy(fs.credential[keySize:], passwordHash[:])

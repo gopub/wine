@@ -49,7 +49,7 @@ func TestServerStatus(t *testing.T) {
 func TestServerMethod(t *testing.T) {
 	server := wine.NewTestServer(t)
 	r := server.Router
-	getStr := strings.Repeat(uuid.New().String(), 1024)
+	getStr := strings.Repeat(uuid.NewString(), 1024)
 	r.Get("/", func(ctx context.Context, req *wine.Request) wine.Responder {
 		return wine.Text(http.StatusOK, getStr)
 	})
@@ -106,7 +106,7 @@ func TestServer_Header(t *testing.T) {
 	server := wine.NewTestServer(t)
 	url := server.Run()
 	t.Run("RootHeader", func(t *testing.T) {
-		v := uuid.New().String()
+		v := uuid.NewString()
 		key := "RootHeader"
 		server.Header().Add(key, v)
 		resp, err := http.Get(url)
@@ -114,7 +114,7 @@ func TestServer_Header(t *testing.T) {
 		require.Equal(t, v, resp.Header.Get(key))
 	})
 	t.Run("PathHeader", func(t *testing.T) {
-		v := uuid.New().String()
+		v := uuid.NewString()
 		key := "PathHeader"
 		server.Get("/hello", func(ctx context.Context, req *wine.Request) wine.Responder {
 			return wine.OK
@@ -149,13 +149,13 @@ func TestServer_Bind(t *testing.T) {
 			}
 			return errors.BadRequest("")
 		}).SetModel(int64(0))
-		resp, err := http.Get(url + "/interror/" + uuid.New().String())
+		resp, err := http.Get(url + "/interror/" + uuid.NewString())
 		require.NoError(t, err)
 		require.Equal(t, http.StatusBadRequest, resp.StatusCode)
 	})
 
 	t.Run("PathParamString", func(t *testing.T) {
-		name := uuid.New().String()
+		name := uuid.NewString()
 		server.Get("/string/{name}", func(ctx context.Context, req *wine.Request) wine.Responder {
 			if req.Model.(string) == name {
 				return wine.OK

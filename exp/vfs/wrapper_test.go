@@ -12,7 +12,7 @@ import (
 func TestFileSystemWrapper_ImportDiskFile(t *testing.T) {
 	fs, err := vfs.NewFileSystem(vfs.NewMemoryStorage())
 	require.NoError(t, err)
-	fs.SetPassword(uuid.New().String())
+	fs.SetPassword(uuid.NewString())
 	fi, err := fs.Wrapper().ImportDiskFile("", "vfs.go")
 	require.NoError(t, err)
 	require.Equal(t, "vfs.go", fi.Name())

@@ -185,7 +185,7 @@ func (f *File) Write(p []byte) (int, error) {
 func (f *File) WriteThumbnail(b []byte) error {
 	tb := f.info.Thumbnail
 	if tb == "" {
-		tb = uuid.New().String()
+		tb = uuid.NewString()
 	}
 
 	err := f.vo.EncryptPage(b)
@@ -243,7 +243,7 @@ func (f *File) flush(all bool) error {
 				f.info.truncate()
 			}
 			f.offset += int64(n)
-			page := uuid.New().String()
+			page := uuid.NewString()
 			data := b[:n]
 			if er := f.vo.EncryptPage(data); er != nil {
 				return fmt.Errorf("encrypt: %w", er)

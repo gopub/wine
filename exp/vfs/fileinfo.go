@@ -67,7 +67,7 @@ func newRootFile() *rootFileInfo {
 func newFileInfo(isDir bool, name string) *FileInfo {
 	return &FileInfo{
 		fileMetadata: fileMetadata{
-			UUID:       uuid.New().String(),
+			UUID:       uuid.NewString(),
 			Name:       name,
 			IsDir:      isDir,
 			CreatedAt:  time.Now().Unix(),

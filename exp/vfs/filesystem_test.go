@@ -12,7 +12,7 @@ import (
 
 func setupFS(t *testing.T) *vfs.FileSystem {
 	ms := vfs.NewMemoryStorage()
-	password := uuid.New().String()
+	password := uuid.NewString()
 	fs, err := vfs.NewFileSystem(ms)
 	require.NoError(t, err)
 	require.NotEmpty(t, fs)
@@ -23,7 +23,7 @@ func setupFS(t *testing.T) *vfs.FileSystem {
 
 func TestNewEncryptedFileSystem(t *testing.T) {
 	ms := vfs.NewMemoryStorage()
-	password := uuid.New().String()
+	password := uuid.NewString()
 	fs, err := vfs.NewFileSystem(ms)
 	require.NoError(t, err)
 	require.NotEmpty(t, fs)
@@ -46,14 +46,14 @@ func TestNewEncryptedFileSystem(t *testing.T) {
 
 func TestFileSystem_CreateDir(t *testing.T) {
 	fs := setupFS(t)
-	dirName := uuid.New().String()
+	dirName := uuid.NewString()
 	dir, err := fs.Mkdir(dirName)
 	require.NoError(t, err)
 	require.NotEmpty(t, dir)
 	require.Equal(t, dirName, dir.Name())
 	require.Equal(t, true, dir.IsDir())
 
-	subDirName := uuid.New().String()
+	subDirName := uuid.NewString()
 	subDir, err := fs.Wrapper().Create(dir.UUID(), subDirName)
 	require.NoError(t, err)
 	require.NotEmpty(t, subDir)
@@ -63,7 +63,7 @@ func TestFileSystem_CreateDir(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEmpty(t, f)
 
-	f, err = fs.Stat(filepath.Join(dirName, uuid.New().String()))
+	f, err = fs.Stat(filepath.Join(dirName, uuid.NewString()))
 	require.Error(t, err)
 	require.Empty(t, f)
 
@@ -75,7 +75,7 @@ func TestFileSystem_CreateFile(t *testing.T) {
 	fs := setupFS(t)
 
 	t.Run("CreateFileInHome", func(t *testing.T) {
-		fileName := uuid.New().String()
+		fileName := uuid.NewString()
 		f, err := fs.Create(fileName)
 		require.NoError(t, err)
 		require.NotEmpty(t, f)
@@ -92,9 +92,9 @@ func TestFileSystem_CreateFile(t *testing.T) {
 	})
 
 	t.Run("CreateFileInDir", func(t *testing.T) {
-		dir, err := fs.Mkdir(uuid.New().String())
+		dir, err := fs.Mkdir(uuid.NewString())
 		require.NoError(t, err)
-		fileName := uuid.New().String()
+		fileName := uuid.NewString()
 		f, err := fs.Wrapper().Create(dir.UUID(), fileName)
 		require.NoError(t, err)
 		require.NotEmpty(t, f)
@@ -119,7 +119,7 @@ func TestFileSystem_Delete(t *testing.T) {
 	fs := setupFS(t)
 
 	t.Run("DeleteExisted", func(t *testing.T) {
-		fileName := uuid.New().String()
+		fileName := uuid.NewString()
 		f, err := fs.Create(fileName)
 		require.NoError(t, err)
 
@@ -131,7 +131,7 @@ func TestFileSystem_Delete(t *testing.T) {
 	})
 
 	t.Run("DeleteNotExisted", func(t *testing.T) {
-		fileName := uuid.New().String()
+		fileName := uuid.NewString()
 		f, err := fs.Create(fileName)
 		require.NoError(t, err)
 
@@ -146,12 +146,12 @@ func TestFileSystem_Delete(t *testing.T) {
 func TestFileSystem_Move(t *testing.T) {
 	fs := setupFS(t)
 
-	fileName := uuid.New().String()
+	fileName := uuid.NewString()
 	f, err := fs.Create(fileName)
 	require.NoError(t, err)
 	f.Close()
 
-	dir, err := fs.Mkdir(uuid.New().String())
+	dir, err := fs.Mkdir(uuid.NewString())
 	require.NoError(t, err)
 
 	err = fs.Wrapper().Move(f.Info().UUID(), dir.UUID())
@@ -163,11 +163,11 @@ func TestFileSystem_Move(t *testing.T) {
 
 func TestFileSystem_Mount(t *testing.T) {
 	ms := vfs.NewMemoryStorage()
-	password := uuid.New().String()
+	password := uuid.NewString()
 	fs, err := vfs.NewFileSystem(ms)
 	require.NoError(t, err)
 	require.NoError(t, fs.SetPassword(password))
-	f, err := fs.Create(uuid.New().String())
+	f, err := fs.Create(uuid.NewString())
 	require.NoError(t, err)
 	f.Close()
 

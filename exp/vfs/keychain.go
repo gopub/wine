@@ -78,7 +78,7 @@ func (kc *fileSystemKeyChain) Save(item *SecKeyItem) error {
 		return fmt.Errorf("load: %w", err)
 	}
 	if item.UUID == "" {
-		item.UUID = uuid.New().String()
+		item.UUID = uuid.NewString()
 	}
 	item.ModifiedAt = time.Now().Unix()
 	items[item.UUID] = item

@@ -76,7 +76,7 @@ func TestJSON(t *testing.T) {
 
 	t.Run("Struct", func(t *testing.T) {
 		v := &Item{
-			String:  uuid.New().String(),
+			String:  uuid.NewString(),
 			Integer: rand.Int(),
 			Float:   rand.Float32(),
 			Array:   []int{rand.Int(), rand.Int()},

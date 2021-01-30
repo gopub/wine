@@ -15,9 +15,9 @@ import (
 func TestFile_Write(t *testing.T) {
 	fs := setupFS(t)
 	t.Run("WriteLargeAmount", func(t *testing.T) {
-		f, err := fs.Create(uuid.New().String())
+		f, err := fs.Create(uuid.NewString())
 		require.NoError(t, err)
-		data := []byte(strings.Repeat(uuid.New().String(), 12345))
+		data := []byte(strings.Repeat(uuid.NewString(), 12345))
 		n, err := f.Write(data)
 		require.Equal(t, len(data), n)
 		require.NoError(t, err)
@@ -42,9 +42,9 @@ func TestFile_Write(t *testing.T) {
 	})
 
 	t.Run("WriteSmallAmount", func(t *testing.T) {
-		f, err := fs.Create(uuid.New().String())
+		f, err := fs.Create(uuid.NewString())
 		require.NoError(t, err)
-		data := []byte(strings.Repeat(uuid.New().String(), 2))
+		data := []byte(strings.Repeat(uuid.NewString(), 2))
 		n, err := f.Write(data)
 		require.Equal(t, len(data), n)
 		require.NoError(t, err)
@@ -69,17 +69,17 @@ func TestFile_Write(t *testing.T) {
 	})
 
 	t.Run("WriteTwice", func(t *testing.T) {
-		f, err := fs.Create(uuid.New().String())
+		f, err := fs.Create(uuid.NewString())
 		require.NoError(t, err)
-		data := []byte(strings.Repeat(uuid.New().String(), 2))
+		data := []byte(strings.Repeat(uuid.NewString(), 2))
 		n, err := f.Write(data)
 		require.Equal(t, len(data), n)
 		require.NoError(t, err)
 		err = f.Close()
 		require.NoError(t, err)
 
-		f, err = fs.Create(uuid.New().String())
-		data = []byte(strings.Repeat(uuid.New().String(), 10))
+		f, err = fs.Create(uuid.NewString())
+		data = []byte(strings.Repeat(uuid.NewString(), 10))
 		n, err = f.Write(data)
 		require.Equal(t, len(data), n)
 		f.Close()
