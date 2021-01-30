@@ -6,10 +6,7 @@ import (
 	"time"
 
 	"github.com/gopub/environ"
-	"github.com/gopub/errors"
 )
-
-const ErrNil = errors.String("nil")
 
 type Options struct {
 	Name string

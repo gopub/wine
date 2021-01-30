@@ -84,7 +84,7 @@ func NewMemoryProvider() *MemoryProvider {
 func (m *MemoryProvider) Get(ctx context.Context, id string) (Session, error) {
 	v, ok := m.cache.Get(id)
 	if !ok {
-		return nil, ErrNil
+		return nil, errors.NotExist
 	}
 	return v.(Session), nil
 }
