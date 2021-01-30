@@ -29,7 +29,7 @@ func (m *memorySession) Set(ctx context.Context, name string, value interface{})
 func (m *memorySession) Get(ctx context.Context, name string, ptrValue interface{}) error {
 	v, ok := m.data.Load(name)
 	if !ok {
-		return fmt.Errorf("%s is missing", name)
+		return errors.NotExist
 	}
 
 	if ptrValue == nil {
