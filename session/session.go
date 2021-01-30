@@ -9,8 +9,10 @@ import (
 )
 
 type Options struct {
-	Name string
-	TTL  time.Duration
+	Name           string
+	TTL            time.Duration
+	CookiePath     string
+	CookieHttpOnly bool
 
 	keyForID       string
 	headerKeyForID string
@@ -23,8 +25,10 @@ func DefaultOptions() *Options {
 		return defaultOptions
 	}
 	o := &Options{
-		Name: environ.String("wine.session.name", "wsession"),
-		TTL:  environ.Duration("wine.session.ttl", 30*time.Minute),
+		Name:           environ.String("wine.session.name", "wsession"),
+		TTL:            environ.Duration("wine.session.ttl", 30*time.Minute),
+		CookieHttpOnly: true,
+		CookiePath:     "/",
 	}
 	o.Name = strings.ToLower(strings.TrimSpace(o.Name))
 	if o.Name == "" {

@@ -37,8 +37,8 @@ func NewHandler(provider Provider, options *Options) wine.HandlerFunc {
 			Name:     options.keyForID,
 			Value:    sid,
 			Expires:  time.Now().Add(options.TTL),
-			Path:     "/",
-			HttpOnly: true,
+			Path:     options.CookiePath,
+			HttpOnly: options.CookieHttpOnly,
 		}
 
 		resp := wine.Next(ctx, req)
