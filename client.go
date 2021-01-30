@@ -6,12 +6,13 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"github.com/gopub/wine/urlutil"
 	"io"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
 	"strings"
+
+	"github.com/gopub/wine/urlutil"
 
 	"github.com/google/uuid"
 	"github.com/gopub/conv"

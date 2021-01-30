@@ -15,8 +15,9 @@ require (
 	github.com/gopub/wine/router v0.1.4
 	github.com/gopub/wine/urlutil v0.1.0
 	github.com/mitchellh/mapstructure v1.4.1 // indirect
+	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/stretchr/testify v1.6.1
-	golang.org/x/sys v0.0.0-20210122235752-a8b976e07c7b // indirect
+	golang.org/x/sys v0.0.0-20210124154548-22da62e12c0c // indirect
 	golang.org/x/text v0.3.5 // indirect
 )
 

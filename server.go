@@ -14,12 +14,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/google/uuid"
+	"github.com/gopub/wine/httpvalue"
+
 	"github.com/gopub/conv"
 	"github.com/gopub/environ"
 	"github.com/gopub/log"
 	"github.com/gopub/types"
-	"github.com/gopub/wine/httpvalue"
 	contextpkg "github.com/gopub/wine/internal/context"
 	"github.com/gopub/wine/internal/io"
 	"github.com/gopub/wine/internal/resource"
@@ -30,10 +30,8 @@ import (
 const (
 	faviconPath = "favicon.ico"
 
-	defaultReqMaxMem  = int(8 * types.MB)
-	defaultSessionTTL = 30 * time.Minute
-	minSessionTTL     = 5 * time.Minute
-	defaultTimeout    = 10 * time.Second
+	defaultReqMaxMem = int(8 * types.MB)
+	defaultTimeout   = 10 * time.Second
 
 	minAutoCompressionSize = 2048
 )
@@ -51,16 +49,13 @@ var reservedPaths = map[string]bool{
 type Server struct {
 	*Router
 	*template.Manager
-	server      *http.Server
-	sessionTTL  time.Duration
-	sessionName string
+	server *http.Server
 
 	addr string
 	url  string
 
 	maxReqMem       types.ByteUnit
 	Timeout         time.Duration
-	PreHandler      Handler
 	Recovery        bool
 	ResultLogger    func(req *Request, result *Result, cost time.Duration)
 	NotFoundHandler Handler
@@ -76,8 +71,6 @@ func NewServer() *Server {
 	header.Set("Server", "Wine")
 
 	s := &Server{
-		sessionName:     environ.String("wine.session.name", "wsessionid"),
-		sessionTTL:      environ.Duration("wine.session.ttl", defaultSessionTTL),
 		maxReqMem:       types.ByteUnit(environ.SizeInBytes("wine.max_memory", defaultReqMaxMem)),
 		Router:          NewRouter(),
 		Manager:         template.NewManager(),
@@ -87,16 +80,8 @@ func NewServer() *Server {
 		ResultLogger:    logResult,
 		LoggingReqModel: environ.Bool("wine.logging.request.model", true),
 	}
-
-	if s.sessionTTL < minSessionTTL {
-		s.sessionTTL = minSessionTTL
-	}
 	s.AddTemplateFuncMap(template.FuncMap)
 	return s
-}
-
-func (s *Server) SessionName() string {
-	return s.sessionName
 }
 
 func (s *Server) Addr() string {
@@ -188,7 +173,6 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		}()
 	}
 	rw = s.wrapResponseWriter(rw, req)
-	sid := s.initSession(rw, req)
 	ctx, cancel := s.initContext(req)
 	defer cancel()
 
@@ -200,8 +184,6 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		s.logResult(&Request{request: req}, rw, startAt)
 		return
 	}
-	wReq.sid = sid
-	wReq.Params()[s.sessionName] = sid
 	s.serve(ctx, wReq, rw)
 	s.logResult(wReq, rw, startAt)
 }
@@ -244,12 +226,8 @@ func (s *Server) serve(ctx context.Context, req *Request, rw http.ResponseWriter
 			h = HandleResponder(Status(http.StatusNotFound))
 		}
 	}
-	var resp Responder
-	if s.PreHandler != nil && !reservedPaths[np] {
-		resp = s.PreHandler.HandleRequest(withNextHandler(ctx, h), req)
-	} else {
-		resp = h.HandleRequest(ctx, req)
-	}
+
+	resp := h.HandleRequest(ctx, req)
 	if resp == nil {
 		resp = Status(http.StatusNotImplemented)
 	}
@@ -293,51 +271,6 @@ func (s *Server) wrapResponseWriter(rw http.ResponseWriter, req *http.Request) h
 	s.Router.md.Header.WriteTo(rw)
 	w := io.NewResponseWriter(rw)
 	return w
-}
-
-func (s *Server) initSession(rw http.ResponseWriter, req *http.Request) string {
-	var sid string
-	// Read cookie
-	for _, c := range req.Cookies() {
-		if c.Name == s.sessionName {
-			sid = c.Value
-			break
-		}
-	}
-
-	// Read Header
-	if sid == "" {
-		lcName := strings.ToLower(s.sessionName)
-		for k, vs := range req.Header {
-			if strings.ToLower(k) == lcName {
-				if len(vs) > 0 {
-					sid = vs[0]
-					break
-				}
-			}
-		}
-	}
-
-	// Read url query
-	if querySid := req.URL.Query().Get(s.sessionName); querySid != "" {
-		sid = querySid
-	}
-
-	if sid == "" {
-		sid = uuid.NewString()
-	}
-
-	cookie := &http.Cookie{
-		Name:     s.sessionName,
-		Value:    sid,
-		Expires:  time.Now().Add(s.sessionTTL),
-		Path:     "/",
-		HttpOnly: true,
-	}
-	http.SetCookie(rw, cookie)
-	// Write to Header in case cookie is disabled by some browsers
-	rw.Header().Set(s.sessionName, sid)
-	return sid
 }
 
 func (s *Server) initContext(req *http.Request) (context.Context, context.CancelFunc) {
@@ -394,11 +327,11 @@ func logResult(req *Request, res *Result, cost time.Duration) {
 		cost)
 	if res.Status >= http.StatusBadRequest {
 		ua := req.Header("User-Agent")
-		sessionAndTrace := req.sid
-		if traceID := req.Header(httpvalue.CustomTraceID); traceID != "" {
-			sessionAndTrace = fmt.Sprintf("%s,%s", sessionAndTrace, traceID)
+		if reqID := req.Header(httpvalue.RequestID); reqID != "" {
+			info = fmt.Sprintf("%s | %s | %s", info, ua, reqID)
+		} else {
+			info = fmt.Sprintf("%s | %s", info, ua)
 		}
-		info = fmt.Sprintf("%s | %s | %s", info, ua, sessionAndTrace)
 		if !req.sensitive {
 			if len(req.Params()) > 0 {
 				info = fmt.Sprintf("%s | %v", info, conv.MustJSONString(req.Params()))

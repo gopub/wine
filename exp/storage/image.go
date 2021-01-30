@@ -14,13 +14,13 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/google/uuid"
-	_ "golang.org/x/image/bmp"
-	_ "golang.org/x/image/webp"
 	"github.com/disintegration/imaging"
+	"github.com/google/uuid"
 	"github.com/gopub/errors"
 	"github.com/gopub/wine"
 	"github.com/gopub/wine/httpvalue"
+	_ "golang.org/x/image/bmp"
+	_ "golang.org/x/image/webp"
 )
 
 type ThumbnailOption struct {

@@ -1,8 +1,9 @@
 package urlutil_test
 
 import (
-	"github.com/gopub/wine/urlutil"
 	"testing"
+
+	"github.com/gopub/wine/urlutil"
 )
 
 func TestJoin(t *testing.T) {
