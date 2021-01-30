@@ -106,8 +106,9 @@ github.com/gopub/log v1.2.0/go.mod h1:N7GzW/a2tgyQp/wSwd9YzUN5AbVB2G1yE7+nZUGL46
 github.com/gopub/log v1.2.2/go.mod h1:N7GzW/a2tgyQp/wSwd9YzUN5AbVB2G1yE7+nZUGL46A=
 github.com/gopub/log v1.2.3/go.mod h1:N7GzW/a2tgyQp/wSwd9YzUN5AbVB2G1yE7+nZUGL46A=
 github.com/gopub/log v1.2.4/go.mod h1:N7GzW/a2tgyQp/wSwd9YzUN5AbVB2G1yE7+nZUGL46A=
-github.com/gopub/log v1.2.5 h1:5n1xhFUSBWYZO1/ZuSJQU3/UcM0yAixnEtzBopXetoQ=
 github.com/gopub/log v1.2.5/go.mod h1:N7GzW/a2tgyQp/wSwd9YzUN5AbVB2G1yE7+nZUGL46A=
+github.com/gopub/log v1.2.6 h1:MJd8Qc2MWrqta8AGC66IbBUBwxMrSCqb6wcs4fMkR+k=
+github.com/gopub/log v1.2.6/go.mod h1:N7GzW/a2tgyQp/wSwd9YzUN5AbVB2G1yE7+nZUGL46A=
 github.com/gopub/types v0.2.22/go.mod h1:9TwnNzanBfFwgtvGMf+wDaBfMRC9V+W1w3IuXmc1lQM=
 github.com/gopub/types v0.3.4 h1:WXRHxaURnEYfthQcQ7TSJorp6J7TcXRf88hUwIBuik8=
 github.com/gopub/types v0.3.4/go.mod h1:V2VImilD4OZeMJA7N2roNFKbytPaWmafHTzYBtFmqFE=

@@ -9,7 +9,7 @@ require (
 	github.com/gopub/conv v0.5.1
 	github.com/gopub/environ v0.3.5
 	github.com/gopub/errors v0.1.7
-	github.com/gopub/log v1.2.5
+	github.com/gopub/log v1.2.6
 	github.com/gopub/types v0.3.4
 	github.com/gopub/wine/httpvalue v0.1.4
 	github.com/gopub/wine/router v0.1.4
