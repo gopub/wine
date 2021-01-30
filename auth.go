@@ -3,10 +3,10 @@ package wine
 import (
 	"context"
 	"encoding/base64"
-	"github.com/gopub/wine/ctxutil"
 	"net/http"
 	"strconv"
 
+	"github.com/gopub/wine/ctxutil"
 	"github.com/gopub/wine/internal/respond"
 )
 

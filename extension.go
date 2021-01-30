@@ -2,12 +2,12 @@ package wine
 
 import (
 	"context"
-	"github.com/gopub/wine/ctxutil"
 	"net/http"
 	"net/http/httputil"
 	"time"
 
 	"github.com/gopub/types"
+	"github.com/gopub/wine/ctxutil"
 )
 
 const (

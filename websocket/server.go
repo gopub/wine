@@ -3,7 +3,6 @@ package websocket
 import (
 	"context"
 	"fmt"
-	"github.com/gopub/wine/ctxutil"
 	"net"
 	"net/http"
 	"reflect"
@@ -15,6 +14,7 @@ import (
 	"github.com/gopub/errors"
 	"github.com/gopub/log"
 	"github.com/gopub/wine"
+	"github.com/gopub/wine/ctxutil"
 	"github.com/gopub/wine/router"
 	"github.com/gorilla/websocket"
 )

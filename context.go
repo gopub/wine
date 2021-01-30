@@ -2,6 +2,7 @@ package wine
 
 import (
 	"context"
+
 	"github.com/gopub/wine/ctxutil"
 )
 

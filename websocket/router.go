@@ -2,9 +2,10 @@ package websocket
 
 import (
 	"context"
+	"time"
+
 	"github.com/gopub/wine/ctxutil"
 	"github.com/gopub/wine/router"
-	"time"
 
 	"github.com/gopub/types"
 
