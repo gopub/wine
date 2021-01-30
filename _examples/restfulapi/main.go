@@ -8,7 +8,7 @@ import (
 )
 
 func main() {
-	s := wine.NewServer()
+	s := wine.NewServer(nil)
 	r := s.Router
 	service := NewItemService()
 	r.Get("/items/{id}", service.Get).SetDescription("Get items by id")

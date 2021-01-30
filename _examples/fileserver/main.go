@@ -11,7 +11,7 @@ func main() {
 	pDir := flag.String("dir", ".", "directory")
 	pAddr := flag.String("addr", ":8000", "server address")
 	flag.Parse()
-	s := wine.NewServer()
+	s := wine.NewServer(nil)
 	s.StaticDir("/", *pDir)
 	log.Infof("BytesFile directory: %s", *pDir)
 	s.Run(*pAddr)

@@ -44,6 +44,14 @@ var reservedPaths = map[string]bool{
 	faviconPath:  true,
 }
 
+type Options struct {
+	ReqFormMem      types.ByteUnit
+	Timeout         time.Duration
+	Recovery        bool
+	AutoCompression bool
+	LoggingReqModel bool
+}
+
 // Server implements web server
 type Server struct {
 	*Router
@@ -53,32 +61,35 @@ type Server struct {
 	addr string
 	url  string
 
-	maxReqMem       types.ByteUnit
-	Timeout         time.Duration
-	Recovery        bool
+	Options
 	ResultLogger    func(req *Request, result *Result, cost time.Duration)
 	NotFoundHandler Handler
-	AutoCompression bool
-	LoggingReqModel bool
 }
 
 // NewServer returns a server
-func NewServer() *Server {
+func NewServer(options *Options) *Server {
 	logger := log.GetLogger("Wine")
 	logger.SetFlags(logger.Flags() ^ log.Lfunction ^ log.Lshortfile)
 	header := make(http.Header, 1)
 	header.Set("Server", "Wine")
 
-	s := &Server{
-		maxReqMem:       types.ByteUnit(environ.SizeInBytes("wine.max_memory", defaultReqMaxMem)),
-		Router:          NewRouter(),
-		Manager:         template.NewManager(),
-		Timeout:         environ.Duration("wine.timeout", defaultTimeout),
-		Recovery:        environ.Bool("wine.recovery", true),
-		AutoCompression: environ.Bool("wine.compression.auto", true),
-		ResultLogger:    logResult,
-		LoggingReqModel: environ.Bool("wine.logging.request.model", true),
+	if options == nil {
+		options = &Options{
+			ReqFormMem:      types.ByteUnit(environ.SizeInBytes("wine.max_memory", defaultReqMaxMem)),
+			Timeout:         environ.Duration("wine.timeout", defaultTimeout),
+			Recovery:        environ.Bool("wine.recovery", true),
+			AutoCompression: environ.Bool("wine.compression.auto", true),
+			LoggingReqModel: environ.Bool("wine.logging.request.model", true),
+		}
 	}
+
+	s := &Server{
+		Router:       NewRouter(),
+		Manager:      template.NewManager(),
+		ResultLogger: logResult,
+		Options:      *options,
+	}
+
 	s.AddTemplateFuncMap(template.FuncMap)
 	return s
 }
@@ -175,7 +186,7 @@ func (s *Server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	ctx, cancel := s.initContext(req)
 	defer cancel()
 
-	wReq, err := parseRequest(req, s.maxReqMem)
+	wReq, err := parseRequest(req, s.ReqFormMem)
 	if err != nil {
 		defer s.closeWriter(rw)
 		resp := Text(http.StatusBadRequest, fmt.Sprintf("Parse request: %v", err))
@@ -367,7 +378,7 @@ type TestServer struct {
 }
 
 func NewTestServer(t *testing.T) *TestServer {
-	s := NewServer()
+	s := NewServer(nil)
 	t.Cleanup(func() {
 		s.Shutdown()
 	})

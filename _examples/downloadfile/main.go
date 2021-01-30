@@ -7,7 +7,7 @@ import (
 )
 
 func main() {
-	s := wine.NewServer()
+	s := wine.NewServer(nil)
 	s.Get("/", func(ctx context.Context, req *wine.Request) wine.Responder {
 		data := []byte("Hello, world!")
 		return wine.BytesFile(data, "test.txt")

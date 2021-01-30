@@ -10,7 +10,7 @@ import (
 )
 
 func main() {
-	s := wine.NewServer()
+	s := wine.NewServer(nil)
 	s.StaticDir("/", "./html")
 	s.Run(":8000")
 }

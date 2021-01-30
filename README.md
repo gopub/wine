@@ -14,7 +14,7 @@ Create ./hello.go
         import "github.com/gopub/wine"
         
         func main() {
-        	s := wine.NewServer()
+        	s := wine.NewServer(nil)
         	s.Get("/hello", func(ctx context.Context, req *wine.Request) wine.Responder {
         		return wine.Text("Hello, Wine!")
         	})
@@ -29,7 +29,7 @@ Run and test:
 
 ## JSON Rendering
 
-        s := wine.NewServer()
+        s := wine.NewServer(nil)
         s.Get("/time", func(ctx context.Context, req *wine.Request) wine.Responder {
         	return wine.JSON(http.StatusOK, map[string]interface{}{"time":time.Now().Unix()})
         })
@@ -38,7 +38,7 @@ Run and test:
 ## Parameters
 Request.Params() returns all parameters from URL query, post form, cookies, and custom header fields.
 
-        s := wine.NewServer()
+        s := wine.NewServer(nil)
         s.Post("feedback", func(ctx context.Context, req *wine.Request) wine.Responder {
             text := req.Params().String("text")
             email := req.Params().String("email")
@@ -60,7 +60,7 @@ Support parameters in json
 Path parameters are also supported in order to provide elegant RESTFul API.  
 Single parameter in one segment:
 <pre>
-    s := wine.NewServer() 
+    s := wine.NewServer(nil) 
     s.Get("/items/<b>{id}</b>", func(ctx context.Context, req *wine.Request) wine.Responder {
         id := req.Params().String("id")
         return wine.Text("item id: " + id)
@@ -87,7 +87,7 @@ func (i *Item) Validate() error {
 }
 
 func main() {
-    s := wine.NewServer() 
+    s := wine.NewServer(nil) 
     s.Post("/items", CreateItem).Bind(&Item{}) 
     s.Run(":8000")
 }
@@ -146,7 +146,7 @@ Intercept and preprocess requests
     }
     
     func main() {
-    	s := wine.NewServer()
+    	s := wine.NewServer(nil)
     
     	//Create "accounts" group and add interceptor CheckSessionID
     	<b>g := s.Group("accounts").Use(CheckSessionID)</b>
@@ -169,7 +169,7 @@ Run it:
 ## Auth
 It's easy to turn on basic auth.
 
-    s := wine.NewServer()
+    s := wine.NewServer(nil)
 	s.Use(wine.NewBasicAuthHandler(map[string]string{
 		"admin": "123",
 		"tom":   "456",

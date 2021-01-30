@@ -28,7 +28,7 @@ func TestTextStream(t *testing.T) {
 		require.NoError(t, err)
 	})
 	host := "localhost:" + fmt.Sprint(rand.Int()%1000+8000)
-	s := wine.NewServer()
+	s := wine.NewServer(nil)
 	s.Bind(http.MethodGet, "/", h)
 	go s.Run(host)
 
