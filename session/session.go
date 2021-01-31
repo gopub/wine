@@ -38,7 +38,7 @@ func DefaultOptions() *Options {
 		panic("Session TTL cannot be less than 1 min")
 	}
 	o.keyForID = o.Name + "id"
-	o.headerKeyForID = "X-" + strings.ToUpper(o.Name[0:1]) + o.Name[1:]
+	o.headerKeyForID = "X-" + strings.ToUpper(o.keyForID[0:1]) + o.keyForID[1:]
 
 	defaultOptions = o
 	return defaultOptions

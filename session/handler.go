@@ -46,7 +46,7 @@ func NewHandler(provider Provider, options *Options) wine.HandlerFunc {
 		return wine.Handle(req.Request(), http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 			http.SetCookie(writer, cookie)
 			// Write to Header in case cookie is disabled by some browsers
-			writer.Header().Set(options.keyForID, sid)
+			writer.Header().Set(options.headerKeyForID, sid)
 			resp.Respond(ctx, writer)
 		}))
 	}
