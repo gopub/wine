@@ -88,7 +88,7 @@ func (i *Item) Validate() error {
 
 func main() {
     s := wine.NewServer(nil) 
-    s.Post("/items", CreateItem).Bind(&Item{}) 
+    s.Post("/items", CreateItem).SetModel(&Item{}) 
     s.Run(":8000")
 }
 func CreateItem(ctx context.Context, req *wine.Request) wine.Responder {

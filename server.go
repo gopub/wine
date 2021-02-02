@@ -203,6 +203,7 @@ func (s *Server) serve(ctx context.Context, req *Request, rw http.ResponseWriter
 	method := req.Request().Method
 	endpoint, params := s.Match(method, np)
 	req.setPathParams(params)
+	req.endpoint = endpoint
 	s.Header().WriteTo(rw)
 	var h Handler
 	switch {

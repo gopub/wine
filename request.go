@@ -18,17 +18,20 @@ import (
 	"github.com/gopub/wine/router"
 )
 
+type GroupedParams = iopkg.RequestParams
+
 // Request is a wrapper of http.Request, aims to provide more convenient interface
 type Request struct {
-	request     *http.Request
-	rawParams   *iopkg.RequestParams
-	params      types.M
-	body        []byte
-	contentType string
-	Model       interface{}
+	request       *http.Request
+	groupedParams *GroupedParams
+	params        types.M
+	body          []byte
+	contentType   string
+	Model         interface{}
 
 	uid       int64
 	sensitive bool
+	endpoint  *Endpoint
 }
 
 // Request returns original http request
@@ -36,15 +39,19 @@ func (r *Request) Request() *http.Request {
 	return r.request
 }
 
-// Body returns request parameters
+// Params returns request parameters
 func (r *Request) Params() types.M {
 	return r.params
 }
 
+func (r *Request) GroupedParams() *GroupedParams {
+	return r.groupedParams
+}
+
 func (r *Request) setPathParams(p map[string]string) {
-	r.rawParams.PathParams = types.M{}
+	r.groupedParams.PathParams = types.M{}
 	for k, v := range p {
-		r.rawParams.PathParams[k] = v
+		r.groupedParams.PathParams[k] = v
 		r.params[k] = v
 	}
 }
@@ -120,23 +127,24 @@ func (r *Request) bind(m interface{}) error {
 		return Validate(r.Model)
 	}
 
-	err = errors.BadRequest("cannot assign: %v", err)
-	kind := reflect.ValueOf(conv.Indirect(pv.Interface())).Kind()
-	if kind == reflect.Struct || kind == reflect.Map || len(r.rawParams.BodyParams) != 0 {
-		return err
+	// if the model is not struct or map, e.g. it's int, float, string etc.
+	// if the body is empty
+	// then try to pick the first param from path or query, and assign it to the model
+	kind := conv.IndirectReadableValue(pv).Kind()
+	if kind != reflect.Struct && kind != reflect.Map && len(r.groupedParams.BodyParams) == 0 {
+		if p := getSingleParam(r); p != nil && conv.Assign(pv.Interface(), p) == nil {
+			r.Model = pv.Elem().Interface()
+			return Validate(r.Model)
+		}
 	}
-
-	if p := getSingleParam(r); p != nil && conv.Assign(pv.Interface(), p) == nil {
-		r.Model = pv.Elem().Interface()
-		return Validate(r.Model)
-	}
-	return err
+	return errors.BadRequest("cannot assign: %v", err)
 }
 
+// get one value from path or query params
 func getSingleParam(r *Request) interface{} {
-	var params = r.rawParams.PathParams
+	var params = r.groupedParams.PathParams
 	if len(params) != 1 {
-		params = r.rawParams.QueryParams
+		params = r.groupedParams.QueryParams
 	}
 
 	if len(params) == 1 {
@@ -189,10 +197,10 @@ func parseRequest(r *http.Request, maxMem types.ByteUnit) (*Request, error) {
 		return nil, fmt.Errorf("read request: %w", err)
 	}
 	return &Request{
-		request:     r,
-		rawParams:   params,
-		params:      params.Combine(),
-		body:        body,
-		contentType: httpvalue.GetContentType(r.Header),
+		request:       r,
+		groupedParams: params,
+		params:        params.Combine(),
+		body:          body,
+		contentType:   httpvalue.GetContentType(r.Header),
 	}, nil
 }
