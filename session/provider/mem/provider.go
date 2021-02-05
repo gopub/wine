@@ -2,6 +2,7 @@ package mem
 
 import (
 	"context"
+
 	"github.com/gopub/errors"
 	"github.com/gopub/wine/session"
 	"github.com/patrickmn/go-cache"
