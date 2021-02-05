@@ -2,6 +2,7 @@ package session
 
 import (
 	"context"
+	"github.com/gopub/errors"
 	"net/http"
 	"strings"
 	"time"
@@ -24,6 +25,9 @@ func NewHandler(provider Provider, options *Options) wine.HandlerFunc {
 		var err error
 		if sid != "" {
 			ses, err = provider.Get(ctx, sid)
+			if err != nil && !errors.IsNotExist(err) {
+				return wine.Error(err)
+			}
 		} else {
 			sid = uuid.NewString()
 		}
