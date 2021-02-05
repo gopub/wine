@@ -6,7 +6,6 @@ import (
 	"github.com/gopub/errors"
 	"github.com/gopub/wine/session"
 	"github.com/patrickmn/go-cache"
-	"github.com/rogpeppe/go-internal/cache"
 )
 
 type Provider struct {
