@@ -9,13 +9,10 @@ import (
 )
 
 type Options struct {
-	Name           string
-	TTL            time.Duration
-	CookiePath     string
-	CookieHttpOnly bool
-
-	keyForID       string
-	headerKeyForID string
+	Name           string        `json:"name,omitempty"`
+	TTL            time.Duration `json:"ttl,omitempty"`
+	CookiePath     string        `json:"cookie_path,omitempty"`
+	CookieHttpOnly bool          `json:"cookie_http_only,omitempty"`
 }
 
 var defaultOptions *Options
@@ -37,8 +34,6 @@ func DefaultOptions() *Options {
 	if o.TTL < time.Minute {
 		panic("Session TTL cannot be less than 1 min")
 	}
-	o.keyForID = o.Name + "id"
-	o.headerKeyForID = "X-" + strings.ToUpper(o.keyForID[0:1]) + o.keyForID[1:]
 
 	defaultOptions = o
 	return defaultOptions
@@ -50,8 +45,7 @@ type Session interface {
 	Get(ctx context.Context, name string, ptrValue interface{}) error
 	Delete(ctx context.Context, name string) error
 	Clear() error
-	Flush() error
-	Options() *Options
+	SetTTL(ttl time.Duration) error
 }
 
 type contextKey int
@@ -71,6 +65,6 @@ func withSession(ctx context.Context, s Session) context.Context {
 
 type Provider interface {
 	Get(ctx context.Context, id string) (Session, error)
-	Create(ctx context.Context, id string, options *Options) (Session, error)
+	Create(ctx context.Context, id string, ttl time.Duration) (Session, error)
 	Delete(ctx context.Context, id string) error
 }

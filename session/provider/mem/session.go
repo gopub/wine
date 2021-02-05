@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"reflect"
 	"sync"
+	"time"
 
 	"github.com/gopub/errors"
 	"github.com/gopub/wine/session"
@@ -12,11 +13,15 @@ import (
 )
 
 type Session struct {
-	id      string
-	data    sync.Map
-	options *session.Options
+	id   string
+	data sync.Map
 
 	sharedCache *cache.Cache
+}
+
+func (m *Session) SetTTL(ttl time.Duration) error {
+	m.sharedCache.Set(m.id, m, ttl)
+	return nil
 }
 
 func (m *Session) ID() string {
@@ -63,14 +68,6 @@ func (m *Session) Delete(ctx context.Context, name string) error {
 func (m *Session) Clear() error {
 	m.data = sync.Map{}
 	return nil
-}
-
-func (m *Session) Flush() error {
-	return nil
-}
-
-func (m *Session) Options() *session.Options {
-	return m.options
 }
 
 var _ session.Session = (*Session)(nil)

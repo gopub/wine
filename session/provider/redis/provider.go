@@ -1,44 +1,57 @@
-package mem
+package redis
 
 import (
 	"context"
 	"time"
 
+	"github.com/go-redis/redis"
 	"github.com/gopub/errors"
 	"github.com/gopub/wine/session"
-	"github.com/patrickmn/go-cache"
 )
 
 type Provider struct {
-	cache *cache.Cache
+	c *redis.Client
 }
 
 var _ session.Provider = (*Provider)(nil)
 
-func NewProvider() *Provider {
+func NewProvider(c *redis.Client) *Provider {
 	p := new(Provider)
-	p.cache = cache.New(session.DefaultOptions().TTL, session.DefaultOptions().TTL*50)
+	p.c = c
 	return p
 }
 
 func (p *Provider) Get(ctx context.Context, id string) (session.Session, error) {
-	v, ok := p.cache.Get(id)
-	if !ok {
+	v, err := p.c.WithContext(ctx).Exists(id).Result()
+	if err != nil {
+		return nil, err
+	}
+
+	if v == 0 {
 		return nil, errors.NotExist
 	}
-	return v.(*Session), nil
+
+	return &Session{
+		id: id,
+		c:  p.c,
+	}, nil
 }
 
 func (p *Provider) Create(ctx context.Context, id string, ttl time.Duration) (session.Session, error) {
-	s := &Session{
-		id:          id,
-		sharedCache: p.cache,
+	err := p.c.WithContext(ctx).HSet(id, "@", 0).Err()
+	if err != nil {
+		return nil, err
 	}
-	p.cache.Set(id, s, ttl)
+	s := &Session{
+		id: id,
+		c:  p.c,
+	}
+	if err = p.c.Expire(id, ttl).Err(); err != nil {
+		return nil, err
+	}
 	return s, nil
 }
 
 func (p *Provider) Delete(ctx context.Context, id string) error {
-	p.cache.Delete(id)
-	return nil
+	return p.c.WithContext(ctx).Del(id).Err()
 }
