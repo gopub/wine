@@ -244,16 +244,17 @@ func (c *ClientEndpoint) Call(ctx context.Context, input interface{}, output int
 	input = conv.Indirect(input)
 	var body io.Reader
 	var contentType string
+	u := *c.url
 	switch iv := input.(type) {
 	case url.Values:
 		if c.method == http.MethodGet || c.method == http.MethodDelete {
-			query := c.url.Query()
+			query := u.Query()
 			for k, vl := range iv {
 				for _, v := range vl {
 					query.Add(k, v)
 				}
 			}
-			c.url.RawQuery = query.Encode()
+			u.RawQuery = query.Encode()
 		} else if len(iv) > 0 {
 			body = strings.NewReader(iv.Encode())
 			contentType = httpvalue.FormURLEncoded
@@ -268,9 +269,9 @@ func (c *ClientEndpoint) Call(ctx context.Context, input interface{}, output int
 		}
 		body = bytes.NewBuffer(data)
 	}
-	req, err := http.NewRequestWithContext(ctx, c.method, c.url.String(), body)
+	req, err := http.NewRequestWithContext(ctx, c.method, u.String(), body)
 	if err != nil {
-		return fmt.Errorf("create request %s %v: %w", c.method, c.url, err)
+		return fmt.Errorf("create request %s %v: %w", c.method, u, err)
 	}
 	for k, v := range c.header {
 		req.Header[k] = v
@@ -282,7 +283,7 @@ func (c *ClientEndpoint) Call(ctx context.Context, input interface{}, output int
 	req.Header.Set(httpvalue.RequestID, reqID)
 	err = c.c.Do(req, output)
 	if err != nil {
-		return fmt.Errorf("do request %s %s %v: %w", reqID, c.method, c.url, err)
+		return fmt.Errorf("do request %s %s %v: %w", reqID, c.method, u, err)
 	}
 	return nil
 }
