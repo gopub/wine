@@ -12,14 +12,13 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/gopub/wine/urlutil"
-
 	"github.com/google/uuid"
 	"github.com/gopub/conv"
 	"github.com/gopub/errors"
 	"github.com/gopub/log"
 	"github.com/gopub/wine/httpvalue"
 	iopkg "github.com/gopub/wine/internal/io"
+	"github.com/gopub/wine/urlutil"
 )
 
 type HeaderBuilder interface {

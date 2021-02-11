@@ -2,12 +2,12 @@ package session
 
 import (
 	"context"
-	"github.com/gopub/errors"
 	"net/http"
 	"strings"
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/gopub/errors"
 	"github.com/gopub/wine"
 )
 
