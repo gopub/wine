@@ -56,6 +56,8 @@ github.com/golang/geo v0.0.0-20200319012246-673a6f80352d/go.mod h1:QZ0nwyI2jOfgR
 github.com/golang/geo v0.0.0-20200730024412-e86565bf3f35/go.mod h1:QZ0nwyI2jOfgRAoBvP+ab5aRr7c9x7lhGEJrKvBwjWI=
 github.com/golang/geo v0.0.0-20210108004804-a63082ebfb66 h1:wNA26/2ftrz6nI4dbIim6OSKtLlNdjpNiwFB+l/yqtQ=
 github.com/golang/geo v0.0.0-20210108004804-a63082ebfb66/go.mod h1:QZ0nwyI2jOfgRAoBvP+ab5aRr7c9x7lhGEJrKvBwjWI=
+github.com/golang/geo v0.0.0-20210211234256-740aa86cb551 h1:gtexQ/VGyN+VVFRXSFiguSNcXmS6rkKT+X7FdIrTtfo=
+github.com/golang/geo v0.0.0-20210211234256-740aa86cb551/go.mod h1:QZ0nwyI2jOfgRAoBvP+ab5aRr7c9x7lhGEJrKvBwjWI=
 github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b/go.mod h1:SBH7ygxi8pfUlaOkMMuAQtPIUF8ecWP5IEl/CR7VP2Q=
 github.com/golang/groupcache v0.0.0-20190129154638-5b532d6fd5ef/go.mod h1:cIg4eruTrX1D+g88fzRXU5OdNfaM+9IcxsU14FzY7Hc=
 github.com/golang/mock v1.1.1/go.mod h1:oTYuIxOrZwtPieC+H1uAHpcLFnEyAGVDL/k47Jfbm0A=
@@ -116,6 +118,8 @@ github.com/gopub/types v0.3.4 h1:WXRHxaURnEYfthQcQ7TSJorp6J7TcXRf88hUwIBuik8=
 github.com/gopub/types v0.3.4/go.mod h1:V2VImilD4OZeMJA7N2roNFKbytPaWmafHTzYBtFmqFE=
 github.com/gopub/types v0.3.6 h1:H9hT527p+sg2tfKkPVCwfY/OwIDNAu2+JzQpNIVcA9o=
 github.com/gopub/types v0.3.6/go.mod h1:V2VImilD4OZeMJA7N2roNFKbytPaWmafHTzYBtFmqFE=
+github.com/gopub/types v0.3.8 h1:ncYwfo6AB4wA1a62iVby807P9g6FXZHpYwvGd7F0tP4=
+github.com/gopub/types v0.3.8/go.mod h1:V2VImilD4OZeMJA7N2roNFKbytPaWmafHTzYBtFmqFE=
 github.com/gopub/wine/httpvalue v0.1.4 h1:ZqSNERrP2ocxr5IdOU9+9FG4KoAvgYTFGXOq7WI3Vz4=
 github.com/gopub/wine/httpvalue v0.1.4/go.mod h1:6A0Udo4CKIP8TXeeD4/zZ+SZ7etHM4mKFbAEnBUehVE=
 github.com/gopub/wine/router v0.1.4 h1:8t5O/I7RGZ1C3CoIRv+Nm5YC8uRoppHwuF/LUCJpdlM=

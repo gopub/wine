@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/gopub/types"
 	"net/http"
 	"reflect"
 
@@ -20,7 +21,7 @@ func SetLogger(l *log.Logger) {
 }
 
 type GetAuthUserID interface {
-	GetAuthUserID() int64
+	GetAuthUserID() types.ID
 }
 
 type GetConnID interface {

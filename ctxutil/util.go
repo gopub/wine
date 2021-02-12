@@ -2,6 +2,7 @@ package ctxutil
 
 import (
 	"context"
+	"github.com/gopub/types"
 	"net/http"
 
 	"github.com/gopub/log"
@@ -72,12 +73,12 @@ func Detach(ctx context.Context) context.Context {
 	return newCtx
 }
 
-func GetUserID(ctx context.Context) int64 {
-	id, _ := ctx.Value(KeyUserID).(int64)
+func GetUserID(ctx context.Context) types.ID {
+	id, _ := ctx.Value(KeyUserID).(types.ID)
 	return id
 }
 
-func WithUserID(ctx context.Context, id int64) context.Context {
+func WithUserID(ctx context.Context, id types.ID) context.Context {
 	if id == 0 {
 		return ctx
 	}
