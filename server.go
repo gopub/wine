@@ -344,8 +344,8 @@ func logResult(req *Request, res *Result, cost time.Duration) {
 			info = fmt.Sprintf("%s | %s", info, ua)
 		}
 		if !req.sensitive {
-			if len(req.Params()) > 0 {
-				info = fmt.Sprintf("%s | %v", info, conv.MustJSONString(req.Params()))
+			if len(req.groupedParams.BodyParams) > 0 {
+				info = fmt.Sprintf("%s | %v", info, conv.MustJSONString(req.groupedParams.BodyParams))
 			} else if len(httpReq.PostForm) > 0 {
 				info = fmt.Sprintf("%s | %v", info, conv.MustJSONString(httpReq.PostForm))
 			}
