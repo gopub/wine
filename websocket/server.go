@@ -3,7 +3,6 @@ package websocket
 import (
 	"context"
 	"fmt"
-	"github.com/gopub/types"
 	"net"
 	"net/http"
 	"reflect"
@@ -49,7 +48,7 @@ func (r *Request) bind(m interface{}) error {
 type serverConn struct {
 	*Conn
 	id       string // connections from the same user can share the same id
-	userID   types.ID
+	userID   int64
 	header   http.Header
 	metadata map[string]string // metadata
 }

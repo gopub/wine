@@ -2,11 +2,11 @@ package ctxutil
 
 import (
 	"context"
-	"github.com/gopub/types"
 	"net/http"
 
-	"github.com/gopub/log"
 	"github.com/gopub/wine/httpvalue"
+
+	"github.com/gopub/log"
 	"github.com/gopub/wine/internal/template"
 )
 
@@ -23,9 +23,14 @@ const (
 	KeyUser
 	KeySudo
 	KeyRequestHeader
+	KeyBasicUser
 
 	keyEnd
 )
+
+type User interface {
+	GetID() int64
+}
 
 func GetRequestHeader(ctx context.Context) http.Header {
 	h, _ := ctx.Value(KeyRequestHeader).(http.Header)
@@ -73,23 +78,40 @@ func Detach(ctx context.Context) context.Context {
 	return newCtx
 }
 
-func GetUserID(ctx context.Context) types.ID {
-	id, _ := ctx.Value(KeyUserID).(types.ID)
-	return id
+func GetUserID(ctx context.Context) int64 {
+	id, _ := ctx.Value(KeyUserID).(int64)
+	if id > 0 {
+		return id
+	}
+
+	if u := GetUser(ctx); u != nil {
+		return u.GetID()
+	}
+	return 0
 }
 
-func WithUserID(ctx context.Context, id types.ID) context.Context {
+func WithUserID(ctx context.Context, id int64) context.Context {
 	if id == 0 {
 		return ctx
 	}
 	return context.WithValue(ctx, KeyUserID, id)
 }
 
-func GetUser(ctx context.Context) interface{} {
-	return ctx.Value(KeyUser)
+func GetUser(ctx context.Context) User {
+	u, _ := ctx.Value(KeyUser).(User)
+	return u
 }
 
-func WithUser(ctx context.Context, u interface{}) context.Context {
+func WithBasicUser(ctx context.Context, u string) context.Context {
+	return context.WithValue(ctx, KeyUser, u)
+}
+
+func GetBasicUser(ctx context.Context) string {
+	u, _ := ctx.Value(KeyUser).(string)
+	return u
+}
+
+func WithUser(ctx context.Context, u User) context.Context {
 	return context.WithValue(ctx, KeyUser, u)
 }
 

@@ -29,7 +29,7 @@ func NewBasicAuthHandler(userToPassword map[string]string, realm string) Handler
 		a := req.Authorization()
 		for user, auth := range userToAuthorization {
 			if auth == a {
-				ctx = ctxutil.WithUser(ctx, user)
+				ctx = ctxutil.WithBasicUser(ctx, user)
 				return Next(ctx, req)
 			}
 		}
