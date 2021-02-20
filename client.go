@@ -171,6 +171,17 @@ func (c *Client) Do(req *http.Request, result interface{}) error {
 		}
 		return fmt.Errorf("cannot send request: %w", err)
 	}
+	if w, ok := result.(io.Writer); ok {
+		_, err = io.Copy(w, resp.Body)
+		if err != nil {
+			return fmt.Errorf("cannot copy response body: %w", err)
+		}
+		if closer, ok := result.(io.Closer); ok {
+			err = closer.Close()
+			return errors.Wrapf(err, "cannot close result writer")
+		}
+		return nil
+	}
 	return c.Decoder(resp, result)
 }
 
