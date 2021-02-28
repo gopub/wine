@@ -163,14 +163,6 @@ func (c *Client) read(done chan<- struct{}) {
 			done <- struct{}{}
 			return
 		}
-		if v, ok := p.V.(*Packet_Data); ok {
-			select {
-			case c.dataC <- v.Data:
-				break
-			default:
-				break
-			}
-		}
 		switch v := p.V.(type) {
 		case *Packet_Data:
 			select {
