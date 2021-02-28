@@ -292,6 +292,38 @@ func (s *Server) Push(ctx context.Context, connID string, typ int32, data interf
 	return firstErr
 }
 
+func (s *Server) PushAll(ctx context.Context, typ int32, data interface{}) error {
+	logger := log.FromContext(ctx).With("type", typ, "data", data)
+	d, err := MarshalData(data)
+	if err != nil {
+		return fmt.Errorf("cannot marshal: %w", err)
+	}
+	var firstErr error
+	s.conns.Range(func(key, conns interface{}) bool {
+		conns.(*sync.Map).Range(func(key, value interface{}) bool {
+			conn := key.(*serverConn)
+			if err = conn.Push(typ, d); err != nil {
+				logger.Errorf("Push: %v", err)
+				if firstErr != nil {
+					firstErr = err
+				}
+			} else {
+				logger.Debugf("Push successfully")
+			}
+
+			if ctx.Err() != nil {
+				if firstErr == nil {
+					firstErr = ctx.Err()
+				}
+				return false
+			}
+			return true
+		})
+		return true
+	})
+	return firstErr
+}
+
 func (s *Server) logCall(req *Request, resultOrErr interface{}, startAt time.Time) {
 	if s.CallLogger == nil {
 		return
