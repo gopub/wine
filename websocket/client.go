@@ -17,7 +17,6 @@ const ErrCanceled errors.String = "request canceled"
 
 const (
 	StatusTransportFailed = 600
-	Status
 )
 
 type ClientState int
