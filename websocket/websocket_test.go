@@ -93,7 +93,7 @@ func (a AuthUserID) GetConnID() string {
 }
 
 func TestServer_Push(t *testing.T) {
-	var uid = AuthUserID(types.NewID().Int())
+	var uid = AuthUserID(types.NextID())
 	addr := fmt.Sprintf("localhost:%d", 1024+rand.Int()%10000)
 	s := websocket.NewServer()
 	s.Bind("auth", func(ctx context.Context, req interface{}) (interface{}, error) {
@@ -108,7 +108,7 @@ func TestServer_Push(t *testing.T) {
 	ctx := context.Background()
 	err := c.Call(ctx, "auth", nil, nil)
 	require.NoError(t, err)
-	data := types.NewID().Pretty()
+	data := types.NextID().Pretty()
 	err = s.Push(ctx, fmt.Sprint(uid), 10, data)
 	require.NoError(t, err)
 	time.Sleep(time.Second) // Ensure client receive the data

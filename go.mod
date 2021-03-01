@@ -11,7 +11,7 @@ require (
 	github.com/gopub/environ v0.3.5
 	github.com/gopub/errors v0.1.7
 	github.com/gopub/log v1.2.8
-	github.com/gopub/types v0.3.8
+	github.com/gopub/types v0.3.19
 	github.com/gopub/wine/httpvalue v0.1.4
 	github.com/gopub/wine/router v0.1.4
 	github.com/gopub/wine/urlutil v0.1.5
@@ -19,7 +19,7 @@ require (
 	github.com/mitchellh/mapstructure v1.4.1 // indirect
 	github.com/nyaruka/phonenumbers v1.0.66 // indirect
 	github.com/stretchr/testify v1.6.1
-	golang.org/x/sys v0.0.0-20210124154548-22da62e12c0c // indirect
+	golang.org/x/sys v0.0.0-20210228012217-479acdf4ea46 // indirect
 	golang.org/x/text v0.3.5 // indirect
 	google.golang.org/protobuf v1.25.0
 )
