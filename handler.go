@@ -3,13 +3,14 @@ package wine
 import (
 	"container/list"
 	"context"
+	"github.com/gopub/wine/urlutil"
+	"io/fs"
 	"net/http"
 	"net/url"
+	"path/filepath"
 	"reflect"
 	"runtime"
 	"strings"
-
-	"github.com/gopub/wine/urlutil"
 )
 
 // Handler defines interface for interceptor
@@ -68,4 +69,18 @@ func Prefix(prefix string, h Handler) Handler {
 		req.request = r2
 		return h.HandleRequest(ctx, req)
 	})
+}
+
+type prefixFS struct {
+	prefix string
+	fs     fs.FS
+}
+
+func (f *prefixFS) Open(name string) (fs.File, error) {
+	name = filepath.Join(f.prefix, name)
+	return f.fs.Open(name)
+}
+
+func PrefixFS(prefix string, fs fs.FS) fs.FS {
+	return &prefixFS{prefix: prefix, fs: fs}
 }
