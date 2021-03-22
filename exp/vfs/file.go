@@ -17,7 +17,7 @@ type File struct {
 	offset int64
 
 	info *FileInfo
-	vo   *FileSystem
+	fs   *FileSystem
 	flag Flag
 }
 
@@ -28,7 +28,7 @@ func newFile(vo *FileSystem, info *FileInfo, flag Flag) *File {
 		panic("invalid flag")
 	}
 	f := &File{
-		vo:   vo,
+		fs:   vo,
 		info: info,
 		flag: flag,
 		buf:  bytes.NewBuffer(nil),
@@ -126,9 +126,9 @@ func (f *File) read(p []byte) (int, error) {
 
 	if f.buf.Len() == 0 {
 		// load one page to buf
-		pageIndex := f.offset / f.vo.pageSize
+		pageIndex := f.offset / f.fs.pageSize
 		page := f.info.Pages[pageIndex]
-		data, err := f.vo.storage.Get(page)
+		data, err := f.fs.storage.Get(page)
 		if err != nil {
 			if errors.Is(err, os.ErrNotExist) {
 				return 0, io.EOF
@@ -136,7 +136,7 @@ func (f *File) read(p []byte) (int, error) {
 			return 0, fmt.Errorf("load page %s: %w", page, err)
 		}
 
-		if err := f.vo.DecryptPage(data); err != nil {
+		if err := f.fs.DecryptPage(data); err != nil {
 			return 0, fmt.Errorf("decrypt: %w", err)
 		}
 
@@ -149,7 +149,7 @@ func (f *File) read(p []byte) (int, error) {
 			return 0, errors.New("cannot write to buf")
 		}
 
-		f.buf.Grow(int(f.offset % f.vo.pageSize))
+		f.buf.Grow(int(f.offset % f.fs.pageSize))
 	}
 
 	nr, err := f.buf.Read(p)
@@ -188,17 +188,17 @@ func (f *File) WriteThumbnail(b []byte) error {
 		tb = uuid.NewString()
 	}
 
-	err := f.vo.EncryptPage(b)
+	err := f.fs.EncryptPage(b)
 	if err != nil {
 		return fmt.Errorf("encrypt %s: %w", f.info.Thumbnail, err)
 	}
 
-	err = f.vo.storage.Put(tb, b)
+	err = f.fs.storage.Put(tb, b)
 	if err != nil {
 		return fmt.Errorf("write %s: %w", f.info.Thumbnail, err)
 	}
 	f.info.Thumbnail = tb
-	f.vo.SaveFileTree()
+	f.fs.SaveFileTree()
 	return nil
 }
 
@@ -207,12 +207,12 @@ func (f *File) ReadThumbnail() ([]byte, error) {
 		return nil, os.ErrNotExist
 	}
 
-	data, err := f.vo.storage.Get(f.info.Thumbnail)
+	data, err := f.fs.storage.Get(f.info.Thumbnail)
 	if err != nil {
 		return nil, fmt.Errorf("read %s: %w", f.info.Thumbnail, err)
 	}
 
-	err = f.vo.DecryptPage(data)
+	err = f.fs.DecryptPage(data)
 	if err != nil {
 		return nil, fmt.Errorf("decrypt %s: %w", f.info.Thumbnail, err)
 	}
@@ -234,8 +234,8 @@ func (f *File) flush(all bool) error {
 		// or if prior detection failed (f.info.MIMEType()=="")
 		f.info.SetMIMEType(httpvalue.DetectContentType(f.buf.Bytes()))
 	}
-	for all || int64(f.buf.Len()) >= f.vo.pageSize {
-		b := make([]byte, f.vo.pageSize)
+	for all || int64(f.buf.Len()) >= f.fs.pageSize {
+		b := make([]byte, f.fs.pageSize)
 		n, err := f.buf.Read(b)
 		// even err is io.EOF, n may be > 0
 		if n > 0 {
@@ -245,11 +245,11 @@ func (f *File) flush(all bool) error {
 			f.offset += int64(n)
 			page := uuid.NewString()
 			data := b[:n]
-			if er := f.vo.EncryptPage(data); er != nil {
+			if er := f.fs.EncryptPage(data); er != nil {
 				return fmt.Errorf("encrypt: %w", er)
 			}
 
-			if er := f.vo.storage.Put(page, data); er != nil {
+			if er := f.fs.storage.Put(page, data); er != nil {
 				return fmt.Errorf("put: %w", er)
 			}
 			f.info.addPage(page)
@@ -265,7 +265,7 @@ func (f *File) flush(all bool) error {
 
 	if all {
 		f.info.setSize(f.offset)
-		if err := f.vo.SaveFileTree(); err != nil {
+		if err := f.fs.SaveFileTree(); err != nil {
 			return fmt.Errorf("save file info list: %w", err)
 		}
 	}

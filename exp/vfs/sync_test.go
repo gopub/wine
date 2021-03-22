@@ -17,10 +17,12 @@ func TestFileSystemSync_CheckData(t *testing.T) {
 	password := uuid.NewString()
 	fs1, err := vfs.NewFileSystem(vfs.NewMemoryStorage())
 	require.NoError(t, err)
-	fs1.SetPassword(password)
+	err = fs1.SetPassword(password)
+	require.NoError(t, err)
 	fs2, err := vfs.NewFileSystem(vfs.NewMemoryStorage())
 	require.NoError(t, err)
-	fs2.SetPassword(password)
+	err = fs2.SetPassword(password)
+	require.NoError(t, err)
 
 	var foo = map[string]int64{"hello": 123}
 	name := uuid.NewString()
