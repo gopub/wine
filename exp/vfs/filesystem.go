@@ -11,6 +11,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/gopub/conv"
 	"github.com/gopub/errors"
+	"github.com/gopub/log"
 	"github.com/gopub/types"
 )
 
@@ -580,6 +581,49 @@ func (fs *FileSystem) Root() *FileInfo {
 
 func (fs *FileSystem) Close() error {
 	return fs.storage.Close()
+}
+
+func (fs *FileSystem) Purge(thresholdSize types.ByteUnit) error {
+	s, ok := fs.storage.(*SQLiteStorage)
+	if !ok {
+		return errors.New("unsupported")
+	}
+	size, _ := s.Size()
+	if size < int64(thresholdSize) {
+		log.Debug("Size %s less than %s. Skipped", types.ByteUnit(size).HumanReadable(),
+			thresholdSize.HumanReadable())
+		return nil
+	}
+	defer func() {
+		if err := recover(); err != nil {
+			log.Error(err)
+		}
+	}()
+	pages := fs.Root().ListAllPages()
+	pageSet := make(map[string]bool, len(pages))
+	for _, page := range pages {
+		pageSet[page] = true
+	}
+
+	keys, err := s.ListKeysByLength(len(uuid.New().String()))
+	if err != nil {
+		return err
+	}
+	var delKeys []string
+	for _, key := range keys {
+		if _, ok := pageSet[key]; ok {
+			log.Debugf("Exist: %s", key)
+		} else {
+			log.Debugf("Unused: %s", key)
+			delKeys = append(delKeys, key)
+		}
+	}
+	err = s.MultiDelete(delKeys)
+	if err != nil {
+		log.Error(err)
+	}
+	log.Debug("Completed")
+	return nil
 }
 
 func loadPageSize(storage Storage) (size int64, err error) {

@@ -5,14 +5,15 @@ import (
 	"os"
 	"sync"
 
-	"github.com/gopub/sql/sqlite"
-
+	"github.com/gopub/log"
 	"github.com/gopub/sql"
+	"github.com/gopub/sql/sqlite"
 )
 
 type SQLiteStorage struct {
-	db *sql.DB
-	mu sync.RWMutex
+	db   *sql.DB
+	mu   sync.RWMutex
+	name string
 }
 
 var _ Storage = (*SQLiteStorage)(nil)
@@ -28,7 +29,8 @@ v BLOB NOT NULL
 		return nil, fmt.Errorf("create table: %w", err)
 	}
 	return &SQLiteStorage{
-		db: db,
+		db:   db,
+		name: name,
 	}, nil
 }
 
@@ -58,6 +60,51 @@ func (s *SQLiteStorage) Delete(key string) error {
 	return err
 }
 
+func (s *SQLiteStorage) MultiDelete(keys []string) error {
+	for _, key := range keys {
+		_, err := s.db.Exec(`DELETE FROM vfs WHERE k=?1`, key)
+		if err != nil {
+			return err
+		}
+	}
+	_, err := s.db.Exec(`VACUUM`)
+	if err != nil {
+		log.Error(err)
+	}
+	return nil
+}
+
+func (s *SQLiteStorage) ListKeysByLength(keyLen int) ([]string, error) {
+	rows, err := s.db.Query(`SELECT k FROM vfs WHERE LEN(k)=?`, keyLen)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var keys []string
+	for rows.Next() {
+		var key string
+		err = rows.Scan(&key)
+		if err != nil {
+			return nil, err
+		}
+		keys = append(keys, key)
+	}
+	return keys, nil
+}
+
 func (s *SQLiteStorage) Close() error {
 	return s.db.Close()
+}
+
+func (s *SQLiteStorage) DB() *sql.DB {
+	return s.db
+}
+
+func (s *SQLiteStorage) Size() (int64, error) {
+	fi, err := os.Stat(s.name)
+	if err != nil {
+		return 0, err
+	}
+	return fi.Size(), nil
 }
