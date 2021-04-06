@@ -33,12 +33,12 @@ const (
 )
 
 const (
-	keyFSRootDir      = "filesystem.root"
-	keyFSThumbnailDir = "filesystem.thumbnails"
-	keyFSCredential   = "filesystem.credential"
-	keyFSConfig       = "filesystem.config"
-	keyFSPageSize     = "filesystem.page_size"
-	keyFSKeyChain     = "filesystem.keychain"
+	keyFSRootDir    = "filesystem.root"
+	keyFSUUID       = "filesystem.uuid"
+	keyFSCredential = "filesystem.credential"
+	keyFSConfig     = "filesystem.config"
+	keyFSPageSize   = "filesystem.page_size"
+	keyFSKeyChain   = "filesystem.keychain"
 )
 
 type Storage interface {

@@ -24,6 +24,7 @@ type FileSystem struct {
 	key        []byte
 	configs    types.M
 	pageSize   int64
+	uuid       string
 
 	thumbnails map[string][]byte
 
@@ -43,6 +44,10 @@ func NewFileSystem(storage Storage) (*FileSystem, error) {
 	}
 
 	var err error
+	if fs.uuid, err = loadUUID(storage); err != nil {
+		return nil, fmt.Errorf("load uuid: %w", err)
+	}
+
 	if fs.pageSize, err = loadPageSize(storage); err != nil {
 		return nil, fmt.Errorf("load page size: %w", err)
 	}
@@ -65,6 +70,10 @@ func NewFileSystem(storage Storage) (*FileSystem, error) {
 		return nil, fmt.Errorf("loadRoot root: %w", err)
 	}
 	return fs, nil
+}
+
+func (fs *FileSystem) UUID() string {
+	return fs.uuid
 }
 
 func (fs *FileSystem) Format(pageSize int64) error {
@@ -651,4 +660,22 @@ func savePageSize(storage Storage, size int64) error {
 		return fmt.Errorf("cannot save page size %d: %v", size, err)
 	}
 	return nil
+}
+
+func loadUUID(storage Storage) (string, error) {
+	data, err := storage.Get(keyFSUUID)
+	if err == nil {
+		return string(data), nil
+	}
+
+	if !errors.IsNotExist(err) {
+		return "", fmt.Errorf("cannot read uuid: %w", err)
+	}
+
+	id := uuid.NewString()
+	err = storage.Put(keyFSUUID, []byte(id))
+	if err != nil {
+		return "", fmt.Errorf("cannot generate uuid: %w", err)
+	}
+	return id, nil
 }
