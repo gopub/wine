@@ -105,7 +105,7 @@ func (kc *fileSystemKeyChain) List() ([]*SecKeyItem, error) {
 		a = append(a, v)
 	}
 	sort.Sort(a)
-	return ([]*SecKeyItem)(a), nil
+	return a, nil
 }
 
 type sortableSecKeyItems []*SecKeyItem
