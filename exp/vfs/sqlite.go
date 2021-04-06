@@ -75,7 +75,7 @@ func (s *SQLiteStorage) MultiDelete(keys []string) error {
 }
 
 func (s *SQLiteStorage) ListKeysByLength(keyLen int) ([]string, error) {
-	rows, err := s.db.Query(`SELECT k FROM vfs WHERE LEN(k)=?`, keyLen)
+	rows, err := s.db.Query(`SELECT k FROM vfs WHERE LENGTH(k)=?`, keyLen)
 	if err != nil {
 		return nil, err
 	}
