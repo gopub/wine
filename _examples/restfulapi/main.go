@@ -11,7 +11,7 @@ func main() {
 	s := wine.NewServer(nil)
 	r := s.Router
 	service := NewItemService()
-	r.Get("/items/{id}", service.Get).SetDescription("Get items by id")
+	r.Get("/items/{id}", service.Get).SetDescription("Download items by id")
 	r.Get("/items/list", service.List).SetDescription("List items")
 	r.Post("/items", service.Create).SetModel(Item{})
 	s.Run(":8000")

@@ -113,7 +113,7 @@ func (h *fileSystemHandler) Upload(rw http.ResponseWriter, req *http.Request) {
 	}
 }
 
-func (h *fileSystemHandler) Get(rw http.ResponseWriter, req *http.Request) {
+func (h *fileSystemHandler) Download(rw http.ResponseWriter, req *http.Request) {
 	fs := (*FileSystem)(h)
 	if !fs.AuthPassed() {
 		errors.Unauthorized("").Respond(req.Context(), rw)
@@ -137,6 +137,32 @@ func (h *fileSystemHandler) Get(rw http.ResponseWriter, req *http.Request) {
 	}
 	req.URL.Path = f.Path()
 	rw.Header().Set(httpvalue.ContentDisposition, httpvalue.FileAttachment(f.Name()))
+	http.FileServer(fs).ServeHTTP(rw, req)
+}
+
+func (h *fileSystemHandler) Get(rw http.ResponseWriter, req *http.Request) {
+	fs := (*FileSystem)(h)
+	if !fs.AuthPassed() {
+		errors.Unauthorized("").Respond(req.Context(), rw)
+		return
+	}
+
+	uuid := req.URL.Query().Get("uuid")
+	f, err := fs.Wrapper().Stat(uuid)
+	if err != nil {
+		h.writeError(req, rw, err)
+		return
+	}
+
+	if f.IsDir() {
+		rw.Header().Set(httpvalue.ContentType, httpvalue.JsonUTF8)
+		_, err = rw.Write(f.DirContent())
+		if err != nil {
+			logger.Errorf("Write data: %v", err)
+		}
+		return
+	}
+	req.URL.Path = f.Path()
 	http.FileServer(fs).ServeHTTP(rw, req)
 }
 
@@ -186,7 +212,7 @@ func (h *fileSystemHandler) RunServer(addr string) {
 	log := logger.With("addr", addr)
 	mux := http.NewServeMux()
 	mux.HandleFunc("/upload", h.Upload)
-	mux.HandleFunc("/get", h.Get)
+	mux.HandleFunc("/get", h.Download)
 	mux.HandleFunc("/stat", h.Stat)
 	mux.Handle("/files", http.StripPrefix("/files", http.FileServer((*FileSystem)(h))))
 	err := http.ListenAndServe(addr, mux)
