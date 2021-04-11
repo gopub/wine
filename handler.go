@@ -3,7 +3,6 @@ package wine
 import (
 	"container/list"
 	"context"
-	"github.com/gopub/wine/urlutil"
 	"io/fs"
 	"net/http"
 	"net/url"
@@ -11,6 +10,8 @@ import (
 	"reflect"
 	"runtime"
 	"strings"
+
+	"github.com/gopub/wine/urlutil"
 )
 
 // Handler defines interface for interceptor

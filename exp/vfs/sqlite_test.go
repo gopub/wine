@@ -1,13 +1,14 @@
 package vfs_test
 
 import (
+	"path/filepath"
+	"sort"
+	"testing"
+
 	"github.com/google/uuid"
 	"github.com/gopub/wine/exp/vfs"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/stretchr/testify/require"
-	"path/filepath"
-	"sort"
-	"testing"
 )
 
 func TestSQLiteStorage_ListKeysByLength(t *testing.T) {
