@@ -100,24 +100,12 @@ func (kc *fileSystemKeyChain) List() ([]*SecKeyItem, error) {
 	if err != nil {
 		return nil, fmt.Errorf("load: %w", err)
 	}
-	a := make(sortableSecKeyItems, 0, len(items))
+	a := make([]*SecKeyItem, 0, len(items))
 	for _, v := range items {
 		a = append(a, v)
 	}
-	sort.Sort(a)
+	sort.Slice(a, func(i, j int) bool {
+		return a[i].Name < a[j].Name
+	})
 	return a, nil
-}
-
-type sortableSecKeyItems []*SecKeyItem
-
-func (a sortableSecKeyItems) Len() int {
-	return len(a)
-}
-
-func (a sortableSecKeyItems) Less(i, j int) bool {
-	return a[i].Name < a[j].Name
-}
-
-func (a sortableSecKeyItems) Swap(i, j int) {
-	a[i], a[j] = a[j], a[i]
 }

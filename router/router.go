@@ -191,7 +191,9 @@ func (r *Router) ListRoutes() []*Endpoint {
 			})
 		}
 	}
-	sort.Sort(sortRouteList(l))
+	sort.Slice(l, func(i, j int) bool {
+		return strings.Compare(l[i].node.path, l[j].node.path) < 0
+	})
 	return l
 }
 

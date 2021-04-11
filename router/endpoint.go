@@ -2,7 +2,6 @@ package router
 
 import (
 	"container/list"
-	"strings"
 )
 
 type Endpoint struct {
@@ -54,18 +53,4 @@ func (e *Endpoint) Metadata() interface{} {
 
 func (e *Endpoint) SetMetadata(m interface{}) {
 	e.node.Metadata = m
-}
-
-type sortRouteList []*Endpoint
-
-func (l sortRouteList) Len() int {
-	return len(l)
-}
-
-func (l sortRouteList) Swap(i, j int) {
-	l[i], l[j] = l[j], l[i]
-}
-
-func (l sortRouteList) Less(i, j int) bool {
-	return strings.Compare(l[i].node.path, l[j].node.path) < 0
 }
