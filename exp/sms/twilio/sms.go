@@ -1,4 +1,4 @@
-package sms
+package twilio
 
 import (
 	"context"
@@ -12,13 +12,13 @@ import (
 	"github.com/gopub/wine"
 )
 
-type TwilioClientConfig struct {
+type SMSConfig struct {
 	PhoneNumbers []string
 	Account      string
 	Token        string
 }
 
-func (c *TwilioClientConfig) Validate() error {
+func (c *SMSConfig) Validate() error {
 	if len(c.PhoneNumbers) == 0 {
 		return errors.New("missing phone numbers")
 	}
@@ -42,22 +42,22 @@ func (c *TwilioClientConfig) Validate() error {
 	return nil
 }
 
-type twilioSendResult struct {
+type sendResult struct {
 	Sid          string `json:"sid"`
 	ErrorCode    int    `json:"error_code"`
 	ErrorMessage string `json:"error_message"`
 	Status       string `json:"status"`
 }
 
-type TwilioClient struct {
-	config   *TwilioClientConfig
+type SMS struct {
+	config   *SMSConfig
 	numIndex int
-	send     *wine.ClientEndpoint
+	send     *wine.SMSEndpoint
 }
 
-func NewTwilioClient(config *TwilioClientConfig) (*TwilioClient, error) {
+func NewSMS(config *SMSConfig) (*SMS, error) {
 	if config == nil {
-		config = new(TwilioClientConfig)
+		config = new(SMSConfig)
 		config.PhoneNumbers = environ.MustStringSlice("twilio.numbers")
 		config.Account = environ.MustString("twilio.account")
 		config.Token = environ.MustString("twilio.token")
@@ -67,14 +67,14 @@ func NewTwilioClient(config *TwilioClientConfig) (*TwilioClient, error) {
 		return nil, fmt.Errorf("validate config: %w", err)
 	}
 
-	s := &TwilioClient{
+	s := &SMS{
 		config:   config,
 		numIndex: 0,
 	}
 
 	sendURL := fmt.Sprintf("https://api.twilio.com/2010-04-01/Accounts/%s/Messages.json", s.config.Account)
 	var err error
-	s.send, err = wine.DefaultClient.Endpoint(http.MethodPost, sendURL)
+	s.send, err = wine.DefaultSMS.Endpoint(http.MethodPost, sendURL)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create http endpoint %s: %w", sendURL, err)
 	}
@@ -82,7 +82,7 @@ func NewTwilioClient(config *TwilioClientConfig) (*TwilioClient, error) {
 	return s, nil
 }
 
-func (s *TwilioClient) Send(ctx context.Context, recipient, content string) (string, error) {
+func (s *SMS) Send(ctx context.Context, recipient, content string) (string, error) {
 	pn, err := types.NewPhoneNumber(recipient)
 	if err != nil {
 		return "", fmt.Errorf("invalid recipient: %w", err)
@@ -92,7 +92,7 @@ func (s *TwilioClient) Send(ctx context.Context, recipient, content string) (str
 	form.Add("To", pn.String())
 	form.Add("From", s.config.PhoneNumbers[s.numIndex])
 	form.Add("Body", content)
-	var result twilioSendResult
+	var result sendResult
 	err = s.send.Call(ctx, form, &result)
 	if err != nil {
 		return "", fmt.Errorf("send: %w", err)
