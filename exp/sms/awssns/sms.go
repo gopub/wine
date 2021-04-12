@@ -8,12 +8,14 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/sns"
 	"github.com/gopub/log"
-	"github.com/gopub/types"
+	"github.com/gopub/wine/exp/sms"
 )
 
 type SMS struct {
 	client *sns.SNS
 }
+
+var _ sms.Sender = (*SMS)(nil)
 
 func NewSMS() *SMS {
 	sess := session.Must(session.NewSession())
@@ -22,16 +24,16 @@ func NewSMS() *SMS {
 	return s
 }
 
-func (s *SMS) Send(ctx context.Context, recipient *types.PhoneNumber, content string) error {
+func (s *SMS) Send(ctx context.Context, recipient, content string) (string, error) {
 	logger := log.FromContext(ctx).With("recipient", recipient)
 	input := &sns.PublishInput{
 		Message:     aws.String(content),
-		PhoneNumber: aws.String(recipient.String()),
+		PhoneNumber: aws.String(recipient),
 	}
-	_, err := s.client.Publish(input)
+	output, err := s.client.Publish(input)
 	if err != nil {
-		return fmt.Errorf("publish: %w", err)
+		return "", fmt.Errorf("publish: %w", err)
 	}
 	logger.Debugf("%v %v", recipient, content)
-	return nil
+	return *output.MessageId, nil
 }

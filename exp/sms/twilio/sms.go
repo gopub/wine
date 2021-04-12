@@ -3,6 +3,7 @@ package twilio
 import (
 	"context"
 	"fmt"
+	"github.com/gopub/wine/exp/sms"
 	"net/http"
 	"net/url"
 
@@ -52,8 +53,10 @@ type sendResult struct {
 type SMS struct {
 	config   *SMSConfig
 	numIndex int
-	send     *wine.SMSEndpoint
+	send     *wine.ClientEndpoint
 }
+
+var _ sms.Sender = (*SMS)(nil)
 
 func NewSMS(config *SMSConfig) (*SMS, error) {
 	if config == nil {
@@ -74,7 +77,7 @@ func NewSMS(config *SMSConfig) (*SMS, error) {
 
 	sendURL := fmt.Sprintf("https://api.twilio.com/2010-04-01/Accounts/%s/Messages.json", s.config.Account)
 	var err error
-	s.send, err = wine.DefaultSMS.Endpoint(http.MethodPost, sendURL)
+	s.send, err = wine.DefaultClient.Endpoint(http.MethodPost, sendURL)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create http endpoint %s: %w", sendURL, err)
 	}
