@@ -198,8 +198,8 @@ func (f *File) WriteThumbnail(b []byte) error {
 		return fmt.Errorf("write %s: %w", f.info.Thumbnail, err)
 	}
 	f.info.Thumbnail = tb
-	f.fs.SaveFileTree()
-	return nil
+	err = f.fs.SaveFileTree()
+	return errors.Wrapf(err, "save file tree")
 }
 
 func (f *File) ReadThumbnail() ([]byte, error) {

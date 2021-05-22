@@ -7,20 +7,10 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/gopub/types"
-
 	"github.com/gopub/errors"
+	"github.com/gopub/types"
 	"github.com/gopub/wine/httpvalue"
 )
-
-type fileResponseItem struct {
-	UUID       string  `json:"uuid"`
-	Name       string  `json:"name"`
-	IsDir      bool    `json:"is_dir"`
-	Files      []*File `json:"files,omitempty"`
-	CreatedAt  int64   `json:"created_at"`
-	ModifiedAt int64   `json:"modified_at"`
-}
 
 type fileSystemHandler FileSystem
 
@@ -181,11 +171,11 @@ func (h *fileSystemHandler) Stat(rw http.ResponseWriter, req *http.Request) {
 	}
 
 	clone := func(fi *FileInfo) *FileInfo {
-		new := new(FileInfo)
-		*new = *fi
-		new.Files = nil
-		new.Pages = nil
-		return new
+		newFi := new(FileInfo)
+		*newFi = *fi
+		newFi.Files = nil
+		newFi.Pages = nil
+		return newFi
 	}
 
 	info := clone(f)

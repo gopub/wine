@@ -288,7 +288,7 @@ func (f *FileInfo) CreatedAt() int64 {
 	return f.fileMetadata.CreatedAt
 }
 
-// SetCreatedAt is for migrating use
+// SetCreatedAt is only for migration
 func (f *FileInfo) SetCreatedAt(t int64) {
 	f.fileMetadata.CreatedAt = t
 	f.fileMetadata.ModifiedAt = t
@@ -303,7 +303,7 @@ func (f *FileInfo) UUID() string {
 	return f.fileMetadata.UUID
 }
 
-// SetUUID is for migrating use only
+// SetUUID is only for migration
 func (f *FileInfo) SetUUID(id string) {
 	f.fileMetadata.UUID = id
 	f.invalidateDirContent()
@@ -320,7 +320,7 @@ func (f *FileInfo) Duration() int {
 	return f.fileMetadata.Duration
 }
 
-// SetUUID is for migrating use only
+// SetDuration is only for migration
 func (f *FileInfo) SetDuration(seconds int) {
 	f.fileMetadata.Duration = seconds
 	f.invalidateDirContent()
