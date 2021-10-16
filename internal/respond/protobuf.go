@@ -3,8 +3,8 @@ package respond
 import (
 	"net/http"
 
-	"github.com/golang/protobuf/proto"
 	"github.com/gopub/wine/httpvalue"
+	"google.golang.org/protobuf/proto"
 )
 
 func Protobuf(status int, message proto.Message) *Response {

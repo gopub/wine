@@ -7,10 +7,10 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/golang/protobuf/proto"
 	"github.com/gopub/conv"
 	"github.com/gopub/log"
 	"github.com/gopub/wine/httpvalue"
+	"google.golang.org/protobuf/proto"
 )
 
 var logger = log.Default()

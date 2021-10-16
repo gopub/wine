@@ -9,13 +9,13 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/golang/protobuf/proto"
 	"github.com/gopub/conv"
 	"github.com/gopub/errors"
 	"github.com/gopub/types"
 	"github.com/gopub/wine/httpvalue"
 	iopkg "github.com/gopub/wine/internal/io"
 	"github.com/gopub/wine/router"
+	"google.golang.org/protobuf/proto"
 )
 
 type GroupedParams = iopkg.RequestParams

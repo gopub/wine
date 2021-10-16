@@ -7,10 +7,10 @@ import (
 	"net/http"
 	"reflect"
 
-	"github.com/golang/protobuf/proto"
 	"github.com/gopub/errors"
 	"github.com/gopub/log"
 	"github.com/gopub/wine"
+	"google.golang.org/protobuf/proto"
 )
 
 var logger = wine.Logger()

@@ -7,10 +7,10 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/golang/protobuf/proto"
 	"github.com/gopub/conv"
 	"github.com/gopub/errors"
 	"github.com/gopub/wine/httpvalue"
+	"google.golang.org/protobuf/proto"
 )
 
 func DecodeResponse(resp *http.Response, result interface{}) error {
