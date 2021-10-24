@@ -53,7 +53,7 @@ func (r *Router) Group(path string) *Router {
 	return nr
 }
 
-// UseHandlers returns a new router with global handlers which will be bound with all new path patterns
+// Use returns a new router with global handlers which will be bound with all new path patterns
 // This can be used to add interceptors
 func (r *Router) Use(handlers *list.List) *Router {
 	nr := r.clone()
@@ -122,7 +122,7 @@ func (r *Router) MatchScopes(path string) []string {
 	return a
 }
 
-// bind binds scope, path with handlers
+// Bind binds scope, path with handlers
 func (r *Router) Bind(scope, path string, handlers *list.List) *Endpoint {
 	if path == "" {
 		logger.Panic("path is empty")
