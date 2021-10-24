@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/gopub/errors"
-
 	"github.com/gopub/log"
 	"github.com/gopub/wine"
 )

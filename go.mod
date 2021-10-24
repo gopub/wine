@@ -16,10 +16,8 @@ require (
 	github.com/gopub/wine/router v0.1.5
 	github.com/gopub/wine/urlutil v0.1.5
 	github.com/gorilla/websocket v1.4.2
-	github.com/magiconair/properties v1.8.5 // indirect
 	github.com/nyaruka/phonenumbers v1.0.72 // indirect
 	github.com/shopspring/decimal v1.3.0 // indirect
-	github.com/spf13/afero v1.6.0 // indirect
 	github.com/spf13/viper v1.9.0 // indirect
 	github.com/stretchr/testify v1.7.0
 	golang.org/x/net v0.0.0-20211015210444-4f30a5c0130f // indirect
