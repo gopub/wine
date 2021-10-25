@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/gopub/conv"
-	"github.com/gopub/log"
+	"github.com/gopub/log/v2"
 	"github.com/gopub/wine/httpvalue"
 	"google.golang.org/protobuf/proto"
 )

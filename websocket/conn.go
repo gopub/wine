@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/gopub/errors"
-	"github.com/gopub/log"
+	"github.com/gopub/log/v2"
 	"github.com/gorilla/websocket"
 	"google.golang.org/protobuf/proto"
 )

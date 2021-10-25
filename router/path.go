@@ -3,7 +3,7 @@ package router
 import (
 	"regexp"
 
-	"github.com/gopub/log"
+	"github.com/gopub/log/v2"
 )
 
 var logger = log.Default()

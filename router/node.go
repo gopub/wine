@@ -7,7 +7,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/gopub/log"
+	oldlog "github.com/gopub/log"
 	"github.com/gopub/types"
 )
 
@@ -330,7 +330,7 @@ func (n *node) HandlerPath() string {
 			name = name[:len(name)-3]
 		}
 		name = reg.ReplaceAllString(name, "$1")
-		s.WriteString(log.ShortPath(name))
+		s.WriteString(oldlog.ShortPath(name))
 	}
 	return s.String()
 }

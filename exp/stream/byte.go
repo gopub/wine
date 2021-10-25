@@ -8,7 +8,7 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/gopub/log"
+	"github.com/gopub/log/v2"
 	"github.com/gopub/wine"
 	"github.com/gopub/wine/httpvalue"
 )

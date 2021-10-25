@@ -5,7 +5,7 @@ import (
 	"os"
 	"sync"
 
-	"github.com/gopub/log"
+	"github.com/gopub/log/v2"
 	"github.com/gopub/sql"
 	"github.com/gopub/sql/sqlite"
 )

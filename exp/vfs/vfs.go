@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/gopub/errors"
-	"github.com/gopub/log"
+	"github.com/gopub/log/v2"
 	"github.com/gopub/types"
 )
 
@@ -14,7 +14,6 @@ var logger *log.Logger
 
 func init() {
 	logger = log.Default().Derive("Wine.vfs")
-	logger.SetFlags(log.LstdFlags - log.Lfunction - log.Lshortfile)
 }
 
 func SetLogger(l *log.Logger) {

@@ -12,7 +12,7 @@ import (
 
 	"github.com/gopub/environ"
 	"github.com/gopub/errors"
-	"github.com/gopub/log"
+	"github.com/gopub/log/v2"
 	"github.com/gopub/wine"
 	"github.com/gopub/wine/ctxutil"
 	"github.com/gopub/wine/router"

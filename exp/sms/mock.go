@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/google/uuid"
-	"github.com/gopub/log"
+	"github.com/gopub/log/v2"
 )
 
 type Mock struct {

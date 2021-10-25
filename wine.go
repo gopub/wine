@@ -2,21 +2,20 @@ package wine
 
 import (
 	"context"
+	"github.com/gopub/wine/router"
 
 	"github.com/gopub/conv"
-	"github.com/gopub/log"
+	"github.com/gopub/log/v2"
 	"github.com/gopub/wine/ctxutil"
 	"github.com/gopub/wine/internal/respond"
-	"github.com/gopub/wine/router"
 )
 
 var logger *log.Logger
 
 func init() {
 	logger = log.Default().Derive("Wine")
-	logger.SetFlags(log.LstdFlags - log.Lfunction - log.Lshortfile)
-	router.SetLogger(logger)
 	respond.SetLogger(logger)
+	router.SetLogger(logger)
 }
 
 func Logger() *log.Logger {

@@ -16,7 +16,7 @@ import (
 
 	"github.com/gopub/conv"
 	"github.com/gopub/environ"
-	"github.com/gopub/log"
+	"github.com/gopub/log/v2"
 	"github.com/gopub/types"
 	"github.com/gopub/wine/ctxutil"
 	"github.com/gopub/wine/httpvalue"
@@ -68,8 +68,6 @@ type Server struct {
 
 // NewServer returns a server
 func NewServer(options *Options) *Server {
-	logger := log.GetLogger("Wine")
-	logger.SetFlags(logger.Flags() ^ log.Lfunction ^ log.Lshortfile)
 	header := make(http.Header, 1)
 	header.Set("Server", "Wine")
 
