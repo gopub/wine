@@ -7,10 +7,8 @@ require (
 	cloud.google.com/go/storage v1.12.0
 	github.com/gopub/wine v1.38.2 // indirect
 	github.com/gopub/wine/exp/storage v0.1.6
-	golang.org/x/mod v0.4.1 // indirect
-	golang.org/x/net v0.0.0-20210119194325-5f4716e94777 // indirect
+	golang.org/x/net v0.7.0 // indirect
 	golang.org/x/oauth2 v0.0.0-20210113205817-d3ed898aa8a3 // indirect
-	golang.org/x/tools v0.1.0 // indirect
 	google.golang.org/genproto v0.0.0-20210122163508-8081c04a3579 // indirect
 	google.golang.org/grpc v1.35.0 // indirect
 )
