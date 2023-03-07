@@ -8,7 +8,7 @@ require (
 	github.com/gopub/errors v0.1.7
 	github.com/gopub/wine v1.38.1
 	github.com/gopub/wine/httpvalue v0.1.4
-	golang.org/x/image v0.0.0-20201208152932-35266b937fa6
+	golang.org/x/image v0.5.0
 )
 
 //replace (
